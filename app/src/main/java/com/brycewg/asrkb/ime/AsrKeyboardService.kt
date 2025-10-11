@@ -209,19 +209,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         return try {
             val cur = base.resources.configuration
             val cfg = Configuration(cur)
-            if (Build.VERSION.SDK_INT >= 24) {
-                val list = LocaleList.forLanguageTags(tag)
-                cfg.setLocales(list)
-            } else {
-                val parts = tag.split('-', '_')
-                val loc = when (parts.size) {
-                    1 -> java.util.Locale(parts[0])
-                    2 -> java.util.Locale(parts[0], parts[1])
-                    else -> java.util.Locale(parts[0])
-                }
-                @Suppress("DEPRECATION")
-                cfg.setLocale(loc)
-            }
+            val list = LocaleList.forLanguageTags(tag)
+            cfg.setLocales(list)
             base.createConfigurationContext(cfg)
         } catch (_: Throwable) {
             base

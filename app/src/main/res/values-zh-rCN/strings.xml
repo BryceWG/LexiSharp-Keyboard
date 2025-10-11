@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name">ASR Keyboard</string>
-    <string name="subtype_generic">通用</string>
-
     <string name="cd_mic">麦克风</string>
     <string name="cd_settings">设置</string>
     <string name="cd_enter">回车</string>
@@ -23,7 +21,6 @@
     <string name="cd_shift">切换大小写</string>
     <string name="cd_symbols_keyboard">切换数字符号</string>
     <string name="label_123">123</string>
-    <string name="cd_switch_to_voice">返回语音输入</string>
     <string name="hint_text_buffer">文本暂存区</string>
     <string name="cd_pinyin_mode">中文拼音输入模式</string>
     <string name="label_pinyin">中</string>

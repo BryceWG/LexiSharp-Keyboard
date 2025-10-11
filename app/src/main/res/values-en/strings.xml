@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">ASR Keyboard</string>
-    <string name="subtype_generic">General</string>
 
     <string name="cd_mic">Microphone</string>
     <string name="cd_settings">Settings</string>
@@ -23,7 +22,6 @@
     <string name="cd_shift">Shift</string>
     <string name="cd_symbols_keyboard">Switch to symbols</string>
     <string name="label_123">123</string>
-    <string name="cd_switch_to_voice">Back to voice input</string>
     <string name="hint_text_buffer">Text buffer</string>
     <string name="cd_pinyin_mode">Chinese Pinyin input mode</string>
     <string name="label_pinyin">中</string>
