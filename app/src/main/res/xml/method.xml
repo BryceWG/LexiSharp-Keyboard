@@ -3,7 +3,7 @@
     android:settingsActivity="com.brycewg.asrkb.ui.SettingsActivity">
 
     <subtype
-        android:label="@string/subtype_generic"
+        android:label="@string/app_name"
         android:imeSubtypeLocale="zh_CN"
         android:imeSubtypeMode="keyboard" />
 
