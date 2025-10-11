@@ -538,8 +538,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             // 停止周期任务，避免竞态；不清除合成文本
             stopPinyinAutoSuggest(clearComposition = false)
             val pinyinNow = when (prefs.pinyinMode) {
-                com.brycewg.asrkb.store.PinyinMode.Quanpin -> rawInput
-                com.brycewg.asrkb.store.PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(rawInput) } catch (_: Throwable) { rawInput }
+                PinyinMode.Quanpin -> rawInput
+                PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(rawInput) } catch (_: Throwable) { rawInput }
             }
             val needFinalRefresh = (pendingPinyinSuggestion == null) || (pinyinNow != pinyinAutoLastInput)
             val ic = currentInputConnection
@@ -772,12 +772,12 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 val now = SystemClock.uptimeMillis()
                 val dt = now - lastShiftTapTime
                 lastShiftTapTime = now
-                if (dt <= ViewConfiguration.getDoubleTapTimeout()) {
+                shiftMode = if (dt <= ViewConfiguration.getDoubleTapTimeout()) {
                     // double tap -> lock
-                    shiftMode = ShiftMode.Lock
+                    ShiftMode.Lock
                 } else {
                     // single tap -> toggle once/off
-                    shiftMode = when (shiftMode) {
+                    when (shiftMode) {
                         ShiftMode.Off -> ShiftMode.Once
                         ShiftMode.Once -> ShiftMode.Off
                         ShiftMode.Lock -> ShiftMode.Off
@@ -833,8 +833,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private fun getDisplayPinyinText(): String {
         val raw = pinyinBuffer.toString()
         return when (prefs.pinyinMode) {
-            com.brycewg.asrkb.store.PinyinMode.Quanpin -> raw
-            com.brycewg.asrkb.store.PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(raw) } catch (_: Throwable) { raw }
+            PinyinMode.Quanpin -> raw
+            PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(raw) } catch (_: Throwable) { raw }
         }
     }
 
@@ -931,10 +931,10 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         }
         // Backspace long-press repeat
         v.findViewById<ImageButton?>(R.id.symBackspace)?.setOnTouchListener { view, event ->
-            var pressed = view.getTag(R.id.tag_pressed) as? Boolean ?: false
-            var longStarted = view.getTag(R.id.tag_long_started) as? Boolean ?: false
-            var starter = view.getTag(R.id.tag_starter) as? Runnable
-            var repeater = view.getTag(R.id.tag_repeater) as? Runnable
+            var pressed: Boolean
+            var longStarted: Boolean
+            val starter = view.getTag(R.id.tag_starter) as? Runnable
+            val repeater = view.getTag(R.id.tag_repeater) as? Runnable
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     pressed = true
@@ -1249,13 +1249,6 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         btnPunct4?.text = prefs.punct4
     }
 
-    private fun commitText(s: String) {
-        try {
-            currentInputConnection?.commitText(s, 1)
-            vibrateTick()
-        } catch (_: Throwable) { }
-    }
-
     // 内部提交文本，允许选择是否触发默认振动（保留原有行为给非 26 键场景）。
     private fun commitTextCore(s: String, vibrate: Boolean) {
         try {
@@ -1520,8 +1513,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     pinyinAutoLastInput = ""
                 } else if (!pinyinAutoRunning) {
                     val pinyin = when (prefs.pinyinMode) {
-                        com.brycewg.asrkb.store.PinyinMode.Quanpin -> raw
-                        com.brycewg.asrkb.store.PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(raw) } catch (_: Throwable) { raw }
+                        PinyinMode.Quanpin -> raw
+                        PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(raw) } catch (_: Throwable) { raw }
                     }
                     if (pinyin != pinyinAutoLastInput) {
                         pinyinAutoRunning = true

@@ -210,7 +210,6 @@ class SettingsActivity : AppCompatActivity() {
         )
         spLanguage.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, languageItems)
         val savedTag = prefs.appLanguageTag
-        var languageSpinnerInitialized: Boolean
         spLanguage.setSelection(
             when (savedTag) {
                 "zh", "zh-CN", "zh-Hans" -> 1
@@ -218,7 +217,7 @@ class SettingsActivity : AppCompatActivity() {
                 else -> 0
             }
         )
-        languageSpinnerInitialized = true
+        var languageSpinnerInitialized: Boolean = true
         // Qwerty default language spinner
         val qwertyLangItems = listOf(
             getString(R.string.qwerty_lang_english),

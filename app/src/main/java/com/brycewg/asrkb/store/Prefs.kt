@@ -481,7 +481,7 @@ class Prefs(context: Context) {
             // 供应商设置（通用导入）
             vendorFields.values.flatten().forEach { f ->
                 optString(f.key)?.let { v ->
-                    val final = if (v.isBlank()) f.default else v
+                    val final = v.ifBlank { f.default }
                     setPrefString(f.key, final)
                 }
             }
