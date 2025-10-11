@@ -1,5 +1,7 @@
 package com.brycewg.asrkb.ui
 
+import android.app.Activity
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -32,9 +34,24 @@ class ImePickerActivity : ComponentActivity() {
                 // 缩短延迟时间，立即关闭透明 Activity 避免闪烁
                 handler.postDelayed({
                     finish()
-                    overridePendingTransition(0, 0)
+                    applyNoTransition()
                 }, 100)
             }
         }
+    }
+
+    private fun applyNoTransition() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // Android 14+ 使用新 API，避免弃用告警
+            overrideActivityTransition(Activity.OVERRIDE_TRANSITION_OPEN, 0, 0)
+            overrideActivityTransition(Activity.OVERRIDE_TRANSITION_CLOSE, 0, 0)
+        } else {
+            suppressDeprecationOverridePendingTransition()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun suppressDeprecationOverridePendingTransition() {
+        overridePendingTransition(0, 0)
     }
 }
