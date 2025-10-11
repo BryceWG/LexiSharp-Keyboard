@@ -90,7 +90,6 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var btnPunct1: TextView? = null
     private var btnPunct2: TextView? = null
     private var btnPunct3: TextView? = null
-    private var btnPunct4: TextView? = null
     private var txtStatus: TextView? = null
     private var committedStableLen: Int = 0
     private var postproc: LlmPostProcessor = LlmPostProcessor()
@@ -475,10 +474,6 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         }
         btnPunct3?.setOnClickListener {
             commitTextCore(prefs.punct3, vibrate = false)
-            it?.let { v -> maybeHapticKeyTap(v) }
-        }
-        btnPunct4?.setOnClickListener {
-            commitTextCore(prefs.punct4, vibrate = false)
             it?.let { v -> maybeHapticKeyTap(v) }
         }
         btnPostproc?.apply {
@@ -1246,7 +1241,6 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         btnPunct1?.text = prefs.punct1
         btnPunct2?.text = prefs.punct2
         btnPunct3?.text = prefs.punct3
-        btnPunct4?.text = prefs.punct4
     }
 
     // 内部提交文本，允许选择是否触发默认振动（保留原有行为给非 26 键场景）。

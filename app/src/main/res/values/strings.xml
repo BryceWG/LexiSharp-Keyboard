@@ -20,6 +20,7 @@
     <string name="label_space">空格</string>
     <string name="cd_symbols_keyboard">切换数字符号</string>
     <string name="label_123">123</string>
+    <string name="cd_switch_to_voice">返回语音输入</string>
     <string name="cd_shift">切换大小写</string>
     <string name="hint_text_buffer">文本暂存区</string>
     <string name="cd_pinyin_mode">中文拼音输入模式</string>
