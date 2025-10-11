@@ -962,7 +962,9 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 qwertyConvScroll?.visibility = View.GONE
             }
         }
+        // 同步更新字母大小写与标点/符号的本地化显示
         applyLetterCase()
+        applySymbolsForCurrentLang()
     }
 
     private fun updateShiftUi() {
@@ -1846,6 +1848,104 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         if (pinyinBuffer.isEmpty()) {
             pendingPinyinSuggestion = null
             clearPinyinPreviewComposition()
+        }
+    }
+
+    // ---------- 符号/标点：随中英模式切换 ----------
+    private fun applySymbolsForCurrentLang() {
+        applyQwertyInlinePunctuation()
+        applySymbolsPanelKeys()
+    }
+
+    private fun applyQwertyInlinePunctuation() {
+        val root = qwertyLettersPanelView ?: qwertyPanelView ?: return
+        fun traverse(v: View) {
+            if (v is ViewGroup) {
+                for (i in 0 until v.childCount) traverse(v.getChildAt(i))
+            } else if (v is TextView) {
+                val tag = v.tag?.toString()
+                if (tag == "punct_key") {
+                    val cur = v.text?.toString() ?: return
+                    val normalized = toAsciiFromAny(cur)
+                    val newText = when (langMode) {
+                        LangMode.Chinese -> toChineseFromAscii(normalized)
+                        LangMode.English -> normalized
+                    }
+                    if (newText != cur) v.text = newText
+                }
+            }
+        }
+        traverse(root)
+    }
+
+    private fun applySymbolsPanelKeys() {
+        val root = symbolsPanelView ?: return
+        fun traverse(v: View) {
+            if (v is ViewGroup) {
+                for (i in 0 until v.childCount) traverse(v.getChildAt(i))
+            } else if (v is TextView) {
+                val tag = v.tag?.toString()
+                if (tag == "sym_key") {
+                    val cur = v.text?.toString() ?: return
+                    val normalized = toAsciiFromAny(cur)
+                    val newText = when (langMode) {
+                        LangMode.Chinese -> toChineseFromAscii(normalized)
+                        LangMode.English -> normalized
+                    }
+                    if (newText != cur) v.text = newText
+                }
+            }
+        }
+        traverse(root)
+    }
+
+    private fun toChineseFromAscii(s: String): String {
+        if (s.length != 1) return s
+        return when (s[0]) {
+            ',' -> "，"
+            '.' -> "。"
+            '?' -> "？"
+            '!' -> "！"
+            ':' -> "："
+            ';' -> "；"
+            '"' -> "“"
+            '\'' -> "’"
+            '(' -> "（"
+            ')' -> "）"
+            '[' -> "［"
+            ']' -> "］"
+            '{' -> "｛"
+            '}' -> "｝"
+            '@' -> "＠"
+            '-' -> "－"
+            '/' -> "／"
+            '$' -> "￥"
+            else -> s
+        }
+    }
+
+    private fun toAsciiFromAny(s: String): String {
+        if (s.length != 1) return s
+        return when (s[0]) {
+            '，' -> ","
+            '。' -> "."
+            '？' -> "?"
+            '！' -> "!"
+            '：' -> ":"
+            '；' -> ";"
+            '“', '”' -> "\""
+            '‘', '’' -> "'"
+            '（' -> "("
+            '）' -> ")"
+            '［', '【' -> "["
+            '］', '】' -> "]"
+            '｛' -> "{"
+            '｝' -> "}"
+            '＠' -> "@"
+            '－' -> "-"
+            '／' -> "/"
+            '￥' -> "${'$'}"
+            else -> s
         }
     }
 }
