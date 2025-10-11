@@ -250,16 +250,19 @@
             android:textSize="16sp" />
 
         <TextView
-            android:id="@+id/qwertyPeriod"
+            android:id="@+id/qwertyLangSwitch"
             android:layout_width="48dp"
             android:layout_height="match_parent"
             android:layout_margin="2dp"
             android:background="@drawable/bg_key_button"
+            android:contentDescription="@string/cd_lang_switch"
             android:gravity="center"
-            android:text="."
+            android:text="@string/label_english_mode"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="20sp"
-            android:tag="punct_key" />
+            android:clickable="true"
+            android:focusable="true"
+            android:stateListAnimator="@animator/key_button_state_list" />
 
         <ImageButton
             android:id="@+id/qwertyEnter"

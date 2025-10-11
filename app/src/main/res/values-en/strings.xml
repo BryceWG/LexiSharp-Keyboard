@@ -26,6 +26,9 @@
     <string name="hint_text_buffer">Text buffer</string>
     <string name="cd_pinyin_mode">Chinese Pinyin input mode</string>
     <string name="label_pinyin">中</string>
+    <string name="cd_lang_switch">Language switch</string>
+    <string name="label_chinese_mode">文</string>
+    <string name="label_english_mode">A</string>
 
     <string name="status_idle">Ready</string>
     <string name="status_listening">Listening…</string>

@@ -26,6 +26,9 @@
     <string name="hint_text_buffer">文本暂存区</string>
     <string name="cd_pinyin_mode">中文拼音输入模式</string>
     <string name="label_pinyin">中</string>
+    <string name="cd_lang_switch">中英文切换</string>
+    <string name="label_chinese_mode">文</string>
+    <string name="label_english_mode">A</string>
 
     <string name="status_idle">就绪</string>
     <string name="status_listening">正在聆听…</string>

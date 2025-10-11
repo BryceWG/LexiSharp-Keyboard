@@ -56,6 +56,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var isQwertyVisible: Boolean = false
     private enum class ShiftMode { Off, Once, Lock }
     private var shiftMode: ShiftMode = ShiftMode.Off
+    private enum class LangMode { English, Chinese }
+    private var langMode: LangMode = LangMode.English
     private var qwertyLetterKeys: MutableList<TextView> = mutableListOf()
     private var lastShiftTapTime: Long = 0L
 
@@ -63,6 +65,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var qwertyHideTop: ImageButton? = null
     private var qwertyTextBuffer: TextView? = null
     private var qwertyPinyin: TextView? = null
+    private var qwertyLangSwitch: TextView? = null
 
     private var btnMic: FloatingActionButton? = null
     private var btnSettings: ImageButton? = null
@@ -472,6 +475,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         qwertyHideTop = v.findViewById(R.id.qwertyHideTop)
         qwertyTextBuffer = v.findViewById(R.id.qwertyTextBuffer)
         qwertyPinyin = v.findViewById(R.id.qwertyPinyin)
+        qwertyLangSwitch = v.findViewById(R.id.qwertyLangSwitch)
 
         // Setup toolbar listeners
         qwertyHideTop?.setOnClickListener { hideKeyboardPanel() }
@@ -479,6 +483,19 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             // TODO: Implement pinyin to Chinese conversion using LLM
             // This will be implemented later
         }
+
+        // Language switch button
+        qwertyLangSwitch?.setOnClickListener {
+            langMode = when (langMode) {
+                LangMode.English -> LangMode.Chinese
+                LangMode.Chinese -> LangMode.English
+            }
+            updateLangModeUI()
+            vibrateTick()
+        }
+
+        // Initialize UI
+        updateLangModeUI()
 
         // Letters
         qwertyLetterKeys.clear()
@@ -577,8 +594,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 else -> false
             }
         }
-        // Enter & 123
-        v.findViewById<ImageButton?>(R.id.qwertyEnter)?.setOnClickListener { sendEnter() }
+        // 123
         v.findViewById<TextView?>(R.id.qwertyNum)?.setOnClickListener { showSymbolsPanel() }
 
         // Shift toggle
@@ -607,13 +623,30 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     }
 
     private fun applyLetterCase() {
-        val upper = shiftMode != ShiftMode.Off
+        // In Chinese mode, always show uppercase letters
+        // In English mode, follow shift state
+        val upper = when (langMode) {
+            LangMode.Chinese -> true
+            LangMode.English -> shiftMode != ShiftMode.Off
+        }
         qwertyLetterKeys.forEach { tv ->
             val t = tv.text?.toString() ?: return@forEach
             if (t.length == 1) {
                 tv.text = if (upper) t.uppercase() else t.lowercase()
             }
         }
+    }
+
+    private fun updateLangModeUI() {
+        when (langMode) {
+            LangMode.Chinese -> {
+                qwertyLangSwitch?.text = getString(R.string.label_chinese_mode)
+            }
+            LangMode.English -> {
+                qwertyLangSwitch?.text = getString(R.string.label_english_mode)
+            }
+        }
+        applyLetterCase()
     }
 
     private fun updateShiftUi() {
