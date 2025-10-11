@@ -30,26 +30,72 @@
             android:stateListAnimator="@animator/key_button_state_list"
             android:tint="?attr/colorOnSurfaceVariant" />
 
-        <!-- 输入文本暂存显示区域 -->
-        <TextView
-            android:id="@+id/qwertyTextBuffer"
+        <!-- 输入文本暂存显示区域（左右分区，联动滚动） -->
+        <LinearLayout
+            android:id="@+id/qwertyTextBufferSplit"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
             android:background="@drawable/bg_key_button"
-            android:gravity="center_vertical|start"
             android:paddingHorizontal="12dp"
             android:paddingVertical="6dp"
-            android:text=""
-            android:hint="@string/hint_text_buffer"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textColorHint="?attr/colorOnSurfaceVariant"
-            android:alpha="0.7"
-            android:textSize="14sp"
-            android:maxLines="1"
-            android:ellipsize="end" />
+            android:orientation="horizontal">
+
+            <HorizontalScrollView
+                android:id="@+id/qwertyRawScroll"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:fillViewport="true"
+                android:scrollbars="none"
+                android:overScrollMode="never">
+
+                <TextView
+                    android:id="@+id/qwertyTextBuffer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical|start"
+                    android:text=""
+                    android:hint="@string/hint_text_buffer"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textColorHint="?attr/colorOnSurfaceVariant"
+                    android:alpha="0.8"
+                    android:textSize="12sp"
+                    android:maxLines="1" />
+
+            </HorizontalScrollView>
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="6dp"
+                android:alpha="0.3"
+                android:background="?attr/colorOnSurfaceVariant" />
+
+            <HorizontalScrollView
+                android:id="@+id/qwertyConvScroll"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:fillViewport="true"
+                android:scrollbars="none"
+                android:overScrollMode="never">
+
+                <TextView
+                    android:id="@+id/qwertyTextBufferConv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical|start"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:alpha="0.8"
+                    android:textSize="12sp"
+                    android:maxLines="1" />
+
+            </HorizontalScrollView>
+
+        </LinearLayout>
 
         <!-- 中文输入模式切换按钮 -->
         <TextView

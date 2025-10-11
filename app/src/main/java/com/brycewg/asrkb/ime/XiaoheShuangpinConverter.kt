@@ -121,4 +121,48 @@ object XiaoheShuangpinConverter {
         }
         return out.toString()
     }
+
+    /**
+     * 构建输入边界 -> 输出边界的映射
+     * 结果数组长度为 input.length + 1，result[k] 表示输入前缀 [0,k) 对应的全拼输出前缀长度。
+     */
+    fun boundaryMap(input: String): IntArray {
+        val n = input.length
+        val res = IntArray(n + 1)
+        var outLen = 0
+        res[0] = 0
+        var i = 0
+        while (i < n) {
+            val ch = input[i]
+            if (ch.isLetter()) {
+                var j = i
+                while (j < n && input[j].isLetter()) j++
+                var k = i
+                while (k + 1 < j) {
+                    // pair [k, k+2)
+                    val out = convertPair(input.substring(k, k + 2))
+                    res[k - i + i] = outLen // ensure boundary at k 已覆盖（冗余赋值安全）
+                    outLen += out.length
+                    res[k + 2 - i + i] = outLen
+                    k += 2
+                }
+                if (k < j) {
+                    // 末尾单字母：原样 1 字符
+                    res[k - i + i] = outLen
+                    outLen += 1
+                    res[k + 1 - i + i] = outLen
+                }
+                i = j
+            } else {
+                // 非字母字符原样 1 字符
+                res[i] = outLen
+                outLen += 1
+                res[i + 1] = outLen
+                i++
+            }
+        }
+        // 填补任何未赋值的边界（理论上已覆盖）
+        for (k in 0..n) if (res[k] < 0) res[k] = outLen
+        return res
+    }
 }

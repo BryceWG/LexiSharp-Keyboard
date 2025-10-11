@@ -14,12 +14,18 @@ import android.view.ViewConfiguration
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.TextView
 import android.view.KeyEvent
 import android.os.SystemClock
 import android.view.inputmethod.InputMethodManager
 import android.text.InputType
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ReplacementSpan
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.view.inputmethod.EditorInfo
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import androidx.core.content.ContextCompat
@@ -66,11 +72,17 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     // Qwerty toolbar views
     private var qwertyHideTop: ImageButton? = null
     private var qwertyTextBuffer: TextView? = null
+    private var qwertyTextBufferConv: TextView? = null
+    private var qwertyRawScroll: HorizontalScrollView? = null
+    private var qwertyConvScroll: HorizontalScrollView? = null
     private var qwertyPinyin: TextView? = null
     private var qwertyLangSwitch: TextView? = null
     // 拼音缓冲（中文模式）
     private val pinyinBuffer = StringBuilder()
     private var pinyinBufferSnapshot: String? = null
+    // 拼音光标（位于 [0, length] 间）
+    private var pinyinCursor: Int = 0
+    private var isSyncScrolling: Boolean = false
     // 中文 26 键：拼音自动 LLM 转换与候选
     private var pinyinAutoJob: kotlinx.coroutines.Job? = null
     private var pinyinAutoLastInput: String = ""
@@ -518,6 +530,9 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         // Bind toolbar views
         qwertyHideTop = v.findViewById(R.id.qwertyHideTop)
         qwertyTextBuffer = v.findViewById(R.id.qwertyTextBuffer)
+        qwertyTextBufferConv = v.findViewById(R.id.qwertyTextBufferConv)
+        qwertyRawScroll = v.findViewById(R.id.qwertyRawScroll)
+        qwertyConvScroll = v.findViewById(R.id.qwertyConvScroll)
         qwertyPinyin = v.findViewById(R.id.qwertyPinyin)
         qwertyLangSwitch = v.findViewById(R.id.qwertyLangSwitch)
 
@@ -593,6 +608,37 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         // Initialize UI
         updateLangModeUI()
 
+        // 点击左侧原始字母区：定位拼音光标（滚动由 HorizontalScrollView 处理）
+        qwertyRawScroll?.setOnTouchListener { view, event ->
+            if (langMode != LangMode.Chinese) return@setOnTouchListener false
+            if (event.actionMasked != MotionEvent.ACTION_UP) return@setOnTouchListener false
+            val tv = qwertyTextBuffer ?: return@setOnTouchListener false
+            val layout = tv.layout ?: return@setOnTouchListener false
+            val hsv = view as HorizontalScrollView
+            val xInText = (event.x + hsv.scrollX - tv.left).coerceAtLeast(0f)
+            val offWithCaret = try { layout.getOffsetForHorizontal(0, xInText) } catch (_: Throwable) { 0 }
+            // caret 索引基于原始字母（raw）插入的占位
+            val caretIndex = pinyinCursor.coerceIn(0, pinyinBuffer.length)
+            val plainOffset = if (offWithCaret <= caretIndex) offWithCaret else (offWithCaret - 1)
+            setPinyinCursor(plainOffset)
+            maybeHapticKeyTap(view)
+            true
+        }
+
+        // 左右分区滚动联动
+        qwertyRawScroll?.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            if (isSyncScrolling) return@setOnScrollChangeListener
+            val other = qwertyConvScroll ?: return@setOnScrollChangeListener
+            isSyncScrolling = true
+            try { other.scrollTo(scrollX, 0) } finally { isSyncScrolling = false }
+        }
+        qwertyConvScroll?.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            if (isSyncScrolling) return@setOnScrollChangeListener
+            val other = qwertyRawScroll ?: return@setOnScrollChangeListener
+            isSyncScrolling = true
+            try { other.scrollTo(scrollX, 0) } finally { isSyncScrolling = false }
+        }
+
         // Letters
         qwertyLetterKeys.clear()
         fun bindLetters(group: View) {
@@ -606,7 +652,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                             val s = child.text?.toString() ?: return@setOnClickListener
                             if (langMode == LangMode.Chinese) {
                                 // 中文模式：字母进入拼音缓冲（以小写拼音为准）
-                                appendToPinyinBuffer(s.lowercase())
+                                insertIntoPinyinBuffer(s.lowercase())
                             } else {
                                 // 英文模式：直接提交
                                 commitTextCore(s, vibrate = false)
@@ -637,7 +683,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         v.findViewById<TextView?>(R.id.qwertySpace)?.apply {
             setOnClickListener {
                 if (langMode == LangMode.Chinese) {
-                    appendToPinyinBuffer(" ")
+                    insertIntoPinyinBuffer(" ")
                 } else {
                     commitTextCore(" ", vibrate = false)
                 }
@@ -738,7 +784,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                             if (snap != null) {
                                 pinyinBuffer.clear()
                                 pinyinBuffer.append(snap)
-                                qwertyTextBuffer?.text = getDisplayPinyinText()
+                                refreshPinyinTextView()
                                 // 恢复后尝试重新启动预览
                                 onPinyinBufferChanged()
                             }
@@ -825,12 +871,16 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         when (langMode) {
             LangMode.Chinese -> {
                 qwertyLangSwitch?.text = getString(R.string.label_chinese_mode)
-                qwertyTextBuffer?.text = getDisplayPinyinText()
+                // 切换到中文时，默认将光标移动到末尾
+                pinyinCursor = pinyinBuffer.length
+                refreshPinyinTextView()
                 maybeStartPinyinAutoSuggest()
             }
             LangMode.English -> {
                 qwertyLangSwitch?.text = getString(R.string.label_english_mode)
                 stopPinyinAutoSuggest(true)
+                qwertyTextBuffer?.text = ""
+                qwertyConvScroll?.visibility = View.GONE
             }
         }
         applyLetterCase()
@@ -854,17 +904,130 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         }
     }
 
-    private fun appendToPinyinBuffer(s: String) {
+    // 将原始拼音光标位置映射到显示字符串中的字符偏移
+    private fun rawIndexToDisplayIndex(rawIndex: Int, displayPlain: String): Int {
+        val raw = pinyinBuffer.toString()
+        val idx = rawIndex.coerceIn(0, raw.length)
+        return when (prefs.pinyinMode) {
+            PinyinMode.Quanpin -> idx
+            PinyinMode.Xiaohe -> {
+                val bm = try { XiaoheShuangpinConverter.boundaryMap(raw) } catch (_: Throwable) { null }
+                (bm?.getOrNull(idx) ?: idx).coerceIn(0, displayPlain.length)
+            }
+        }
+    }
+
+    // 将显示字符串中的字符偏移映射回原始拼音位置（选择最近边界）
+    private fun displayIndexToRawIndex(displayIndex: Int, displayPlain: String): Int {
+        val raw = pinyinBuffer.toString()
+        val di = displayIndex.coerceIn(0, displayPlain.length)
+        return when (prefs.pinyinMode) {
+            PinyinMode.Quanpin -> di.coerceIn(0, raw.length)
+            PinyinMode.Xiaohe -> {
+                val bm = try { XiaoheShuangpinConverter.boundaryMap(raw) } catch (_: Throwable) { null }
+                if (bm == null) return di.coerceIn(0, raw.length)
+                // 找到最大 k 使 bm[k] <= di
+                var k = 0
+                val last = bm.size - 1
+                while (k < last && bm[k] <= di) k++
+                if (bm[k] > di) k--
+                k.coerceIn(0, raw.length)
+            }
+        }
+    }
+
+    private fun setPinyinCursor(idx: Int) {
+        val newIdx = idx.coerceIn(0, pinyinBuffer.length)
+        if (newIdx == pinyinCursor) return
+        pinyinCursor = newIdx
+        refreshPinyinTextView()
+    }
+
+    // 自定义插入竖线光标的展示
+    private fun refreshPinyinTextView() {
+        val tvRaw = qwertyTextBuffer ?: return
+        val tvConv = qwertyTextBufferConv
+        if (langMode != LangMode.Chinese) {
+            tvRaw.text = ""
+            tvConv?.visibility = View.GONE
+            return
+        }
+        val raw = pinyinBuffer.toString()
+        val caretPos = pinyinCursor.coerceIn(0, raw.length)
+        // 构造原始字母行 + 光标
+        val ssb = SpannableStringBuilder()
+        try { ssb.append(raw) } catch (_: Throwable) { tvRaw.text = raw; return }
+        val place = "\u200B"
+        val insertAt = caretPos.coerceIn(0, ssb.length)
+        ssb.insert(insertAt, place)
+        val color = tvRaw.currentTextColor
+        val widthPx = (tvRaw.resources.displayMetrics.density * 1.5f).toInt().coerceAtLeast(1)
+        ssb.setSpan(CaretSpan(color, widthPx), insertAt, insertAt + place.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        tvRaw.text = ssb
+        // 转换行：仅在小鹤双拼时显示
+        if (prefs.pinyinMode == PinyinMode.Xiaohe) {
+            qwertyConvScroll?.visibility = View.VISIBLE
+            tvConv?.visibility = View.VISIBLE
+            tvConv?.text = try { XiaoheShuangpinConverter.convert(raw) } catch (_: Throwable) { raw }
+        } else {
+            tvConv?.text = ""
+            tvConv?.visibility = View.GONE
+            qwertyConvScroll?.visibility = View.GONE
+        }
+        // 确保光标可见
+        ensureCursorVisible(insertAt)
+    }
+
+    private fun ensureCursorVisible(displayCaretIndexWithPlace: Int) {
+        val tv = qwertyTextBuffer ?: return
+        val hsv = qwertyRawScroll ?: return
+        tv.post {
+            val layout = tv.layout ?: return@post
+            val xCaret = try { layout.getPrimaryHorizontal(displayCaretIndexWithPlace) } catch (_: Throwable) { 0f }
+            val left = hsv.scrollX.toFloat()
+            val right = left + hsv.width
+            val padding = (tv.resources.displayMetrics.density * 16).toInt()
+            if (xCaret < left + padding) {
+                hsv.smoothScrollTo((xCaret - padding).toInt().coerceAtLeast(0), 0)
+            } else if (xCaret > right - padding) {
+                hsv.smoothScrollTo((xCaret - hsv.width + padding).toInt().coerceAtLeast(0), 0)
+            }
+        }
+    }
+
+    private class CaretSpan(private val color: Int, private val widthPx: Int) : ReplacementSpan() {
+        override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
+            return widthPx
+        }
+        override fun draw(canvas: Canvas, text: CharSequence, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint) {
+            val p = Paint(paint)
+            p.color = color
+            val hPad = 2f
+            val left = x
+            val right = x + widthPx
+            val t = top.toFloat() + hPad
+            val b = bottom.toFloat() - hPad
+            canvas.drawRect(left, t, right, b, p)
+        }
+    }
+
+    // 在光标处插入文本
+    private fun insertIntoPinyinBuffer(s: String) {
         if (s.isEmpty()) return
-        pinyinBuffer.append(s)
-        qwertyTextBuffer?.text = getDisplayPinyinText()
+        val idx = pinyinCursor.coerceIn(0, pinyinBuffer.length)
+        pinyinBuffer.insert(idx, s)
+        pinyinCursor = idx + s.length
+        refreshPinyinTextView()
         onPinyinBufferChanged()
     }
 
-    private fun popFromPinyinBuffer() : Boolean {
-        if (pinyinBuffer.isEmpty()) return false
-        pinyinBuffer.deleteCharAt(pinyinBuffer.length - 1)
-        qwertyTextBuffer?.text = getDisplayPinyinText()
+    // 删除光标前一个字符
+    private fun deleteBeforeCursorInPinyin(): Boolean {
+        if (pinyinBuffer.isEmpty() || pinyinCursor <= 0) return false
+        val delAt = (pinyinCursor - 1).coerceIn(0, pinyinBuffer.length - 1)
+        pinyinBuffer.deleteCharAt(delAt)
+        pinyinCursor = delAt
+        refreshPinyinTextView()
         onPinyinBufferChanged()
         return true
     }
@@ -872,13 +1035,14 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private fun clearPinyinBuffer() {
         if (pinyinBuffer.isEmpty()) return
         pinyinBuffer.clear()
-        qwertyTextBuffer?.text = ""
+        pinyinCursor = 0
+        refreshPinyinTextView()
         onPinyinBufferChanged()
     }
 
     private fun handleQwertyBackspaceTap() {
         if (langMode == LangMode.Chinese) {
-            if (popFromPinyinBuffer()) return
+            if (deleteBeforeCursorInPinyin()) return
         }
         sendBackspace()
     }
