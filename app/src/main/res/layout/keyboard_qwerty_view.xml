@@ -26,8 +26,6 @@
             android:contentDescription="@string/cd_hide"
             android:padding="6dp"
             android:src="@drawable/ic_chevron_down"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
             android:tint="?attr/colorOnSurfaceVariant" />
 
         <!-- 输入文本暂存显示区域（左右分区，联动滚动） -->
@@ -107,8 +105,6 @@
             android:text="@string/label_pinyin"
             android:clickable="true"
             android:focusable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -219,8 +215,7 @@
             android:padding="8dp"
             android:src="@drawable/ic_shift"
             android:tint="@color/tint_shift_icon"
-            android:scaleType="fitCenter"
-            android:stateListAnimator="@animator/key_button_state_list" />
+            android:scaleType="fitCenter" />
         <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
             android:layout_margin="1dp" android:gravity="center" android:background="@drawable/bg_key_button"
             android:text="z" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
@@ -252,7 +247,6 @@
             android:contentDescription="@string/cd_backspace"
             android:padding="6dp"
             android:src="@drawable/ic_backspace"
-            android:stateListAnimator="@animator/key_button_state_list"
             android:tint="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
 
@@ -312,8 +306,7 @@
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="20sp"
             android:clickable="true"
-            android:focusable="true"
-            android:stateListAnimator="@animator/key_button_state_list" />
+            android:focusable="true" />
 
         <ImageButton
             android:id="@+id/qwertyEnter"
@@ -324,7 +317,6 @@
             android:contentDescription="@string/cd_enter"
             android:padding="6dp"
             android:src="@drawable/ic_enter"
-            android:stateListAnimator="@animator/key_button_state_list"
             android:tint="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
 
@@ -398,8 +390,6 @@
                     android:contentDescription="@string/cd_backspace"
                     android:padding="6dp"
                     android:src="@drawable/ic_backspace"
-                    android:foreground="?attr/selectableItemBackgroundBorderless"
-                    android:stateListAnimator="@animator/key_button_state_list"
                     android:tint="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
 
@@ -432,8 +422,6 @@
                     android:contentDescription="@string/cd_hide"
                     android:padding="6dp"
                     android:src="@drawable/ic_chevron_down"
-                    android:foreground="?attr/selectableItemBackgroundBorderless"
-                    android:stateListAnimator="@animator/key_button_state_list"
                     android:tint="?attr/colorOnSurfaceVariant" />
 
                 <TextView
@@ -458,8 +446,6 @@
                     android:contentDescription="@string/cd_enter"
                     android:padding="6dp"
                     android:src="@drawable/ic_enter"
-                    android:foreground="?attr/selectableItemBackgroundBorderless"
-                    android:stateListAnimator="@animator/key_button_state_list"
                     android:tint="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
 
