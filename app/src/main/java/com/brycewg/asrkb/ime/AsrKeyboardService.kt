@@ -36,6 +36,7 @@ import com.brycewg.asrkb.asr.GeminiFileAsrEngine
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.PinyinMode
 import com.brycewg.asrkb.ui.SettingsActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -204,7 +205,6 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         btnPunct1 = asr.findViewById(R.id.btnPunct1)
         btnPunct2 = asr.findViewById(R.id.btnPunct2)
         btnPunct3 = asr.findViewById(R.id.btnPunct3)
-        btnPunct4 = asr.findViewById(R.id.btnPunct4)
         txtStatus = asr.findViewById(R.id.txtStatus)
         btnLetters = asr.findViewById(R.id.btnLetters)
 
@@ -672,7 +672,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                                 if (snap != null) {
                                     pinyinBuffer.clear()
                                     pinyinBuffer.append(snap)
-                                    qwertyTextBuffer?.text = pinyinBuffer.toString()
+                                    qwertyTextBuffer?.text = getDisplayPinyinText()
                                 }
                             }
                             backspaceClearedInGesture = false
@@ -756,6 +756,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         when (langMode) {
             LangMode.Chinese -> {
                 qwertyLangSwitch?.text = getString(R.string.label_chinese_mode)
+                qwertyTextBuffer?.text = getDisplayPinyinText()
             }
             LangMode.English -> {
                 qwertyLangSwitch?.text = getString(R.string.label_english_mode)
@@ -774,16 +775,24 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     }
 
     // --- 中文模式：拼音缓冲工具 ---
+    private fun getDisplayPinyinText(): String {
+        val raw = pinyinBuffer.toString()
+        return when (prefs.pinyinMode) {
+            com.brycewg.asrkb.store.PinyinMode.Quanpin -> raw
+            com.brycewg.asrkb.store.PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(raw) } catch (_: Throwable) { raw }
+        }
+    }
+
     private fun appendToPinyinBuffer(s: String) {
         if (s.isEmpty()) return
         pinyinBuffer.append(s)
-        qwertyTextBuffer?.text = pinyinBuffer.toString()
+        qwertyTextBuffer?.text = getDisplayPinyinText()
     }
 
     private fun popFromPinyinBuffer() : Boolean {
         if (pinyinBuffer.isEmpty()) return false
         pinyinBuffer.deleteCharAt(pinyinBuffer.length - 1)
-        qwertyTextBuffer?.text = pinyinBuffer.toString()
+        qwertyTextBuffer?.text = getDisplayPinyinText()
         return true
     }
 
@@ -802,7 +811,11 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
 
     private fun submitPinyinBufferWithLlm() {
         if (langMode != LangMode.Chinese) return
-        val pinyin = pinyinBuffer.toString().trim()
+        val rawInput = pinyinBuffer.toString().trim()
+        val pinyin = when (prefs.pinyinMode) {
+            PinyinMode.Quanpin -> rawInput
+            PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(rawInput) } catch (_: Throwable) { rawInput }
+        }
         if (pinyin.isEmpty()) {
             txtStatus?.text = getString(R.string.hint_pinyin_empty)
             vibrateTick()

@@ -59,6 +59,11 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_QWERTY_DEFAULT_LANG, DEFAULT_QWERTY_DEFAULT_LANG) ?: DEFAULT_QWERTY_DEFAULT_LANG
         set(value) = sp.edit { putString(KEY_QWERTY_DEFAULT_LANG, if (value == "zh") "zh" else "en") }
 
+    // 拼音输入模式（全拼/小鹤双拼）
+    var pinyinMode: PinyinMode
+        get() = PinyinMode.fromId(sp.getString(KEY_PINYIN_MODE, PinyinMode.Quanpin.id))
+        set(value) = sp.edit { putString(KEY_PINYIN_MODE, value.id) }
+
     // 应用内语言（空字符串表示跟随系统；如："zh-Hans"、"en"）
     var appLanguageTag: String
         get() = sp.getString(KEY_APP_LANGUAGE_TAG, "") ?: ""
@@ -280,6 +285,7 @@ class Prefs(context: Context) {
         private const val KEY_MIC_HAPTIC_ENABLED = "mic_haptic_enabled"
         private const val KEY_QWERTY_HAPTIC_ENABLED = "qwerty_haptic_enabled"
         private const val KEY_QWERTY_DEFAULT_LANG = "qwerty_default_lang"
+        private const val KEY_PINYIN_MODE = "pinyin_mode"
         private const val KEY_FLOATING_SWITCHER_ENABLED = "floating_switcher_enabled"
         private const val KEY_FLOATING_SWITCHER_ALPHA = "floating_switcher_alpha"
         private const val KEY_POSTPROC_ENABLED = "postproc_enabled"
@@ -386,6 +392,7 @@ class Prefs(context: Context) {
         o.put(KEY_MIC_HAPTIC_ENABLED, micHapticEnabled)
         o.put(KEY_QWERTY_HAPTIC_ENABLED, qwertyHapticEnabled)
         o.put(KEY_QWERTY_DEFAULT_LANG, qwertyDefaultLang)
+        o.put(KEY_PINYIN_MODE, pinyinMode.id)
         o.put(KEY_APP_LANGUAGE_TAG, appLanguageTag)
         o.put(KEY_FLOATING_SWITCHER_ENABLED, floatingSwitcherEnabled)
         o.put(KEY_FLOATING_SWITCHER_ALPHA, floatingSwitcherAlpha)
@@ -433,6 +440,7 @@ class Prefs(context: Context) {
             optBool(KEY_MIC_HAPTIC_ENABLED)?.let { micHapticEnabled = it }
             optBool(KEY_QWERTY_HAPTIC_ENABLED)?.let { qwertyHapticEnabled = it }
             optString(KEY_QWERTY_DEFAULT_LANG)?.let { qwertyDefaultLang = if (it == "zh") "zh" else "en" }
+            optString(KEY_PINYIN_MODE)?.let { pinyinMode = PinyinMode.fromId(it) }
             optString(KEY_APP_LANGUAGE_TAG)?.let { appLanguageTag = it }
             optBool(KEY_POSTPROC_ENABLED)?.let { postProcessEnabled = it }
             optBool(KEY_FLOATING_SWITCHER_ENABLED)?.let { floatingSwitcherEnabled = it }

@@ -87,6 +87,7 @@ class SettingsActivity : AppCompatActivity() {
         val spAsrVendor = findViewById<Spinner>(R.id.spAsrVendor)
         val spLanguage = findViewById<Spinner>(R.id.spLanguage)
         val spQwertyDefaultLang = findViewById<Spinner>(R.id.spQwertyDefaultLang)
+        val spPinyinMode = findViewById<Spinner>(R.id.spPinyinMode)
         val tvAsrTotalChars = findViewById<TextView>(R.id.tvAsrTotalChars)
         val switchTrimTrailingPunct = findViewById<MaterialSwitch>(R.id.switchTrimTrailingPunct)
         val switchShowImeSwitcher = findViewById<MaterialSwitch>(R.id.switchShowImeSwitcher)
@@ -224,6 +225,13 @@ class SettingsActivity : AppCompatActivity() {
         )
         spQwertyDefaultLang.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, qwertyLangItems)
         spQwertyDefaultLang.setSelection(if (prefs.qwertyDefaultLang == "zh") 1 else 0)
+        // Pinyin mode spinner
+        val pinyinModeItems = listOf(
+            getString(R.string.pinyin_mode_quanpin),
+            getString(R.string.pinyin_mode_xiaohe)
+        )
+        spPinyinMode.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, pinyinModeItems)
+        spPinyinMode.setSelection(if (prefs.pinyinMode == com.brycewg.asrkb.store.PinyinMode.Xiaohe) 1 else 0)
         fun applyVendorVisibility(v: AsrVendor) {
             // 通过映射统一控制各供应商标题与内容分组可见性
             val groups = mapOf(
@@ -274,6 +282,13 @@ class SettingsActivity : AppCompatActivity() {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val lang = if (position == 1) "zh" else "en"
                 prefs.qwertyDefaultLang = lang
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+
+        spPinyinMode.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                prefs.pinyinMode = if (position == 1) com.brycewg.asrkb.store.PinyinMode.Xiaohe else com.brycewg.asrkb.store.PinyinMode.Quanpin
             }
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
@@ -428,6 +443,8 @@ class SettingsActivity : AppCompatActivity() {
                         )
                         // 同步 26 键默认语言
                         spQwertyDefaultLang.setSelection(if (prefs.qwertyDefaultLang == "zh") 1 else 0)
+                        // 同步 拼音模式
+                        spPinyinMode.setSelection(if (prefs.pinyinMode == com.brycewg.asrkb.store.PinyinMode.Xiaohe) 1 else 0)
                         Toast.makeText(this, getString(R.string.toast_import_success), Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(this, getString(R.string.toast_import_failed), Toast.LENGTH_SHORT).show()

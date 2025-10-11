@@ -164,10 +164,25 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:textColor="?attr/colorOnSurface"
-                android:text="@string/label_qwerty_default_lang" />
+                android:text="@string/label_qwerty_default_lang"
+                android:textStyle="bold" />
 
             <Spinner
                 android:id="@+id/spQwertyDefaultLang"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!-- Pinyin mode selection -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textColor="?attr/colorOnSurface"
+                android:text="@string/label_pinyin_mode"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spPinyinMode"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
