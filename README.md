@@ -2,6 +2,8 @@
 
 一个基于 Kotlin 的 Android 平台的语音输入法键盘应用，专注于提供高质量的语音转文字输入体验。
 
+*English version: [README_EN.md](README_EN.md)*
+
 ## 功能特性
 
 - 🎤 **长按录音**: 通过长按麦克风按钮开始语音识别
