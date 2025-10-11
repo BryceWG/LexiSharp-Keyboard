@@ -115,6 +115,12 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var btnPunct4: TextView? = null
     private var btnPunct5: TextView? = null
     private var txtStatus: TextView? = null
+    private var audioWaveView: AudioWaveView? = null
+    // Qwerty/Symbol 空格键引用（用于覆盖显示 ASR 状态）
+    private var qwertySpaceView: TextView? = null
+    private var symSpaceView: TextView? = null
+    private var spaceStatusActive: Boolean = false
+    private var spaceStatusClearRunnable: Runnable? = null
     private var committedStableLen: Int = 0
     private var postproc: LlmPostProcessor = LlmPostProcessor()
     private var micLongPressStarted: Boolean = false
@@ -856,6 +862,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         // - Long press: 按住说话（进入ASR监听，松手停止并返回QWERTY）
         // - Swipe up: 进入语音输入面板（不直接开始录音）
         v.findViewById<TextView?>(R.id.qwertySpace)?.apply {
+            // 缓存引用，便于状态覆盖
+            qwertySpaceView = this
             setOnTouchListener { view, event ->
                 val slop = ViewConfiguration.get(view.context).scaledTouchSlop
                 when (event.actionMasked) {
@@ -916,8 +924,12 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                             asrEngine?.stop()
                             if (!prefs.postProcessEnabled) {
                                 updateUiIdle()
+                                // 文件识别（无后处理）通常很快，仍提示“识别中”以覆盖空格，随后由耗时提示恢复
+                                showSpaceStatus(s(R.string.status_recognizing))
                             } else {
                                 txtStatus?.text = s(R.string.status_recognizing)
+                                // 返回 QWERTY 后镜像状态到空格键
+                                showSpaceStatus(s(R.string.status_recognizing))
                             }
                             showLettersPanel()
                             return@setOnTouchListener true
@@ -1347,6 +1359,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         bind(v)
         // Space click/long-press
         v.findViewById<TextView?>(R.id.symSpace)?.apply {
+            // 缓存引用，便于状态覆盖
+            symSpaceView = this
             setOnClickListener {
                 commitTextCore(" ", vibrate = false)
                 maybeHapticKeyTap(this)
@@ -1450,6 +1464,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         asrPanelView?.visibility = View.VISIBLE
         isQwertyVisible = false
         stopPinyinAutoSuggest(true)
+        // 切换到 ASR 面板时，清除空格键上的临时状态覆盖
+        clearSpaceStatus()
     }
 
     private fun showSymbolsPanel() {
@@ -1522,6 +1538,35 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         controller.isAppearanceLightNavigationBars = isLight
     }
 
+    // --- 在空格键上覆盖显示 ASR 状态（QWERTY/符号面板均支持） ---
+    private fun showSpaceStatus(text: String) {
+        try { spaceStatusClearRunnable?.let { (rootView ?: qwertySpaceView ?: symSpaceView)?.removeCallbacks(it) } } catch (_: Throwable) { }
+        spaceStatusClearRunnable = null
+        spaceStatusActive = true
+        try { qwertySpaceView?.text = text } catch (_: Throwable) { }
+        try { symSpaceView?.text = text } catch (_: Throwable) { }
+    }
+
+    private fun showSpaceStatusForMs(text: String, duration: Long = 1500L) {
+        showSpaceStatus(text)
+        val anchor = rootView ?: qwertySpaceView ?: symSpaceView
+        val r = Runnable {
+            if (asrEngine?.isRunning != true) {
+                clearSpaceStatus()
+            }
+        }
+        spaceStatusClearRunnable = r
+        try { anchor?.postDelayed(r, duration) } catch (_: Throwable) { }
+    }
+
+    private fun clearSpaceStatus() {
+        spaceStatusActive = false
+        try { qwertySpaceView?.setText(R.string.label_space) } catch (_: Throwable) { }
+        try { symSpaceView?.setText(R.string.label_space) } catch (_: Throwable) { }
+        try { spaceStatusClearRunnable?.let { (rootView ?: qwertySpaceView ?: symSpaceView)?.removeCallbacks(it) } } catch (_: Throwable) { }
+        spaceStatusClearRunnable = null
+    }
+
     private fun buildEngineForCurrentMode(): StreamingAsrEngine? {
         return when (prefs.asrVendor) {
             AsrVendor.Volc -> if (prefs.hasVolcKeys()) {
@@ -1584,10 +1629,14 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         val ms = lastRequestDurationMs ?: return
         try {
             txtStatus?.text = s(R.string.status_last_request_ms, ms)
+            // 同步将“上次识别耗时”显示在空格键上，短暂展示后恢复
+            showSpaceStatusForMs(s(R.string.status_last_request_ms, ms))
             val v = rootView ?: txtStatus
             v?.postDelayed({
                 if (asrEngine?.isRunning != true) {
                     txtStatus?.text = s(R.string.status_idle)
+                    // 若 ASR 已闲置，则确保空格状态也回到默认
+                    clearSpaceStatus()
                 }
             }, 1500)
         } catch (_: Throwable) { }
@@ -1867,6 +1916,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     currentInputConnection?.setComposingText(text, 1)
                 }
                 txtStatus?.text = s(R.string.status_ai_processing)
+                // 同步状态到空格键（用户已回到 QWERTY 时可见）
+                showSpaceStatus(s(R.string.status_ai_processing))
                 val raw = if (prefs.trimFinalTrailingPunct) trimTrailingPunctuation(text) else text
                 val processed = try {
                     postproc.process(raw, prefs).ifBlank { raw }
