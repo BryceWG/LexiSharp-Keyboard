@@ -152,23 +152,25 @@
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnPunct4"
+            app:layout_constraintEnd_toStartOf="@id/btnLetters"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <!-- 右下角：改为 26 键切换（ABC） -->
         <TextView
-            android:id="@+id/btnPunct4"
+            android:id="@+id/btnLetters"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginStart="6dp"
             android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_punct_btn_4"
+            android:contentDescription="@string/cd_letters_keyboard"
             android:gravity="center"
             android:clickable="true"
             android:focusable="true"
             android:foreground="?attr/selectableItemBackgroundBorderless"
             android:stateListAnimator="@animator/key_button_state_list"
+            android:text="@string/label_abc"
             android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="18sp"
+            android:textSize="16sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -235,26 +237,6 @@
             app:layout_constraintTop_toTopOf="parent"
             android:tint="?attr/colorOnSurfaceVariant" />
 
-        <!-- 切换到字母键盘按钮（ABC） -->
-        <TextView
-            android:id="@+id/btnLetters"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_letters_keyboard"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            android:text="@string/label_abc"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="16sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnEnter"
-            app:layout_constraintTop_toTopOf="parent" />
-
         <ImageButton
             android:id="@+id/btnAiEdit"
             android:layout_width="40dp"
@@ -268,7 +250,7 @@
             android:src="@drawable/ic_edit"
             android:stateListAnimator="@animator/key_button_state_list"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnLetters"
+            app:layout_constraintEnd_toStartOf="@id/btnEnter"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toEndOf="@id/btnImeSwitcher"
             app:layout_constraintTop_toTopOf="parent"
