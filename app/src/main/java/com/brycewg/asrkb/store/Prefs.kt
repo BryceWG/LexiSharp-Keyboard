@@ -189,6 +189,23 @@ class Prefs(context: Context) {
             return found?.content ?: (llmPrompt.ifBlank { DEFAULT_LLM_PROMPT })
         }
 
+    // 自定义词汇：每行一个，供拼音->中文提示增强
+    var customVocabRaw: String
+        get() = sp.getString(KEY_CUSTOM_VOCAB, "") ?: ""
+        set(value) = sp.edit { putString(KEY_CUSTOM_VOCAB, value.trim()) }
+
+    fun getCustomVocabList(): List<String> {
+        val raw = customVocabRaw
+        if (raw.isBlank()) return emptyList()
+        // 仅按换行拆分；去重、去空白；限制数量
+        val set = LinkedHashSet<String>()
+        raw.split("\n").forEach { line ->
+            val t = line.trim()
+            if (t.isNotEmpty()) set.add(t)
+        }
+        return set.take(200)
+    }
+
     // SiliconFlow凭证
     var sfApiKey: String by stringPref(KEY_SF_API_KEY, "")
 
@@ -330,6 +347,7 @@ class Prefs(context: Context) {
         private const val KEY_LLM_PROMPT = "llm_prompt"
         private const val KEY_LLM_PROMPT_PRESETS = "llm_prompt_presets"
         private const val KEY_LLM_PROMPT_ACTIVE_ID = "llm_prompt_active_id"
+        private const val KEY_CUSTOM_VOCAB = "custom_vocab"
         private const val KEY_ASR_VENDOR = "asr_vendor"
         private const val KEY_SF_API_KEY = "sf_api_key"
         private const val KEY_SF_MODEL = "sf_model"
@@ -444,6 +462,8 @@ class Prefs(context: Context) {
         o.put(KEY_LLM_PROMPT, llmPrompt)
         o.put(KEY_LLM_PROMPT_PRESETS, promptPresetsJson)
         o.put(KEY_LLM_PROMPT_ACTIVE_ID, activePromptId)
+        // 自定义词汇（拼音提示词增强）
+        o.put(KEY_CUSTOM_VOCAB, customVocabRaw)
         // 供应商设置（通用导出）
         o.put(KEY_ASR_VENDOR, asrVendor.id)
         // 遍历所有供应商字段，统一导出，避免逐个硬编码
@@ -504,6 +524,7 @@ class Prefs(context: Context) {
             if (!o.has(KEY_LLM_PROMPT_PRESETS)) {
                 optString(KEY_LLM_PROMPT)?.let { llmPrompt = it }
             }
+            optString(KEY_CUSTOM_VOCAB)?.let { customVocabRaw = it }
 
             optString(KEY_ASR_VENDOR)?.let { asrVendor = AsrVendor.fromId(it) }
             // 供应商设置（通用导入）

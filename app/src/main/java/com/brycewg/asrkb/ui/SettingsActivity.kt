@@ -70,6 +70,8 @@ class SettingsActivity : AppCompatActivity() {
         // Gemini
         val etGeminiApiKey = findViewById<EditText>(R.id.etGeminiApiKey)
         val etGeminiModel = findViewById<EditText>(R.id.etGeminiModel)
+        // 自定义词汇（拼音提示增强）
+        val etCustomVocab = findViewById<EditText>(R.id.etCustomVocab)
         val groupVolc = findViewById<View>(R.id.groupVolc)
         val groupSf = findViewById<View>(R.id.groupSf)
         val groupEleven = findViewById<View>(R.id.groupEleven)
@@ -139,6 +141,7 @@ class SettingsActivity : AppCompatActivity() {
             etLlmApiKey.setText(prefs.llmApiKey)
             etLlmModel.setText(prefs.llmModel)
             etLlmTemperature.setText(prefs.llmTemperature.toString())
+            etCustomVocab.setText(prefs.customVocabRaw)
             etPinyinLlmInterval.setText(prefs.qwertyPinyinLlmIntervalSec.toString())
             etPunct1.setText(prefs.punct1)
             etPunct2.setText(prefs.punct2)
@@ -387,6 +390,7 @@ class SettingsActivity : AppCompatActivity() {
             prefs.llmModel = etLlmModel.text?.toString()?.ifBlank { Prefs.DEFAULT_LLM_MODEL } ?: Prefs.DEFAULT_LLM_MODEL
             val tempVal = etLlmTemperature.text?.toString()?.toFloatOrNull()
             prefs.llmTemperature = (tempVal ?: Prefs.DEFAULT_LLM_TEMPERATURE).coerceIn(0f, 2f)
+            prefs.customVocabRaw = etCustomVocab.text?.toString() ?: ""
             // 自定义标点符号按钮
             prefs.punct1 = etPunct1.text?.toString() ?: Prefs.DEFAULT_PUNCT_1
             prefs.punct2 = etPunct2.text?.toString() ?: Prefs.DEFAULT_PUNCT_2

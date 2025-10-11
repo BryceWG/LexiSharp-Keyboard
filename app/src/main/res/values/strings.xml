@@ -150,4 +150,7 @@
     <!-- Quick guide (image + text) -->
     <string name="guide_header">从左到右，从上到下</string>
     <string name="guide_body">核心用法：长按录音，松手转录（居中按钮）\n 1.后处理 Prompt 切换\n 2.启用后处理\n 3.收起键盘键\n 4.退格键，上滑或左滑删除所有内容，下滑撤销后处理结果\n 5.设置键\n 6.切换输入法\n 7.编辑键，点击后语音输入指令，说完后再按一次，LLM 根据指令修改上次转录/选中内容\n 8.回车键\n 9.下方三个区域为可自定义标点符号键</string>
+    <!-- Custom vocabulary for pinyin assistance -->
+    <string name="label_custom_vocab_title">自定义词汇（拼音识别增强）</string>
+    <string name="label_custom_vocab_hint">每行一个词；将自动转换为拼音并注入提示词。例如：\n北京大学\nOpenAI\n科大讯飞</string>
 </resources>

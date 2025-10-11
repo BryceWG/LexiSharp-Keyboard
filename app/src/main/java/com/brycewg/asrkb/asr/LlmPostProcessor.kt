@@ -99,6 +99,22 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     val temperature = prefs.llmTemperature.toDouble().coerceIn(0.0, 2.0)
 
     val url = resolveUrl(endpoint)
+    // 动态注入：自定义词汇（汉字 + 拼音）辅助 disambiguation
+    val vocab = prefs.getCustomVocabList()
+    val vocabLines = if (vocab.isNotEmpty()) {
+      vocab.take(100).map { term ->
+        val py = PinyinUtil.toPinyin(term)
+        "- ${term} (${py})"
+      }.joinToString("\n")
+    } else ""
+
+    val vocabSection = if (vocabLines.isNotEmpty()) {
+      """
+      【领域/自定义词汇（优先还原为以下中文，括号内为拼音提示）】
+      $vocabLines
+      """.trimIndent()
+    } else ""
+
     val systemPrompt = """
       你是一个精确的“拼音转汉字”助手。给你一段用户输入的汉语拼音（可能包含空格、分词标记或少量标点），请将其转换为最可能的中文文本。
       规则：
@@ -107,6 +123,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
       - 当拼音含糊时，选择最常见、最自然的中文表达；不要输出多种候选或注释。
       - 若输入并非拼音或不可解析，则原样返回（或输出接近原意的中文）。
       - 输出保持为简体中文。
+
+      $vocabSection
     """.trimIndent()
 
     val userContent = """

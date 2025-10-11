@@ -646,6 +646,34 @@
                 style="@style/Widget.Material3.Button.TonalButton"
                 android:text="@string/btn_add_preset" />
 
+            <!-- Custom vocabulary for pinyin->Chinese enhancement -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"
+                android:text="@string/label_custom_vocab_title" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:boxBackgroundMode="outline"
+                android:hint="@string/label_custom_vocab_hint">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etCustomVocab"
+                    android:layout_width="match_parent"
+                    android:layout_height="120dp"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:maxLines="6"
+                    android:overScrollMode="ifContentScrolls"
+                    android:scrollbars="vertical"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?attr/colorOnSurfaceVariant" />
+            </com.google.android.material.textfield.TextInputLayout>
+
             <com.google.android.material.divider.MaterialDivider
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -160,4 +160,7 @@
 \n 7. Edit key: tap to speak a command, then tap again when done; the LLM will modify the last transcribed/selected content according to the command
 \n 8. Enter key
 \n 9. The three areas below are customizable punctuation keys</string>
+    <!-- Custom vocabulary for pinyin assistance -->
+    <string name="label_custom_vocab_title">Custom Vocabulary (Pinyin assist)</string>
+    <string name="label_custom_vocab_hint">One term per line; they will be converted to pinyin and injected into the transcription prompt. Example:\n北京大学\nOpenAI\n科大讯飞</string>
 </resources>
