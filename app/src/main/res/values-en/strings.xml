@@ -15,6 +15,17 @@
     <string name="cd_punct_btn_2">Custom key 2</string>
     <string name="cd_punct_btn_3">Custom key 3</string>
     <string name="cd_punct_btn_4">Custom key 4</string>
+    <string name="cd_letters_keyboard">Switch to letters keyboard</string>
+    <string name="cd_space">Space</string>
+    <string name="label_abc">ABC</string>
+    <string name="label_space">Space</string>
+    <string name="cd_shift">Shift</string>
+    <string name="cd_symbols_keyboard">Switch to symbols</string>
+    <string name="label_123">123</string>
+    <string name="cd_switch_to_voice">Back to voice input</string>
+    <string name="hint_text_buffer">Text buffer</string>
+    <string name="cd_pinyin_mode">Chinese Pinyin input mode</string>
+    <string name="label_pinyin">中</string>
 
     <string name="status_idle">Ready</string>
     <string name="status_listening">Listening…</string>

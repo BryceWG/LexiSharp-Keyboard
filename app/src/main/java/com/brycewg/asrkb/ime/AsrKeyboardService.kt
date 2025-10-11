@@ -12,9 +12,12 @@ import android.view.MotionEvent
 import android.view.HapticFeedbackConstants
 import android.view.ViewConfiguration
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.TextView
 import android.view.KeyEvent
+import android.os.SystemClock
 import android.view.inputmethod.InputMethodManager
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
@@ -47,6 +50,19 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var asrEngine: StreamingAsrEngine? = null
     private lateinit var prefs: Prefs
     private var rootView: View? = null
+    private var asrPanelView: View? = null
+    private var qwertyPanelView: View? = null
+    private var symbolsPanelView: View? = null
+    private var isQwertyVisible: Boolean = false
+    private enum class ShiftMode { Off, Once, Lock }
+    private var shiftMode: ShiftMode = ShiftMode.Off
+    private var qwertyLetterKeys: MutableList<TextView> = mutableListOf()
+    private var lastShiftTapTime: Long = 0L
+
+    // Qwerty toolbar views
+    private var qwertyHideTop: ImageButton? = null
+    private var qwertyTextBuffer: TextView? = null
+    private var qwertyPinyin: TextView? = null
 
     private var btnMic: FloatingActionButton? = null
     private var btnSettings: ImageButton? = null
@@ -57,6 +73,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var btnPromptPicker: ImageButton? = null
     private var btnHide: ImageButton? = null
     private var btnImeSwitcher: ImageButton? = null
+    private var btnLetters: TextView? = null
     private var btnPunct1: TextView? = null
     private var btnPunct2: TextView? = null
     private var btnPunct3: TextView? = null
@@ -152,22 +169,38 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         // IME context often uses a framework theme; wrap with our theme and Material dynamic colors.
         val themedContext = android.view.ContextThemeWrapper(this, R.style.Theme_ASRKeyboard_Ime)
         val dynamicContext = com.google.android.material.color.DynamicColors.wrapContextIfAvailable(themedContext)
-        val view = LayoutInflater.from(dynamicContext).inflate(R.layout.keyboard_view, null, false)
-        rootView = view
-        btnMic = view.findViewById(R.id.btnMic)
-        btnSettings = view.findViewById(R.id.btnSettings)
-        btnEnter = view.findViewById(R.id.btnEnter)
-        btnPostproc = view.findViewById(R.id.btnPostproc)
-        btnAiEdit = view.findViewById(R.id.btnAiEdit)
-        btnBackspace = view.findViewById(R.id.btnBackspace)
-        btnPromptPicker = view.findViewById(R.id.btnPromptPicker)
-        btnHide = view.findViewById(R.id.btnHide)
-        btnImeSwitcher = view.findViewById(R.id.btnImeSwitcher)
-        btnPunct1 = view.findViewById(R.id.btnPunct1)
-        btnPunct2 = view.findViewById(R.id.btnPunct2)
-        btnPunct3 = view.findViewById(R.id.btnPunct3)
-        btnPunct4 = view.findViewById(R.id.btnPunct4)
-        txtStatus = view.findViewById(R.id.txtStatus)
+        val container = FrameLayout(dynamicContext)
+        // Inflate ASR panel (existing)
+        val asr = LayoutInflater.from(dynamicContext).inflate(R.layout.keyboard_view, container, false)
+        // Inflate 26-key letters panel (hidden by default)
+        val qwerty = LayoutInflater.from(dynamicContext).inflate(R.layout.keyboard_qwerty_view, container, false)
+        qwerty.visibility = View.GONE
+        val symbols = LayoutInflater.from(dynamicContext).inflate(R.layout.keyboard_symbols_view, container, false)
+        symbols.visibility = View.GONE
+        container.addView(asr, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        container.addView(qwerty, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        container.addView(symbols, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        rootView = container
+        asrPanelView = asr
+        qwertyPanelView = qwerty
+        symbolsPanelView = symbols
+
+        // Bind ASR panel views
+        btnMic = asr.findViewById(R.id.btnMic)
+        btnSettings = asr.findViewById(R.id.btnSettings)
+        btnEnter = asr.findViewById(R.id.btnEnter)
+        btnPostproc = asr.findViewById(R.id.btnPostproc)
+        btnAiEdit = asr.findViewById(R.id.btnAiEdit)
+        btnBackspace = asr.findViewById(R.id.btnBackspace)
+        btnPromptPicker = asr.findViewById(R.id.btnPromptPicker)
+        btnHide = asr.findViewById(R.id.btnHide)
+        btnImeSwitcher = asr.findViewById(R.id.btnImeSwitcher)
+        btnPunct1 = asr.findViewById(R.id.btnPunct1)
+        btnPunct2 = asr.findViewById(R.id.btnPunct2)
+        btnPunct3 = asr.findViewById(R.id.btnPunct3)
+        btnPunct4 = asr.findViewById(R.id.btnPunct4)
+        txtStatus = asr.findViewById(R.id.txtStatus)
+        btnLetters = asr.findViewById(R.id.btnLetters)
 
         btnMic?.setOnTouchListener { v, event ->
             when (event.actionMasked) {
@@ -227,6 +260,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         }
         btnSettings?.setOnClickListener { openSettings() }
         btnEnter?.setOnClickListener { sendEnter() }
+        btnLetters?.setOnClickListener { showLettersPanel() }
         btnAiEdit?.setOnClickListener {
             // Tap-to-toggle: start/stop instruction capture for AI edit
             if (!hasRecordAudioPermission()) {
@@ -423,8 +457,287 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         updateUiIdle()
         refreshPermissionUi()
         // Align system toolbar/navigation bar color to our surface color so they match
-        syncSystemBarsToKeyboardBackground(view)
-        return view
+        // Setup qwerty panel actions
+        setupQwertyPanel()
+        setupSymbolsPanel()
+
+        syncSystemBarsToKeyboardBackground(container)
+        return container
+    }
+
+    private fun setupQwertyPanel() {
+        val v = qwertyPanelView ?: return
+
+        // Bind toolbar views
+        qwertyHideTop = v.findViewById(R.id.qwertyHideTop)
+        qwertyTextBuffer = v.findViewById(R.id.qwertyTextBuffer)
+        qwertyPinyin = v.findViewById(R.id.qwertyPinyin)
+
+        // Setup toolbar listeners
+        qwertyHideTop?.setOnClickListener { hideKeyboardPanel() }
+        qwertyPinyin?.setOnClickListener {
+            // TODO: Implement pinyin to Chinese conversion using LLM
+            // This will be implemented later
+        }
+
+        // Letters
+        qwertyLetterKeys.clear()
+        fun bindLetters(group: View) {
+            if (group is ViewGroup) {
+                for (i in 0 until group.childCount) {
+                    val child = group.getChildAt(i)
+                    val tag = child.tag?.toString()
+                    if (tag == "letter_key" && child is TextView) {
+                        qwertyLetterKeys.add(child)
+                        child.setOnClickListener {
+                            val s = child.text?.toString() ?: return@setOnClickListener
+                            commitText(s)
+                            if (shiftMode == ShiftMode.Once) {
+                                shiftMode = ShiftMode.Off
+                                updateShiftUi()
+                                applyLetterCase()
+                            }
+                        }
+                    } else if (tag == "punct_key" && child is TextView) {
+                        child.setOnClickListener {
+                            val s = child.text?.toString() ?: return@setOnClickListener
+                            commitText(s)
+                        }
+                    } else if (child is ViewGroup) {
+                        bindLetters(child)
+                    }
+                }
+            }
+        }
+        bindLetters(v)
+        applyLetterCase()
+
+        // Space (tap to insert, long-press to return to ASR panel)
+        v.findViewById<TextView?>(R.id.qwertySpace)?.apply {
+            setOnClickListener { commitText(" ") }
+            setOnLongClickListener {
+                showAsrPanel()
+                vibrateTick()
+                true
+            }
+        }
+        // Backspace: tap deletes one; long-press to repeat
+        v.findViewById<ImageButton?>(R.id.qwertyBackspace)?.setOnTouchListener { view, event ->
+            var pressed = view.getTag(R.id.tag_pressed) as? Boolean ?: false
+            var longStarted = view.getTag(R.id.tag_long_started) as? Boolean ?: false
+            var starter = view.getTag(R.id.tag_starter) as? Runnable
+            var repeater = view.getTag(R.id.tag_repeater) as? Runnable
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    pressed = true
+                    longStarted = false
+                    // schedule long press starter
+                    starter?.let { view.removeCallbacks(it) }
+                    repeater?.let { view.removeCallbacks(it) }
+                    val r = Runnable {
+                        if (!(view.getTag(R.id.tag_pressed) as? Boolean ?: false)) return@Runnable
+                        view.setTag(R.id.tag_long_started, true)
+                        // first delete then start repeating
+                        sendBackspace()
+                        val rep = object : Runnable {
+                            override fun run() {
+                                if (!(view.getTag(R.id.tag_pressed) as? Boolean ?: false)) return
+                                sendBackspace()
+                                view.postDelayed(this, ViewConfiguration.getKeyRepeatDelay().toLong())
+                            }
+                        }
+                        view.setTag(R.id.tag_repeater, rep)
+                        view.postDelayed(rep, ViewConfiguration.getKeyRepeatDelay().toLong())
+                    }
+                    view.setTag(R.id.tag_starter, r)
+                    view.postDelayed(r, ViewConfiguration.getLongPressTimeout().toLong())
+                    view.setTag(R.id.tag_pressed, pressed)
+                    view.setTag(R.id.tag_long_started, longStarted)
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    val dx = event.x
+                    val dy = event.y
+                    // end state
+                    pressed = false
+                    val ls = view.getTag(R.id.tag_long_started) as? Boolean ?: false
+                    // cancel tasks
+                    (view.getTag(R.id.tag_starter) as? Runnable)?.let { view.removeCallbacks(it) }
+                    (view.getTag(R.id.tag_repeater) as? Runnable)?.let { view.removeCallbacks(it) }
+                    view.setTag(R.id.tag_starter, null)
+                    view.setTag(R.id.tag_repeater, null)
+                    view.setTag(R.id.tag_pressed, pressed)
+                    view.setTag(R.id.tag_long_started, false)
+                    if (!ls && event.actionMasked == MotionEvent.ACTION_UP) {
+                        // treat as tap
+                        sendBackspace()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        // Enter & 123
+        v.findViewById<ImageButton?>(R.id.qwertyEnter)?.setOnClickListener { sendEnter() }
+        v.findViewById<TextView?>(R.id.qwertyNum)?.setOnClickListener { showSymbolsPanel() }
+
+        // Shift toggle
+        v.findViewById<TextView?>(R.id.qwertyShift)?.apply {
+            isSelected = shiftMode != ShiftMode.Off
+            setOnClickListener {
+                val now = SystemClock.uptimeMillis()
+                val dt = now - lastShiftTapTime
+                lastShiftTapTime = now
+                if (dt <= ViewConfiguration.getDoubleTapTimeout()) {
+                    // double tap -> lock
+                    shiftMode = ShiftMode.Lock
+                } else {
+                    // single tap -> toggle once/off
+                    shiftMode = when (shiftMode) {
+                        ShiftMode.Off -> ShiftMode.Once
+                        ShiftMode.Once -> ShiftMode.Off
+                        ShiftMode.Lock -> ShiftMode.Off
+                    }
+                }
+                updateShiftUi()
+                applyLetterCase()
+                vibrateTick()
+            }
+        }
+    }
+
+    private fun applyLetterCase() {
+        val upper = shiftMode != ShiftMode.Off
+        qwertyLetterKeys.forEach { tv ->
+            val t = tv.text?.toString() ?: return@forEach
+            if (t.length == 1) {
+                tv.text = if (upper) t.uppercase() else t.lowercase()
+            }
+        }
+    }
+
+    private fun updateShiftUi() {
+        val shift = qwertyPanelView?.findViewById<TextView?>(R.id.qwertyShift)
+        when (shiftMode) {
+            ShiftMode.Off -> { shift?.isSelected = false; shift?.isActivated = false }
+            ShiftMode.Once -> { shift?.isSelected = true; shift?.isActivated = false }
+            ShiftMode.Lock -> { shift?.isSelected = true; shift?.isActivated = true }
+        }
+    }
+
+    private fun setupSymbolsPanel() {
+        val v = symbolsPanelView ?: return
+        fun bind(group: View) {
+            if (group is ViewGroup) {
+                for (i in 0 until group.childCount) {
+                    val child = group.getChildAt(i)
+                    val tag = child.tag?.toString()
+                    if (tag == "sym_key" && child is TextView) {
+                        child.setOnClickListener {
+                            val s = child.text?.toString() ?: return@setOnClickListener
+                            commitText(s)
+                        }
+                    } else if (child is ViewGroup) {
+                        bind(child)
+                    }
+                }
+            }
+        }
+        bind(v)
+        // Space click/long-press
+        v.findViewById<TextView?>(R.id.symSpace)?.apply {
+            setOnClickListener { commitText(" ") }
+            setOnLongClickListener {
+                showAsrPanel()
+                vibrateTick()
+                true
+            }
+        }
+        // Backspace long-press repeat
+        v.findViewById<ImageButton?>(R.id.symBackspace)?.setOnTouchListener { view, event ->
+            var pressed = view.getTag(R.id.tag_pressed) as? Boolean ?: false
+            var longStarted = view.getTag(R.id.tag_long_started) as? Boolean ?: false
+            var starter = view.getTag(R.id.tag_starter) as? Runnable
+            var repeater = view.getTag(R.id.tag_repeater) as? Runnable
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    pressed = true
+                    longStarted = false
+                    starter?.let { view.removeCallbacks(it) }
+                    repeater?.let { view.removeCallbacks(it) }
+                    val r = Runnable {
+                        if (!(view.getTag(R.id.tag_pressed) as? Boolean ?: false)) return@Runnable
+                        view.setTag(R.id.tag_long_started, true)
+                        sendBackspace()
+                        val rep = object : Runnable {
+                            override fun run() {
+                                if (!(view.getTag(R.id.tag_pressed) as? Boolean ?: false)) return
+                                sendBackspace()
+                                view.postDelayed(this, ViewConfiguration.getKeyRepeatDelay().toLong())
+                            }
+                        }
+                        view.setTag(R.id.tag_repeater, rep)
+                        view.postDelayed(rep, ViewConfiguration.getKeyRepeatDelay().toLong())
+                    }
+                    view.setTag(R.id.tag_starter, r)
+                    view.postDelayed(r, ViewConfiguration.getLongPressTimeout().toLong())
+                    view.setTag(R.id.tag_pressed, pressed)
+                    view.setTag(R.id.tag_long_started, longStarted)
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    pressed = false
+                    val ls = view.getTag(R.id.tag_long_started) as? Boolean ?: false
+                    (view.getTag(R.id.tag_starter) as? Runnable)?.let { view.removeCallbacks(it) }
+                    (view.getTag(R.id.tag_repeater) as? Runnable)?.let { view.removeCallbacks(it) }
+                    view.setTag(R.id.tag_starter, null)
+                    view.setTag(R.id.tag_repeater, null)
+                    view.setTag(R.id.tag_pressed, pressed)
+                    view.setTag(R.id.tag_long_started, false)
+                    if (!ls && event.actionMasked == MotionEvent.ACTION_UP) {
+                        sendBackspace()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        // Enter / Hide / ABC
+        v.findViewById<ImageButton?>(R.id.symEnter)?.setOnClickListener { sendEnter() }
+        v.findViewById<ImageButton?>(R.id.symHide)?.setOnClickListener { hideKeyboardPanel() }
+        v.findViewById<TextView?>(R.id.symToLetters)?.setOnClickListener { showLettersPanel() }
+    }
+
+    private fun showLettersPanel() {
+        // Stop any ongoing ASR capture when switching away
+        if (asrEngine?.isRunning == true) {
+            asrEngine?.stop()
+        }
+        updateUiIdle()
+        asrPanelView?.visibility = View.GONE
+        qwertyPanelView?.visibility = View.VISIBLE
+        symbolsPanelView?.visibility = View.GONE
+        isQwertyVisible = true
+        updateShiftUi()
+        applyLetterCase()
+    }
+
+    private fun showAsrPanel() {
+        qwertyPanelView?.visibility = View.GONE
+        symbolsPanelView?.visibility = View.GONE
+        asrPanelView?.visibility = View.VISIBLE
+        isQwertyVisible = false
+    }
+
+    private fun showSymbolsPanel() {
+        if (asrEngine?.isRunning == true) {
+            asrEngine?.stop()
+        }
+        updateUiIdle()
+        asrPanelView?.visibility = View.GONE
+        qwertyPanelView?.visibility = View.GONE
+        symbolsPanelView?.visibility = View.VISIBLE
+        isQwertyVisible = false
     }
 
     override fun onEvaluateFullscreenMode(): Boolean {

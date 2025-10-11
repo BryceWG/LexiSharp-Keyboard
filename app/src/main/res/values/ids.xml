@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="tag_pressed" type="id"/>
+    <item name="tag_long_started" type="id"/>
+    <item name="tag_starter" type="id"/>
+    <item name="tag_repeater" type="id"/>
+</resources>
+

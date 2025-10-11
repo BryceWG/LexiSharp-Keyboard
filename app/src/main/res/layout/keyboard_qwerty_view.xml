@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_keyboard_container"
+    android:paddingHorizontal="12dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="12dp">
+
+    <!-- 工具条：输入文本暂存区和功能按钮 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp"
+        android:minHeight="40dp">
+
+        <!-- 收起键盘按钮 -->
+        <ImageButton
+            android:id="@+id/qwertyHideTop"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_key_button"
+            android:contentDescription="@string/cd_hide"
+            android:padding="6dp"
+            android:src="@drawable/ic_chevron_down"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:stateListAnimator="@animator/key_button_state_list"
+            android:tint="?attr/colorOnSurfaceVariant" />
+
+        <!-- 输入文本暂存显示区域 -->
+        <TextView
+            android:id="@+id/qwertyTextBuffer"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_key_button"
+            android:gravity="center_vertical|start"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:text=""
+            android:hint="@string/hint_text_buffer"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
+            android:alpha="0.7"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- 中文输入模式切换按钮 -->
+        <TextView
+            android:id="@+id/qwertyPinyin"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_key_button"
+            android:contentDescription="@string/cd_pinyin_mode"
+            android:gravity="center"
+            android:text="@string/label_pinyin"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:stateListAnimator="@animator/key_button_state_list"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!-- 第一行：qwertyuiop -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <!-- Use equal weights for keys -->
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="q" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="w" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="e" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="r" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="t" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="y" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="u" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="i" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="o" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="p" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+    </LinearLayout>
+
+    <!-- 第二行：asdfghjkl -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp">
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="a" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="s" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="d" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="f" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="g" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="h" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="j" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="k" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="l" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+    </LinearLayout>
+
+    <!-- 第三行：Shift + zxcvbnm + 退格 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/qwertyShift"
+            android:layout_width="52dp"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp"
+            android:background="@drawable/bg_shift_button"
+            android:contentDescription="@string/cd_shift"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:stateListAnimator="@animator/key_button_state_list"
+            android:text="⇧"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="z" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="x" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="c" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="v" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="b" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="n" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+            android:layout_margin="4dp" android:gravity="center" android:background="@drawable/bg_key_button"
+            android:text="m" android:textSize="20sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="letter_key"/>
+
+        <ImageButton
+            android:id="@+id/qwertyBackspace"
+            android:layout_width="52dp"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp"
+            android:background="@drawable/bg_key_button"
+            android:contentDescription="@string/cd_backspace"
+            android:padding="6dp"
+            android:src="@drawable/ic_backspace"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:stateListAnimator="@animator/key_button_state_list"
+            android:tint="?attr/colorOnSurfaceVariant" />
+    </LinearLayout>
+
+    <!-- 第四行：123 切换 / 收起 / 逗号  空格  句号 / 回车 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:id="@+id/qwertyNum"
+            android:layout_width="52dp"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp"
+            android:background="@drawable/bg_key_button"
+            android:contentDescription="@string/cd_symbols_keyboard"
+            android:gravity="center"
+            android:text="@string/label_123"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/qwertyComma"
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp"
+            android:background="@drawable/bg_key_button"
+            android:gravity="center"
+            android:text=","
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="20sp"
+            android:tag="punct_key" />
+
+        <TextView
+            android:id="@+id/qwertySpace"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_key_button"
+            android:contentDescription="@string/cd_space"
+            android:gravity="center"
+            android:text="@string/label_space"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/qwertyPeriod"
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp"
+            android:background="@drawable/bg_key_button"
+            android:gravity="center"
+            android:text="."
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="20sp"
+            android:tag="punct_key" />
+
+        <ImageButton
+            android:id="@+id/qwertyEnter"
+            android:layout_width="52dp"
+            android:layout_height="match_parent"
+            android:layout_margin="4dp"
+            android:background="@drawable/bg_key_button"
+            android:contentDescription="@string/cd_enter"
+            android:padding="6dp"
+            android:src="@drawable/ic_enter"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:stateListAnimator="@animator/key_button_state_list"
+            android:tint="?attr/colorOnSurfaceVariant" />
+    </LinearLayout>
+
+</LinearLayout>
