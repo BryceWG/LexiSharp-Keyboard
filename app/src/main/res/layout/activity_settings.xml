@@ -186,6 +186,23 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
+            <!-- Pinyin auto-conversion interval (seconds, 0 to disable) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:boxBackgroundMode="outline"
+                android:hint="@string/label_pinyin_llm_interval">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPinyinLlmInterval"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:maxLength="6"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?attr/colorOnSurfaceVariant" />
+            </com.google.android.material.textfield.TextInputLayout>
+
             <!-- ASR vendor selection -->
             <TextView
                 android:layout_width="match_parent"

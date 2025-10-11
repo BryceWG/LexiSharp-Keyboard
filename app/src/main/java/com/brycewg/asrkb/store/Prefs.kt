@@ -54,6 +54,19 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_QWERTY_HAPTIC_ENABLED, true)
         set(value) = sp.edit { putBoolean(KEY_QWERTY_HAPTIC_ENABLED, value) }
 
+    // 拼音自动 LLM 转换间隔（秒，支持小数；0 表示关闭）
+    var qwertyPinyinLlmIntervalSec: Float
+        get() {
+            // 兼容旧版本的 Int 存储
+            return try {
+                sp.getFloat(KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC, DEFAULT_QWERTY_PINYIN_LLM_INTERVAL_SEC)
+            } catch (_: Throwable) {
+                val i = try { sp.getInt(KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC, DEFAULT_QWERTY_PINYIN_LLM_INTERVAL_SEC.toInt()) } catch (_: Throwable) { 0 }
+                i.toFloat()
+            }.coerceAtLeast(0f)
+        }
+        set(value) = sp.edit { putFloat(KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC, value.coerceAtLeast(0f)) }
+
     // 26 键默认语言（"en" 或 "zh"）
     var qwertyDefaultLang: String
         get() = sp.getString(KEY_QWERTY_DEFAULT_LANG, DEFAULT_QWERTY_DEFAULT_LANG) ?: DEFAULT_QWERTY_DEFAULT_LANG
@@ -284,6 +297,7 @@ class Prefs(context: Context) {
         private const val KEY_AUTO_SWITCH_ON_PASSWORD = "auto_switch_on_password"
         private const val KEY_MIC_HAPTIC_ENABLED = "mic_haptic_enabled"
         private const val KEY_QWERTY_HAPTIC_ENABLED = "qwerty_haptic_enabled"
+        private const val KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC = "qwerty_pinyin_llm_interval_sec"
         private const val KEY_QWERTY_DEFAULT_LANG = "qwerty_default_lang"
         private const val KEY_PINYIN_MODE = "pinyin_mode"
         private const val KEY_FLOATING_SWITCHER_ENABLED = "floating_switcher_enabled"
@@ -338,6 +352,8 @@ class Prefs(context: Context) {
 
         // 26 键默认语言默认值
         const val DEFAULT_QWERTY_DEFAULT_LANG = "en"
+        // 拼音自动 LLM 转换默认间隔（秒，支持小数）
+        const val DEFAULT_QWERTY_PINYIN_LLM_INTERVAL_SEC = 2.0f
 
         // 标点按钮默认值
         const val DEFAULT_PUNCT_1 = "，"
@@ -416,6 +432,8 @@ class Prefs(context: Context) {
         o.put(KEY_PUNCT_2, punct2)
         o.put(KEY_PUNCT_3, punct3)
         o.put(KEY_PUNCT_4, punct4)
+        // 拼音自动转换间隔
+        o.put(KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC, qwertyPinyinLlmIntervalSec)
         // 统计信息
         o.put(KEY_TOTAL_ASR_CHARS, totalAsrChars)
         return o.toString()
@@ -439,6 +457,8 @@ class Prefs(context: Context) {
             optBool(KEY_AUTO_SWITCH_ON_PASSWORD)?.let { autoSwitchOnPassword = it }
             optBool(KEY_MIC_HAPTIC_ENABLED)?.let { micHapticEnabled = it }
             optBool(KEY_QWERTY_HAPTIC_ENABLED)?.let { qwertyHapticEnabled = it }
+            // 新增：拼音自动转换间隔（秒，支持小数）
+            optFloat(KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC)?.let { qwertyPinyinLlmIntervalSec = it.coerceAtLeast(0f) }
             optString(KEY_QWERTY_DEFAULT_LANG)?.let { qwertyDefaultLang = if (it == "zh") "zh" else "en" }
             optString(KEY_PINYIN_MODE)?.let { pinyinMode = PinyinMode.fromId(it) }
             optString(KEY_APP_LANGUAGE_TAG)?.let { appLanguageTag = it }

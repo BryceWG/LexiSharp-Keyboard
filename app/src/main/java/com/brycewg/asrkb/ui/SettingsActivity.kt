@@ -105,6 +105,8 @@ class SettingsActivity : AppCompatActivity() {
         val etLlmPrompt = findViewById<EditText>(R.id.etLlmPrompt)
         val etLlmPromptTitle = findViewById<EditText>(R.id.etLlmPromptTitle)
         val spPromptPresets = findViewById<Spinner>(R.id.spPromptPresets)
+        // Pinyin auto-convert interval
+        val etPinyinLlmInterval = findViewById<EditText>(R.id.etPinyinLlmInterval)
         // 自定义标点符号输入
         val etPunct1 = findViewById<EditText>(R.id.etPunct1)
         val etPunct2 = findViewById<EditText>(R.id.etPunct2)
@@ -136,6 +138,7 @@ class SettingsActivity : AppCompatActivity() {
             etLlmApiKey.setText(prefs.llmApiKey)
             etLlmModel.setText(prefs.llmModel)
             etLlmTemperature.setText(prefs.llmTemperature.toString())
+            etPinyinLlmInterval.setText(prefs.qwertyPinyinLlmIntervalSec.toString())
             etPunct1.setText(prefs.punct1)
             etPunct2.setText(prefs.punct2)
             etPunct3.setText(prefs.punct3)
@@ -328,6 +331,12 @@ class SettingsActivity : AppCompatActivity() {
             prefs.autoSwitchOnPassword = switchAutoSwitchPassword.isChecked
             prefs.micHapticEnabled = switchMicHaptic.isChecked
             prefs.qwertyHapticEnabled = switchQwertyHaptic.isChecked
+            // 拼音自动转换间隔（秒）
+            run {
+                val raw = etPinyinLlmInterval.text?.toString()?.trim() ?: ""
+                val v = raw.toFloatOrNull()?.coerceAtLeast(0f) ?: Prefs.DEFAULT_QWERTY_PINYIN_LLM_INTERVAL_SEC
+                prefs.qwertyPinyinLlmIntervalSec = v
+            }
             // 悬浮球透明度（百分比转 0-1）
             prefs.floatingSwitcherAlpha = (sliderFloatingAlpha.value / 100f).coerceIn(0.2f, 1.0f)
             // 悬浮球开关：保存状态并根据权限与当前输入法情况启动/隐藏
