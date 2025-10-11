@@ -68,6 +68,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var qwertyLangSwitch: TextView? = null
     // 拼音缓冲（中文模式）
     private val pinyinBuffer = StringBuilder()
+    private var pinyinBufferSnapshot: String? = null
 
     private var btnMic: FloatingActionButton? = null
     private var btnSettings: ImageButton? = null
@@ -594,61 +595,114 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 true
             }
         }
-        // Backspace: tap deletes one; long-press to repeat
-        v.findViewById<ImageButton?>(R.id.qwertyBackspace)?.setOnTouchListener { view, event ->
-            var pressed = view.getTag(R.id.tag_pressed) as? Boolean ?: false
-            var longStarted = view.getTag(R.id.tag_long_started) as? Boolean ?: false
-            var starter = view.getTag(R.id.tag_starter) as? Runnable
-            var repeater = view.getTag(R.id.tag_repeater) as? Runnable
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    pressed = true
-                    longStarted = false
-                    // schedule long press starter
-                    starter?.let { view.removeCallbacks(it) }
-                    repeater?.let { view.removeCallbacks(it) }
-                    val r = Runnable {
-                        if (!(view.getTag(R.id.tag_pressed) as? Boolean ?: false)) return@Runnable
-                        view.setTag(R.id.tag_long_started, true)
-                        // first delete then start repeating（中文模式优先清空缓冲）
-                        handleQwertyBackspaceTap()
-                        val rep = object : Runnable {
-                            override fun run() {
-                                if (!(view.getTag(R.id.tag_pressed) as? Boolean ?: false)) return
-                                handleQwertyBackspaceTap()
-                                view.postDelayed(this, ViewConfiguration.getKeyRepeatDelay().toLong())
+        // Backspace gestures: tap delete; swipe up/left clear all; swipe down undo or revert; long-press repeat
+        v.findViewById<ImageButton?>(R.id.qwertyBackspace)?.apply {
+            setOnClickListener {
+                handleQwertyBackspaceTap()
+                maybeHapticKeyTap(this)
+            }
+            setOnTouchListener { view, event ->
+                val ic = currentInputConnection ?: return@setOnTouchListener false
+                val slop = ViewConfiguration.get(view.context).scaledTouchSlop
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        backspaceStartX = event.x
+                        backspaceStartY = event.y
+                        backspaceClearedInGesture = false
+                        backspacePressed = true
+                        backspaceLongPressStarted = false
+                        // cancel any pending
+                        backspaceLongPressStarter?.let { view.removeCallbacks(it) }
+                        backspaceRepeatRunnable?.let { view.removeCallbacks(it) }
+                        val starter = Runnable {
+                            if (!backspacePressed || backspaceClearedInGesture) return@Runnable
+                            backspaceLongPressStarted = true
+                            // initial
+                            handleQwertyBackspaceTap()
+                            val rep = object : Runnable {
+                                override fun run() {
+                                    if (!backspacePressed || backspaceClearedInGesture) return
+                                    handleQwertyBackspaceTap()
+                                    view.postDelayed(this, ViewConfiguration.getKeyRepeatDelay().toLong())
+                                }
+                            }
+                            backspaceRepeatRunnable = rep
+                            view.postDelayed(rep, ViewConfiguration.getKeyRepeatDelay().toLong())
+                        }
+                        backspaceLongPressStarter = starter
+                        view.postDelayed(starter, ViewConfiguration.getLongPressTimeout().toLong())
+                        // snapshot editor and pinyin buffer
+                        try {
+                            backspaceSnapshotBefore = ic.getTextBeforeCursor(10000, 0)
+                            backspaceSnapshotAfter = ic.getTextAfterCursor(10000, 0)
+                            backspaceSnapshotValid = backspaceSnapshotBefore != null && backspaceSnapshotAfter != null
+                        } catch (_: Throwable) {
+                            backspaceSnapshotBefore = null
+                            backspaceSnapshotAfter = null
+                            backspaceSnapshotValid = false
+                        }
+                        pinyinBufferSnapshot = if (langMode == LangMode.Chinese) pinyinBuffer.toString() else null
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val dx = event.x - backspaceStartX
+                        val dy = event.y - backspaceStartY
+                        if (!backspaceClearedInGesture && (dy <= -slop || dx <= -slop)) {
+                            backspaceLongPressStarter?.let { view.removeCallbacks(it) }
+                            backspaceRepeatRunnable?.let { view.removeCallbacks(it) }
+                            clearAllTextWithSnapshot(ic)
+                            clearPinyinBuffer()
+                            backspaceClearedInGesture = true
+                            vibrateTick()
+                            return@setOnTouchListener true
+                        }
+                        if (!backspaceClearedInGesture && dy >= slop) {
+                            backspaceLongPressStarter?.let { view.removeCallbacks(it) }
+                            backspaceRepeatRunnable?.let { view.removeCallbacks(it) }
+                            if (revertLastPostprocToRaw(ic)) {
+                                vibrateTick()
+                                return@setOnTouchListener true
                             }
                         }
-                        view.setTag(R.id.tag_repeater, rep)
-                        view.postDelayed(rep, ViewConfiguration.getKeyRepeatDelay().toLong())
+                        if (backspaceClearedInGesture && dy >= slop) {
+                            if (backspaceSnapshotValid) {
+                                restoreSnapshot(ic)
+                                // restore pinyin buffer if any
+                                val snap = pinyinBufferSnapshot
+                                if (snap != null) {
+                                    pinyinBuffer.clear()
+                                    pinyinBuffer.append(snap)
+                                    qwertyTextBuffer?.text = pinyinBuffer.toString()
+                                }
+                            }
+                            backspaceClearedInGesture = false
+                            vibrateTick()
+                            return@setOnTouchListener true
+                        }
+                        true
                     }
-                    view.setTag(R.id.tag_starter, r)
-                    view.postDelayed(r, ViewConfiguration.getLongPressTimeout().toLong())
-                    view.setTag(R.id.tag_pressed, pressed)
-                    view.setTag(R.id.tag_long_started, longStarted)
-                    true
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    val dx = event.x
-                    val dy = event.y
-                    // end state
-                    pressed = false
-                    val ls = view.getTag(R.id.tag_long_started) as? Boolean ?: false
-                    // cancel tasks
-                    (view.getTag(R.id.tag_starter) as? Runnable)?.let { view.removeCallbacks(it) }
-                    (view.getTag(R.id.tag_repeater) as? Runnable)?.let { view.removeCallbacks(it) }
-                    view.setTag(R.id.tag_starter, null)
-                    view.setTag(R.id.tag_repeater, null)
-                    view.setTag(R.id.tag_pressed, pressed)
-                    view.setTag(R.id.tag_long_started, false)
-                    if (!ls && event.actionMasked == MotionEvent.ACTION_UP) {
-                        // tap
-                        handleQwertyBackspaceTap()
-                        maybeHapticKeyTap(view)
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        val dx = event.x - backspaceStartX
+                        val dy = event.y - backspaceStartY
+                        val isTap = kotlin.math.abs(dx) < slop && kotlin.math.abs(dy) < slop && !backspaceClearedInGesture && !backspaceLongPressStarted
+                        backspacePressed = false
+                        backspaceLongPressStarter?.let { view.removeCallbacks(it) }
+                        backspaceLongPressStarter = null
+                        backspaceRepeatRunnable?.let { view.removeCallbacks(it) }
+                        backspaceRepeatRunnable = null
+                        if (isTap && event.actionMasked == MotionEvent.ACTION_UP) {
+                            view.performClick()
+                            return@setOnTouchListener true
+                        }
+                        backspaceSnapshotBefore = null
+                        backspaceSnapshotAfter = null
+                        backspaceSnapshotValid = false
+                        pinyinBufferSnapshot = null
+                        backspaceClearedInGesture = false
+                        true
                     }
-                    true
+                    else -> false
                 }
-                else -> false
             }
         }
         // Enter & 123
@@ -879,8 +933,13 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         qwertyPanelView?.visibility = View.VISIBLE
         symbolsPanelView?.visibility = View.GONE
         isQwertyVisible = true
+        // 应用默认语言模式（设置项）
+        try {
+            val wantZh = prefs.qwertyDefaultLang == "zh"
+            langMode = if (wantZh) LangMode.Chinese else LangMode.English
+        } catch (_: Throwable) { langMode = LangMode.English }
+        updateLangModeUI()
         updateShiftUi()
-        applyLetterCase()
     }
 
     private fun showAsrPanel() {

@@ -158,6 +158,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
+            <!-- Qwerty default language mode -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textColor="?attr/colorOnSurface"
+                android:text="@string/label_qwerty_default_lang" />
+
+            <Spinner
+                android:id="@+id/spQwertyDefaultLang"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
             <!-- ASR vendor selection -->
             <TextView
                 android:layout_width="match_parent"

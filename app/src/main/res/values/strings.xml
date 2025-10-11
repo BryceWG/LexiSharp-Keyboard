@@ -73,6 +73,9 @@
     <string name="label_show_ime_switcher">显示“切换输入法”按钮</string>
     <string name="label_mic_haptic">按下麦克风时振动反馈</string>
     <string name="label_qwerty_haptic">键盘按键振动</string>
+    <string name="label_qwerty_default_lang">26键默认语言模式</string>
+    <string name="qwerty_lang_english">英文</string>
+    <string name="qwerty_lang_chinese">中文</string>
     <string name="label_floating_switcher">启用悬浮球快速切换输入法</string>
     <string name="label_floating_alpha">悬浮球透明度</string>
     <string name="toast_need_overlay_perm">请在系统设置中授予“在其他应用上层显示”权限以启用悬浮球</string>

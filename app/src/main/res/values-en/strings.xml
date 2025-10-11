@@ -73,6 +73,9 @@
     <string name="label_show_ime_switcher">Show "Switch Input Method" button</string>
     <string name="label_mic_haptic">Haptic feedback on mic press</string>
     <string name="label_qwerty_haptic">Haptic on key taps</string>
+    <string name="label_qwerty_default_lang">Default 26-key language</string>
+    <string name="qwerty_lang_english">English</string>
+    <string name="qwerty_lang_chinese">Chinese</string>
     <string name="label_floating_switcher">Enable floating ball to switch IME</string>
     <string name="label_floating_alpha">Floating ball transparency</string>
     <string name="toast_need_overlay_perm">Please grant "Display over other apps" in system settings to enable the floating ball</string>
