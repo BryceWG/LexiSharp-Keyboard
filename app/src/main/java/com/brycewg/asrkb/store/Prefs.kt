@@ -263,7 +263,7 @@ class Prefs(context: Context) {
     fun hasAsrKeys(): Boolean = hasVendorKeys(asrVendor)
     fun hasLlmKeys(): Boolean = llmApiKey.isNotBlank() && llmEndpoint.isNotBlank() && llmModel.isNotBlank()
 
-    // 自定义标点按钮（4个位置）
+    // 自定义标点按钮（扩展至 5 个位置）
     var punct1: String
         get() = (sp.getString(KEY_PUNCT_1, DEFAULT_PUNCT_1) ?: DEFAULT_PUNCT_1).trim()
         set(value) = sp.edit { putString(KEY_PUNCT_1, value.trim()) }
@@ -275,6 +275,14 @@ class Prefs(context: Context) {
     var punct3: String
         get() = (sp.getString(KEY_PUNCT_3, DEFAULT_PUNCT_3) ?: DEFAULT_PUNCT_3).trim()
         set(value) = sp.edit { putString(KEY_PUNCT_3, value.trim()) }
+
+    var punct4: String
+        get() = (sp.getString(KEY_PUNCT_4, DEFAULT_PUNCT_4) ?: DEFAULT_PUNCT_4).trim()
+        set(value) = sp.edit { putString(KEY_PUNCT_4, value.trim()) }
+
+    var punct5: String
+        get() = (sp.getString(KEY_PUNCT_5, DEFAULT_PUNCT_5) ?: DEFAULT_PUNCT_5).trim()
+        set(value) = sp.edit { putString(KEY_PUNCT_5, value.trim()) }
 
     // 历史语音识别总字数（仅统计最终提交到编辑器的识别结果；AI编辑不计入）
     var totalAsrChars: Long
@@ -326,6 +334,8 @@ class Prefs(context: Context) {
         private const val KEY_PUNCT_1 = "punct_1"
         private const val KEY_PUNCT_2 = "punct_2"
         private const val KEY_PUNCT_3 = "punct_3"
+        private const val KEY_PUNCT_4 = "punct_4"
+        private const val KEY_PUNCT_5 = "punct_5"
         private const val KEY_TOTAL_ASR_CHARS = "total_asr_chars"
 
         const val DEFAULT_ENDPOINT = "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash"
@@ -357,6 +367,8 @@ class Prefs(context: Context) {
         const val DEFAULT_PUNCT_1 = "，"
         const val DEFAULT_PUNCT_2 = "。"
         const val DEFAULT_PUNCT_3 = "！"
+        const val DEFAULT_PUNCT_4 = "？"
+        const val DEFAULT_PUNCT_5 = "、"
 
         private fun buildDefaultPromptPresets(): List<PromptPreset> {
             val p1 = PromptPreset(
@@ -428,6 +440,8 @@ class Prefs(context: Context) {
         o.put(KEY_PUNCT_1, punct1)
         o.put(KEY_PUNCT_2, punct2)
         o.put(KEY_PUNCT_3, punct3)
+        o.put(KEY_PUNCT_4, punct4)
+        o.put(KEY_PUNCT_5, punct5)
         // 拼音自动转换间隔
         o.put(KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC, qwertyPinyinLlmIntervalSec)
         // 统计信息
@@ -484,6 +498,8 @@ class Prefs(context: Context) {
             optString(KEY_PUNCT_1)?.let { punct1 = it }
             optString(KEY_PUNCT_2)?.let { punct2 = it }
             optString(KEY_PUNCT_3)?.let { punct3 = it }
+            optString(KEY_PUNCT_4)?.let { punct4 = it }
+            optString(KEY_PUNCT_5)?.let { punct5 = it }
             // 统计信息（可选）
             if (o.has(KEY_TOTAL_ASR_CHARS)) {
                 // 使用 optLong，若类型为字符串/浮点将尽力转换

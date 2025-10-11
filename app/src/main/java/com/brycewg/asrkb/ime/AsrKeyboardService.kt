@@ -105,6 +105,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var btnPunct1: TextView? = null
     private var btnPunct2: TextView? = null
     private var btnPunct3: TextView? = null
+    private var btnPunct4: TextView? = null
+    private var btnPunct5: TextView? = null
     private var txtStatus: TextView? = null
     private var committedStableLen: Int = 0
     private var postproc: LlmPostProcessor = LlmPostProcessor()
@@ -205,8 +207,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         // Inflate 26 键（内部包含字母与符号两个主区域）
         val qwerty = LayoutInflater.from(dynamicContext).inflate(R.layout.keyboard_qwerty_view, container, false)
         qwerty.visibility = View.GONE
-        container.addView(asr, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        container.addView(qwerty, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        container.addView(asr)
+        container.addView(qwerty)
         rootView = container
         asrPanelView = asr
         qwertyPanelView = qwerty
@@ -227,6 +229,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         btnPunct1 = asr.findViewById(R.id.btnPunct1)
         btnPunct2 = asr.findViewById(R.id.btnPunct2)
         btnPunct3 = asr.findViewById(R.id.btnPunct3)
+        btnPunct4 = asr.findViewById(R.id.btnPunct4)
+        btnPunct5 = asr.findViewById(R.id.btnPunct5)
         txtStatus = asr.findViewById(R.id.txtStatus)
         btnLetters = asr.findViewById(R.id.btnLetters)
 
@@ -490,6 +494,14 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         }
         btnPunct3?.setOnClickListener {
             commitTextCore(prefs.punct3, vibrate = false)
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
+        btnPunct4?.setOnClickListener {
+            commitTextCore(prefs.punct4, vibrate = false)
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
+        btnPunct5?.setOnClickListener {
+            commitTextCore(prefs.punct5, vibrate = false)
             it?.let { v -> maybeHapticKeyTap(v) }
         }
         btnPostproc?.apply {
@@ -1437,6 +1449,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         btnPunct1?.text = prefs.punct1
         btnPunct2?.text = prefs.punct2
         btnPunct3?.text = prefs.punct3
+        btnPunct4?.text = prefs.punct4
+        btnPunct5?.text = prefs.punct5
     }
 
     // 内部提交文本，允许选择是否触发默认振动（保留原有行为给非 26 键场景）。

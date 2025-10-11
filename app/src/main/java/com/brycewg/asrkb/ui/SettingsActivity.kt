@@ -106,10 +106,12 @@ class SettingsActivity : AppCompatActivity() {
         val spPromptPresets = findViewById<Spinner>(R.id.spPromptPresets)
         // Pinyin auto-convert interval
         val etPinyinLlmInterval = findViewById<EditText>(R.id.etPinyinLlmInterval)
-        // 自定义标点符号输入（最多三个）
+        // 自定义标点符号输入
         val etPunct1 = findViewById<EditText>(R.id.etPunct1)
         val etPunct2 = findViewById<EditText>(R.id.etPunct2)
         val etPunct3 = findViewById<EditText>(R.id.etPunct3)
+        val etPunct4 = findViewById<EditText>(R.id.etPunct4)
+        val etPunct5 = findViewById<EditText>(R.id.etPunct5)
 
         fun applyPrefsToUi() {
             etAppKey.setText(prefs.appKey)
@@ -139,6 +141,8 @@ class SettingsActivity : AppCompatActivity() {
             etPunct1.setText(prefs.punct1)
             etPunct2.setText(prefs.punct2)
             etPunct3.setText(prefs.punct3)
+            etPunct4.setText(prefs.punct4)
+            etPunct5.setText(prefs.punct5)
             // 统计：显示历史语音识别总字数
             try {
                 tvAsrTotalChars.text = getString(R.string.label_asr_total_chars, prefs.totalAsrChars)
@@ -376,6 +380,8 @@ class SettingsActivity : AppCompatActivity() {
             prefs.punct1 = etPunct1.text?.toString() ?: Prefs.DEFAULT_PUNCT_1
             prefs.punct2 = etPunct2.text?.toString() ?: Prefs.DEFAULT_PUNCT_2
             prefs.punct3 = etPunct3.text?.toString() ?: Prefs.DEFAULT_PUNCT_3
+            prefs.punct4 = etPunct4.text?.toString() ?: Prefs.DEFAULT_PUNCT_4
+            prefs.punct5 = etPunct5.text?.toString() ?: Prefs.DEFAULT_PUNCT_5
             // 更新当前预设标题/内容并设为活动状态
             val newTitle = etLlmPromptTitle.text?.toString()?.ifBlank { getString(R.string.untitled_preset) } ?: getString(R.string.untitled_preset)
             val newContent = etLlmPrompt.text?.toString() ?: Prefs.DEFAULT_LLM_PROMPT

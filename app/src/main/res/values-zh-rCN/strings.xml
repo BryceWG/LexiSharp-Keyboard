@@ -14,6 +14,8 @@
     <string name="cd_punct_btn_1">自定义按键 1</string>
     <string name="cd_punct_btn_2">自定义按键 2</string>
     <string name="cd_punct_btn_3">自定义按键 3</string>
+    <string name="cd_punct_btn_4">自定义按键 4</string>
+    <string name="cd_punct_btn_5">自定义按键 5</string>
     <string name="cd_letters_keyboard">切换字母键盘</string>
     <string name="cd_space">空格</string>
     <string name="label_abc">ABC</string>
@@ -94,6 +96,8 @@
     <string name="label_custom_punct_1">按钮1（字符或标点）</string>
     <string name="label_custom_punct_2">按钮2（字符或标点）</string>
     <string name="label_custom_punct_3">按钮3（字符或标点）</string>
+    <string name="label_custom_punct_4">按钮4（字符或标点）</string>
+    <string name="label_custom_punct_5">按钮5（字符或标点）</string>
     <string name="label_auto_switch_password">密码框自动切换回上个输入法</string>
 
     <string name="label_language">应用语言</string>

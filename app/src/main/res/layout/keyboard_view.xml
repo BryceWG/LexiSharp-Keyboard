@@ -1,296 +1,301 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="@dimen/ime_panel_height"
     android:background="@drawable/bg_keyboard_container"
-    android:paddingHorizontal="12dp"
-    android:paddingTop="8dp"
+    android:paddingHorizontal="16dp"
+    android:paddingTop="12dp"
     android:paddingBottom="12dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <!-- 状态文本 - 顶部 -->
+
+    <!-- 第三行：标点符号和字母切换（从底部开始布局） -->
+    <TextView
+        android:id="@+id/txtStatus"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="0dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="2"
+        android:text="@string/status_idle"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="22sp"
+        android:background="@drawable/bg_status_text"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="6dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="80dp">
+    <TextView
+        android:id="@+id/btnPunct1"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_punct_btn_1"
+        android:gravity="center"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnPunct2"
+        app:layout_constraintHorizontal_chainStyle="spread_inside" />
 
-        <ImageButton
-            android:id="@+id/btnHide"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_hide"
-            android:clipToOutline="true"
-            android:padding="6dp"
-            android:src="@drawable/ic_chevron_down"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnBackspace"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0"
-            android:tint="?attr/colorOnSurfaceVariant" />
+    <TextView
+        android:id="@+id/btnPunct2"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_punct_btn_2"
+        android:gravity="center"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnPunct1"
+        app:layout_constraintEnd_toStartOf="@id/btnPunct4" />
 
-        <ImageButton
-            android:id="@+id/btnPostproc"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_postproc_toggle"
-            android:clipToOutline="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:padding="6dp"
-            android:src="@drawable/ic_magic"
-            android:stateListAnimator="@animator/key_button_state_list"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@id/btnPromptPicker"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0"
-            android:tint="?attr/colorOnSurfaceVariant" />
+    <TextView
+        android:id="@+id/btnPunct3"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_punct_btn_3"
+        android:gravity="center"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnPunct5"
+        app:layout_constraintEnd_toStartOf="@id/btnLetters" />
 
-        <ImageButton
-            android:id="@+id/btnBackspace"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_backspace"
-            android:clipToOutline="true"
-            android:padding="6dp"
-            android:src="@drawable/ic_backspace"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0"
-            android:tint="?attr/colorOnSurfaceVariant" />
+    <!-- 新增：第三行中部两个自定义符号键，位于麦克风左右侧 -->
 
-        <ImageButton
-            android:id="@+id/btnPromptPicker"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_prompt_picker"
-            android:clipToOutline="true"
-            android:padding="6dp"
-            android:src="@drawable/ic_prompt"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0"
-            android:tint="?attr/colorOnSurfaceVariant" />
+    <TextView
+        android:id="@+id/btnPunct4"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_key_button"
+        android:clickable="true"
+        android:contentDescription="@string/cd_punct_btn_4"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:gravity="center"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnPunct2"
+        app:layout_constraintEnd_toStartOf="@id/btnPunct5" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    <TextView
+        android:id="@+id/btnPunct5"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_key_button"
+        android:clickable="true"
+        android:contentDescription="@string/cd_punct_btn_5"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:gravity="center"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="22sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnPunct4"
+        app:layout_constraintEnd_toStartOf="@id/btnPunct3" />
 
-    <!-- Middle function row moved to overlay to keep height unchanged -->
+    <TextView
+        android:id="@+id/btnLetters"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_letters_keyboard"
+        android:gravity="center"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:text="@string/label_abc"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btnPunct3"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Custom punctuation row -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
+    <!-- 第二行：设置、输入法切换、AI编辑、回车（在第三行上方10dp） -->
+    <ImageButton
+        android:id="@+id/btnSettings"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_settings"
+        android:clipToOutline="true"
+        android:padding="10dp"
+        android:src="@drawable/ic_settings"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/btnPunct1"
+        app:layout_constraintStart_toStartOf="@id/btnPunct1"
+        app:layout_constraintEnd_toEndOf="@id/btnPunct1" />
+
+    <ImageButton
+        android:id="@+id/btnImeSwitcher"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_switch_ime"
+        android:clipToOutline="true"
+        android:padding="10dp"
+        android:src="@drawable/ic_keyboard"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/btnPunct2"
+        app:layout_constraintStart_toStartOf="@id/btnPunct2"
+        app:layout_constraintEnd_toEndOf="@id/btnPunct2" />
+
+    <ImageButton
+        android:id="@+id/btnAiEdit"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_ai_edit"
+        android:clipToOutline="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:padding="10dp"
+        android:src="@drawable/ic_edit"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/btnPunct3"
+        app:layout_constraintStart_toStartOf="@id/btnPunct3"
+        app:layout_constraintEnd_toEndOf="@id/btnPunct3" />
+
+    <ImageButton
+        android:id="@+id/btnEnter"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_enter"
+        android:clipToOutline="true"
+        android:padding="10dp"
+        android:src="@drawable/ic_enter"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/btnLetters"
+        app:layout_constraintStart_toStartOf="@id/btnLetters"
+        app:layout_constraintEnd_toEndOf="@id/btnLetters" />
+
+    <!-- 第一行：提示词选择器、后处理、隐藏、退格（在第二行上方10dp） -->
+    <ImageButton
+        android:id="@+id/btnPromptPicker"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_prompt_picker"
+        android:clipToOutline="true"
+        android:padding="10dp"
+        android:src="@drawable/ic_prompt"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/btnSettings"
+        app:layout_constraintStart_toStartOf="@id/btnPunct1"
+        app:layout_constraintEnd_toEndOf="@id/btnPunct1" />
+
+    <ImageButton
+        android:id="@+id/btnPostproc"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_postproc_toggle"
+        android:clipToOutline="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:padding="10dp"
+        android:src="@drawable/ic_magic"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/btnImeSwitcher"
+        app:layout_constraintStart_toStartOf="@id/btnPunct2"
+        app:layout_constraintEnd_toEndOf="@id/btnPunct2" />
+
+    <ImageButton
+        android:id="@+id/btnHide"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_hide"
+        android:clipToOutline="true"
+        android:padding="10dp"
+        android:src="@drawable/ic_chevron_down"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/btnAiEdit"
+        app:layout_constraintStart_toStartOf="@id/btnPunct3"
+        app:layout_constraintEnd_toEndOf="@id/btnPunct3" />
+
+    <ImageButton
+        android:id="@+id/btnBackspace"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_key_button"
+        android:contentDescription="@string/cd_backspace"
+        android:clipToOutline="true"
+        android:padding="10dp"
+        android:src="@drawable/ic_backspace"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:stateListAnimator="@animator/key_button_state_list"
+        android:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/btnEnter"
+        app:layout_constraintStart_toStartOf="@id/btnLetters"
+        app:layout_constraintEnd_toEndOf="@id/btnLetters" />
+
+    <!-- 麦克风按钮 - 整个面板正中间 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnMic"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp">
+        android:contentDescription="@string/cd_mic"
+        android:elevation="0dp"
+        android:stateListAnimator="@null"
+        app:backgroundTint="@color/fab_mic_tint"
+        app:elevation="0dp"
+        app:fabCustomSize="90dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:maxImageSize="40dp"
+        app:pressedTranslationZ="0dp"
+        app:srcCompat="@drawable/ic_mic"
+        app:tint="?attr/colorOnPrimaryContainer" />
 
-        <TextView
-            android:id="@+id/btnPunct1"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_punct_btn_1"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="18sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/btnPunct2"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_punct_btn_2"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="18sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@id/btnPunct1"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/btnPunct3"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_punct_btn_3"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="18sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnLetters"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- 右下角：改为 26 键切换（ABC） -->
-        <TextView
-            android:id="@+id/btnLetters"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_letters_keyboard"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            android:text="@string/label_abc"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="16sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    </LinearLayout>
-
-    <!-- Overlay: original function row placed around middle height without increasing total panel height -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:translationY="0dp">
-
-        <ImageButton
-            android:id="@+id/btnSettings"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_settings"
-            android:clipToOutline="true"
-            android:padding="6dp"
-            android:src="@drawable/ic_settings"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:tint="?attr/colorOnSurfaceVariant" />
-
-        <ImageButton
-            android:id="@+id/btnImeSwitcher"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_switch_ime"
-            android:clipToOutline="true"
-            android:padding="6dp"
-            android:src="@drawable/ic_keyboard"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@id/btnSettings"
-            app:layout_constraintTop_toTopOf="parent"
-            android:tint="?attr/colorOnSurfaceVariant" />
-
-        <ImageButton
-            android:id="@+id/btnEnter"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_enter"
-            android:clipToOutline="true"
-            android:padding="6dp"
-            android:src="@drawable/ic_enter"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:stateListAnimator="@animator/key_button_state_list"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:tint="?attr/colorOnSurfaceVariant" />
-
-        <ImageButton
-            android:id="@+id/btnAiEdit"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_key_button"
-            android:contentDescription="@string/cd_ai_edit"
-            android:clipToOutline="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:padding="6dp"
-            android:src="@drawable/ic_edit"
-            android:stateListAnimator="@animator/key_button_state_list"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnEnter"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintStart_toEndOf="@id/btnImeSwitcher"
-            app:layout_constraintTop_toTopOf="parent"
-            android:tint="?attr/colorOnSurfaceVariant" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:orientation="vertical"
-        android:gravity="center_horizontal">
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/btnMic"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/cd_mic"
-            app:srcCompat="@drawable/ic_mic"
-            app:backgroundTint="@color/fab_mic_tint"
-            app:tint="?attr/colorOnPrimaryContainer"
-            android:elevation="0dp"
-            app:elevation="0dp"
-            app:pressedTranslationZ="0dp"
-            android:stateListAnimator="@null"
-            app:fabCustomSize="72dp"
-            app:maxImageSize="40dp" />
-
-        <TextView
-            android:id="@+id/txtStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:maxLines="2"
-            android:ellipsize="end"
-            android:text="@string/status_idle"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="16sp" />
-    </LinearLayout>
-
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

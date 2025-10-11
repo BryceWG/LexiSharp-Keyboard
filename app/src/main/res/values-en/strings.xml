@@ -14,6 +14,8 @@
     <string name="cd_punct_btn_1">Custom key 1</string>
     <string name="cd_punct_btn_2">Custom key 2</string>
     <string name="cd_punct_btn_3">Custom key 3</string>
+    <string name="cd_punct_btn_4">Custom key 4</string>
+    <string name="cd_punct_btn_5">Custom key 5</string>
     <string name="cd_letters_keyboard">Switch to letters keyboard</string>
     <string name="cd_space">Space</string>
     <string name="label_abc">ABC</string>
@@ -101,6 +103,8 @@
     <string name="label_custom_punct_1">Button 1 (char or punctuation)</string>
     <string name="label_custom_punct_2">Button 2 (char or punctuation)</string>
     <string name="label_custom_punct_3">Button 3 (char or punctuation)</string>
+    <string name="label_custom_punct_4">Button 4 (char or punctuation)</string>
+    <string name="label_custom_punct_5">Button 5 (char or punctuation)</string>
     <string name="label_auto_switch_password">Auto switch back on password fields</string>
 
     <!-- Language & misc -->

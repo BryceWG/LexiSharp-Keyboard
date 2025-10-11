@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="settings_form_max_width">560dp</dimen>
+    <!-- 统一键盘面板总高度（QWERTY：8dp 顶部 + 40dp 工具条 + 8dp 间距 + 50*4 行 + 4dp 行间距 + 12dp 底部 = 272dp） -->
+    <dimen name="ime_panel_height">272dp</dimen>
 </resources>
-
