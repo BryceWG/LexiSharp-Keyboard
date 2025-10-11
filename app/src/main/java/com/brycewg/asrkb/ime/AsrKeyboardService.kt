@@ -739,18 +739,30 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         child.setOnClickListener {
                             val s = child.text?.toString() ?: return@setOnClickListener
                             if (langMode == LangMode.Chinese) {
-                                // 中文模式：字母进入拼音缓冲（以小写拼音为准）
-                                insertIntoPinyinBuffer(s.lowercase())
+                                // 中文模式：
+                                // - Shift 开启（Once/Lock）时，直接将大写字母上屏，不进入拼音缓冲/双拼
+                                // - 其它情况：按小写拼音写入缓冲
+                                if (shiftMode != ShiftMode.Off) {
+                                    commitTextCore(s.uppercase(), vibrate = false)
+                                    // Shift 为一次性时用后即关
+                                    if (shiftMode == ShiftMode.Once) {
+                                        shiftMode = ShiftMode.Off
+                                        updateShiftUi()
+                                        applyLetterCase()
+                                    }
+                                } else {
+                                    insertIntoPinyinBuffer(s.lowercase())
+                                }
                             } else {
-                                // 英文模式：直接提交
+                                // 英文模式：直接提交（跟随当前显示大小写）
                                 commitTextCore(s, vibrate = false)
+                                if (shiftMode == ShiftMode.Once) {
+                                    shiftMode = ShiftMode.Off
+                                    updateShiftUi()
+                                    applyLetterCase()
+                                }
                             }
                             maybeHapticKeyTap(child)
-                            if (shiftMode == ShiftMode.Once && langMode == LangMode.English) {
-                                shiftMode = ShiftMode.Off
-                                updateShiftUi()
-                                applyLetterCase()
-                            }
                         }
                         if (prefs.qwertySwipeAltEnabled) child.setOnTouchListener { v, event ->
                             val tv = v as? TextView ?: return@setOnTouchListener false
@@ -1594,6 +1606,22 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
 
     private fun sendEnter() {
         val ic = currentInputConnection ?: return
+        // 优化：在 QWERTY 中文模式下，若拼音缓冲中含有字母，则直接将缓冲原样上屏（不做双拼转换）
+        if (isQwertyVisible && langMode == LangMode.Chinese) {
+            val raw = pinyinBuffer.toString()
+            // “含有字母”判断：存在任意 A-Z/a-z 即认为需要上屏
+            val hasLetter = raw.any { it.isLetter() }
+            if (hasLetter) {
+                // 清除可能存在的合成预览，避免被上屏干扰
+                clearPinyinPreviewComposition()
+                try {
+                    ic.commitText(raw, 1)
+                } catch (_: Throwable) { }
+                clearPinyinBuffer()
+                // 直接上屏字母后不再发送回车
+                return
+            }
+        }
         ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
         ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
     }
