@@ -9,6 +9,7 @@
     <string name="cd_ai_edit">AI编辑</string>
     <string name="cd_hide">收起键盘</string>
     <string name="cd_prompt_picker">切换后处理 Prompt</string>
+    <string name="cd_audio_wave">音频波形</string>
     <string name="cd_punct_btn_1">自定义按键 1</string>
     <string name="cd_punct_btn_2">自定义按键 2</string>
     <string name="cd_punct_btn_3">自定义按键 3</string>

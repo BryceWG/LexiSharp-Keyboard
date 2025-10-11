@@ -111,6 +111,8 @@ class VolcFileAsrEngine(
                     val read = recorder.read(buf, 0, buf.size)
                     if (read > 0) {
                         pcmBuffer.write(buf, 0, read)
+                        // 推送实时电平（RMS 0..1）
+                        try { listener.onAudioLevel(rmsOfPcm16(buf, read)) } catch (_: Throwable) { }
                         if (pcmBuffer.size() >= maxBytes) {
                             // 超过限制时自动停止
                             break
@@ -176,6 +178,23 @@ class VolcFileAsrEngine(
                 listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
             }
         }
+    }
+
+    private fun rmsOfPcm16(buf: ByteArray, count: Int): Float {
+        var sum = 0.0
+        var n = 0
+        var i = 0
+        val limit = count - (count % 2)
+        while (i + 1 < limit) {
+            val s = ((buf[i + 1].toInt() shl 8) or (buf[i].toInt() and 0xFF)).toShort().toInt()
+            sum += (s * s).toDouble()
+            n++
+            i += 2
+        }
+        if (n == 0) return 0f
+        val mean = sum / n
+        val rms = kotlin.math.sqrt(mean).toFloat()
+        return (rms / 32768f).coerceIn(0f, 1f)
     }
 
     private fun buildRequestJson(base64Audio: String): String {

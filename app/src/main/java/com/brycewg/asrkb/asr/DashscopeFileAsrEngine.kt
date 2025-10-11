@@ -108,14 +108,15 @@ class DashscopeFileAsrEngine(
         recorder.startRecording()
         val buf = ByteArray(chunkBytes)
         val maxBytes = 5 * 60 * sampleRate * 2
-        while (true) {
-          if (!running.get()) break
-          val read = recorder.read(buf, 0, buf.size)
-          if (read > 0) {
-            pcmBuffer.write(buf, 0, read)
-            if (pcmBuffer.size() >= maxBytes) break
-          }
+      while (true) {
+        if (!running.get()) break
+        val read = recorder.read(buf, 0, buf.size)
+        if (read > 0) {
+          pcmBuffer.write(buf, 0, read)
+          try { listener.onAudioLevel(rmsOfPcm16(buf, read)) } catch (_: Throwable) { }
+          if (pcmBuffer.size() >= maxBytes) break
         }
+      }
       } catch (t: Throwable) {
         listener.onError(context.getString(R.string.error_audio_error, t.message ?: ""))
       } finally {
@@ -327,5 +328,22 @@ class DashscopeFileAsrEngine(
     val bb = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
     bb.putShort(v.toShort())
     return bb.array()
+  }
+
+  private fun rmsOfPcm16(buf: ByteArray, count: Int): Float {
+    var sum = 0.0
+    var n = 0
+    var i = 0
+    val limit = count - (count % 2)
+    while (i + 1 < limit) {
+      val s = ((buf[i + 1].toInt() shl 8) or (buf[i].toInt() and 0xFF)).toShort().toInt()
+      sum += (s * s).toDouble()
+      n++
+      i += 2
+    }
+    if (n == 0) return 0f
+    val mean = sum / n
+    val rms = kotlin.math.sqrt(mean).toFloat()
+    return (rms / 32768f).coerceIn(0f, 1f)
   }
 }

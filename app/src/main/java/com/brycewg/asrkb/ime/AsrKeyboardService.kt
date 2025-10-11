@@ -44,6 +44,7 @@ import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.PinyinMode
 import com.brycewg.asrkb.ui.SettingsActivity
+import com.brycewg.asrkb.ui.AudioWaveView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -296,6 +297,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         btnPunct4 = asr.findViewById(R.id.btnPunct4)
         btnPunct5 = asr.findViewById(R.id.btnPunct5)
         txtStatus = asr.findViewById(R.id.txtStatus)
+        audioWaveView = asr.findViewById(R.id.audioWaveView)
         btnLetters = asr.findViewById(R.id.btnLetters)
 
         btnMic?.setOnTouchListener { v, event ->
@@ -346,6 +348,9 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         } else {
                             // File-based recognition happens now
                             txtStatus?.text = s(R.string.status_recognizing)
+                            // 停止录音后隐藏波形
+                            audioWaveView?.stop()
+                            audioWaveView?.visibility = View.GONE
                         }
                     }
                     v.performClick()
@@ -1646,11 +1651,15 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         txtStatus?.text = s(R.string.status_idle)
         btnMic?.isSelected = false
         currentInputConnection?.finishComposingText()
+        audioWaveView?.stop()
+        audioWaveView?.visibility = View.GONE
     }
 
     private fun updateUiListening() {
         txtStatus?.text = s(R.string.status_listening)
         btnMic?.isSelected = true
+        audioWaveView?.visibility = View.VISIBLE
+        audioWaveView?.start()
     }
 
     private fun sendEnter() {
@@ -1979,7 +1988,16 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         serviceScope.launch {
             txtStatus?.text = message
             vibrateTick()
+            // 短暂在空格键上展示错误信息
+            showSpaceStatusForMs(message)
+            audioWaveView?.stop()
+            audioWaveView?.visibility = View.GONE
         }
+    }
+
+    override fun onAudioLevel(level: Float) {
+        val v = audioWaveView ?: return
+        v.post { v.setLevel(level) }
     }
 
     private fun trimTrailingPunctuation(s: String): String {

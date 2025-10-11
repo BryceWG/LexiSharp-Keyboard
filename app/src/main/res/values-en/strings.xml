@@ -10,6 +10,7 @@
     <string name="cd_ai_edit">AI Edit</string>
     <string name="cd_hide">Hide keyboard</string>
     <string name="cd_prompt_picker">Switch post-processing prompt</string>
+    <string name="cd_audio_wave">Audio waveform</string>
     <string name="cd_punct_btn_1">Custom key 1</string>
     <string name="cd_punct_btn_2">Custom key 2</string>
     <string name="cd_punct_btn_3">Custom key 3</string>

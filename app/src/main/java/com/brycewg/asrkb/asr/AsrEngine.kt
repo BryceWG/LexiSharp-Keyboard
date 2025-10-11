@@ -27,5 +27,11 @@ interface StreamingAsrEngine : AsrEngine {
 
         /** 处理识别过程中的错误 */
         fun onError(message: String)
+
+        /**
+         * 实时音频电平（0.0~1.0），用于可视化波形/能量条。
+         * 默认空实现，避免老代码必须实现。
+         */
+        fun onAudioLevel(level: Float) { /* optional */ }
     }
 }
