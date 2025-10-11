@@ -32,7 +32,6 @@
 
         <!-- 输入文本暂存显示区域（左右分区，联动滚动） -->
         <LinearLayout
-            android:id="@+id/qwertyTextBufferSplit"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -118,7 +117,6 @@
 
     <!-- 行切换容器：在同一顶栏下切换 26 键与 123 符号，仅变化主要区域 -->
     <FrameLayout
-        android:id="@+id/qwertyMainSwitcher"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <!-- 26 键字母面板（默认可见） -->
@@ -400,6 +398,8 @@
                     android:layout_width="58dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="6dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="2dp"
                     android:background="@drawable/bg_key_button"
                     android:contentDescription="@string/cd_backspace"
                     android:padding="6dp"
@@ -419,8 +419,10 @@
 
                 <TextView
                     android:id="@+id/symToLetters"
-                    android:layout_width="48dp"
+                    android:layout_width="58dp"
                     android:layout_height="match_parent"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="2dp"
                     android:background="@drawable/bg_key_button"
                     android:contentDescription="@string/cd_letters_keyboard"
                     android:gravity="center"
@@ -433,6 +435,8 @@
                     android:layout_width="48dp"
                     android:layout_height="match_parent"
                     android:layout_marginStart="6dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="2dp"
                     android:background="@drawable/bg_key_button"
                     android:contentDescription="@string/cd_hide"
                     android:padding="6dp"
@@ -447,6 +451,8 @@
                     android:layout_height="match_parent"
                     android:layout_marginStart="6dp"
                     android:layout_marginEnd="6dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="2dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_key_button"
                     android:contentDescription="@string/cd_space"
@@ -457,8 +463,10 @@
 
                 <ImageButton
                     android:id="@+id/symEnter"
-                    android:layout_width="48dp"
+                    android:layout_width="58dp"
                     android:layout_height="match_parent"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="2dp"
                     android:background="@drawable/bg_key_button"
                     android:contentDescription="@string/cd_enter"
                     android:padding="6dp"
