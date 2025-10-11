@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 激活状态（大写锁定）- 使用高亮主题色 -->
+    <item android:state_activated="true" android:color="?attr/colorPrimary" />
+    
+    <!-- 选中状态（单次大写）- 使用主题色 -->
+    <item android:state_selected="true" android:color="?attr/colorPrimary" />
+    
+    <!-- 按压状态 - 使用主题色 -->
+    <item android:state_pressed="true" android:color="?attr/colorPrimary" />
+    
+    <!-- 默认状态 - 使用表面变体颜色 -->
+    <item android:color="?attr/colorOnSurfaceVariant" />
+</selector>
