@@ -24,6 +24,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import android.util.Base64
+import com.brycewg.asrkb.R
 
 /**
  * 使用火山引擎"recognize/flash" API的非流式ASR引擎。
@@ -71,7 +72,7 @@ class VolcFileAsrEngine(
                 Manifest.permission.RECORD_AUDIO
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasPermission) {
-                listener.onError("录音权限未授予")
+                listener.onError(context.getString(R.string.error_record_permission_denied))
                 running.set(false)
                 return@launch
             }
@@ -89,12 +90,12 @@ class VolcFileAsrEngine(
                     bufferSize
                 )
             } catch (t: Throwable) {
-                listener.onError("无法初始化录音: ${t.message}")
+                listener.onError(context.getString(R.string.error_audio_init_cannot, t.message ?: ""))
                 running.set(false)
                 return@launch
             }
             if (recorder.state != AudioRecord.STATE_INITIALIZED) {
-                listener.onError("录音初始化失败")
+                listener.onError(context.getString(R.string.error_audio_init_failed))
                 running.set(false)
                 return@launch
             }
@@ -117,7 +118,7 @@ class VolcFileAsrEngine(
                     }
                 }
             } catch (t: Throwable) {
-                listener.onError("录音错误: ${t.message}")
+                listener.onError(context.getString(R.string.error_audio_error, t.message ?: ""))
             } finally {
                 try { recorder.stop() } catch (_: Throwable) {}
                 try { recorder.release() } catch (_: Throwable) {}
@@ -126,7 +127,7 @@ class VolcFileAsrEngine(
             // 如果有数据，准备音频并上传
             val pcmBytes = pcmBuffer.toByteArray()
             if (pcmBytes.isEmpty()) {
-                listener.onError("空音频")
+                listener.onError(context.getString(R.string.error_audio_empty))
                 return@launch
             }
 
@@ -152,7 +153,8 @@ class VolcFileAsrEngine(
                 resp.use { r ->
                     if (!r.isSuccessful) {
                         val msg = r.header("X-Api-Message") ?: r.message
-                        listener.onError("识别请求失败: HTTP ${r.code}${if (msg.isBlank()) "" else ": $msg"}")
+                        val suffix = if (msg.isBlank()) "" else ": $msg"
+                        listener.onError(context.getString(R.string.error_request_failed_http, r.code, suffix))
                         return@launch
                     }
                     val bodyStr = r.body?.string() ?: ""
@@ -167,11 +169,11 @@ class VolcFileAsrEngine(
                         try { onRequestDuration?.invoke(dt) } catch (_: Throwable) {}
                         listener.onFinal(text)
                     } else {
-                        listener.onError("识别返回为空")
+                        listener.onError(context.getString(R.string.error_asr_empty_result))
                     }
                 }
             } catch (t: Throwable) {
-                listener.onError("识别失败: ${t.message}")
+                listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
             }
         }
     }

@@ -7,6 +7,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import androidx.core.content.ContextCompat
+import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,7 +76,7 @@ class DashscopeFileAsrEngine(
         Manifest.permission.RECORD_AUDIO
       ) == PackageManager.PERMISSION_GRANTED
       if (!hasPermission) {
-        listener.onError("录音权限未授予")
+        listener.onError(context.getString(R.string.error_record_permission_denied))
         running.set(false)
         return@launch
       }
@@ -92,12 +93,12 @@ class DashscopeFileAsrEngine(
           bufferSize
         )
       } catch (t: Throwable) {
-        listener.onError("无法初始化录音: ${t.message}")
+        listener.onError(context.getString(R.string.error_audio_init_cannot, t.message ?: ""))
         running.set(false)
         return@launch
       }
       if (recorder.state != AudioRecord.STATE_INITIALIZED) {
-        listener.onError("录音初始化失败")
+        listener.onError(context.getString(R.string.error_audio_init_failed))
         running.set(false)
         return@launch
       }
@@ -116,7 +117,7 @@ class DashscopeFileAsrEngine(
           }
         }
       } catch (t: Throwable) {
-        listener.onError("录音错误: ${t.message}")
+        listener.onError(context.getString(R.string.error_audio_error, t.message ?: ""))
       } finally {
         try { recorder.stop() } catch (_: Throwable) {}
         try { recorder.release() } catch (_: Throwable) {}
@@ -124,7 +125,7 @@ class DashscopeFileAsrEngine(
 
       val pcmBytes = pcmBuffer.toByteArray()
       if (pcmBytes.isEmpty()) {
-        listener.onError("空音频")
+        listener.onError(context.getString(R.string.error_audio_empty))
         return@launch
       }
 
@@ -135,7 +136,7 @@ class DashscopeFileAsrEngine(
 
         val apiKey = prefs.dashApiKey
         if (apiKey.isBlank()) {
-          listener.onError("未配置 DashScope API Key")
+          listener.onError(context.getString(R.string.error_missing_dashscope_key))
           return@launch
         }
         val model = prefs.dashModel.ifBlank { Prefs.DEFAULT_DASH_MODEL }
@@ -153,13 +154,14 @@ class DashscopeFileAsrEngine(
         val policyBody = policyResp.body?.string().orEmpty()
         if (!policyResp.isSuccessful) {
           val msg = policyResp.message
-          listener.onError("getPolicy 失败: HTTP ${policyResp.code}${if (msg.isBlank()) "" else ": $msg"}")
+          val suffix = if (msg.isBlank()) "" else ": $msg"
+          listener.onError(context.getString(R.string.error_dash_getpolicy_failed_http, policyResp.code, suffix))
           return@launch
         }
         val policyJson = try { JSONObject(policyBody) } catch (_: Throwable) { JSONObject() }
         val policy = policyJson.optJSONObject("data")
         if (policy == null) {
-          listener.onError("getPolicy 响应无 data 字段")
+          listener.onError(context.getString(R.string.error_dash_no_data))
           return@launch
         }
 
@@ -170,7 +172,7 @@ class DashscopeFileAsrEngine(
         else tmp.nameIfExists()
         val ossHost = policy.optString("upload_host")
         if (ossHost.isBlank()) {
-          listener.onError("getPolicy 响应缺少 upload_host")
+          listener.onError(context.getString(R.string.error_dash_missing_upload_host))
           return@launch
         }
         val multipart = MultipartBody.Builder().setType(MultipartBody.FORM)
@@ -200,7 +202,8 @@ class DashscopeFileAsrEngine(
         val ossResp = http.newCall(ossReq).execute()
         if (!ossResp.isSuccessful) {
           val err = ossResp.body?.string().orEmpty().ifBlank { ossResp.message }
-          listener.onError("OSS 上传失败: ${ossResp.code}${if (err.isBlank()) "" else ": $err"}")
+          val suffix = if (err.isBlank()) "" else ": $err"
+          listener.onError(context.getString(R.string.error_oss_upload_failed_http, ossResp.code, suffix))
           return@launch
         }
         val ossUrl = "oss://$key"
@@ -247,7 +250,8 @@ class DashscopeFileAsrEngine(
         val genStr = genResp.body?.string().orEmpty()
         if (!genResp.isSuccessful) {
           val msg = genResp.message
-          listener.onError("ASR 请求失败: HTTP ${genResp.code}${if (msg.isBlank()) "" else ": $msg"}")
+          val suffix = if (msg.isBlank()) "" else ": $msg"
+          listener.onError(context.getString(R.string.error_asr_request_failed_http, genResp.code, suffix))
           return@launch
         }
         val text = parseDashscopeText(genStr)
@@ -256,10 +260,10 @@ class DashscopeFileAsrEngine(
           try { onRequestDuration?.invoke(dt) } catch (_: Throwable) {}
           listener.onFinal(text)
         } else {
-          listener.onError("识别返回为空")
+          listener.onError(context.getString(R.string.error_asr_empty_result))
         }
       } catch (t: Throwable) {
-        listener.onError("识别失败: ${t.message}")
+        listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
       }
     }
   }

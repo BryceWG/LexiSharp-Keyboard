@@ -8,6 +8,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Base64
 import androidx.core.content.ContextCompat
+import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,7 +69,7 @@ class GeminiFileAsrEngine(
         Manifest.permission.RECORD_AUDIO
       ) == PackageManager.PERMISSION_GRANTED
       if (!hasPermission) {
-        listener.onError("录音权限未授予")
+        listener.onError(context.getString(R.string.error_record_permission_denied))
         running.set(false)
         return@launch
       }
@@ -85,12 +86,12 @@ class GeminiFileAsrEngine(
           bufferSize
         )
       } catch (t: Throwable) {
-        listener.onError("无法初始化录音: ${t.message}")
+        listener.onError(context.getString(R.string.error_audio_init_cannot, t.message ?: ""))
         running.set(false)
         return@launch
       }
       if (recorder.state != AudioRecord.STATE_INITIALIZED) {
-        listener.onError("录音初始化失败")
+        listener.onError(context.getString(R.string.error_audio_init_failed))
         running.set(false)
         return@launch
       }
@@ -110,7 +111,7 @@ class GeminiFileAsrEngine(
           }
         }
       } catch (t: Throwable) {
-        listener.onError("录音错误: ${t.message}")
+        listener.onError(context.getString(R.string.error_audio_error, t.message ?: ""))
       } finally {
         try { recorder.stop() } catch (_: Throwable) {}
         try { recorder.release() } catch (_: Throwable) {}
@@ -118,7 +119,7 @@ class GeminiFileAsrEngine(
 
       val pcmBytes = pcmBuffer.toByteArray()
       if (pcmBytes.isEmpty()) {
-        listener.onError("空音频")
+        listener.onError(context.getString(R.string.error_audio_empty))
         return@launch
       }
 
@@ -127,7 +128,7 @@ class GeminiFileAsrEngine(
         val b64 = Base64.encodeToString(wav, Base64.NO_WRAP)
         val apiKey = prefs.gemApiKey
         if (apiKey.isBlank()) {
-          listener.onError("未配置 Gemini API Key")
+          listener.onError(context.getString(R.string.error_missing_gemini_key))
           return@launch
         }
         val model = prefs.gemModel.ifBlank { Prefs.DEFAULT_GEM_MODEL }
@@ -146,12 +147,11 @@ class GeminiFileAsrEngine(
           if (!r.isSuccessful) {
             val hint = extractGeminiError(str)
             val msg = r.message
-            val reason = buildString {
-              append("识别请求失败: HTTP ${r.code}")
+            val suffix = buildString {
               if (msg.isNotBlank()) append(": $msg")
               if (hint.isNotBlank()) append(" — $hint")
             }
-            listener.onError(reason)
+            listener.onError(context.getString(R.string.error_request_failed_http, r.code, suffix))
             return@use
           }
           val text = parseGeminiText(str)
@@ -160,11 +160,11 @@ class GeminiFileAsrEngine(
             try { onRequestDuration?.invoke(dt) } catch (_: Throwable) {}
             listener.onFinal(text)
           } else {
-            listener.onError("识别返回为空")
+            listener.onError(context.getString(R.string.error_asr_empty_result))
           }
         }
       } catch (t: Throwable) {
-        listener.onError("识别失败: ${t.message}")
+        listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
       }
     }
   }

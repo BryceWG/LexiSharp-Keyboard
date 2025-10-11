@@ -45,6 +45,9 @@
     <string name="hint_pinyin_empty">请先输入拼音</string>
     <string name="hint_cannot_read_text">当前应用的文本不可读取</string>
     <string name="hint_need_permission">需要麦克风权限以进行语音输入</string>
+    <string name="status_postproc">AI后处理：%1$s</string>
+    <string name="toggle_on">开启</string>
+    <string name="toggle_off">关闭</string>
 
     <string name="settings_instructions">首次使用步骤：\n1. 点击“启用键盘”，在系统设置中启用 ASR Keyboard\n2. 点击“选择键盘”，切换到 ASR Keyboard\n3. 授予麦克风权限后，回到任意输入框，长按键盘上的麦克风按钮即可体验</string>
     <string name="btn_enable">启用键盘</string>
@@ -121,6 +124,27 @@
 
     <!-- Stats -->
     <string name="label_asr_total_chars">历史语音识别总字数：%1$d</string>
+
+    <!-- Errors (ASR engines) -->
+    <string name="error_record_permission_denied">录音权限未授予</string>
+    <string name="error_audio_init_cannot">无法初始化录音: %1$s</string>
+    <string name="error_audio_init_failed">录音初始化失败</string>
+    <string name="error_audio_error">录音错误: %1$s</string>
+    <string name="error_audio_empty">空音频</string>
+    <string name="error_missing_gemini_key">未配置 Gemini API Key</string>
+    <string name="error_missing_dashscope_key">未配置 DashScope API Key</string>
+    <string name="error_missing_siliconflow_key">未配置 SiliconFlow API Key</string>
+    <string name="error_missing_openai_key">未配置 OpenAI API Key</string>
+    <string name="error_missing_eleven_key">未配置 ElevenLabs API Key</string>
+    <string name="error_missing_eleven_model_id">未配置 ElevenLabs Model ID（服务端要求必填）</string>
+    <string name="error_request_failed_http">识别请求失败: HTTP %1$d%2$s</string>
+    <string name="error_asr_request_failed_http">ASR 请求失败: HTTP %1$d%2$s</string>
+    <string name="error_dash_getpolicy_failed_http">getPolicy 失败: HTTP %1$d%2$s</string>
+    <string name="error_dash_no_data">getPolicy 响应无 data 字段</string>
+    <string name="error_dash_missing_upload_host">getPolicy 响应缺少 upload_host</string>
+    <string name="error_oss_upload_failed_http">OSS 上传失败: %1$d%2$s</string>
+    <string name="error_asr_empty_result">识别返回为空</string>
+    <string name="error_recognize_failed_with_reason">识别失败: %1$s</string>
 
     <!-- Quick guide (image + text) -->
     <string name="guide_header">从左到右，从上到下</string>

@@ -11,8 +11,8 @@ android {
         applicationId = "com.brycewg.asrkb"
         minSdk =31
         targetSdk = 34
-        versionCode = 21
-        versionName = "2.1.3"
+        versionCode = 22
+        versionName = "2.1.4"
     }
 
     buildTypes {

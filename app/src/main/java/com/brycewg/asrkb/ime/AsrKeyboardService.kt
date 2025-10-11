@@ -51,6 +51,13 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import com.google.android.material.color.MaterialColors
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
+import androidx.annotation.StringRes
+import android.content.Context
+import android.os.Build
+import android.content.res.Configuration
+import android.os.LocaleList
 
 class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
 
@@ -136,6 +143,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var lastAsrCommitText: String? = null
     // 最近一次 ASR API 请求耗时（毫秒）
     private var lastRequestDurationMs: Long? = null
+    // 跟踪上次应用的应用内语言，确保 IME 面板使用最新本地化资源
+    private var lastAppliedLanguageTag: String = ""
 
     private enum class SessionKind { AiEdit }
     private data class AiEditState(
@@ -150,10 +159,14 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         super.onCreate()
         prefs = Prefs(this)
         asrEngine = buildEngineForCurrentMode()
+        // 记录当前语言，便于后续检测变化
+        lastAppliedLanguageTag = try { prefs.appLanguageTag } catch (_: Throwable) { "" }
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        // 应用并同步最新的应用内语言选择（若用户刚在设置里切换）
+        applyAppLanguageIfNeeded()
         // If current field is a password and user opted in, auto-switch back to previous IME
         if (prefs.autoSwitchOnPassword && isPasswordEditor(info)) {
             try {
@@ -171,8 +184,55 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         // Refresh custom punctuation labels
         applyPunctuationLabels()
         refreshPermissionUi()
+        // 进入时重置状态文本，确保使用最新语言
+        if (asrEngine?.isRunning != true) {
+            updateUiIdle()
+        }
         // Keep system toolbar/nav colors in sync with our panel background
         syncSystemBarsToKeyboardBackground(rootView)
+    }
+
+    private fun applyAppLanguageIfNeeded() {
+        val tag = try { prefs.appLanguageTag } catch (_: Throwable) { "" }
+        if (tag == lastAppliedLanguageTag) return
+        lastAppliedLanguageTag = tag
+        try {
+            val locales = if (tag.isBlank()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
+            AppCompatDelegate.setApplicationLocales(locales)
+        } catch (_: Throwable) { }
+    }
+
+    // 基于应用内语言构建一个带本地化配置的 Context（Service 不受 AppCompat 自动本地化影响）
+    private fun buildLocaleAppliedContext(base: Context): Context {
+        val tag = try { prefs.appLanguageTag } catch (_: Throwable) { "" }
+        if (tag.isBlank()) return base
+        return try {
+            val cur = base.resources.configuration
+            val cfg = Configuration(cur)
+            if (Build.VERSION.SDK_INT >= 24) {
+                val list = LocaleList.forLanguageTags(tag)
+                cfg.setLocales(list)
+            } else {
+                val parts = tag.split('-', '_')
+                val loc = when (parts.size) {
+                    1 -> java.util.Locale(parts[0])
+                    2 -> java.util.Locale(parts[0], parts[1])
+                    else -> java.util.Locale(parts[0])
+                }
+                @Suppress("DEPRECATION")
+                cfg.setLocale(loc)
+            }
+            base.createConfigurationContext(cfg)
+        } catch (_: Throwable) {
+            base
+        }
+    }
+
+    // 使用当前键盘视图上下文（已带语言配置）获取字符串
+    private fun s(@StringRes id: Int, vararg args: Any): String {
+        // 始终基于当前偏好构建最新的语言上下文，避免 rootView 的旧上下文滞后
+        val ctx = buildLocaleAppliedContext(this)
+        return try { ctx.getString(id, *args) } catch (_: Throwable) { getString(id, *args) }
     }
 
     private fun isPasswordEditor(info: EditorInfo?): Boolean {
@@ -198,8 +258,9 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
 
     @SuppressLint("InflateParams")
     override fun onCreateInputView(): View {
-        // IME context often uses a framework theme; wrap with our theme and Material dynamic colors.
-        val themedContext = android.view.ContextThemeWrapper(this, R.style.Theme_ASRKeyboard_Ime)
+        // 为 IME 构建带应用内语言的上下文，再施加主题与动态色
+        val localeCtx = buildLocaleAppliedContext(this)
+        val themedContext = android.view.ContextThemeWrapper(localeCtx, R.style.Theme_ASRKeyboard_Ime)
         val dynamicContext = com.google.android.material.color.DynamicColors.wrapContextIfAvailable(themedContext)
         val container = FrameLayout(dynamicContext)
         // Inflate ASR 面板
@@ -281,7 +342,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                             updateUiIdle()
                         } else {
                             // File-based recognition happens now
-                            txtStatus?.text = getString(R.string.status_recognizing)
+                            txtStatus?.text = s(R.string.status_recognizing)
                         }
                     }
                     v.performClick()
@@ -307,12 +368,12 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 return@setOnClickListener
             }
             if (!prefs.hasAsrKeys()) {
-                txtStatus?.text = getString(R.string.hint_need_keys)
+                txtStatus?.text = s(R.string.hint_need_keys)
                 it?.let { v -> maybeHapticKeyTap(v) }
                 return@setOnClickListener
             }
             if (!prefs.hasLlmKeys()) {
-                txtStatus?.text = getString(R.string.hint_need_llm_keys)
+                txtStatus?.text = s(R.string.hint_need_llm_keys)
                 it?.let { v -> maybeHapticKeyTap(v) }
                 return@setOnClickListener
             }
@@ -320,7 +381,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             if (running && currentSessionKind == SessionKind.AiEdit) {
                 // Stop capture -> will trigger onFinal once recognition finishes
                 asrEngine?.stop()
-                txtStatus?.text = getString(R.string.status_recognizing)
+                txtStatus?.text = s(R.string.status_recognizing)
                 it?.let { v -> maybeHapticKeyTap(v) }
                 return@setOnClickListener
             }
@@ -332,7 +393,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             // Prepare snapshot of target text
             val ic = currentInputConnection
             if (ic == null) {
-                txtStatus?.text = getString(R.string.status_idle)
+                txtStatus?.text = s(R.string.status_idle)
                 return@setOnClickListener
             }
             var targetIsSelection = false
@@ -350,7 +411,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 afterLen = after?.length ?: 0
                 if (lastAsrCommitText.isNullOrEmpty()) {
                     // No last ASR result to edit — avoid starting capture unnecessarily
-                    txtStatus?.text = getString(R.string.status_last_asr_not_found)
+                txtStatus?.text = s(R.string.status_last_asr_not_found)
                     return@setOnClickListener
                 }
             }
@@ -358,7 +419,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             currentSessionKind = SessionKind.AiEdit
             asrEngine = ensureEngineMatchesMode(asrEngine)
             updateUiListening()
-            txtStatus?.text = getString(R.string.status_ai_edit_listening)
+            txtStatus?.text = s(R.string.status_ai_edit_listening)
             asrEngine?.start()
             it?.let { v -> maybeHapticKeyTap(v) }
         }
@@ -512,8 +573,9 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 prefs.postProcessEnabled = enabled
                 isSelected = enabled
                 alpha = if (enabled) 1f else 0.45f
-                // Provide quick feedback via status line
-                txtStatus?.text = if (enabled) getString(R.string.cd_postproc_toggle) + ": ON" else getString(R.string.cd_postproc_toggle) + ": OFF"
+                // Provide quick feedback via status line (localized)
+                val state = if (enabled) s(R.string.toggle_on) else s(R.string.toggle_off)
+                txtStatus?.text = s(R.string.status_postproc, state)
                 // Swap ASR engine implementation when toggled (only if not running)
                 if (asrEngine?.isRunning != true) {
                     asrEngine = buildEngineForCurrentMode()
@@ -590,7 +652,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             }
 
             // 需要最终刷新：再调用一次 LLM，使用返回值替换合成并上屏
-            txtStatus?.text = getString(R.string.status_pinyin_processing)
+            txtStatus?.text = s(R.string.status_pinyin_processing)
             serviceScope.launch {
                 val out = try { postproc.pinyinToChinese(pinyinNow, prefs).ifBlank { pinyinNow } } catch (_: Throwable) { pinyinNow }
                 try {
@@ -608,7 +670,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 pendingPinyinSuggestion = null
                 pinyinAutoLastInput = ""
                 vibrateTick()
-                txtStatus?.text = getString(R.string.status_idle)
+                txtStatus?.text = s(R.string.status_idle)
                 maybeStartPinyinAutoSuggest()
             }
             it?.let { v2 -> maybeHapticKeyTap(v2) }
@@ -889,14 +951,14 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private fun updateLangModeUI() {
         when (langMode) {
             LangMode.Chinese -> {
-                qwertyLangSwitch?.text = getString(R.string.label_chinese_mode)
+                qwertyLangSwitch?.text = s(R.string.label_chinese_mode)
                 // 切换到中文时，默认将光标移动到末尾
                 pinyinCursor = pinyinBuffer.length
                 refreshPinyinTextView()
                 maybeStartPinyinAutoSuggest()
             }
             LangMode.English -> {
-                qwertyLangSwitch?.text = getString(R.string.label_english_mode)
+                qwertyLangSwitch?.text = s(R.string.label_english_mode)
                 stopPinyinAutoSuggest(true)
                 qwertyTextBuffer?.text = ""
                 qwertyConvScroll?.visibility = View.GONE
@@ -1074,16 +1136,16 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(rawInput) } catch (_: Throwable) { rawInput }
         }
         if (pinyin.isEmpty()) {
-            txtStatus?.text = getString(R.string.hint_pinyin_empty)
+            txtStatus?.text = s(R.string.hint_pinyin_empty)
             vibrateTick()
             return
         }
         if (!prefs.hasLlmKeys()) {
-            txtStatus?.text = getString(R.string.hint_need_llm_keys)
+            txtStatus?.text = s(R.string.hint_need_llm_keys)
             vibrateTick()
             return
         }
-        txtStatus?.text = getString(R.string.status_pinyin_processing)
+        txtStatus?.text = s(R.string.status_pinyin_processing)
         serviceScope.launch {
             val out = try {
                 postproc.pinyinToChinese(pinyin, prefs).ifBlank { pinyin }
@@ -1092,7 +1154,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             currentInputConnection?.commitText(out, 1)
             clearPinyinBuffer()
             vibrateTick()
-            txtStatus?.text = getString(R.string.status_idle)
+            txtStatus?.text = s(R.string.status_idle)
         }
     }
 
@@ -1247,13 +1309,13 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         val hasKeys = prefs.hasAsrKeys()
         if (!granted) {
             btnMic?.isEnabled = false
-            txtStatus?.text = getString(R.string.hint_need_permission)
+            txtStatus?.text = s(R.string.hint_need_permission)
         } else if (!hasKeys) {
             btnMic?.isEnabled = false
-            txtStatus?.text = getString(R.string.hint_need_keys)
+            txtStatus?.text = s(R.string.hint_need_keys)
         } else {
             btnMic?.isEnabled = true
-            txtStatus?.text = getString(R.string.status_idle)
+            txtStatus?.text = s(R.string.status_idle)
         }
     }
 
@@ -1296,22 +1358,22 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private fun buildEngineForCurrentMode(): StreamingAsrEngine? {
         return when (prefs.asrVendor) {
             AsrVendor.Volc -> if (prefs.hasVolcKeys()) {
-                VolcFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                VolcFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             } else null
             AsrVendor.SiliconFlow -> if (prefs.hasSfKeys()) {
-                SiliconFlowFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                SiliconFlowFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             } else null
             AsrVendor.ElevenLabs -> if (prefs.hasElevenKeys()) {
-                ElevenLabsFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                ElevenLabsFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             } else null
             AsrVendor.OpenAI -> if (prefs.hasOpenAiKeys()) {
-                OpenAiFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                OpenAiFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             } else null
             AsrVendor.DashScope -> if (prefs.hasDashKeys()) {
-                DashscopeFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                DashscopeFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             } else null
             AsrVendor.Gemini -> if (prefs.hasGeminiKeys()) {
-                GeminiFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                GeminiFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             } else null
         }
     }
@@ -1321,27 +1383,27 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         return when (prefs.asrVendor) {
             AsrVendor.Volc -> when (current) {
                 is VolcFileAsrEngine -> current
-                else -> VolcFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                else -> VolcFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             }
             AsrVendor.SiliconFlow -> when (current) {
                 is SiliconFlowFileAsrEngine -> current
-                else -> SiliconFlowFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                else -> SiliconFlowFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             }
             AsrVendor.ElevenLabs -> when (current) {
                 is ElevenLabsFileAsrEngine -> current
-                else -> ElevenLabsFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                else -> ElevenLabsFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             }
             AsrVendor.OpenAI -> when (current) {
                 is OpenAiFileAsrEngine -> current
-                else -> OpenAiFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                else -> OpenAiFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             }
             AsrVendor.DashScope -> when (current) {
                 is DashscopeFileAsrEngine -> current
-                else -> DashscopeFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                else -> DashscopeFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             }
             AsrVendor.Gemini -> when (current) {
                 is GeminiFileAsrEngine -> current
-                else -> GeminiFileAsrEngine(this@AsrKeyboardService, serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
+                else -> GeminiFileAsrEngine(buildLocaleAppliedContext(this@AsrKeyboardService), serviceScope, prefs, this@AsrKeyboardService, this@AsrKeyboardService::onAsrRequestDuration)
             }
         }
     }
@@ -1354,24 +1416,24 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         updateUiIdle()
         val ms = lastRequestDurationMs ?: return
         try {
-            txtStatus?.text = getString(R.string.status_last_request_ms, ms)
+            txtStatus?.text = s(R.string.status_last_request_ms, ms)
             val v = rootView ?: txtStatus
             v?.postDelayed({
                 if (asrEngine?.isRunning != true) {
-                    txtStatus?.text = getString(R.string.status_idle)
+                    txtStatus?.text = s(R.string.status_idle)
                 }
             }, 1500)
         } catch (_: Throwable) { }
     }
 
     private fun updateUiIdle() {
-        txtStatus?.text = getString(R.string.status_idle)
+        txtStatus?.text = s(R.string.status_idle)
         btnMic?.isSelected = false
         currentInputConnection?.finishComposingText()
     }
 
     private fun updateUiListening() {
-        txtStatus?.text = getString(R.string.status_listening)
+        txtStatus?.text = s(R.string.status_listening)
         btnMic?.isSelected = true
     }
 
@@ -1502,7 +1564,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 val position = mi.itemId
                 val preset = presets.getOrNull(position) ?: return@setOnMenuItemClickListener false
                 prefs.activePromptId = preset.id
-                txtStatus?.text = getString(R.string.switched_preset, preset.title)
+                txtStatus?.text = s(R.string.switched_preset, preset.title)
                 true
             }
             popup.show()
@@ -1522,7 +1584,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     aiEditState = null
                     return@launch
                 }
-                txtStatus?.text = getString(R.string.status_ai_editing)
+                txtStatus?.text = s(R.string.status_ai_editing)
                 // Build original text: selection or last ASR commit (no selection)
                 val original = try {
                     if (state.targetIsSelection) {
@@ -1537,7 +1599,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 } catch (_: Throwable) { "" }
                 if (original.isBlank()) {
                     // Safety: if we failed to reconstruct original text, do not delete anything
-                    txtStatus?.text = getString(R.string.hint_cannot_read_text)
+                    txtStatus?.text = s(R.string.hint_cannot_read_text)
                     vibrateTick()
                     currentSessionKind = null
                     aiEditState = null
@@ -1547,7 +1609,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 }
                 if (edited.isBlank()) {
                     // LLM returned empty or failed — do not change
-                    txtStatus?.text = getString(R.string.status_llm_empty_result)
+                    txtStatus?.text = s(R.string.status_llm_empty_result)
                     vibrateTick()
                     currentSessionKind = null
                     aiEditState = null
@@ -1594,7 +1656,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         }
                         if (!replaced) {
                             // Fallback: do nothing but inform user for safety
-                            txtStatus?.text = getString(R.string.status_last_asr_not_found)
+                            txtStatus?.text = s(R.string.status_last_asr_not_found)
                             ic.finishComposingText()
                             ic.endBatchEdit()
                             vibrateTick()
@@ -1621,7 +1683,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 if (!prefs.disableComposingUnderline) {
                     currentInputConnection?.setComposingText(text, 1)
                 }
-                txtStatus?.text = getString(R.string.status_ai_processing)
+                txtStatus?.text = s(R.string.status_ai_processing)
                 val raw = if (prefs.trimFinalTrailingPunct) trimTrailingPunctuation(text) else text
                 val processed = try {
                     postproc.process(raw, prefs).ifBlank { raw }
@@ -1711,7 +1773,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             ic.finishComposingText()
             ic.endBatchEdit()
             lastPostprocCommit = null
-            txtStatus?.text = getString(R.string.status_reverted_to_raw)
+            txtStatus?.text = s(R.string.status_reverted_to_raw)
             true
         } catch (_: Throwable) {
             false
