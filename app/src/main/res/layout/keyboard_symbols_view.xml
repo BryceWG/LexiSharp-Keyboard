@@ -12,55 +12,55 @@
     <!-- 第一行：数字 1-0 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="50dp"
         android:gravity="center_horizontal"
         android:orientation="horizontal">
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="1" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="2" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="3" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="4" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="5" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="6" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="7" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="8" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="9" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="0" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="1" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="2" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="3" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="4" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="5" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="6" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="7" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="8" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="9" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="0" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
     </LinearLayout>
 
     <!-- 第二行：常见符号 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="50dp"
         android:gravity="center_horizontal"
         android:orientation="horizontal"
         android:paddingStart="6dp"
         android:paddingEnd="6dp">
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="-" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="/" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text=":" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text=";" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="(" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text=")" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="¥" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="&amp;" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="@" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="&quot;" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="-" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="/" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text=":" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text=";" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="(" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text=")" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="¥" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="&amp;" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="@" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="&quot;" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
     </LinearLayout>
 
     <!-- 第三行：更多符号 + 退格 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="50dp"
         android:gravity="center_horizontal"
         android:orientation="horizontal">
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="'" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="," android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="?" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="!" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
-        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="." android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="'" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="," android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="?" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="!" android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
+        <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="2dp" android:gravity="center" android:background="@drawable/bg_key_button" android:text="." android:textSize="18sp" android:textColor="?attr/colorOnSurfaceVariant" android:tag="sym_key"/>
         <ImageButton
             android:id="@+id/symBackspace"
-            android:layout_width="48dp"
+            android:layout_width="58dp"
             android:layout_height="match_parent"
             android:layout_marginStart="6dp"
             android:background="@drawable/bg_key_button"
@@ -75,9 +75,10 @@
     <!-- 第四行：ABC / 收起 / 空格 / 回车 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="50dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp">
 
         <TextView
             android:id="@+id/symToLetters"

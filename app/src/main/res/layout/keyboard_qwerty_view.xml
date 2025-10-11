@@ -71,6 +71,17 @@
 
     </LinearLayout>
 
+    <!-- 行切换容器：用于在同一顶栏下切换 26 键与 123 符号行 -->
+    <FrameLayout
+        android:id="@+id/qwertyRowsSwitcher"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/qwertyRowsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
     <!-- 第一行：qwertyuiop -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -276,5 +287,8 @@
             android:stateListAnimator="@animator/key_button_state_list"
             android:tint="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
+
+        </LinearLayout>
+    </FrameLayout>
 
 </LinearLayout>
