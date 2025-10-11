@@ -262,20 +262,29 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             }
         }
         btnSettings?.setOnClickListener { openSettings() }
-        btnEnter?.setOnClickListener { sendEnter() }
-        btnLetters?.setOnClickListener { showLettersPanel() }
+        btnEnter?.setOnClickListener {
+            sendEnter()
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
+        btnLetters?.setOnClickListener {
+            showLettersPanel()
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
         btnAiEdit?.setOnClickListener {
             // Tap-to-toggle: start/stop instruction capture for AI edit
             if (!hasRecordAudioPermission()) {
                 refreshPermissionUi()
+                it?.let { v -> maybeHapticKeyTap(v) }
                 return@setOnClickListener
             }
             if (!prefs.hasAsrKeys()) {
                 txtStatus?.text = getString(R.string.hint_need_keys)
+                it?.let { v -> maybeHapticKeyTap(v) }
                 return@setOnClickListener
             }
             if (!prefs.hasLlmKeys()) {
                 txtStatus?.text = getString(R.string.hint_need_llm_keys)
+                it?.let { v -> maybeHapticKeyTap(v) }
                 return@setOnClickListener
             }
             val running = asrEngine?.isRunning == true
@@ -283,10 +292,12 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 // Stop capture -> will trigger onFinal once recognition finishes
                 asrEngine?.stop()
                 txtStatus?.text = getString(R.string.status_recognizing)
+                it?.let { v -> maybeHapticKeyTap(v) }
                 return@setOnClickListener
             }
             if (running) {
                 // Engine currently in dictation; ignore to avoid conflicts
+                it?.let { v -> maybeHapticKeyTap(v) }
                 return@setOnClickListener
             }
             // Prepare snapshot of target text
@@ -320,9 +331,13 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             updateUiListening()
             txtStatus?.text = getString(R.string.status_ai_edit_listening)
             asrEngine?.start()
+            it?.let { v -> maybeHapticKeyTap(v) }
         }
         // Backspace: tap to delete one; swipe up/left to clear all; swipe down to undo within gesture; long-press to repeat delete
-        btnBackspace?.setOnClickListener { sendBackspace() }
+        btnBackspace?.setOnClickListener {
+            sendBackspace()
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
         btnBackspace?.setOnTouchListener { v, event ->
             val ic = currentInputConnection
             if (ic == null) return@setOnTouchListener false
@@ -427,16 +442,35 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 else -> false
             }
         }
-        btnHide?.setOnClickListener { hideKeyboardPanel() }
-        btnImeSwitcher?.setOnClickListener { showImePicker() }
+        btnHide?.setOnClickListener {
+            hideKeyboardPanel()
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
+        btnImeSwitcher?.setOnClickListener {
+            showImePicker()
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
         btnPromptPicker?.setOnClickListener { v ->
             showPromptPicker(v)
+            maybeHapticKeyTap(v)
         }
         // Punctuation clicks
-        btnPunct1?.setOnClickListener { commitText(prefs.punct1) }
-        btnPunct2?.setOnClickListener { commitText(prefs.punct2) }
-        btnPunct3?.setOnClickListener { commitText(prefs.punct3) }
-        btnPunct4?.setOnClickListener { commitText(prefs.punct4) }
+        btnPunct1?.setOnClickListener {
+            commitTextCore(prefs.punct1, vibrate = false)
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
+        btnPunct2?.setOnClickListener {
+            commitTextCore(prefs.punct2, vibrate = false)
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
+        btnPunct3?.setOnClickListener {
+            commitTextCore(prefs.punct3, vibrate = false)
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
+        btnPunct4?.setOnClickListener {
+            commitTextCore(prefs.punct4, vibrate = false)
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
         btnPostproc?.apply {
             isSelected = prefs.postProcessEnabled
             alpha = if (prefs.postProcessEnabled) 1f else 0.45f
@@ -451,6 +485,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 if (asrEngine?.isRunning != true) {
                     asrEngine = buildEngineForCurrentMode()
                 }
+                maybeHapticKeyTap(this)
             }
         }
 
@@ -683,7 +718,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     if (tag == "sym_key" && child is TextView) {
                         child.setOnClickListener {
                             val s = child.text?.toString() ?: return@setOnClickListener
-                            commitText(s)
+                            commitTextCore(s, vibrate = false)
+                            maybeHapticKeyTap(child)
                         }
                     } else if (child is ViewGroup) {
                         bind(child)
@@ -694,7 +730,10 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         bind(v)
         // Space click/long-press
         v.findViewById<TextView?>(R.id.symSpace)?.apply {
-            setOnClickListener { commitText(" ") }
+            setOnClickListener {
+                commitTextCore(" ", vibrate = false)
+                maybeHapticKeyTap(this)
+            }
             setOnLongClickListener {
                 showAsrPanel()
                 vibrateTick()
@@ -744,6 +783,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     view.setTag(R.id.tag_long_started, false)
                     if (!ls && event.actionMasked == MotionEvent.ACTION_UP) {
                         sendBackspace()
+                        maybeHapticKeyTap(view)
                     }
                     true
                 }
@@ -751,9 +791,18 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             }
         }
         // Enter / Hide / ABC
-        v.findViewById<ImageButton?>(R.id.symEnter)?.setOnClickListener { sendEnter() }
-        v.findViewById<ImageButton?>(R.id.symHide)?.setOnClickListener { hideKeyboardPanel() }
-        v.findViewById<TextView?>(R.id.symToLetters)?.setOnClickListener { showLettersPanel() }
+        v.findViewById<ImageButton?>(R.id.symEnter)?.setOnClickListener {
+            sendEnter()
+            it?.let { vv -> maybeHapticKeyTap(vv) }
+        }
+        v.findViewById<ImageButton?>(R.id.symHide)?.setOnClickListener {
+            hideKeyboardPanel()
+            it?.let { vv -> maybeHapticKeyTap(vv) }
+        }
+        v.findViewById<TextView?>(R.id.symToLetters)?.setOnClickListener {
+            showLettersPanel()
+            it?.let { vv -> maybeHapticKeyTap(vv) }
+        }
     }
 
     private fun showLettersPanel() {
