@@ -75,6 +75,11 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_QWERTY_DEFAULT_LANG, DEFAULT_QWERTY_DEFAULT_LANG) ?: DEFAULT_QWERTY_DEFAULT_LANG
         set(value) = sp.edit { putString(KEY_QWERTY_DEFAULT_LANG, if (value == "zh") "zh" else "en") }
 
+    // 启动默认面板（"asr" 或 "qwerty"）
+    var startupPanel: String
+        get() = sp.getString(KEY_STARTUP_PANEL, DEFAULT_STARTUP_PANEL) ?: DEFAULT_STARTUP_PANEL
+        set(value) = sp.edit { putString(KEY_STARTUP_PANEL, if (value == "qwerty") "qwerty" else "asr") }
+
     // 拼音输入模式（全拼/小鹤双拼）
     var pinyinMode: PinyinMode
         get() = PinyinMode.fromId(sp.getString(KEY_PINYIN_MODE, PinyinMode.Quanpin.id))
@@ -306,6 +311,7 @@ class Prefs(context: Context) {
         private const val KEY_DISABLE_COMPOSING_UNDERLINE = "disable_composing_underline"
         private const val KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC = "qwerty_pinyin_llm_interval_sec"
         private const val KEY_QWERTY_DEFAULT_LANG = "qwerty_default_lang"
+        private const val KEY_STARTUP_PANEL = "startup_panel"
         private const val KEY_PINYIN_MODE = "pinyin_mode"
         private const val KEY_FLOATING_SWITCHER_ENABLED = "floating_switcher_enabled"
         private const val KEY_FLOATING_SWITCHER_ALPHA = "floating_switcher_alpha"
@@ -360,6 +366,7 @@ class Prefs(context: Context) {
 
         // 26 键默认语言默认值
         const val DEFAULT_QWERTY_DEFAULT_LANG = "en"
+        const val DEFAULT_STARTUP_PANEL = "asr"
         // 拼音自动 LLM 转换默认间隔（秒，支持小数）
         const val DEFAULT_QWERTY_PINYIN_LLM_INTERVAL_SEC = 2.0f
 
@@ -444,6 +451,8 @@ class Prefs(context: Context) {
         o.put(KEY_PUNCT_5, punct5)
         // 拼音自动转换间隔
         o.put(KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC, qwertyPinyinLlmIntervalSec)
+        // 启动默认面板
+        o.put(KEY_STARTUP_PANEL, startupPanel)
         // 统计信息
         o.put(KEY_TOTAL_ASR_CHARS, totalAsrChars)
         return o.toString()
@@ -470,6 +479,7 @@ class Prefs(context: Context) {
             // 新增：拼音自动转换间隔（秒，支持小数）
             optFloat(KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC)?.let { qwertyPinyinLlmIntervalSec = it.coerceAtLeast(0f) }
             optString(KEY_QWERTY_DEFAULT_LANG)?.let { qwertyDefaultLang = if (it == "zh") "zh" else "en" }
+            optString(KEY_STARTUP_PANEL)?.let { startupPanel = if (it == "qwerty") "qwerty" else "asr" }
             optString(KEY_PINYIN_MODE)?.let { pinyinMode = PinyinMode.fromId(it) }
             optString(KEY_APP_LANGUAGE_TAG)?.let { appLanguageTag = it }
             optBool(KEY_POSTPROC_ENABLED)?.let { postProcessEnabled = it }

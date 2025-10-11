@@ -583,6 +583,15 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         setupQwertyPanel()
         setupSymbolsPanel()
 
+        // 启动默认面板（语音/26键）
+        try {
+            if (prefs.startupPanel == "qwerty") {
+                showLettersPanel()
+            } else {
+                showAsrPanel()
+            }
+        } catch (_: Throwable) { }
+
         syncSystemBarsToKeyboardBackground(container)
         return container
     }
@@ -898,7 +907,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         }
 
         // Shift toggle
-        v.findViewById<TextView?>(R.id.qwertyShift)?.apply {
+        v.findViewById<ImageButton?>(R.id.qwertyShift)?.apply {
             isSelected = shiftMode != ShiftMode.Off
             setOnClickListener {
                 val now = SystemClock.uptimeMillis()
@@ -957,7 +966,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     }
 
     private fun updateShiftUi() {
-        val shift = qwertyPanelView?.findViewById<TextView?>(R.id.qwertyShift)
+        val shift = qwertyPanelView?.findViewById<ImageButton?>(R.id.qwertyShift)
         when (shiftMode) {
             ShiftMode.Off -> { shift?.isSelected = false; shift?.isActivated = false }
             ShiftMode.Once -> { shift?.isSelected = true; shift?.isActivated = false }

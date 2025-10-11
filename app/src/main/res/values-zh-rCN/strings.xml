@@ -104,6 +104,7 @@
     <string name="lang_follow_system">跟随系统</string>
     <string name="lang_zh_cn">简体中文</string>
     <string name="lang_en">English</string>
+    <string name="label_startup_qwerty_switch">启动时优先显示 26 键键盘面板</string>
     <string name="toast_saved">已保存</string>
     <string name="toast_preset_added">已新增预设</string>
     <string name="untitled_preset">未命名预设</string>

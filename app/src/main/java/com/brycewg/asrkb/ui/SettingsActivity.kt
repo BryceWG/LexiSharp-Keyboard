@@ -87,6 +87,7 @@ class SettingsActivity : AppCompatActivity() {
         val spAsrVendor = findViewById<Spinner>(R.id.spAsrVendor)
         val spLanguage = findViewById<Spinner>(R.id.spLanguage)
         val spQwertyDefaultLang = findViewById<Spinner>(R.id.spQwertyDefaultLang)
+        val switchStartupQwerty = findViewById<MaterialSwitch>(R.id.switchStartupQwerty)
         val spPinyinMode = findViewById<Spinner>(R.id.spPinyinMode)
         val tvAsrTotalChars = findViewById<TextView>(R.id.tvAsrTotalChars)
         val switchTrimTrailingPunct = findViewById<MaterialSwitch>(R.id.switchTrimTrailingPunct)
@@ -143,6 +144,7 @@ class SettingsActivity : AppCompatActivity() {
             etPunct3.setText(prefs.punct3)
             etPunct4.setText(prefs.punct4)
             etPunct5.setText(prefs.punct5)
+            switchStartupQwerty.isChecked = (prefs.startupPanel == "qwerty")
             // 统计：显示历史语音识别总字数
             try {
                 tvAsrTotalChars.text = getString(R.string.label_asr_total_chars, prefs.totalAsrChars)
@@ -220,6 +222,8 @@ class SettingsActivity : AppCompatActivity() {
             }
         )
         var languageSpinnerInitialized: Boolean = true
+        // 启动默认面板开关（开=26键，关=语音）
+        switchStartupQwerty.isChecked = (prefs.startupPanel == "qwerty")
         // Qwerty default language spinner
         val qwertyLangItems = listOf(
             getString(R.string.qwerty_lang_english),
@@ -278,6 +282,10 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+
+        switchStartupQwerty.setOnCheckedChangeListener { _, isChecked ->
+            prefs.startupPanel = if (isChecked) "qwerty" else "asr"
         }
 
         spQwertyDefaultLang.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
@@ -451,6 +459,8 @@ class SettingsActivity : AppCompatActivity() {
                         )
                         // 同步 26 键默认语言
                         spQwertyDefaultLang.setSelection(if (prefs.qwertyDefaultLang == "zh") 1 else 0)
+                        // 同步 启动默认面板
+                        switchStartupQwerty.isChecked = (prefs.startupPanel == "qwerty")
                         // 同步 拼音模式
                         spPinyinMode.setSelection(if (prefs.pinyinMode == com.brycewg.asrkb.store.PinyinMode.Xiaohe) 1 else 0)
                         Toast.makeText(this, getString(R.string.toast_import_success), Toast.LENGTH_SHORT).show()

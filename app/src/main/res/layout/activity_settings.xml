@@ -120,6 +120,14 @@
                 android:layout_marginTop="8dp"
                 android:text="@string/label_auto_switch_password" />
 
+            <!-- Startup default panel switch -->
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchStartupQwerty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/label_startup_qwerty_switch" />
+
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/switchMicHaptic"
                 android:layout_width="match_parent"
