@@ -66,6 +66,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var qwertyTextBuffer: TextView? = null
     private var qwertyPinyin: TextView? = null
     private var qwertyLangSwitch: TextView? = null
+    // 拼音缓冲（中文模式）
+    private val pinyinBuffer = StringBuilder()
 
     private var btnMic: FloatingActionButton? = null
     private var btnSettings: ImageButton? = null
@@ -518,9 +520,9 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             it?.let { v -> maybeHapticKeyTap(v) }
         }
         qwertyPinyin?.setOnClickListener {
-            // TODO: Implement pinyin to Chinese conversion using LLM
-            // This will be implemented later
+            // 中文按钮：将缓冲区拼音交给 LLM 转中文并提交
             it?.let { v -> maybeHapticKeyTap(v) }
+            submitPinyinBufferWithLlm()
         }
 
         // Language switch button
@@ -547,10 +549,15 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         qwertyLetterKeys.add(child)
                         child.setOnClickListener {
                             val s = child.text?.toString() ?: return@setOnClickListener
-                            // 26 键点击：使用系统触觉，不使用通用振动
-                            commitTextCore(s, vibrate = false)
+                            if (langMode == LangMode.Chinese) {
+                                // 中文模式：字母进入拼音缓冲（以小写拼音为准）
+                                appendToPinyinBuffer(s.lowercase())
+                            } else {
+                                // 英文模式：直接提交
+                                commitTextCore(s, vibrate = false)
+                            }
                             maybeHapticKeyTap(child)
-                            if (shiftMode == ShiftMode.Once) {
+                            if (shiftMode == ShiftMode.Once && langMode == LangMode.English) {
                                 shiftMode = ShiftMode.Off
                                 updateShiftUi()
                                 applyLetterCase()
@@ -574,7 +581,11 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         // Space (tap to insert, long-press to return to ASR panel)
         v.findViewById<TextView?>(R.id.qwertySpace)?.apply {
             setOnClickListener {
-                commitTextCore(" ", vibrate = false)
+                if (langMode == LangMode.Chinese) {
+                    appendToPinyinBuffer(" ")
+                } else {
+                    commitTextCore(" ", vibrate = false)
+                }
                 maybeHapticKeyTap(this)
             }
             setOnLongClickListener {
@@ -599,12 +610,12 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     val r = Runnable {
                         if (!(view.getTag(R.id.tag_pressed) as? Boolean ?: false)) return@Runnable
                         view.setTag(R.id.tag_long_started, true)
-                        // first delete then start repeating
-                        sendBackspace()
+                        // first delete then start repeating（中文模式优先清空缓冲）
+                        handleQwertyBackspaceTap()
                         val rep = object : Runnable {
                             override fun run() {
                                 if (!(view.getTag(R.id.tag_pressed) as? Boolean ?: false)) return
-                                sendBackspace()
+                                handleQwertyBackspaceTap()
                                 view.postDelayed(this, ViewConfiguration.getKeyRepeatDelay().toLong())
                             }
                         }
@@ -631,8 +642,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     view.setTag(R.id.tag_pressed, pressed)
                     view.setTag(R.id.tag_long_started, false)
                     if (!ls && event.actionMasked == MotionEvent.ACTION_UP) {
-                        // treat as tap
-                        sendBackspace()
+                        // tap
+                        handleQwertyBackspaceTap()
                         maybeHapticKeyTap(view)
                     }
                     true
@@ -705,6 +716,59 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             ShiftMode.Off -> { shift?.isSelected = false; shift?.isActivated = false }
             ShiftMode.Once -> { shift?.isSelected = true; shift?.isActivated = false }
             ShiftMode.Lock -> { shift?.isSelected = true; shift?.isActivated = true }
+        }
+    }
+
+    // --- 中文模式：拼音缓冲工具 ---
+    private fun appendToPinyinBuffer(s: String) {
+        if (s.isEmpty()) return
+        pinyinBuffer.append(s)
+        qwertyTextBuffer?.text = pinyinBuffer.toString()
+    }
+
+    private fun popFromPinyinBuffer() : Boolean {
+        if (pinyinBuffer.isEmpty()) return false
+        pinyinBuffer.deleteCharAt(pinyinBuffer.length - 1)
+        qwertyTextBuffer?.text = pinyinBuffer.toString()
+        return true
+    }
+
+    private fun clearPinyinBuffer() {
+        if (pinyinBuffer.isEmpty()) return
+        pinyinBuffer.clear()
+        qwertyTextBuffer?.text = ""
+    }
+
+    private fun handleQwertyBackspaceTap() {
+        if (langMode == LangMode.Chinese) {
+            if (popFromPinyinBuffer()) return
+        }
+        sendBackspace()
+    }
+
+    private fun submitPinyinBufferWithLlm() {
+        if (langMode != LangMode.Chinese) return
+        val pinyin = pinyinBuffer.toString().trim()
+        if (pinyin.isEmpty()) {
+            txtStatus?.text = getString(R.string.hint_pinyin_empty)
+            vibrateTick()
+            return
+        }
+        if (!prefs.hasLlmKeys()) {
+            txtStatus?.text = getString(R.string.hint_need_llm_keys)
+            vibrateTick()
+            return
+        }
+        txtStatus?.text = getString(R.string.status_pinyin_processing)
+        serviceScope.launch {
+            val out = try {
+                postproc.pinyinToChinese(pinyin, prefs).ifBlank { pinyin }
+            } catch (_: Throwable) { pinyin }
+            // 提交并清空缓冲
+            currentInputConnection?.commitText(out, 1)
+            clearPinyinBuffer()
+            vibrateTick()
+            txtStatus?.text = getString(R.string.status_idle)
         }
     }
 

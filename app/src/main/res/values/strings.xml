@@ -34,6 +34,7 @@
     <string name="status_listening">正在聆听…</string>
     <string name="status_recognizing">识别中…</string>
     <string name="status_ai_processing">AI后处理中…</string>
+    <string name="status_pinyin_processing">拼音转汉字中…</string>
     <string name="status_ai_edit_listening">请说出编辑指令…</string>
     <string name="status_ai_editing">AI编辑中…</string>
     <string name="status_last_request_ms">上次识别耗时：%1$d ms</string>
@@ -41,6 +42,7 @@
     <string name="status_llm_empty_result">AI编辑失败：未返回结果</string>
     <string name="status_last_asr_not_found">未找到上一次识别文本，已取消替换</string>
     <string name="hint_need_llm_keys">需要配置 AI 后处理参数</string>
+    <string name="hint_pinyin_empty">请先输入拼音</string>
     <string name="hint_cannot_read_text">当前应用的文本不可读取</string>
     <string name="hint_need_permission">需要麦克风权限以进行语音输入</string>
 

@@ -34,12 +34,14 @@
     <string name="status_listening">Listening…</string>
     <string name="status_recognizing">Recognizing…</string>
     <string name="status_ai_processing">AI post-processing…</string>
+    <string name="status_pinyin_processing">Converting pinyin…</string>
     <string name="status_ai_edit_listening">Speak your edit instruction…</string>
     <string name="status_ai_editing">AI editing…</string>
     <string name="status_reverted_to_raw">Reverted to raw transcript</string>
     <string name="status_llm_empty_result">AI edit failed: no result</string>
     <string name="status_last_asr_not_found">Last ASR result not found; canceled</string>
     <string name="hint_need_llm_keys">Configure AI post-processing first</string>
+    <string name="hint_pinyin_empty">Type pinyin first</string>
     <string name="hint_cannot_read_text">Current app text is not readable</string>
     <string name="hint_need_permission">Microphone permission is required for voice input</string>
 

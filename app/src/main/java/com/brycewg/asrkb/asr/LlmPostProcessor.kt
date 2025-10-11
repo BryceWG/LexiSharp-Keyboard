@@ -87,6 +87,81 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
   }
 
   /**
+   * 拼音转中文：使用专用的 System Prompt，尽量将纯拼音（可含空格/标点）映射为最合理的中文短语/句子。
+   * - 仅输出中文结果，不要输出解释或引号；失败时回退为原输入。
+   */
+  suspend fun pinyinToChinese(pinyin: String, prefs: Prefs): String = withContext(Dispatchers.IO) {
+    val src = pinyin.trim()
+    if (src.isBlank()) return@withContext ""
+    val apiKey = prefs.llmApiKey
+    val endpoint = prefs.llmEndpoint
+    val model = prefs.llmModel
+    val temperature = prefs.llmTemperature.toDouble().coerceIn(0.0, 2.0)
+
+    val url = resolveUrl(endpoint)
+    val systemPrompt = """
+      你是一个精确的“拼音转汉字”助手。给你一段用户输入的汉语拼音（可能包含空格、分词标记或少量标点），请将其转换为最可能的中文文本。
+      规则：
+      - 只输出最终中文文本，不要输出任何解释、提示词或引号。
+      - 优先符合口语表达与常见书写习惯。
+      - 当拼音含糊时，选择最常见、最自然的中文表达；不要输出多种候选或注释。
+      - 若输入并非拼音或不可解析，则原样返回（或输出接近原意的中文）。
+      - 输出保持为简体中文。
+    """.trimIndent()
+
+    val userContent = """
+      【拼音】
+      $src
+    """.trimIndent()
+
+    val reqJson = JSONObject().apply {
+      put("model", model)
+      put("temperature", temperature)
+      put("messages", JSONArray().apply {
+        put(JSONObject().apply {
+          put("role", "system")
+          put("content", systemPrompt)
+        })
+        put(JSONObject().apply {
+          put("role", "user")
+          put("content", userContent)
+        })
+      })
+    }.toString()
+
+    val body = reqJson.toRequestBody(jsonMedia)
+    val http = (client ?: OkHttpClient.Builder().callTimeout(30, TimeUnit.SECONDS).build())
+    val req = Request.Builder()
+      .url(url)
+      .addHeader("Authorization", "Bearer $apiKey")
+      .addHeader("Content-Type", "application/json")
+      .post(body)
+      .build()
+
+    val resp = http.newCall(req).execute()
+    if (!resp.isSuccessful) {
+      resp.close()
+      return@withContext src
+    }
+    val out = try {
+      val s = resp.body?.string() ?: return@withContext src
+      val obj = JSONObject(s)
+      when {
+        obj.has("choices") -> {
+          val choices = obj.getJSONArray("choices")
+          if (choices.length() > 0) {
+            val msg = choices.getJSONObject(0).optJSONObject("message")
+            msg?.optString("content")?.ifBlank { src } ?: src
+          } else src
+        }
+        obj.has("output_text") -> obj.optString("output_text", src)
+        else -> src
+      }
+    } catch (_: Throwable) { src } finally { resp.close() }
+    return@withContext out
+  }
+
+  /**
    * 使用自然语言指令编辑现有文本，兼容 Chat Completions API。
    * 返回编辑后的文本；任何失败时返回原始文本不变。
    */
