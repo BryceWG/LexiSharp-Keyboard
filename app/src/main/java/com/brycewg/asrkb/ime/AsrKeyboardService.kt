@@ -76,6 +76,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var pinyinAutoLastInput: String = ""
     private var pinyinAutoRunning: Boolean = false
     private var pendingPinyinSuggestion: String? = null
+    // 防抖与防过期：为每次 LLM 预览请求打序号；当拼音变更/清空/停止预览时递增，晚到结果将被忽略
+    private var pinyinAutoSeq: Long = 0L
 
     private var btnMic: FloatingActionButton? = null
     private var btnSettings: ImageButton? = null
@@ -108,6 +110,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var backspaceLongPressStarted: Boolean = false
     private var backspaceLongPressStarter: Runnable? = null
     private var backspaceRepeatRunnable: Runnable? = null
+    // 是否在本次手势中清空了整个编辑框（用于下滑撤销时区分恢复范围）
+    private var backspaceClearedFieldInGesture: Boolean = false
 
     // Track latest AI post-processed commit to allow swipe-down revert to raw
     private data class PostprocCommit(val processed: String, val raw: String)
@@ -542,6 +546,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 // 直接将当前预览上屏（结束合成）
                 try {
                     ic?.beginBatchEdit()
+                    // 直接将当前预览上屏（结束合成）
                     ic?.finishComposingText()
                     ic?.endBatchEdit()
                 } catch (_: Throwable) { }
@@ -561,6 +566,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     val ic2 = currentInputConnection
                     ic2?.beginBatchEdit()
                     ic2?.setComposingText(out, 1)
+                    // 上屏：结束合成
                     ic2?.finishComposingText()
                     ic2?.endBatchEdit()
                 } catch (_: Throwable) { }
@@ -657,6 +663,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         backspaceStartX = event.x
                         backspaceStartY = event.y
                         backspaceClearedInGesture = false
+                        backspaceClearedFieldInGesture = false
                         backspacePressed = true
                         backspaceLongPressStarted = false
                         // cancel any pending
@@ -698,8 +705,17 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         if (!backspaceClearedInGesture && (dy <= -slop || dx <= -slop)) {
                             backspaceLongPressStarter?.let { view.removeCallbacks(it) }
                             backspaceRepeatRunnable?.let { view.removeCallbacks(it) }
-                            clearAllTextWithSnapshot(ic)
-                            clearPinyinBuffer()
+                            // 优先清空拼音缓冲与预览；若无拼音再清空整个输入框
+                            if (langMode == LangMode.Chinese && pinyinBuffer.isNotEmpty()) {
+                                // 清空拼音缓冲并移除合成预览
+                                clearPinyinBuffer()
+                                clearPinyinPreviewComposition()
+                                backspaceClearedFieldInGesture = false
+                            } else {
+                                clearAllTextWithSnapshot(ic)
+                                clearPinyinBuffer()
+                                backspaceClearedFieldInGesture = true
+                            }
                             backspaceClearedInGesture = true
                             vibrateTick()
                             return@setOnTouchListener true
@@ -713,17 +729,21 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                             }
                         }
                         if (backspaceClearedInGesture && dy >= slop) {
-                            if (backspaceSnapshotValid) {
+                            // 撤销：若清空了编辑框，则恢复快照；否则只恢复拼音缓冲
+                            if (backspaceClearedFieldInGesture && backspaceSnapshotValid) {
                                 restoreSnapshot(ic)
-                                // restore pinyin buffer if any
-                                val snap = pinyinBufferSnapshot
-                                if (snap != null) {
-                                    pinyinBuffer.clear()
-                                    pinyinBuffer.append(snap)
-                                    qwertyTextBuffer?.text = getDisplayPinyinText()
-                                }
+                            }
+                            // 恢复拼音缓冲
+                            val snap = pinyinBufferSnapshot
+                            if (snap != null) {
+                                pinyinBuffer.clear()
+                                pinyinBuffer.append(snap)
+                                qwertyTextBuffer?.text = getDisplayPinyinText()
+                                // 恢复后尝试重新启动预览
+                                onPinyinBufferChanged()
                             }
                             backspaceClearedInGesture = false
+                            backspaceClearedFieldInGesture = false
                             vibrateTick()
                             return@setOnTouchListener true
                         }
@@ -747,6 +767,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         backspaceSnapshotValid = false
                         pinyinBufferSnapshot = null
                         backspaceClearedInGesture = false
+                        backspaceClearedFieldInGesture = false
                         true
                     }
                     else -> false
@@ -1265,6 +1286,17 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         }
     }
 
+    // 清除中文 26 键的 LLM 预览合成文本（不把预览“上屏”）
+    private fun clearPinyinPreviewComposition() {
+        try {
+            val ic = currentInputConnection
+            ic?.beginBatchEdit()
+            ic?.setComposingText("", 1)
+            ic?.finishComposingText()
+            ic?.endBatchEdit()
+        } catch (_: Throwable) { }
+    }
+
     private fun showPromptPicker(anchor: View) {
         try {
             val presets = prefs.getPromptPresets()
@@ -1502,7 +1534,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             while (isActive) {
                 val raw = pinyinBuffer.toString().trim()
                 if (raw.isEmpty()) {
-                    try { currentInputConnection?.finishComposingText() } catch (_: Throwable) { }
+                    clearPinyinPreviewComposition()
                     pendingPinyinSuggestion = null
                     pinyinAutoLastInput = ""
                 } else if (!pinyinAutoRunning) {
@@ -1511,11 +1543,24 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(raw) } catch (_: Throwable) { raw }
                     }
                     if (pinyin != pinyinAutoLastInput) {
+                        // 标记当前请求序号
                         pinyinAutoRunning = true
+                        val reqSeq = ++pinyinAutoSeq
                         val out = try { postproc.pinyinToChinese(pinyin, prefs).ifBlank { pinyin } } catch (_: Throwable) { pinyin }
-                        pendingPinyinSuggestion = out
-                        try { currentInputConnection?.setComposingText(out, 1) } catch (_: Throwable) { }
-                        pinyinAutoLastInput = pinyin
+                        // 若期间拼音已变更或被清空/停止，丢弃结果
+                        if (reqSeq == pinyinAutoSeq) {
+                            // 再做一次原样校验：当前缓冲与请求时拼音一致才应用
+                            val curRaw = pinyinBuffer.toString().trim()
+                            val curPin = when (prefs.pinyinMode) {
+                                PinyinMode.Quanpin -> curRaw
+                                PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(curRaw) } catch (_: Throwable) { curRaw }
+                            }
+                            if (curPin == pinyin && curPin.isNotEmpty()) {
+                                pendingPinyinSuggestion = out
+                                try { currentInputConnection?.setComposingText(out, 1) } catch (_: Throwable) { }
+                                pinyinAutoLastInput = pinyin
+                            }
+                        }
                         pinyinAutoRunning = false
                     }
                 }
@@ -1531,14 +1576,18 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         pinyinAutoRunning = false
         pinyinAutoLastInput = ""
         pendingPinyinSuggestion = null
-        if (clearComposition) try { currentInputConnection?.finishComposingText() } catch (_: Throwable) { }
+        // 序号递增，确保在途结果无效
+        pinyinAutoSeq++
+        if (clearComposition) clearPinyinPreviewComposition()
     }
 
     private fun onPinyinBufferChanged() {
         pinyinAutoLastInput = ""
+        // 拼音内容变化，序号递增，避免在途结果落地
+        pinyinAutoSeq++
         if (pinyinBuffer.isEmpty()) {
             pendingPinyinSuggestion = null
-            try { currentInputConnection?.finishComposingText() } catch (_: Throwable) { }
+            clearPinyinPreviewComposition()
         }
     }
 }
