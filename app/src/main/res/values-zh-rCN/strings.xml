@@ -16,17 +16,17 @@
     <string name="cd_punct_btn_5">自定义按键 5</string>
     <string name="cd_letters_keyboard">切换字母键盘</string>
     <string name="cd_space">空格</string>
-    <string name="label_abc">ABC</string>
+    <string name="label_abc">abc</string>
     <string name="label_space">空格</string>
     <string name="cd_shift">切换大小写</string>
     <string name="cd_symbols_keyboard">切换数字符号</string>
-    <string name="label_123">123</string>
+    <string name="label_123">\?123</string>
     <string name="hint_text_buffer">文本暂存区</string>
     <string name="cd_pinyin_mode">中文拼音输入模式</string>
     <string name="label_pinyin">中</string>
     <string name="cd_lang_switch">中英文切换</string>
-    <string name="label_chinese_mode">文</string>
-    <string name="label_english_mode">A</string>
+    <string name="label_chinese_mode">中</string>
+    <string name="label_english_mode">En</string>
 
     <string name="status_idle">就绪</string>
     <string name="status_listening">正在聆听…</string>
