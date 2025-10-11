@@ -558,11 +558,15 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             val needFinalRefresh = (pendingPinyinSuggestion == null) || (pinyinNow != pinyinAutoLastInput)
             val ic = currentInputConnection
             if (!needFinalRefresh && !pendingPinyinSuggestion.isNullOrBlank()) {
-                // 直接将当前预览上屏（结束合成）
+                // 直接将当前预览上屏
                 try {
                     ic?.beginBatchEdit()
-                    // 直接将当前预览上屏（结束合成）
-                    ic?.finishComposingText()
+                    if (prefs.disableComposingUnderline) {
+                        ic?.commitText(pendingPinyinSuggestion, 1)
+                    } else {
+                        // 使用合成：结束即可上屏
+                        ic?.finishComposingText()
+                    }
                     ic?.endBatchEdit()
                 } catch (_: Throwable) { }
                 clearPinyinBuffer()
@@ -580,9 +584,12 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 try {
                     val ic2 = currentInputConnection
                     ic2?.beginBatchEdit()
-                    ic2?.setComposingText(out, 1)
-                    // 上屏：结束合成
-                    ic2?.finishComposingText()
+                    if (prefs.disableComposingUnderline) {
+                        ic2?.commitText(out, 1)
+                    } else {
+                        ic2?.setComposingText(out, 1)
+                        ic2?.finishComposingText()
+                    }
                     ic2?.endBatchEdit()
                 } catch (_: Throwable) { }
                 clearPinyinBuffer()
@@ -1456,6 +1463,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
 
     // 清除中文 26 键的 LLM 预览合成文本（不把预览“上屏”）
     private fun clearPinyinPreviewComposition() {
+        if (prefs.disableComposingUnderline) return
         try {
             val ic = currentInputConnection
             ic?.beginBatchEdit()
@@ -1595,8 +1603,10 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 lastPostprocCommit = null
                 goIdleWithTimingHint()
             } else if (prefs.postProcessEnabled && prefs.hasLlmKeys()) {
-                // Keep recognized text as composing while we post-process
-                currentInputConnection?.setComposingText(text, 1)
+                // 可选：在等待 AI 后处理时是否使用合成文本展示（带下划线）
+                if (!prefs.disableComposingUnderline) {
+                    currentInputConnection?.setComposingText(text, 1)
+                }
                 txtStatus?.text = getString(R.string.status_ai_processing)
                 val raw = if (prefs.trimFinalTrailingPunct) trimTrailingPunctuation(text) else text
                 val processed = try {
@@ -1607,8 +1617,12 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 // 如果开启去除句尾标点，对LLM后处理结果也执行一次修剪，避免模型重新补回标点导致设置失效
                 val finalProcessed = if (prefs.trimFinalTrailingPunct) trimTrailingPunctuation(processed) else processed
                 val ic = currentInputConnection
-                ic?.setComposingText(finalProcessed, 1)
-                ic?.finishComposingText()
+                if (prefs.disableComposingUnderline) {
+                    ic?.commitText(finalProcessed, 1)
+                } else {
+                    ic?.setComposingText(finalProcessed, 1)
+                    ic?.finishComposingText()
+                }
                 // Record this commit so user can swipe-down on backspace to revert to raw
                 lastPostprocCommit = if (finalProcessed.isNotEmpty() && finalProcessed != raw) PostprocCommit(finalProcessed, raw) else null
                 vibrateTick()
@@ -1725,7 +1739,9 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                             }
                             if (curPin == pinyin && curPin.isNotEmpty()) {
                                 pendingPinyinSuggestion = out
-                                try { currentInputConnection?.setComposingText(out, 1) } catch (_: Throwable) { }
+                                if (!prefs.disableComposingUnderline) {
+                                    try { currentInputConnection?.setComposingText(out, 1) } catch (_: Throwable) { }
+                                }
                                 pinyinAutoLastInput = pinyin
                             }
                         }
