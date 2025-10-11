@@ -56,7 +56,6 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.annotation.StringRes
 import android.content.Context
-import android.os.Build
 import android.content.res.Configuration
 import android.os.LocaleList
 
@@ -1160,47 +1159,6 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         }
     }
 
-    // --- 中文模式：拼音缓冲工具 ---
-    private fun getDisplayPinyinText(): String {
-        val raw = pinyinBuffer.toString()
-        return when (prefs.pinyinMode) {
-            PinyinMode.Quanpin -> raw
-            PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(raw) } catch (_: Throwable) { raw }
-        }
-    }
-
-    // 将原始拼音光标位置映射到显示字符串中的字符偏移
-    private fun rawIndexToDisplayIndex(rawIndex: Int, displayPlain: String): Int {
-        val raw = pinyinBuffer.toString()
-        val idx = rawIndex.coerceIn(0, raw.length)
-        return when (prefs.pinyinMode) {
-            PinyinMode.Quanpin -> idx
-            PinyinMode.Xiaohe -> {
-                val bm = try { XiaoheShuangpinConverter.boundaryMap(raw) } catch (_: Throwable) { null }
-                (bm?.getOrNull(idx) ?: idx).coerceIn(0, displayPlain.length)
-            }
-        }
-    }
-
-    // 将显示字符串中的字符偏移映射回原始拼音位置（选择最近边界）
-    private fun displayIndexToRawIndex(displayIndex: Int, displayPlain: String): Int {
-        val raw = pinyinBuffer.toString()
-        val di = displayIndex.coerceIn(0, displayPlain.length)
-        return when (prefs.pinyinMode) {
-            PinyinMode.Quanpin -> di.coerceIn(0, raw.length)
-            PinyinMode.Xiaohe -> {
-                val bm = try { XiaoheShuangpinConverter.boundaryMap(raw) } catch (_: Throwable) { null }
-                if (bm == null) return di.coerceIn(0, raw.length)
-                // 找到最大 k 使 bm[k] <= di
-                var k = 0
-                val last = bm.size - 1
-                while (k < last && bm[k] <= di) k++
-                if (bm[k] > di) k--
-                k.coerceIn(0, raw.length)
-            }
-        }
-    }
-
     private fun setPinyinCursor(idx: Int) {
         val newIdx = idx.coerceIn(0, pinyinBuffer.length)
         if (newIdx == pinyinCursor) return
@@ -1780,7 +1738,6 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
 
     // 清除中文 26 键的 LLM 预览合成文本（不把预览“上屏”）
     private fun clearPinyinPreviewComposition() {
-        if (prefs.disableComposingUnderline) return
         try {
             val ic = currentInputConnection
             ic?.beginBatchEdit()
@@ -2067,9 +2024,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                             }
                             if (curPin == pinyin && curPin.isNotEmpty()) {
                                 pendingPinyinSuggestion = out
-                                if (!prefs.disableComposingUnderline) {
-                                    try { currentInputConnection?.setComposingText(out, 1) } catch (_: Throwable) { }
-                                }
+                                // 始终设置合成预览，确保“自动转换”为用户可见
+                                try { currentInputConnection?.setComposingText(out, 1) } catch (_: Throwable) { }
                                 pinyinAutoLastInput = pinyin
                             }
                         }
@@ -2197,7 +2153,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             '＠' -> "@"
             '－' -> "-"
             '／' -> "/"
-            '￥' -> "${'$'}"
+            '￥' -> "$"
             else -> s
         }
     }
@@ -2253,24 +2209,24 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         return when (langMode) {
             LangMode.Chinese -> when (lower) {
                 // 第一行：数字
-                'q' -> "1"; 'w' -> "2"; 'e' -> "3"; 'r' -> "4"; 't' -> "5";
-                'y' -> "6"; 'u' -> "7"; 'i' -> "8"; 'o' -> "9"; 'p' -> "0";
+                'q' -> "1"; 'w' -> "2"; 'e' -> "3"; 'r' -> "4"; 't' -> "5"
+                'y' -> "6"; 'u' -> "7"; 'i' -> "8"; 'o' -> "9"; 'p' -> "0"
                 // 第二行：符号
-                'a' -> "-"; 's' -> "/"; 'd' -> "："; 'f' -> "；"; 'g' -> "（"; 'h' -> "）";
-                'j' -> "～"; 'k' -> "“"; 'l' -> "”";
+                'a' -> "-"; 's' -> "/"; 'd' -> "："; 'f' -> "；"; 'g' -> "（"; 'h' -> "）"
+                'j' -> "～"; 'k' -> "“"; 'l' -> "”"
                 // 第三行：符号
-                'z' -> "@"; 'x' -> "."; 'c' -> "＃"; 'v' -> "、"; 'b' -> "？"; 'n' -> "！"; 'm' -> "……";
+                'z' -> "@"; 'x' -> "."; 'c' -> "＃"; 'v' -> "、"; 'b' -> "？"; 'n' -> "！"; 'm' -> "……"
                 else -> null
             }
             LangMode.English -> when (lower) {
                 // 第一行：数字
-                'q' -> "1"; 'w' -> "2"; 'e' -> "3"; 'r' -> "4"; 't' -> "5";
-                'y' -> "6"; 'u' -> "7"; 'i' -> "8"; 'o' -> "9"; 'p' -> "0";
+                'q' -> "1"; 'w' -> "2"; 'e' -> "3"; 'r' -> "4"; 't' -> "5"
+                'y' -> "6"; 'u' -> "7"; 'i' -> "8"; 'o' -> "9"; 'p' -> "0"
                 // 第二行：符号
-                'a' -> "-"; 's' -> "/"; 'd' -> ":"; 'f' -> ";"; 'g' -> "("; 'h' -> ")";
-                'j' -> "~"; 'k' -> "'"; 'l' -> "\"";
+                'a' -> "-"; 's' -> "/"; 'd' -> ":"; 'f' -> ";"; 'g' -> "("; 'h' -> ")"
+                'j' -> "~"; 'k' -> "'"; 'l' -> "\""
                 // 第三行：符号
-                'z' -> "@"; 'x' -> "-"; 'c' -> "#"; 'v' -> "&"; 'b' -> "?"; 'n' -> "!"; 'm' -> "…";
+                'z' -> "@"; 'x' -> "-"; 'c' -> "#"; 'v' -> "&"; 'b' -> "?"; 'n' -> "!"; 'm' -> "…"
                 else -> null
             }
         }

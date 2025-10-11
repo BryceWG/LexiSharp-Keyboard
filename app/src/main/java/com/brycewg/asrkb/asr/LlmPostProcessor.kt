@@ -104,7 +104,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     val vocabLines = if (vocab.isNotEmpty()) {
       vocab.take(100).map { term ->
         val py = PinyinUtil.toPinyin(term)
-        "- ${term} (${py})"
+        "- $term (${py})"
       }.joinToString("\n")
     } else ""
 

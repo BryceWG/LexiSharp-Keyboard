@@ -225,7 +225,7 @@ class SettingsActivity : AppCompatActivity() {
                 else -> 0
             }
         )
-        var languageSpinnerInitialized: Boolean = true
+        var languageSpinnerInitialized = true
         // 启动默认面板开关（开=26键，关=语音）
         switchStartupQwerty.isChecked = (prefs.startupPanel == "qwerty")
         // Qwerty default language spinner
