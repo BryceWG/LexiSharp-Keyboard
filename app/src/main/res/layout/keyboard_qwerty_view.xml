@@ -33,11 +33,11 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
             android:background="@drawable/bg_key_button"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
             android:orientation="horizontal">
 
             <HorizontalScrollView
@@ -59,7 +59,7 @@
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:textColorHint="?attr/colorOnSurfaceVariant"
                     android:alpha="0.8"
-                    android:textSize="12sp"
+                    android:textSize="16sp"
                     android:maxLines="1" />
 
             </HorizontalScrollView>
@@ -87,7 +87,7 @@
                     android:gravity="center_vertical|start"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:alpha="0.8"
-                    android:textSize="12sp"
+                    android:textSize="16sp"
                     android:maxLines="1" />
 
             </HorizontalScrollView>
@@ -256,7 +256,7 @@
         android:layout_height="50dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:layout_marginTop="4dp">
+        android:layout_marginTop="2dp">
 
         <TextView
             android:id="@+id/qwertyNum"
@@ -399,7 +399,7 @@
                 android:layout_height="50dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:layout_marginTop="4dp">
+                android:layout_marginTop="2dp">
 
                 <TextView
                     android:id="@+id/symToLetters"
