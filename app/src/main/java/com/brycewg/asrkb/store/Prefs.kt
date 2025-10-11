@@ -52,6 +52,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_QWERTY_HAPTIC_ENABLED, true)
         set(value) = sp.edit { putBoolean(KEY_QWERTY_HAPTIC_ENABLED, value) }
 
+    // 26 键：上滑输入数字/符号
+    var qwertySwipeAltEnabled: Boolean
+        get() = sp.getBoolean(KEY_QWERTY_SWIPE_ALT_ENABLED, true)
+        set(value) = sp.edit { putBoolean(KEY_QWERTY_SWIPE_ALT_ENABLED, value) }
+
     // 禁用合成态下划线（尽量避免“拼写检查/下划线预览”效果）
     var disableComposingUnderline: Boolean
         get() = sp.getBoolean(KEY_DISABLE_COMPOSING_UNDERLINE, true)
@@ -308,6 +313,7 @@ class Prefs(context: Context) {
         private const val KEY_AUTO_SWITCH_ON_PASSWORD = "auto_switch_on_password"
         private const val KEY_MIC_HAPTIC_ENABLED = "mic_haptic_enabled"
         private const val KEY_QWERTY_HAPTIC_ENABLED = "qwerty_haptic_enabled"
+        private const val KEY_QWERTY_SWIPE_ALT_ENABLED = "qwerty_swipe_alt_enabled"
         private const val KEY_DISABLE_COMPOSING_UNDERLINE = "disable_composing_underline"
         private const val KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC = "qwerty_pinyin_llm_interval_sec"
         private const val KEY_QWERTY_DEFAULT_LANG = "qwerty_default_lang"
@@ -429,6 +435,7 @@ class Prefs(context: Context) {
         o.put(KEY_FLOATING_SWITCHER_ENABLED, floatingSwitcherEnabled)
         o.put(KEY_FLOATING_SWITCHER_ALPHA, floatingSwitcherAlpha)
         o.put(KEY_POSTPROC_ENABLED, postProcessEnabled)
+        o.put(KEY_QWERTY_SWIPE_ALT_ENABLED, qwertySwipeAltEnabled)
         o.put(KEY_LLM_ENDPOINT, llmEndpoint)
         o.put(KEY_LLM_API_KEY, llmApiKey)
         o.put(KEY_LLM_MODEL, llmModel)
@@ -475,6 +482,7 @@ class Prefs(context: Context) {
             optBool(KEY_AUTO_SWITCH_ON_PASSWORD)?.let { autoSwitchOnPassword = it }
             optBool(KEY_MIC_HAPTIC_ENABLED)?.let { micHapticEnabled = it }
             optBool(KEY_QWERTY_HAPTIC_ENABLED)?.let { qwertyHapticEnabled = it }
+            optBool(KEY_QWERTY_SWIPE_ALT_ENABLED)?.let { qwertySwipeAltEnabled = it }
             optBool(KEY_DISABLE_COMPOSING_UNDERLINE)?.let { disableComposingUnderline = it }
             // 新增：拼音自动转换间隔（秒，支持小数）
             optFloat(KEY_QWERTY_PINYIN_LLM_INTERVAL_SEC)?.let { qwertyPinyinLlmIntervalSec = it.coerceAtLeast(0f) }

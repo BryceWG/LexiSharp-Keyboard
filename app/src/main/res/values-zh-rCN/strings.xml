@@ -72,6 +72,7 @@
     <string name="label_trim_trailing_punct">完成后去除句末标点</string>
     <string name="label_mic_haptic">按下麦克风时振动反馈</string>
     <string name="label_qwerty_haptic">键盘按键振动</string>
+    <string name="label_qwerty_swipe_alt">启用上滑输入数字/符号</string>
     <string name="label_qwerty_default_lang">26键默认语言模式</string>
     <string name="qwerty_lang_english">英文</string>
     <string name="qwerty_lang_chinese">中文</string>

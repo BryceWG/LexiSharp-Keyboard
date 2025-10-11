@@ -735,6 +735,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     val tag = child.tag?.toString()
                     if (tag == "letter_key" && child is TextView) {
                         qwertyLetterKeys.add(child)
+                        // 点击：字母；上滑：符号/数字（见 symbolic_table.md）
                         child.setOnClickListener {
                             val s = child.text?.toString() ?: return@setOnClickListener
                             if (langMode == LangMode.Chinese) {
@@ -751,11 +752,82 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                                 applyLetterCase()
                             }
                         }
+                        if (prefs.qwertySwipeAltEnabled) child.setOnTouchListener { v, event ->
+                            val tv = v as? TextView ?: return@setOnTouchListener false
+                            val slop = ViewConfiguration.get(v.context).scaledTouchSlop
+                            when (event.actionMasked) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    v.setTag(R.id.tag_swipe_start_x, event.x)
+                                    v.setTag(R.id.tag_swipe_start_y, event.y)
+                                    v.setTag(R.id.tag_swipe_handled, false)
+                                    false
+                                }
+                                MotionEvent.ACTION_MOVE -> {
+                                    val sy = (v.getTag(R.id.tag_swipe_start_y) as? Float) ?: return@setOnTouchListener false
+                                    val handled = (v.getTag(R.id.tag_swipe_handled) as? Boolean) ?: false
+                                    if (!handled) {
+                                        val dy = event.y - sy
+                                        if (dy <= -slop) {
+                                            val base = tv.text?.toString()?.firstOrNull()?.lowercaseChar()
+                                            val alt = base?.let { getSwipeAltForLetter(it) }
+                                            if (!alt.isNullOrEmpty()) {
+                                                commitTextCore(alt, vibrate = false)
+                                                vibrateTick()
+                                                v.setTag(R.id.tag_swipe_handled, true)
+                                                return@setOnTouchListener true
+                                            }
+                                        }
+                                    }
+                                    false
+                                }
+                                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                    val handled = (v.getTag(R.id.tag_swipe_handled) as? Boolean) ?: false
+                                    if (handled) return@setOnTouchListener true
+                                    false
+                                }
+                                else -> false
+                            }
+                        } else {
+                            child.setOnTouchListener(null)
+                        }
                     } else if (tag == "punct_key" && child is TextView) {
                         child.setOnClickListener {
                             val s = child.text?.toString() ?: return@setOnClickListener
                             commitTextCore(s, vibrate = false)
                             maybeHapticKeyTap(child)
+                        }
+                        if (prefs.qwertySwipeAltEnabled) child.setOnTouchListener { v, event ->
+                            val slop = ViewConfiguration.get(v.context).scaledTouchSlop
+                            when (event.actionMasked) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    v.setTag(R.id.tag_swipe_start_y, event.y)
+                                    v.setTag(R.id.tag_swipe_handled, false)
+                                    false
+                                }
+                                MotionEvent.ACTION_MOVE -> {
+                                    val sy = (v.getTag(R.id.tag_swipe_start_y) as? Float) ?: return@setOnTouchListener false
+                                    val handled = (v.getTag(R.id.tag_swipe_handled) as? Boolean) ?: false
+                                    if (!handled) {
+                                        val dy = event.y - sy
+                                        if (dy <= -slop) {
+                                            val alt = getSwipeAltForComma()
+                                            commitTextCore(alt, vibrate = false)
+                                            vibrateTick()
+                                            v.setTag(R.id.tag_swipe_handled, true)
+                                            return@setOnTouchListener true
+                                        }
+                                    }
+                                    false
+                                }
+                                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                                    val handled = (v.getTag(R.id.tag_swipe_handled) as? Boolean) ?: false
+                                    if (handled) return@setOnTouchListener true
+                                    false
+                                }
+                                else -> false
+                            }
+                        } else {
+                            child.setOnTouchListener(null)
                         }
                     } else if (child is ViewGroup) {
                         bindLetters(child)
@@ -765,6 +837,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         }
         bindLetters(v)
         applyLetterCase()
+        applySwipeAltBadges()
 
         // Space gestures:
         // - Tap: 输入空格
@@ -1937,6 +2010,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private fun applySymbolsForCurrentLang() {
         applyQwertyInlinePunctuation()
         applySymbolsPanelKeys()
+        applySwipeAltBadges()
     }
 
     private fun applyQwertyInlinePunctuation() {
@@ -2028,6 +2102,87 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             '／' -> "/"
             '￥' -> "${'$'}"
             else -> s
+        }
+    }
+
+    // 为字母键和逗号键应用右上角角标，提示上滑可输入的数字/符号
+    private fun applySwipeAltBadges() {
+        val root = qwertyLettersPanelView ?: qwertyPanelView ?: return
+        fun colorWithAlpha(base: Int, alphaFraction: Float = 0.75f): Int {
+            val a = ((Color.alpha(base) * alphaFraction).toInt()).coerceIn(0, 255)
+            return (base and 0x00FFFFFF) or (a shl 24)
+        }
+        // 如果禁用上滑功能，移除所有角标/覆盖提示
+        if (!prefs.qwertySwipeAltEnabled) {
+            fun clear(v: View) {
+                if (v is ViewGroup) {
+                    for (i in 0 until v.childCount) clear(v.getChildAt(i))
+                } else if (v is TextView) {
+                    val tag = v.tag?.toString()
+                    if (tag == "letter_key" || tag == "punct_key") v.foreground = null
+                }
+            }
+            clear(root)
+            return
+        }
+        fun traverse(v: View) {
+            if (v is ViewGroup) {
+                for (i in 0 until v.childCount) traverse(v.getChildAt(i))
+            } else if (v is TextView) {
+                val tag = v.tag?.toString()
+                if (tag == "letter_key") {
+                    val base = v.text?.toString()?.firstOrNull()?.lowercaseChar()
+                    val alt = base?.let { getSwipeAltForLetter(it) }
+                    if (!alt.isNullOrEmpty()) {
+                        val size = (v.textSize * 0.5f).coerceAtLeast(8f)
+                        val c = colorWithAlpha(v.currentTextColor, 0.6f)
+                        v.foreground = CornerBadgeDrawable(alt, size, c, paddingPx = 6f)
+                    } else {
+                        v.foreground = null
+                    }
+                } else if (tag == "punct_key") {
+                    val alt = getSwipeAltForComma()
+                    val size = (v.textSize * 0.6f).coerceAtLeast(8f)
+                    val c = colorWithAlpha(v.currentTextColor, 0.6f)
+                    v.foreground = CornerBadgeDrawable(alt, size, c, paddingPx = 6f)
+                }
+            }
+        }
+        traverse(root)
+    }
+
+    // ---------- QWERTY 上滑映射（symbolic_table.md） ----------
+    private fun getSwipeAltForLetter(lower: Char): String? {
+        return when (langMode) {
+            LangMode.Chinese -> when (lower) {
+                // 第一行：数字
+                'q' -> "1"; 'w' -> "2"; 'e' -> "3"; 'r' -> "4"; 't' -> "5";
+                'y' -> "6"; 'u' -> "7"; 'i' -> "8"; 'o' -> "9"; 'p' -> "0";
+                // 第二行：符号
+                'a' -> "-"; 's' -> "/"; 'd' -> "："; 'f' -> "；"; 'g' -> "（"; 'h' -> "）";
+                'j' -> "～"; 'k' -> "“"; 'l' -> "”";
+                // 第三行：符号
+                'z' -> "@"; 'x' -> "."; 'c' -> "＃"; 'v' -> "、"; 'b' -> "？"; 'n' -> "！"; 'm' -> "……";
+                else -> null
+            }
+            LangMode.English -> when (lower) {
+                // 第一行：数字
+                'q' -> "1"; 'w' -> "2"; 'e' -> "3"; 'r' -> "4"; 't' -> "5";
+                'y' -> "6"; 'u' -> "7"; 'i' -> "8"; 'o' -> "9"; 'p' -> "0";
+                // 第二行：符号
+                'a' -> "-"; 's' -> "/"; 'd' -> ":"; 'f' -> ";"; 'g' -> "("; 'h' -> ")";
+                'j' -> "~"; 'k' -> "'"; 'l' -> "\"";
+                // 第三行：符号
+                'z' -> "@"; 'x' -> "-"; 'c' -> "#"; 'v' -> "&"; 'b' -> "?"; 'n' -> "!"; 'm' -> "…";
+                else -> null
+            }
+        }
+    }
+
+    private fun getSwipeAltForComma(): String {
+        return when (langMode) {
+            LangMode.Chinese -> "。"
+            LangMode.English -> "."
         }
     }
 }

@@ -74,6 +74,7 @@
     <string name="label_trim_trailing_punct">Remove trailing punctuation on finish</string>
     <string name="label_mic_haptic">Haptic feedback on mic press</string>
     <string name="label_qwerty_haptic">Haptic on key taps</string>
+    <string name="label_qwerty_swipe_alt">Enable swipe-up digits/symbols</string>
     <string name="label_qwerty_default_lang">Default 26-key language</string>
     <string name="qwerty_lang_english">English</string>
     <string name="qwerty_lang_chinese">Chinese</string>

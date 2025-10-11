@@ -4,5 +4,7 @@
     <item name="tag_long_started" type="id"/>
     <item name="tag_starter" type="id"/>
     <item name="tag_repeater" type="id"/>
+    <item name="tag_swipe_start_x" type="id"/>
+    <item name="tag_swipe_start_y" type="id"/>
+    <item name="tag_swipe_handled" type="id"/>
 </resources>
-

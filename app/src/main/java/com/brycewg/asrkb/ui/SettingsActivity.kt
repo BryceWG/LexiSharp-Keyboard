@@ -96,6 +96,7 @@ class SettingsActivity : AppCompatActivity() {
         val sliderFloatingAlpha = findViewById<Slider>(R.id.sliderFloatingAlpha)
         val switchMicHaptic = findViewById<MaterialSwitch>(R.id.switchMicHaptic)
         val switchQwertyHaptic = findViewById<MaterialSwitch>(R.id.switchQwertyHaptic)
+        val switchQwertySwipeAlt = findViewById<MaterialSwitch>(R.id.switchQwertySwipeAlt)
 
         // LLM相关字段
         val etLlmEndpoint = findViewById<EditText>(R.id.etLlmEndpoint)
@@ -231,6 +232,7 @@ class SettingsActivity : AppCompatActivity() {
         )
         spQwertyDefaultLang.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, qwertyLangItems)
         spQwertyDefaultLang.setSelection(if (prefs.qwertyDefaultLang == "zh") 1 else 0)
+        switchQwertySwipeAlt.isChecked = prefs.qwertySwipeAltEnabled
         // Pinyin mode spinner
         val pinyinModeItems = listOf(
             getString(R.string.pinyin_mode_quanpin),
@@ -337,6 +339,7 @@ class SettingsActivity : AppCompatActivity() {
             prefs.autoSwitchOnPassword = switchAutoSwitchPassword.isChecked
             prefs.micHapticEnabled = switchMicHaptic.isChecked
             prefs.qwertyHapticEnabled = switchQwertyHaptic.isChecked
+            prefs.qwertySwipeAltEnabled = switchQwertySwipeAlt.isChecked
             // 拼音自动转换间隔（秒）
             run {
                 val raw = etPinyinLlmInterval.text?.toString()?.trim() ?: ""
@@ -459,6 +462,8 @@ class SettingsActivity : AppCompatActivity() {
                         )
                         // 同步 26 键默认语言
                         spQwertyDefaultLang.setSelection(if (prefs.qwertyDefaultLang == "zh") 1 else 0)
+                        // 同步 上滑输入开关
+                        switchQwertySwipeAlt.isChecked = prefs.qwertySwipeAltEnabled
                         // 同步 启动默认面板
                         switchStartupQwerty.isChecked = (prefs.startupPanel == "qwerty")
                         // 同步 拼音模式
