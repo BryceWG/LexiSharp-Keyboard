@@ -478,10 +478,14 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         qwertyLangSwitch = v.findViewById(R.id.qwertyLangSwitch)
 
         // Setup toolbar listeners
-        qwertyHideTop?.setOnClickListener { hideKeyboardPanel() }
+        qwertyHideTop?.setOnClickListener {
+            hideKeyboardPanel()
+            it?.let { v -> maybeHapticKeyTap(v) }
+        }
         qwertyPinyin?.setOnClickListener {
             // TODO: Implement pinyin to Chinese conversion using LLM
             // This will be implemented later
+            it?.let { v -> maybeHapticKeyTap(v) }
         }
 
         // Language switch button
@@ -491,7 +495,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 LangMode.Chinese -> LangMode.English
             }
             updateLangModeUI()
-            vibrateTick()
+            it?.let { v -> maybeHapticKeyTap(v) }
         }
 
         // Initialize UI
@@ -508,7 +512,9 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         qwertyLetterKeys.add(child)
                         child.setOnClickListener {
                             val s = child.text?.toString() ?: return@setOnClickListener
-                            commitText(s)
+                            // 26 键点击：使用系统触觉，不使用通用振动
+                            commitTextCore(s, vibrate = false)
+                            maybeHapticKeyTap(child)
                             if (shiftMode == ShiftMode.Once) {
                                 shiftMode = ShiftMode.Off
                                 updateShiftUi()
@@ -518,7 +524,8 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     } else if (tag == "punct_key" && child is TextView) {
                         child.setOnClickListener {
                             val s = child.text?.toString() ?: return@setOnClickListener
-                            commitText(s)
+                            commitTextCore(s, vibrate = false)
+                            maybeHapticKeyTap(child)
                         }
                     } else if (child is ViewGroup) {
                         bindLetters(child)
@@ -531,7 +538,10 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
 
         // Space (tap to insert, long-press to return to ASR panel)
         v.findViewById<TextView?>(R.id.qwertySpace)?.apply {
-            setOnClickListener { commitText(" ") }
+            setOnClickListener {
+                commitTextCore(" ", vibrate = false)
+                maybeHapticKeyTap(this)
+            }
             setOnLongClickListener {
                 showAsrPanel()
                 vibrateTick()
@@ -588,14 +598,19 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                     if (!ls && event.actionMasked == MotionEvent.ACTION_UP) {
                         // treat as tap
                         sendBackspace()
+                        maybeHapticKeyTap(view)
                     }
                     true
                 }
                 else -> false
             }
         }
-        // 123
-        v.findViewById<TextView?>(R.id.qwertyNum)?.setOnClickListener { showSymbolsPanel() }
+        // Enter & 123
+        v.findViewById<ImageButton?>(R.id.qwertyEnter)?.setOnClickListener { sendEnter() }
+        v.findViewById<TextView?>(R.id.qwertyNum)?.setOnClickListener {
+            showSymbolsPanel()
+            it?.let { v2 -> maybeHapticKeyTap(v2) }
+        }
 
         // Shift toggle
         v.findViewById<TextView?>(R.id.qwertyShift)?.apply {
@@ -617,7 +632,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                 }
                 updateShiftUi()
                 applyLetterCase()
-                vibrateTick()
+                maybeHapticKeyTap(this)
             }
         }
     }
@@ -993,6 +1008,20 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             currentInputConnection?.commitText(s, 1)
             vibrateTick()
         } catch (_: Throwable) { }
+    }
+
+    // 内部提交文本，允许选择是否触发默认振动（保留原有行为给非 26 键场景）。
+    private fun commitTextCore(s: String, vibrate: Boolean) {
+        try {
+            currentInputConnection?.commitText(s, 1)
+            if (vibrate) vibrateTick()
+        } catch (_: Throwable) { }
+    }
+
+    // 26 键盘点击触觉反馈：跟随系统触觉设置
+    private fun maybeHapticKeyTap(view: View) {
+        if (!prefs.qwertyHapticEnabled) return
+        try { view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) } catch (_: Throwable) { }
     }
 
     private fun vibrateTick() {

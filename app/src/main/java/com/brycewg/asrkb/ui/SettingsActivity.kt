@@ -93,6 +93,7 @@ class SettingsActivity : AppCompatActivity() {
         val switchFloating = findViewById<MaterialSwitch>(R.id.switchFloatingSwitcher)
         val sliderFloatingAlpha = findViewById<Slider>(R.id.sliderFloatingAlpha)
         val switchMicHaptic = findViewById<MaterialSwitch>(R.id.switchMicHaptic)
+        val switchQwertyHaptic = findViewById<MaterialSwitch>(R.id.switchQwertyHaptic)
 
         // LLM相关字段
         val etLlmEndpoint = findViewById<EditText>(R.id.etLlmEndpoint)
@@ -126,6 +127,7 @@ class SettingsActivity : AppCompatActivity() {
             switchShowImeSwitcher.isChecked = prefs.showImeSwitcherButton
             switchAutoSwitchPassword.isChecked = prefs.autoSwitchOnPassword
             switchMicHaptic.isChecked = prefs.micHapticEnabled
+            switchQwertyHaptic.isChecked = prefs.qwertyHapticEnabled
             switchFloating.isChecked = prefs.floatingSwitcherEnabled
             sliderFloatingAlpha.value = (prefs.floatingSwitcherAlpha * 100f).coerceIn(30f, 100f)
             etLlmEndpoint.setText(prefs.llmEndpoint)
@@ -294,6 +296,7 @@ class SettingsActivity : AppCompatActivity() {
             prefs.showImeSwitcherButton = switchShowImeSwitcher.isChecked
             prefs.autoSwitchOnPassword = switchAutoSwitchPassword.isChecked
             prefs.micHapticEnabled = switchMicHaptic.isChecked
+            prefs.qwertyHapticEnabled = switchQwertyHaptic.isChecked
             // 悬浮球透明度（百分比转 0-1）
             prefs.floatingSwitcherAlpha = (sliderFloatingAlpha.value / 100f).coerceIn(0.2f, 1.0f)
             // 悬浮球开关：保存状态并根据权限与当前输入法情况启动/隐藏

@@ -49,6 +49,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_MIC_HAPTIC_ENABLED, true)
         set(value) = sp.edit { putBoolean(KEY_MIC_HAPTIC_ENABLED, value) }
 
+    // 26 键盘点击触觉反馈
+    var qwertyHapticEnabled: Boolean
+        get() = sp.getBoolean(KEY_QWERTY_HAPTIC_ENABLED, true)
+        set(value) = sp.edit { putBoolean(KEY_QWERTY_HAPTIC_ENABLED, value) }
+
     // 应用内语言（空字符串表示跟随系统；如："zh-Hans"、"en"）
     var appLanguageTag: String
         get() = sp.getString(KEY_APP_LANGUAGE_TAG, "") ?: ""
@@ -268,6 +273,7 @@ class Prefs(context: Context) {
         private const val KEY_SHOW_IME_SWITCHER_BUTTON = "show_ime_switcher_button"
         private const val KEY_AUTO_SWITCH_ON_PASSWORD = "auto_switch_on_password"
         private const val KEY_MIC_HAPTIC_ENABLED = "mic_haptic_enabled"
+        private const val KEY_QWERTY_HAPTIC_ENABLED = "qwerty_haptic_enabled"
         private const val KEY_FLOATING_SWITCHER_ENABLED = "floating_switcher_enabled"
         private const val KEY_FLOATING_SWITCHER_ALPHA = "floating_switcher_alpha"
         private const val KEY_POSTPROC_ENABLED = "postproc_enabled"
@@ -369,6 +375,7 @@ class Prefs(context: Context) {
         o.put(KEY_SHOW_IME_SWITCHER_BUTTON, showImeSwitcherButton)
         o.put(KEY_AUTO_SWITCH_ON_PASSWORD, autoSwitchOnPassword)
         o.put(KEY_MIC_HAPTIC_ENABLED, micHapticEnabled)
+        o.put(KEY_QWERTY_HAPTIC_ENABLED, qwertyHapticEnabled)
         o.put(KEY_APP_LANGUAGE_TAG, appLanguageTag)
         o.put(KEY_FLOATING_SWITCHER_ENABLED, floatingSwitcherEnabled)
         o.put(KEY_FLOATING_SWITCHER_ALPHA, floatingSwitcherAlpha)
@@ -414,6 +421,7 @@ class Prefs(context: Context) {
             optBool(KEY_SHOW_IME_SWITCHER_BUTTON)?.let { showImeSwitcherButton = it }
             optBool(KEY_AUTO_SWITCH_ON_PASSWORD)?.let { autoSwitchOnPassword = it }
             optBool(KEY_MIC_HAPTIC_ENABLED)?.let { micHapticEnabled = it }
+            optBool(KEY_QWERTY_HAPTIC_ENABLED)?.let { qwertyHapticEnabled = it }
             optString(KEY_APP_LANGUAGE_TAG)?.let { appLanguageTag = it }
             optBool(KEY_POSTPROC_ENABLED)?.let { postProcessEnabled = it }
             optBool(KEY_FLOATING_SWITCHER_ENABLED)?.let { floatingSwitcherEnabled = it }
