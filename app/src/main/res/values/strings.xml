@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ASR Keyboard</string>
+    <string name="app_name">言犀键盘</string>
 
     <string name="cd_mic">麦克风</string>
     <string name="cd_settings">设置</string>
@@ -48,13 +48,13 @@
     <string name="toggle_on">开启</string>
     <string name="toggle_off">关闭</string>
 
-    <string name="settings_instructions">首次使用步骤：\n1. 点击“启用键盘”，在系统设置中启用 ASR Keyboard\n2. 点击“选择键盘”，切换到 ASR Keyboard\n3. 授予麦克风权限后，回到任意输入框，长按键盘上的麦克风按钮即可体验</string>
+    <string name="settings_instructions">首次使用步骤：\n1. 点击"启用键盘"，在系统设置中启用 言犀键盘\n2. 点击"选择键盘"，切换到 言犀键盘\n3. 授予麦克风权限后，回到任意输入框，长按键盘上的麦克风按钮即可体验</string>
     <string name="btn_enable">启用键盘</string>
     <string name="btn_choose">选择键盘</string>
     <string name="btn_grant_mic">授予麦克风权限</string>
     <string name="btn_show_guide">查看使用指南</string>
     <!-- Material UI additions -->
-    <string name="settings_title">ASR 键盘设置</string>
+    <string name="settings_title">言犀键盘设置</string>
     <string name="volc_section_title">Volcano Engine 鉴权参数</string>
     <string name="sf_section_title">SiliconFlow 鉴权参数</string>
     <string name="label_app_key">X-Api-App-Key</string>
@@ -84,7 +84,7 @@
     <string name="label_floating_switcher">启用悬浮球快速切换输入法</string>
     <string name="label_floating_alpha">悬浮球透明度</string>
     <string name="toast_need_overlay_perm">请在系统设置中授予“在其他应用上层显示”权限以启用悬浮球</string>
-    <string name="cd_floating_switcher">快速切换到 ASR 键盘</string>
+    <string name="cd_floating_switcher">快速切换到 言犀键盘</string>
 
     <!-- LLM settings -->
     <string name="llm_section_title">AI 后处理配置</string>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ASR Keyboard</string>
+    <string name="app_name">LexiSharp Keyboard</string>
 
     <string name="cd_mic">Microphone</string>
     <string name="cd_settings">Settings</string>
@@ -47,13 +47,13 @@
     <string name="toggle_on">ON</string>
     <string name="toggle_off">OFF</string>
 
-    <string name="settings_instructions">First-time setup:\n1. Tap “Enable Keyboard” and enable ASR Keyboard in system settings\n2. Tap “Choose Keyboard” to switch to ASR Keyboard\n3. Grant microphone permission, then long‑press the mic button on the keyboard to try</string>
+    <string name="settings_instructions">First-time setup:\n1. Tap "Enable Keyboard" and enable LexiSharp Keyboard in system settings\n2. Tap "Choose Keyboard" to switch to LexiSharp Keyboard\n3. Grant microphone permission, then long‑press the mic button on the keyboard to try</string>
     <string name="btn_enable">Enable Keyboard</string>
     <string name="btn_choose">Choose Keyboard</string>
     <string name="btn_grant_mic">Grant Microphone Permission</string>
     <string name="btn_show_guide">View Quick Guide</string>
     <!-- Material UI additions -->
-    <string name="settings_title">ASR Keyboard Settings</string>
+    <string name="settings_title">LexiSharp Keyboard Settings</string>
     <string name="volc_section_title">Volcano Engine Credentials</string>
     <string name="sf_section_title">SiliconFlow Credentials</string>
     <string name="label_app_key">X-Api-App-Key</string>
@@ -84,7 +84,7 @@
     <string name="label_floating_switcher">Enable floating ball to switch IME</string>
     <string name="label_floating_alpha">Floating ball transparency</string>
     <string name="toast_need_overlay_perm">Please grant "Display over other apps" in system settings to enable the floating ball</string>
-    <string name="cd_floating_switcher">Quick switch to ASR keyboard</string>
+    <string name="cd_floating_switcher">Quick switch to LexiSharp keyboard</string>
 
     <!-- LLM settings -->
     <string name="llm_section_title">AI Post-processing</string>
