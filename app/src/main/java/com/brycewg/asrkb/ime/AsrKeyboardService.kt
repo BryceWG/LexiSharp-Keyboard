@@ -61,6 +61,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var asrPanelView: View? = null
     private var qwertyPanelView: View? = null
     private var symbolsPanelView: View? = null
+    private var qwertyLettersPanelView: View? = null
     private var isQwertyVisible: Boolean = false
     private enum class ShiftMode { Off, Once, Lock }
     private var shiftMode: ShiftMode = ShiftMode.Off
@@ -199,20 +200,19 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         val themedContext = android.view.ContextThemeWrapper(this, R.style.Theme_ASRKeyboard_Ime)
         val dynamicContext = com.google.android.material.color.DynamicColors.wrapContextIfAvailable(themedContext)
         val container = FrameLayout(dynamicContext)
-        // Inflate ASR panel (existing)
+        // Inflate ASR 面板
         val asr = LayoutInflater.from(dynamicContext).inflate(R.layout.keyboard_view, container, false)
-        // Inflate 26-key letters panel (hidden by default)
+        // Inflate 26 键（内部包含字母与符号两个主区域）
         val qwerty = LayoutInflater.from(dynamicContext).inflate(R.layout.keyboard_qwerty_view, container, false)
         qwerty.visibility = View.GONE
-        val symbols = LayoutInflater.from(dynamicContext).inflate(R.layout.keyboard_symbols_view, container, false)
-        symbols.visibility = View.GONE
         container.addView(asr, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         container.addView(qwerty, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        container.addView(symbols, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         rootView = container
         asrPanelView = asr
         qwertyPanelView = qwerty
-        symbolsPanelView = symbols
+        // 在 qwerty 内部找到主区域的两个子面板
+        qwertyLettersPanelView = qwerty.findViewById(R.id.qwertyLettersPanel)
+        symbolsPanelView = qwerty.findViewById(R.id.qwertySymbolsPanel)
 
         // Bind ASR panel views
         btnMic = asr.findViewById(R.id.btnMic)
@@ -1175,13 +1175,16 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     }
 
     private fun showLettersPanel() {
-        // Stop any ongoing ASR capture when switching away
+        // 切走 ASR 时停止采集
         if (asrEngine?.isRunning == true) {
             asrEngine?.stop()
         }
         updateUiIdle()
+        // 切换顶层：显示 qwerty，隐藏 asr
         asrPanelView?.visibility = View.GONE
         qwertyPanelView?.visibility = View.VISIBLE
+        // 切换 qwerty 主区域：显示字母，隐藏符号
+        qwertyLettersPanelView?.visibility = View.VISIBLE
         symbolsPanelView?.visibility = View.GONE
         isQwertyVisible = true
         // 应用默认语言模式（设置项）
@@ -1196,7 +1199,6 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
 
     private fun showAsrPanel() {
         qwertyPanelView?.visibility = View.GONE
-        symbolsPanelView?.visibility = View.GONE
         asrPanelView?.visibility = View.VISIBLE
         isQwertyVisible = false
         stopPinyinAutoSuggest(true)
@@ -1207,8 +1209,10 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             asrEngine?.stop()
         }
         updateUiIdle()
+        // 进入符号：显示 qwerty 顶层，仅切换主区域
         asrPanelView?.visibility = View.GONE
-        qwertyPanelView?.visibility = View.GONE
+        qwertyPanelView?.visibility = View.VISIBLE
+        qwertyLettersPanelView?.visibility = View.GONE
         symbolsPanelView?.visibility = View.VISIBLE
         isQwertyVisible = false
         stopPinyinAutoSuggest(true)
