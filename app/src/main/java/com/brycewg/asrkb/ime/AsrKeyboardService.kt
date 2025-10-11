@@ -121,6 +121,14 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     private var micLongPressPending: Boolean = false
     private var micLongPressRunnable: Runnable? = null
 
+    // Qwerty space gestures
+    private var spaceLongPressStarted: Boolean = false
+    private var spaceLongPressPending: Boolean = false
+    private var spaceLongPressRunnable: Runnable? = null
+    private var spaceStartX: Float = 0f
+    private var spaceStartY: Float = 0f
+    private var spaceSwipedUp: Boolean = false
+
     // Backspace gesture state
     private var backspaceStartX: Float = 0f
     private var backspaceStartY: Float = 0f
@@ -758,20 +766,94 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         bindLetters(v)
         applyLetterCase()
 
-        // Space (tap to insert, long-press to return to ASR panel)
+        // Space gestures:
+        // - Tap: 输入空格
+        // - Long press: 按住说话（进入ASR监听，松手停止并返回QWERTY）
+        // - Swipe up: 进入语音输入面板（不直接开始录音）
         v.findViewById<TextView?>(R.id.qwertySpace)?.apply {
-            setOnClickListener {
-                if (langMode == LangMode.Chinese) {
-                    insertIntoPinyinBuffer(" ")
-                } else {
-                    commitTextCore(" ", vibrate = false)
+            setOnTouchListener { view, event ->
+                val slop = ViewConfiguration.get(view.context).scaledTouchSlop
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        spaceStartX = event.x
+                        spaceStartY = event.y
+                        spaceSwipedUp = false
+                        spaceLongPressStarted = false
+                        spaceLongPressPending = true
+                        // 预设长按启动语音识别（按住说话）
+                        val timeout = ViewConfiguration.getLongPressTimeout().toLong()
+                        val r = Runnable {
+                            if (!spaceLongPressPending || asrEngine?.isRunning == true) return@Runnable
+                            // 权限与配置校验
+                            if (!hasRecordAudioPermission() || !prefs.hasAsrKeys()) {
+                                spaceLongPressPending = false
+                                // 展示权限/配置提示需在ASR面板，若需要可引导：这里保持静默
+                                return@Runnable
+                            }
+                            // 准备引擎并切换到ASR面板展示监听状态
+                            asrEngine = ensureEngineMatchesMode(asrEngine)
+                            spaceLongPressStarted = true
+                            committedStableLen = 0
+                            showAsrPanel()
+                            updateUiListening()
+                            asrEngine?.start()
+                        }
+                        spaceLongPressRunnable = r
+                        view.postDelayed(r, timeout)
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val dy = event.y - spaceStartY
+                        // 上滑进入语音输入面板（取消长按）
+                        if (!spaceSwipedUp && !spaceLongPressStarted && dy <= -slop) {
+                            spaceSwipedUp = true
+                            spaceLongPressPending = false
+                            spaceLongPressRunnable?.let { view.removeCallbacks(it) }
+                            spaceLongPressRunnable = null
+                            showAsrPanel()
+                            vibrateTick()
+                            return@setOnTouchListener true
+                        }
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        val dx = event.x - spaceStartX
+                        val dy = event.y - spaceStartY
+                        val isTap = !spaceLongPressStarted && !spaceSwipedUp &&
+                                kotlin.math.abs(dx) < slop && kotlin.math.abs(dy) < slop
+                        // 取消长按触发
+                        spaceLongPressPending = false
+                        spaceLongPressRunnable?.let { view.removeCallbacks(it) }
+                        spaceLongPressRunnable = null
+
+                        if (spaceLongPressStarted && asrEngine?.isRunning == true) {
+                            // 松手停止识别，并返回QWERTY
+                            asrEngine?.stop()
+                            if (!prefs.postProcessEnabled) {
+                                updateUiIdle()
+                            } else {
+                                txtStatus?.text = s(R.string.status_recognizing)
+                            }
+                            showLettersPanel()
+                            return@setOnTouchListener true
+                        }
+                        if (spaceSwipedUp) {
+                            // 已上滑进入语音面板，不再当作点击
+                            return@setOnTouchListener true
+                        }
+                        if (isTap) {
+                            if (langMode == LangMode.Chinese) {
+                                insertIntoPinyinBuffer(" ")
+                            } else {
+                                commitTextCore(" ", vibrate = false)
+                            }
+                            maybeHapticKeyTap(view)
+                            return@setOnTouchListener true
+                        }
+                        true
+                    }
+                    else -> false
                 }
-                maybeHapticKeyTap(this)
-            }
-            setOnLongClickListener {
-                showAsrPanel()
-                vibrateTick()
-                true
             }
         }
         // Backspace gestures: tap delete; swipe up/left clear all; swipe down undo or revert; long-press repeat
