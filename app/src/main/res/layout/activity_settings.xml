@@ -89,12 +89,7 @@
                 android:layout_marginTop="12dp"
                 android:text="@string/label_trim_trailing_punct" />
 
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/switchShowImeSwitcher"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/label_show_ime_switcher" />
+            
 
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/switchFloatingSwitcher"

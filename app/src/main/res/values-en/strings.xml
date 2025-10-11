@@ -69,7 +69,6 @@
     <string name="btn_close">Close</string>
     <string name="title_quick_guide">Quick Start Guide</string>
     <string name="label_trim_trailing_punct">Remove trailing punctuation on finish</string>
-    <string name="label_show_ime_switcher">Show "Switch Input Method" button</string>
     <string name="label_mic_haptic">Haptic feedback on mic press</string>
     <string name="label_qwerty_haptic">Haptic on key taps</string>
     <string name="label_qwerty_default_lang">Default 26-key language</string>

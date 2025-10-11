@@ -68,7 +68,6 @@
     <string name="btn_close">关闭</string>
     <string name="title_quick_guide">快速上手教程</string>
     <string name="label_trim_trailing_punct">完成后去除句末标点</string>
-    <string name="label_show_ime_switcher">显示“切换输入法”按钮</string>
     <string name="label_mic_haptic">按下麦克风时振动反馈</string>
     <string name="label_qwerty_haptic">键盘按键振动</string>
     <string name="label_qwerty_default_lang">26键默认语言模式</string>

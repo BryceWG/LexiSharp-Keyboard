@@ -90,7 +90,6 @@ class SettingsActivity : AppCompatActivity() {
         val spPinyinMode = findViewById<Spinner>(R.id.spPinyinMode)
         val tvAsrTotalChars = findViewById<TextView>(R.id.tvAsrTotalChars)
         val switchTrimTrailingPunct = findViewById<MaterialSwitch>(R.id.switchTrimTrailingPunct)
-        val switchShowImeSwitcher = findViewById<MaterialSwitch>(R.id.switchShowImeSwitcher)
         val switchAutoSwitchPassword = findViewById<MaterialSwitch>(R.id.switchAutoSwitchPassword)
         val switchFloating = findViewById<MaterialSwitch>(R.id.switchFloatingSwitcher)
         val sliderFloatingAlpha = findViewById<Slider>(R.id.sliderFloatingAlpha)
@@ -127,7 +126,6 @@ class SettingsActivity : AppCompatActivity() {
             etOpenAiApiKey.setText(prefs.oaAsrApiKey)
             etOpenAiModel.setText(prefs.oaAsrModel)
             switchTrimTrailingPunct.isChecked = prefs.trimFinalTrailingPunct
-            switchShowImeSwitcher.isChecked = prefs.showImeSwitcherButton
             switchAutoSwitchPassword.isChecked = prefs.autoSwitchOnPassword
             switchMicHaptic.isChecked = prefs.micHapticEnabled
             switchQwertyHaptic.isChecked = prefs.qwertyHapticEnabled
@@ -324,7 +322,6 @@ class SettingsActivity : AppCompatActivity() {
             prefs.gemModel = etGeminiModel.text?.toString()?.ifBlank { Prefs.DEFAULT_GEM_MODEL } ?: Prefs.DEFAULT_GEM_MODEL
             // 开关设置
             prefs.trimFinalTrailingPunct = switchTrimTrailingPunct.isChecked
-            prefs.showImeSwitcherButton = switchShowImeSwitcher.isChecked
             prefs.autoSwitchOnPassword = switchAutoSwitchPassword.isChecked
             prefs.micHapticEnabled = switchMicHaptic.isChecked
             prefs.qwertyHapticEnabled = switchQwertyHaptic.isChecked
