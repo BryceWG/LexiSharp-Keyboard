@@ -79,6 +79,7 @@
     <string name="label_pinyin_mode">拼音输入模式</string>
     <string name="pinyin_mode_quanpin">全拼</string>
     <string name="pinyin_mode_xiaohe">小鹤双拼</string>
+    <string name="label_pinyin_llm_interval">拼音自动转汉字间隔（秒，0 为关闭）</string>
     <string name="label_floating_switcher">启用悬浮球快速切换输入法</string>
     <string name="label_floating_alpha">悬浮球透明度</string>
     <string name="toast_need_overlay_perm">请在系统设置中授予“在其他应用上层显示”权限以启用悬浮球</string>

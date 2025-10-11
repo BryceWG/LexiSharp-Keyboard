@@ -79,6 +79,7 @@
     <string name="label_pinyin_mode">Pinyin input mode</string>
     <string name="pinyin_mode_quanpin">Quanpin</string>
     <string name="pinyin_mode_xiaohe">Xiaohe Shuangpin</string>
+    <string name="label_pinyin_llm_interval">Pinyin auto-conversion interval (seconds, 0 = off)</string>
     <string name="label_floating_switcher">Enable floating ball to switch IME</string>
     <string name="label_floating_alpha">Floating ball transparency</string>
     <string name="toast_need_overlay_perm">Please grant "Display over other apps" in system settings to enable the floating ball</string>

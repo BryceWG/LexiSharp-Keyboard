@@ -43,6 +43,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import com.google.android.material.color.MaterialColors
 
 class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
@@ -70,6 +71,11 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     // 拼音缓冲（中文模式）
     private val pinyinBuffer = StringBuilder()
     private var pinyinBufferSnapshot: String? = null
+    // 中文 26 键：拼音自动 LLM 转换与候选
+    private var pinyinAutoJob: kotlinx.coroutines.Job? = null
+    private var pinyinAutoLastInput: String = ""
+    private var pinyinAutoRunning: Boolean = false
+    private var pendingPinyinSuggestion: String? = null
 
     private var btnMic: FloatingActionButton? = null
     private var btnSettings: ImageButton? = null
@@ -168,6 +174,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
     override fun onDestroy() {
         super.onDestroy()
         asrEngine?.stop()
+        stopPinyinAutoSuggest(true)
         serviceScope.cancel()
     }
 
@@ -521,9 +528,55 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             it?.let { v -> maybeHapticKeyTap(v) }
         }
         qwertyPinyin?.setOnClickListener {
-            // 中文按钮：将缓冲区拼音交给 LLM 转中文并提交
-            it?.let { v -> maybeHapticKeyTap(v) }
-            submitPinyinBufferWithLlm()
+            // 中文“中”键：若最后一次定时调用后拼音有更改，则在上屏前再调用一次LLM；否则直接上屏
+            if (langMode != LangMode.Chinese) { it?.let { v2 -> maybeHapticKeyTap(v2) }; return@setOnClickListener }
+            val rawInput = pinyinBuffer.toString().trim()
+            if (rawInput.isEmpty()) { it?.let { v2 -> maybeHapticKeyTap(v2) }; return@setOnClickListener }
+            // 若未配置LLM，则退回一次性转换逻辑（内部会提示缺少配置）
+            if (!prefs.hasLlmKeys()) { submitPinyinBufferWithLlm(); it?.let { v2 -> maybeHapticKeyTap(v2) }; return@setOnClickListener }
+
+            // 停止周期任务，避免竞态；不清除合成文本
+            stopPinyinAutoSuggest(clearComposition = false)
+            val pinyinNow = when (prefs.pinyinMode) {
+                com.brycewg.asrkb.store.PinyinMode.Quanpin -> rawInput
+                com.brycewg.asrkb.store.PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(rawInput) } catch (_: Throwable) { rawInput }
+            }
+            val needFinalRefresh = (pendingPinyinSuggestion == null) || (pinyinNow != pinyinAutoLastInput)
+            val ic = currentInputConnection
+            if (!needFinalRefresh && !pendingPinyinSuggestion.isNullOrBlank()) {
+                // 直接将当前预览上屏（结束合成）
+                try {
+                    ic?.beginBatchEdit()
+                    ic?.finishComposingText()
+                    ic?.endBatchEdit()
+                } catch (_: Throwable) { }
+                clearPinyinBuffer()
+                pendingPinyinSuggestion = null
+                pinyinAutoLastInput = ""
+                it?.let { v2 -> maybeHapticKeyTap(v2) }
+                maybeStartPinyinAutoSuggest()
+                return@setOnClickListener
+            }
+
+            // 需要最终刷新：再调用一次 LLM，使用返回值替换合成并上屏
+            txtStatus?.text = getString(R.string.status_pinyin_processing)
+            serviceScope.launch {
+                val out = try { postproc.pinyinToChinese(pinyinNow, prefs).ifBlank { pinyinNow } } catch (_: Throwable) { pinyinNow }
+                try {
+                    val ic2 = currentInputConnection
+                    ic2?.beginBatchEdit()
+                    ic2?.setComposingText(out, 1)
+                    ic2?.finishComposingText()
+                    ic2?.endBatchEdit()
+                } catch (_: Throwable) { }
+                clearPinyinBuffer()
+                pendingPinyinSuggestion = null
+                pinyinAutoLastInput = ""
+                vibrateTick()
+                txtStatus?.text = getString(R.string.status_idle)
+                maybeStartPinyinAutoSuggest()
+            }
+            it?.let { v2 -> maybeHapticKeyTap(v2) }
         }
 
         // Language switch button
@@ -757,9 +810,11 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             LangMode.Chinese -> {
                 qwertyLangSwitch?.text = getString(R.string.label_chinese_mode)
                 qwertyTextBuffer?.text = getDisplayPinyinText()
+                maybeStartPinyinAutoSuggest()
             }
             LangMode.English -> {
                 qwertyLangSwitch?.text = getString(R.string.label_english_mode)
+                stopPinyinAutoSuggest(true)
             }
         }
         applyLetterCase()
@@ -787,12 +842,14 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         if (s.isEmpty()) return
         pinyinBuffer.append(s)
         qwertyTextBuffer?.text = getDisplayPinyinText()
+        onPinyinBufferChanged()
     }
 
     private fun popFromPinyinBuffer() : Boolean {
         if (pinyinBuffer.isEmpty()) return false
         pinyinBuffer.deleteCharAt(pinyinBuffer.length - 1)
         qwertyTextBuffer?.text = getDisplayPinyinText()
+        onPinyinBufferChanged()
         return true
     }
 
@@ -800,6 +857,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         if (pinyinBuffer.isEmpty()) return
         pinyinBuffer.clear()
         qwertyTextBuffer?.text = ""
+        onPinyinBufferChanged()
     }
 
     private fun handleQwertyBackspaceTap() {
@@ -953,6 +1011,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         } catch (_: Throwable) { langMode = LangMode.English }
         updateLangModeUI()
         updateShiftUi()
+        if (langMode == LangMode.Chinese) maybeStartPinyinAutoSuggest() else stopPinyinAutoSuggest(true)
     }
 
     private fun showAsrPanel() {
@@ -960,6 +1019,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         symbolsPanelView?.visibility = View.GONE
         asrPanelView?.visibility = View.VISIBLE
         isQwertyVisible = false
+        stopPinyinAutoSuggest(true)
     }
 
     private fun showSymbolsPanel() {
@@ -971,6 +1031,7 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
         qwertyPanelView?.visibility = View.GONE
         symbolsPanelView?.visibility = View.VISIBLE
         isQwertyVisible = false
+        stopPinyinAutoSuggest(true)
     }
 
     override fun onEvaluateFullscreenMode(): Boolean {
@@ -1439,6 +1500,58 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
             true
         } catch (_: Throwable) {
             false
+        }
+    }
+
+    // ---------- 中文 26 键：拼音自动 LLM 转换预览 ----------
+    private fun maybeStartPinyinAutoSuggest() {
+        if (!isQwertyVisible) return
+        if (langMode != LangMode.Chinese) return
+        if (!prefs.hasLlmKeys()) return
+        val interval = prefs.qwertyPinyinLlmIntervalSec
+        if (interval <= 0f) { stopPinyinAutoSuggest(true); return }
+        if (pinyinAutoJob?.isActive == true) return
+        pinyinAutoJob = serviceScope.launch {
+            while (isActive) {
+                val raw = pinyinBuffer.toString().trim()
+                if (raw.isEmpty()) {
+                    try { currentInputConnection?.finishComposingText() } catch (_: Throwable) { }
+                    pendingPinyinSuggestion = null
+                    pinyinAutoLastInput = ""
+                } else if (!pinyinAutoRunning) {
+                    val pinyin = when (prefs.pinyinMode) {
+                        com.brycewg.asrkb.store.PinyinMode.Quanpin -> raw
+                        com.brycewg.asrkb.store.PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(raw) } catch (_: Throwable) { raw }
+                    }
+                    if (pinyin != pinyinAutoLastInput) {
+                        pinyinAutoRunning = true
+                        val out = try { postproc.pinyinToChinese(pinyin, prefs).ifBlank { pinyin } } catch (_: Throwable) { pinyin }
+                        pendingPinyinSuggestion = out
+                        try { currentInputConnection?.setComposingText(out, 1) } catch (_: Throwable) { }
+                        pinyinAutoLastInput = pinyin
+                        pinyinAutoRunning = false
+                    }
+                }
+                val delayMs = ((interval).coerceAtLeast(0f) * 1000f).toLong().coerceAtLeast(500L)
+                kotlinx.coroutines.delay(delayMs)
+            }
+        }
+    }
+
+    private fun stopPinyinAutoSuggest(clearComposition: Boolean) {
+        try { pinyinAutoJob?.cancel() } catch (_: Throwable) { }
+        pinyinAutoJob = null
+        pinyinAutoRunning = false
+        pinyinAutoLastInput = ""
+        pendingPinyinSuggestion = null
+        if (clearComposition) try { currentInputConnection?.finishComposingText() } catch (_: Throwable) { }
+    }
+
+    private fun onPinyinBufferChanged() {
+        pinyinAutoLastInput = ""
+        if (pinyinBuffer.isEmpty()) {
+            pendingPinyinSuggestion = null
+            try { currentInputConnection?.finishComposingText() } catch (_: Throwable) { }
         }
     }
 }
