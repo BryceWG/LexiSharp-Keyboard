@@ -2014,25 +2014,27 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener {
                         pinyinAutoRunning = true
                         val reqSeq = ++pinyinAutoSeq
                         val out = try { postproc.pinyinToChinese(pinyin, prefs).ifBlank { pinyin } } catch (_: Throwable) { pinyin }
-                        // 若期间拼音已变更或被清空/停止，丢弃结果
-                        if (reqSeq == pinyinAutoSeq) {
-                            // 再做一次原样校验：当前缓冲与请求时拼音一致才应用
-                            val curRaw = pinyinBuffer.toString().trim()
-                            val curPin = when (prefs.pinyinMode) {
-                                PinyinMode.Quanpin -> curRaw
-                                PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(curRaw) } catch (_: Throwable) { curRaw }
-                            }
-                            if (curPin == pinyin && curPin.isNotEmpty()) {
-                                pendingPinyinSuggestion = out
-                                // 始终设置合成预览，确保“自动转换”为用户可见
-                                try { currentInputConnection?.setComposingText(out, 1) } catch (_: Throwable) { }
-                                pinyinAutoLastInput = pinyin
-                            }
+                        // 计算当前最新拼音，用于判定是否仍可应用预览
+                        val curRaw = pinyinBuffer.toString().trim()
+                        val curPin = when (prefs.pinyinMode) {
+                            PinyinMode.Quanpin -> curRaw
+                            PinyinMode.Xiaohe -> try { XiaoheShuangpinConverter.convert(curRaw) } catch (_: Throwable) { curRaw }
+                        }
+                        val seqMatches = (reqSeq == pinyinAutoSeq)
+                        // 放宽条件：
+                        // - 若序号一致且输入未变更，正常应用；
+                        // - 若序号不一致，但当前输入是旧输入的前缀扩展（持续输入场景），也立即展示以提升实时性；
+                        val allowStaleIfPrefix = (!seqMatches && curPin.startsWith(pinyin))
+                        if ((seqMatches && curPin == pinyin && curPin.isNotEmpty()) || allowStaleIfPrefix) {
+                            pendingPinyinSuggestion = out
+                            try { currentInputConnection?.setComposingText(out, 1) } catch (_: Throwable) { }
+                            // 仅当严格匹配当前输入时，才记录 lastInput，避免打断后续更新
+                            if (seqMatches) pinyinAutoLastInput = pinyin
                         }
                         pinyinAutoRunning = false
                     }
                 }
-                val delayMs = ((interval).coerceAtLeast(0f) * 1000f).toLong().coerceAtLeast(500L)
+                val delayMs = ((interval).coerceAtLeast(0f) * 1000f).toLong().coerceAtLeast(100L)
                 kotlinx.coroutines.delay(delayMs)
             }
         }
