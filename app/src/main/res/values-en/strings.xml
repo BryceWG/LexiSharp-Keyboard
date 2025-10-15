@@ -123,6 +123,8 @@
     <string name="label_floating_only_when_ime_visible">Only show floating ball when keyboard is visible</string>
     <string name="label_floating_ime_visibility_compat">IME visibility compatibility mode</string>
     <string name="desc_floating_ime_visibility_compat">Enable when default detection is inaccurate; adds multiple heuristics (editable focus/IME package) and may slightly increase battery usage.</string>
+    <string name="label_floating_ime_visibility_debug">Show IME visibility debug toasts</string>
+    <string name="desc_floating_ime_visibility_debug">On visibility state changes, show which heuristics fired via Toast. For testing only.</string>
     <string name="label_floating_alpha">Floating ball transparency</string>
     <string name="label_floating_size">Floating ball size</string>
     <string name="toast_need_overlay_perm">Please grant "Display over other apps" in system settings to enable the floating ball</string>
@@ -134,6 +136,14 @@
     <string name="label_floating_write_compat_pkgs">Target package names (one per line)</string>
     <string name="hint_floating_write_compat_pkgs">Enter full package or prefix (e.g., org.telegram or com.ss.android.ugc.aweme). A trailing * means prefix match (e.g., org.telegram.*).</string>
     <string name="cd_floating_asr">Floating ball voice recognition</string>
+
+    <!-- IME visibility debug toasts -->
+    <string name="toast_ime_debug_window">Detect: IME window present</string>
+    <string name="toast_ime_debug_focus">Detect: Editable focus</string>
+    <string name="toast_ime_debug_package">Detect: IME package</string>
+    <string name="toast_ime_debug_insets">Detect: WindowInsets(IME)</string>
+    <string name="toast_ime_debug_layout">Detect: Visible frame gap</string>
+    <string name="toast_ime_debug_hold">Detect: Focus hold window</string>
     <string name="btn_grant_all_permissions">Grant all required permissions</string>
 
     <!-- Floating ASR status messages -->

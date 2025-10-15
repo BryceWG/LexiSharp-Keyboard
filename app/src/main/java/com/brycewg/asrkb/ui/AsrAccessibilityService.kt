@@ -230,11 +230,18 @@ class AsrAccessibilityService : AccessibilityService() {
         val hasFocus = hasEditableFocusNow()
         if (hasFocus) lastEditableFocusAt = now
         val prefsCompat = try { Prefs(this).floatingImeVisibilityCompatEnabled } catch (_: Throwable) { false }
-        val simpleVisible = isImeWindowVisible()
+        val prefsDebug = try { Prefs(this).floatingImeVisibilityDebugEnabled } catch (_: Throwable) { false }
+        val mWindow = isImeWindowVisible()
+        val mFocus = hasFocus
+        val mPkg = isImePackageDetected()
+        val mInsets = isImeVisibleByInsets()
+        val mLayout = isImeVisibleByGlobalLayout()
+        val hold = (now - lastEditableFocusAt <= holdAfterFocusMs)
+
         val compatVisible = if (prefsCompat) {
-            simpleVisible || hasFocus || isImePackageDetected() || isImeVisibleByInsets() || isImeVisibleByGlobalLayout()
-        } else simpleVisible
-        val active = compatVisible || (now - lastEditableFocusAt <= holdAfterFocusMs)
+            mWindow || mFocus || mPkg || mInsets || mLayout
+        } else mWindow
+        val active = compatVisible || hold
         val prev = lastImeSceneActive
         if (prev == null || prev != active) {
             lastImeSceneActive = active
@@ -251,8 +258,23 @@ class AsrAccessibilityService : AccessibilityService() {
                     val i2 = Intent(this, FloatingAsrService::class.java).apply { this.action = action }
                     startService(i2)
                 } catch (_: Throwable) { }
+                // 调试提示：显示触发命中的策略（仅在激活为 true 时展示）
+                if (prefsDebug && active) {
+                    if (mWindow) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_window))
+                    if (prefsCompat) {
+                        if (mFocus) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_focus))
+                        if (mPkg) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_package))
+                        if (mInsets) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_insets))
+                        if (mLayout) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_layout))
+                    }
+                    if (hold) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_hold))
+                }
             } catch (_: Throwable) { }
         }
+    }
+
+    private fun toastDebug(msg: String) {
+        try { Toast.makeText(this, msg, Toast.LENGTH_SHORT).show() } catch (_: Throwable) { }
     }
 
     override fun onInterrupt() {
@@ -569,7 +591,7 @@ class AsrAccessibilityService : AccessibilityService() {
         try {
             val wm = windowManager ?: return
             val v = View(this)
-            val type = if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE
+            val type = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
             val lp = WindowManager.LayoutParams(
                 1, 1,
                 type,

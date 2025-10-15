@@ -58,6 +58,21 @@
         android:textColor="@android:color/darker_gray"
         android:text="@string/desc_floating_ime_visibility_compat" />
 
+      <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/switchImeVisibilityDebug"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/label_floating_ime_visibility_debug" />
+
+      <TextView
+        android:id="@+id/tvImeVisibilityDebugDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@android:color/darker_gray"
+        android:text="@string/desc_floating_ime_visibility_debug" />
+
       <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
