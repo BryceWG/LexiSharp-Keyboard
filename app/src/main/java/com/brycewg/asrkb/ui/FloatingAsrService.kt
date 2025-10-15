@@ -69,9 +69,6 @@ class FloatingAsrService : Service(), StreamingAsrEngine.Listener {
     private var ballIcon: ImageView? = null
     private var ballProgress: ProgressBar? = null
     private var lp: WindowManager.LayoutParams? = null
-    private var imeInsetsVisible: Boolean? = null
-    private var imeLayoutVisible: Boolean? = null
-    private var imeLayoutListener: android.view.ViewTreeObserver.OnGlobalLayoutListener? = null
     
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var asrEngine: StreamingAsrEngine? = null
@@ -220,7 +217,6 @@ class FloatingAsrService : Service(), StreamingAsrEngine.Listener {
             applyBallSize()
             updateBallState()
             Log.d(TAG, "Ball view added successfully")
-            tryAttachImeVisibilityDetectors(view)
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to add ball view", e)
         }
@@ -238,7 +234,6 @@ class FloatingAsrService : Service(), StreamingAsrEngine.Listener {
 
     private fun hideBall() {
         val v = ballView ?: return
-        tryDetachImeVisibilityDetectors(v)
         try { windowManager.removeView(v) } catch (_: Throwable) { }
         ballView = null
         lp = null
@@ -864,59 +859,4 @@ class FloatingAsrService : Service(), StreamingAsrEngine.Listener {
         return (v * d + 0.5f).toInt()
     }
 
-    private fun tryAttachImeVisibilityDetectors(root: View) {
-        val prefs = try { prefs } catch (_: Throwable) { null } ?: return
-        if (!prefs.floatingSwitcherOnlyWhenImeVisible || !prefs.floatingImeVisibilityCompatEnabled) return
-        // WindowInsets (API 30+)
-        try {
-            if (android.os.Build.VERSION.SDK_INT >= 30) {
-                root.setOnApplyWindowInsetsListener { _, insets ->
-                    val visible = try { insets.isVisible(android.view.WindowInsets.Type.ime()) } catch (_: Throwable) { false }
-                    if (visible != imeInsetsVisible) {
-                        imeInsetsVisible = visible
-                        AsrAccessibilityService.reportOverlayImeVisibility(visible, null)
-                    }
-                    insets
-                }
-                try { root.requestApplyInsets() } catch (_: Throwable) { }
-                try {
-                    val wi = root.rootWindowInsets
-                    val vis = wi?.let { if (android.os.Build.VERSION.SDK_INT >= 30) it.isVisible(android.view.WindowInsets.Type.ime()) else false } ?: false
-                    imeInsetsVisible = vis
-                    AsrAccessibilityService.reportOverlayImeVisibility(vis, null)
-                } catch (_: Throwable) { }
-            }
-        } catch (_: Throwable) { }
-        // GlobalLayout fallback
-        try {
-            val l = android.view.ViewTreeObserver.OnGlobalLayoutListener {
-                try {
-                    val r = android.graphics.Rect()
-                    root.getWindowVisibleDisplayFrame(r)
-                    val screenH = resources.displayMetrics.heightPixels
-                    val gap = (screenH - r.bottom).coerceAtLeast(0)
-                    val visible = gap > dp(96)
-                    if (imeLayoutVisible != visible) {
-                        imeLayoutVisible = visible
-                        AsrAccessibilityService.reportOverlayImeVisibility(null, visible)
-                    }
-                } catch (_: Throwable) { }
-            }
-            root.viewTreeObserver.addOnGlobalLayoutListener(l)
-            imeLayoutListener = l
-        } catch (_: Throwable) { }
-    }
-
-    private fun tryDetachImeVisibilityDetectors(root: View) {
-        try {
-            val vto = root.viewTreeObserver
-            imeLayoutListener?.let { l ->
-                try { vto.removeOnGlobalLayoutListener(l) } catch (_: Throwable) { }
-            }
-        } catch (_: Throwable) { }
-        imeLayoutListener = null
-        imeInsetsVisible = null
-        imeLayoutVisible = null
-        try { AsrAccessibilityService.reportOverlayImeVisibility(false, false) } catch (_: Throwable) { }
-    }
 }

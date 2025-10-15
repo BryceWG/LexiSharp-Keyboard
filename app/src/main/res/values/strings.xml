@@ -122,7 +122,7 @@
     <string name="label_floating_switcher">启用悬浮球快速切换输入法</string>
     <string name="label_floating_only_when_ime_visible">仅在键盘显示时显示悬浮球</string>
     <string name="label_floating_ime_visibility_compat">键盘可见性兼容模式</string>
-    <string name="desc_floating_ime_visibility_compat">当默认检测不准确时启用，增加多种推断方式（可编辑焦点/输入法包名等），可能略微增加耗电。</string>
+    <string name="desc_floating_ime_visibility_compat">当默认检测不准确时启用：使用“输入法包名”检测作为兼容回退。</string>
     <string name="label_floating_ime_visibility_debug">显示键盘可见性调试提示</string>
     <string name="desc_floating_ime_visibility_debug">在键盘可见性状态改变时，以 Toast 显示命中的检测策略，仅用于测试与排查。</string>
     <string name="label_floating_alpha">悬浮球透明度</string>
@@ -133,10 +133,7 @@
 
     <!-- IME visibility debug toasts -->
     <string name="toast_ime_debug_window">检测：IME窗口存在</string>
-    <string name="toast_ime_debug_focus">检测：可编辑焦点</string>
     <string name="toast_ime_debug_package">检测：IME包名</string>
-    <string name="toast_ime_debug_insets">检测：WindowInsets(IME)</string>
-    <string name="toast_ime_debug_layout">检测：可视区域高度差</string>
     <string name="toast_ime_debug_hold">检测：焦点保持窗口</string>
     <string name="label_floating_write_compat">悬浮球写入文字兼容性模式</string>
     <string name="desc_floating_write_compat">在部分应用中文本框会出现背景文字被误识别，导致通过无障碍服务插入文字时会附带背景文字的情况。开启此模式后，在目标软件中使用悬浮球时会尝试“全选+粘贴”写入一个不可见字符，以屏蔽背景文字。</string>

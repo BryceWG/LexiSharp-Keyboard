@@ -9,10 +9,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.View
-import android.view.WindowManager
-import android.graphics.PixelFormat
-import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
@@ -40,23 +36,9 @@ class AsrAccessibilityService : AccessibilityService() {
         const val EXTRA_TEXT = "text"
 
         private var instance: AsrAccessibilityService? = null
-        @Volatile private var overlayImeInsetsVisible: Boolean = false
-        @Volatile private var overlayImeLayoutVisible: Boolean = false
-        @Volatile private var overlayImeSignalsAt: Long = 0L
 
         fun isEnabled(): Boolean = instance != null
 
-        /**
-         * 悬浮层上报的 IME 可见性信号（insets/layout 推断）。
-         * 仅在“兼容模式”下作为辅助信号使用。
-         */
-        fun reportOverlayImeVisibility(insetsVisible: Boolean?, layoutVisible: Boolean?) {
-            try {
-                insetsVisible?.let { overlayImeInsetsVisible = it }
-                layoutVisible?.let { overlayImeLayoutVisible = it }
-                overlayImeSignalsAt = System.currentTimeMillis()
-            } catch (_: Throwable) { }
-        }
 
         /**
          * 读取当前焦点可编辑节点的文本与选区，转换为前后缀快照；
@@ -171,19 +153,14 @@ class AsrAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         instance = this
         Log.d(TAG, "Accessibility service connected")
-        windowManager = try { getSystemService(WindowManager::class.java) } catch (_: Throwable) { null }
-        // 刚连接时推送一次当前输入场景状态，并尝试附加 overlay 监听
-        try { handler.post {
-            tryAttachOverlayDetectorsIfNeeded()
-            tryDispatchImeVisibilityHint()
-        } } catch (_: Throwable) { }
+        // 刚连接时推送一次当前输入场景状态
+        try { handler.post { tryDispatchImeVisibilityHint() } } catch (_: Throwable) { }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         instance = null
         Log.d(TAG, "Accessibility service destroyed")
-        try { detachOverlayDetectors() } catch (_: Throwable) { }
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -191,8 +168,6 @@ class AsrAccessibilityService : AccessibilityService() {
     private var lastImeSceneActive: Boolean? = null
     private var lastEditableFocusAt: Long = 0L
     private val holdAfterFocusMs: Long = 1200L
-    private var overlayView: View? = null
-    private var windowManager: WindowManager? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         // 现用于辅助判断“仅在输入法面板显示时显示悬浮球”的场景
@@ -222,8 +197,6 @@ class AsrAccessibilityService : AccessibilityService() {
         if (!prefs.floatingSwitcherOnlyWhenImeVisible) return
         val anyFloatingEnabled = prefs.floatingSwitcherEnabled || prefs.floatingAsrEnabled
         if (!anyFloatingEnabled) return
-        // 兼容模式：根据设置动态附加或移除 overlay insets 监听
-        tryAttachOverlayDetectorsIfNeeded()
 
         // 优先：是否存在输入法窗口（更接近“键盘显示”）
         val now = System.currentTimeMillis()
@@ -231,17 +204,18 @@ class AsrAccessibilityService : AccessibilityService() {
         if (hasFocus) lastEditableFocusAt = now
         val prefsCompat = try { Prefs(this).floatingImeVisibilityCompatEnabled } catch (_: Throwable) { false }
         val prefsDebug = try { Prefs(this).floatingImeVisibilityDebugEnabled } catch (_: Throwable) { false }
+        // 默认模式：仅使用 IME 窗口存在判断
         val mWindow = isImeWindowVisible()
-        val mFocus = hasFocus
+        // 兼容模式：仅使用 IME 包名判断
         val mPkg = isImePackageDetected()
-        val mInsets = isImeVisibleByInsets()
-        val mLayout = isImeVisibleByGlobalLayout()
         val hold = (now - lastEditableFocusAt <= holdAfterFocusMs)
 
         val compatVisible = if (prefsCompat) {
-            mWindow || mFocus || mPkg || mInsets || mLayout
-        } else mWindow
-        val active = compatVisible || hold
+            mPkg
+        } else {
+            mWindow
+        }
+        val active = if (prefsCompat) compatVisible else (compatVisible || hold)
         val prev = lastImeSceneActive
         if (prev == null || prev != active) {
             lastImeSceneActive = active
@@ -260,14 +234,10 @@ class AsrAccessibilityService : AccessibilityService() {
                 } catch (_: Throwable) { }
                 // 调试提示：显示触发命中的策略（仅在激活为 true 时展示）
                 if (prefsDebug && active) {
-                    if (mWindow) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_window))
-                    if (prefsCompat) {
-                        if (mFocus) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_focus))
-                        if (mPkg) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_package))
-                        if (mInsets) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_insets))
-                        if (mLayout) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_layout))
-                    }
-                    if (hold) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_hold))
+                    // 默认模式：提示 IME 窗口存在；兼容模式：仅提示 IME 包名
+                    if (!prefsCompat && mWindow) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_window))
+                    if (prefsCompat && mPkg) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_package))
+                    if (!prefsCompat && hold) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_hold))
                 }
             } catch (_: Throwable) { }
         }
@@ -569,64 +539,4 @@ class AsrAccessibilityService : AccessibilityService() {
         } catch (_: Throwable) { false }
     }
 
-    private fun isImeVisibleByInsets(): Boolean {
-        val ts = overlayImeSignalsAt
-        if (ts <= 0L) return false
-        val fresh = (System.currentTimeMillis() - ts) <= 2000L
-        return fresh && overlayImeInsetsVisible
-    }
-
-    private fun isImeVisibleByGlobalLayout(): Boolean {
-        val ts = overlayImeSignalsAt
-        if (ts <= 0L) return false
-        val fresh = (System.currentTimeMillis() - ts) <= 2000L
-        return fresh && overlayImeLayoutVisible
-    }
-
-    private fun tryAttachOverlayDetectorsIfNeeded() {
-        val prefs = try { Prefs(this) } catch (_: Throwable) { null } ?: return
-        val need = prefs.floatingSwitcherOnlyWhenImeVisible && prefs.floatingImeVisibilityCompatEnabled
-        if (!need) { detachOverlayDetectors(); return }
-        if (overlayView != null) return
-        try {
-            val wm = windowManager ?: return
-            val v = View(this)
-            val type = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
-            val lp = WindowManager.LayoutParams(
-                1, 1,
-                type,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
-            )
-            lp.title = "AsrImeInsetsProbe"
-            lp.x = 0
-            lp.y = 0
-            v.setOnApplyWindowInsetsListener { _, insets ->
-                if (Build.VERSION.SDK_INT >= 30) {
-                    val visible = try { insets.isVisible(android.view.WindowInsets.Type.ime()) } catch (_: Throwable) { false }
-                    reportOverlayImeVisibility(visible, null)
-                }
-                insets
-            }
-            wm.addView(v, lp)
-            overlayView = v
-            try { v.requestApplyInsets() } catch (_: Throwable) { }
-            try {
-                if (Build.VERSION.SDK_INT >= 30) {
-                    val wi = v.rootWindowInsets
-                    val vis = wi?.isVisible(android.view.WindowInsets.Type.ime()) ?: false
-                    reportOverlayImeVisibility(vis, null)
-                }
-            } catch (_: Throwable) { }
-        } catch (e: Throwable) {
-            Log.w(TAG, "attach overlay insets probe failed", e)
-        }
-    }
-
-    private fun detachOverlayDetectors() {
-        val v = overlayView ?: return
-        try { windowManager?.removeView(v) } catch (_: Throwable) { }
-        overlayView = null
-        try { reportOverlayImeVisibility(false, false) } catch (_: Throwable) { }
-    }
 }
