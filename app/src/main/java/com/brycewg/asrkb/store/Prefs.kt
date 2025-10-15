@@ -90,6 +90,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE, true)
         set(value) = sp.edit { putBoolean(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE, value) }
 
+    // 键盘可见性兼容模式（默认关）
+    var floatingImeVisibilityCompatEnabled: Boolean
+        get() = sp.getBoolean(KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED, false)
+        set(value) = sp.edit { putBoolean(KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED, value) }
+
     // 悬浮球透明度（0.2f - 1.0f）
     var floatingSwitcherAlpha: Float
         get() = sp.getFloat(KEY_FLOATING_SWITCHER_ALPHA, 1.0f).coerceIn(0.2f, 1.0f)
@@ -526,6 +531,7 @@ class Prefs(context: Context) {
         private const val KEY_FLOATING_WRITE_COMPAT_ENABLED = "floating_write_compat_enabled"
         private const val KEY_FLOATING_ASR_ENABLED = "floating_asr_enabled"
         private const val KEY_FLOATING_ONLY_WHEN_IME_VISIBLE = "floating_only_when_ime_visible"
+        private const val KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED = "floating_ime_visibility_compat_enabled"
         private const val KEY_FLOATING_WRITE_COMPAT_PACKAGES = "floating_write_compat_packages"
         private const val KEY_POSTPROC_ENABLED = "postproc_enabled"
         private const val KEY_APP_LANGUAGE_TAG = "app_language_tag"
@@ -674,6 +680,7 @@ class Prefs(context: Context) {
         o.put(KEY_FLOATING_POS_Y, floatingBallPosY)
         o.put(KEY_FLOATING_ASR_ENABLED, floatingAsrEnabled)
         o.put(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE, floatingSwitcherOnlyWhenImeVisible)
+        o.put(KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED, floatingImeVisibilityCompatEnabled)
         o.put(KEY_POSTPROC_ENABLED, postProcessEnabled)
         o.put(KEY_LLM_ENDPOINT, llmEndpoint)
         o.put(KEY_LLM_API_KEY, llmApiKey)
@@ -748,6 +755,7 @@ class Prefs(context: Context) {
             optInt(KEY_FLOATING_POS_Y)?.let { floatingBallPosY = it }
             optBool(KEY_FLOATING_ASR_ENABLED)?.let { floatingAsrEnabled = it }
             optBool(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE)?.let { floatingSwitcherOnlyWhenImeVisible = it }
+            optBool(KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED)?.let { floatingImeVisibilityCompatEnabled = it }
             optBool(KEY_FLOATING_WRITE_COMPAT_ENABLED)?.let { floatingWriteTextCompatEnabled = it }
             optString(KEY_FLOATING_WRITE_COMPAT_PACKAGES)?.let { floatingWriteCompatPackages = it }
 

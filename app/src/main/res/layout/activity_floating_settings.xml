@@ -43,6 +43,21 @@
         android:layout_marginTop="8dp"
         android:text="@string/label_floating_only_when_ime_visible" />
 
+      <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/switchImeVisibilityCompat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/label_floating_ime_visibility_compat" />
+
+      <TextView
+        android:id="@+id/tvImeVisibilityCompatDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@android:color/darker_gray"
+        android:text="@string/desc_floating_ime_visibility_compat" />
+
       <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

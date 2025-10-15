@@ -39,6 +39,9 @@ class FloatingImeSwitcherService : Service() {
     private var ballView: View? = null
     private var lp: WindowManager.LayoutParams? = null
     private var imeVisible: Boolean = false
+    private var imeInsetsVisible: Boolean? = null
+    private var imeLayoutVisible: Boolean? = null
+    private var imeLayoutListener: android.view.ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private val handler = Handler(Looper.getMainLooper())
     private val settingsObserver = object : android.database.ContentObserver(handler) {
@@ -195,10 +198,13 @@ class FloatingImeSwitcherService : Service() {
             lp = params
         } catch (_: Throwable) { }
         applyBallAlpha()
+        // 兼容模式：尝试从悬浮层推断 IME 可见性，回报给无障碍服务
+        tryAttachImeVisibilityDetectors(iv)
     }
 
     private fun removeBall() {
         val v = ballView ?: return
+        tryDetachImeVisibilityDetectors(v)
         try { windowManager.removeView(v) } catch (_: Throwable) { }
         ballView = null
         lp = null
@@ -422,5 +428,62 @@ class FloatingImeSwitcherService : Service() {
     private fun dp(v: Int): Int {
         val d = resources.displayMetrics.density
         return (v * d + 0.5f).toInt()
+    }
+
+    private fun tryAttachImeVisibilityDetectors(root: View) {
+        val prefs = try { Prefs(this) } catch (_: Throwable) { null } ?: return
+        if (!prefs.floatingSwitcherOnlyWhenImeVisible || !prefs.floatingImeVisibilityCompatEnabled) return
+        // WindowInsets (API 30+)
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                root.setOnApplyWindowInsetsListener { _, insets ->
+                    val visible = try { insets.isVisible(android.view.WindowInsets.Type.ime()) } catch (_: Throwable) { false }
+                    if (visible != imeInsetsVisible) {
+                        imeInsetsVisible = visible
+                        AsrAccessibilityService.reportOverlayImeVisibility(visible, null)
+                    }
+                    insets
+                }
+                try { root.requestApplyInsets() } catch (_: Throwable) { }
+                try {
+                    val wi = root.rootWindowInsets
+                    val vis = wi?.let { if (android.os.Build.VERSION.SDK_INT >= 30) it.isVisible(android.view.WindowInsets.Type.ime()) else false } ?: false
+                    imeInsetsVisible = vis
+                    AsrAccessibilityService.reportOverlayImeVisibility(vis, null)
+                } catch (_: Throwable) { }
+            }
+        } catch (_: Throwable) { }
+        // GlobalLayout fallback
+        try {
+            val l = android.view.ViewTreeObserver.OnGlobalLayoutListener {
+                try {
+                    val r = android.graphics.Rect()
+                    root.getWindowVisibleDisplayFrame(r)
+                    val screenH = resources.displayMetrics.heightPixels
+                    val gap = (screenH - r.bottom).coerceAtLeast(0)
+                    val visible = gap > dp(96) // 阈值：约合 96dp
+                    if (imeLayoutVisible != visible) {
+                        imeLayoutVisible = visible
+                        AsrAccessibilityService.reportOverlayImeVisibility(null, visible)
+                    }
+                } catch (_: Throwable) { }
+            }
+            root.viewTreeObserver.addOnGlobalLayoutListener(l)
+            imeLayoutListener = l
+        } catch (_: Throwable) { }
+    }
+
+    private fun tryDetachImeVisibilityDetectors(root: View) {
+        try {
+            val vto = root.viewTreeObserver
+            imeLayoutListener?.let { l ->
+                try { vto.removeOnGlobalLayoutListener(l) } catch (_: Throwable) { }
+            }
+        } catch (_: Throwable) { }
+        imeLayoutListener = null
+        imeInsetsVisible = null
+        imeLayoutVisible = null
+        // 清空一次上报，避免残留
+        try { AsrAccessibilityService.reportOverlayImeVisibility(false, false) } catch (_: Throwable) { }
     }
 }

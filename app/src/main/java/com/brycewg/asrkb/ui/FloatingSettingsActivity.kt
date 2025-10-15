@@ -28,6 +28,7 @@ class FloatingSettingsActivity : AppCompatActivity() {
 
     val switchFloating = findViewById<MaterialSwitch>(R.id.switchFloatingSwitcher)
     val switchFloatingOnlyWhenImeVisible = findViewById<MaterialSwitch>(R.id.switchFloatingOnlyWhenImeVisible)
+    val switchImeVisibilityCompat = findViewById<MaterialSwitch>(R.id.switchImeVisibilityCompat)
     val sliderFloatingAlpha = findViewById<Slider>(R.id.sliderFloatingAlpha)
     val sliderFloatingSize = findViewById<Slider>(R.id.sliderFloatingSize)
     val switchFloatingAsr = findViewById<MaterialSwitch>(R.id.switchFloatingAsr)
@@ -37,6 +38,7 @@ class FloatingSettingsActivity : AppCompatActivity() {
     // 初始状态
     switchFloating.isChecked = prefs.floatingSwitcherEnabled
     switchFloatingOnlyWhenImeVisible.isChecked = prefs.floatingSwitcherOnlyWhenImeVisible
+    switchImeVisibilityCompat.isChecked = prefs.floatingImeVisibilityCompatEnabled
     sliderFloatingAlpha.value = (prefs.floatingSwitcherAlpha * 100f).coerceIn(30f, 100f)
     sliderFloatingSize.value = prefs.floatingBallSizeDp.toFloat()
     switchFloatingAsr.isChecked = prefs.floatingAsrEnabled
@@ -90,6 +92,15 @@ class FloatingSettingsActivity : AppCompatActivity() {
     switchFloatingOnlyWhenImeVisible.setOnCheckedChangeListener { _, isChecked ->
       prefs.floatingSwitcherOnlyWhenImeVisible = isChecked
       if (isChecked && !isAccessibilityServiceEnabled()) {
+        Toast.makeText(this, getString(R.string.toast_need_accessibility_perm), Toast.LENGTH_LONG).show()
+        try { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) } catch (_: Throwable) {}
+      }
+    }
+
+    // 键盘可见性兼容模式
+    switchImeVisibilityCompat.setOnCheckedChangeListener { _, isChecked ->
+      prefs.floatingImeVisibilityCompatEnabled = isChecked
+      if (prefs.floatingSwitcherOnlyWhenImeVisible && isChecked && !isAccessibilityServiceEnabled()) {
         Toast.makeText(this, getString(R.string.toast_need_accessibility_perm), Toast.LENGTH_LONG).show()
         try { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) } catch (_: Throwable) {}
       }

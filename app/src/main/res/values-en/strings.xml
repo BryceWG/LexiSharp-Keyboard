@@ -121,6 +121,8 @@
     <string name="label_mic_tap_toggle">Use tap to control recording</string>
     <string name="label_floating_switcher">Enable floating ball to switch IME</string>
     <string name="label_floating_only_when_ime_visible">Only show floating ball when keyboard is visible</string>
+    <string name="label_floating_ime_visibility_compat">IME visibility compatibility mode</string>
+    <string name="desc_floating_ime_visibility_compat">Enable when default detection is inaccurate; adds multiple heuristics (editable focus/IME package) and may slightly increase battery usage.</string>
     <string name="label_floating_alpha">Floating ball transparency</string>
     <string name="label_floating_size">Floating ball size</string>
     <string name="toast_need_overlay_perm">Please grant "Display over other apps" in system settings to enable the floating ball</string>
