@@ -48,7 +48,11 @@
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           style="@style/Widget.Material3.Button"
-          android:text="@string/btn_enable" />
+          android:text="@string/btn_enable"
+          app:icon="@drawable/ic_keyboard"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.button.MaterialButton
           android:id="@+id/btnChoose"
@@ -56,7 +60,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.TonalButton"
-          android:text="@string/btn_choose" />
+          android:text="@string/btn_choose"
+          app:icon="@drawable/ic_keyboard"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.button.MaterialButton
           android:id="@+id/btnAllPermissions"
@@ -64,7 +72,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.TonalButton"
-          android:text="@string/btn_grant_all_permissions" />
+          android:text="@string/btn_grant_all_permissions"
+          app:icon="@drawable/ic_settings"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.button.MaterialButton
           android:id="@+id/btnShowGuide"
@@ -72,7 +84,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.OutlinedButton"
-          android:text="@string/btn_show_guide" />
+          android:text="@string/btn_show_guide"
+          app:icon="@drawable/ic_prompt"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.button.MaterialButton
           android:id="@+id/btnCheckUpdate"
@@ -80,7 +96,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.OutlinedButton"
-          android:text="@string/btn_check_update" />
+          android:text="@string/btn_check_update"
+          app:icon="@drawable/ic_settings"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <!-- 测试输入：按钮，点击后弹出底部输入框 -->
         <com.google.android.material.button.MaterialButton
@@ -89,7 +109,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.OutlinedButton"
-          android:text="@string/btn_test_input" />
+          android:text="@string/btn_test_input"
+          app:icon="@drawable/ic_keyboard"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.divider.MaterialDivider
           android:layout_width="match_parent"
@@ -101,7 +125,10 @@
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="12dp"
-          android:text="@string/label_trim_trailing_punct" />
+          android:text="@string/label_trim_trailing_punct"
+          android:drawableStart="@drawable/ic_edit"
+          android:drawablePadding="@dimen/setting_icon_padding"
+          android:drawableTint="?attr/colorOnSurface" />
 
         
 
@@ -110,28 +137,40 @@
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
-          android:text="@string/label_auto_switch_password" />
+          android:text="@string/label_auto_switch_password"
+          android:drawableStart="@drawable/ic_settings"
+          android:drawablePadding="@dimen/setting_icon_padding"
+          android:drawableTint="?attr/colorOnSurface" />
 
         <com.google.android.material.materialswitch.MaterialSwitch
           android:id="@+id/switchMicHaptic"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
-          android:text="@string/label_mic_haptic" />
+          android:text="@string/label_mic_haptic"
+          android:drawableStart="@drawable/ic_mic"
+          android:drawablePadding="@dimen/setting_icon_padding"
+          android:drawableTint="?attr/colorOnSurface" />
 
         <com.google.android.material.materialswitch.MaterialSwitch
           android:id="@+id/switchMicTapToggle"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
-          android:text="@string/label_mic_tap_toggle" />
+          android:text="@string/label_mic_tap_toggle"
+          android:drawableStart="@drawable/ic_mic"
+          android:drawablePadding="@dimen/setting_icon_padding"
+          android:drawableTint="?attr/colorOnSurface" />
 
         <com.google.android.material.materialswitch.MaterialSwitch
           android:id="@+id/switchSwapAiEditWithSwitcher"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
-          android:text="@string/label_swap_ai_edit_switcher" />
+          android:text="@string/label_swap_ai_edit_switcher"
+          android:drawableStart="@drawable/ic_magic"
+          android:drawablePadding="@dimen/setting_icon_padding"
+          android:drawableTint="?attr/colorOnSurface" />
 
         <!-- 键盘高度 -->
         <TextView
@@ -141,7 +180,10 @@
           android:layout_marginTop="16dp"
           android:textColor="?attr/colorOnSurface"
           android:textStyle="bold"
-          android:text="@string/label_keyboard_height" />
+          android:text="@string/label_keyboard_height"
+          android:drawableStart="@drawable/ic_keyboard"
+          android:drawablePadding="@dimen/setting_icon_padding"
+          android:drawableTint="?attr/colorOnSurface" />
 
         <Spinner
           android:id="@+id/spKeyboardHeight"
@@ -156,7 +198,10 @@
           android:layout_marginTop="16dp"
           android:textColor="?attr/colorOnSurface"
           android:textStyle="bold"
-          android:text="@string/label_language" />
+          android:text="@string/label_language"
+          android:drawableStart="@drawable/ic_settings"
+          android:drawablePadding="@dimen/setting_icon_padding"
+          android:drawableTint="?attr/colorOnSurface" />
 
         <Spinner
           android:id="@+id/spLanguage"
@@ -174,7 +219,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="16dp"
           style="@style/Widget.Material3.Button"
-          android:text="@string/title_asr_settings" />
+          android:text="@string/title_asr_settings"
+          app:icon="@drawable/ic_mic"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.button.MaterialButton
           android:id="@+id/btnOpenAiSettings"
@@ -182,7 +231,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.TonalButton"
-          android:text="@string/title_ai_settings" />
+          android:text="@string/title_ai_settings"
+          app:icon="@drawable/ic_magic"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.button.MaterialButton
           android:id="@+id/btnOpenFloatingSettings"
@@ -190,7 +243,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.TonalButton"
-          android:text="@string/title_floating_settings" />
+          android:text="@string/title_floating_settings"
+          app:icon="@drawable/ic_settings"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.button.MaterialButton
           android:id="@+id/btnOpenPunctSettings"
@@ -198,7 +255,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.OutlinedButton"
-          android:text="@string/title_punct_settings" />
+          android:text="@string/title_punct_settings"
+          app:icon="@drawable/ic_edit"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.divider.MaterialDivider
           android:layout_width="match_parent"
@@ -213,7 +274,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.TonalButton"
-          android:text="@string/btn_export_settings" />
+          android:text="@string/btn_export_settings"
+          app:icon="@drawable/ic_settings"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <com.google.android.material.button.MaterialButton
           android:id="@+id/btnImportSettings"
@@ -221,7 +286,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="8dp"
           style="@style/Widget.Material3.Button.OutlinedButton"
-          android:text="@string/btn_import_settings" />
+          android:text="@string/btn_import_settings"
+          app:icon="@drawable/ic_settings"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
         <!-- 关于 -->
         <com.google.android.material.button.MaterialButton
@@ -230,7 +299,11 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="16dp"
           style="@style/Widget.Material3.Button.OutlinedButton"
-          android:text="@string/btn_about" />
+          android:text="@string/btn_about"
+          app:icon="@drawable/ic_settings"
+          app:iconGravity="textStart"
+          app:iconPadding="@dimen/setting_icon_padding"
+          app:iconSize="@dimen/setting_icon_size" />
 
       </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
