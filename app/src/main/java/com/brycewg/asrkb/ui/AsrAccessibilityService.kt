@@ -203,19 +203,18 @@ class AsrAccessibilityService : AccessibilityService() {
         val hasFocus = hasEditableFocusNow()
         if (hasFocus) lastEditableFocusAt = now
         val prefsCompat = try { Prefs(this).floatingImeVisibilityCompatEnabled } catch (_: Throwable) { false }
-        val prefsDebug = try { Prefs(this).floatingImeVisibilityDebugEnabled } catch (_: Throwable) { false }
+        val compatPkgs = try { Prefs(this).getFloatingImeVisibilityCompatPackageRules() } catch (_: Throwable) { emptyList() }
         // 默认模式：仅使用 IME 窗口存在判断
         val mWindow = isImeWindowVisible()
         // 兼容模式：仅使用 IME 包名判断
         val mPkg = isImePackageDetected()
         val hold = (now - lastEditableFocusAt <= holdAfterFocusMs)
 
-        val compatVisible = if (prefsCompat) {
-            mPkg
-        } else {
-            mWindow
-        }
-        val active = if (prefsCompat) compatVisible else (compatVisible || hold)
+        // 仅当“开启兼容模式”且当前前台应用在兼容目标列表中时，才使用包名检测；否则使用默认窗口检测+保持
+        val activePkg = getActiveWindowPackage()
+        val isCompatTarget = prefsCompat && !activePkg.isNullOrEmpty() && compatPkgs.any { it == activePkg }
+        val compatVisible = if (isCompatTarget) mPkg else mWindow
+        val active = if (isCompatTarget) compatVisible else (compatVisible || hold)
         val prev = lastImeSceneActive
         if (prev == null || prev != active) {
             lastImeSceneActive = active
@@ -232,19 +231,8 @@ class AsrAccessibilityService : AccessibilityService() {
                     val i2 = Intent(this, FloatingAsrService::class.java).apply { this.action = action }
                     startService(i2)
                 } catch (_: Throwable) { }
-                // 调试提示：显示触发命中的策略（仅在激活为 true 时展示）
-                if (prefsDebug && active) {
-                    // 默认模式：提示 IME 窗口存在；兼容模式：仅提示 IME 包名
-                    if (!prefsCompat && mWindow) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_window))
-                    if (prefsCompat && mPkg) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_package))
-                    if (!prefsCompat && hold) toastDebug(getString(com.brycewg.asrkb.R.string.toast_ime_debug_hold))
-                }
             } catch (_: Throwable) { }
         }
-    }
-
-    private fun toastDebug(msg: String) {
-        try { Toast.makeText(this, msg, Toast.LENGTH_SHORT).show() } catch (_: Throwable) { }
     }
 
     override fun onInterrupt() {

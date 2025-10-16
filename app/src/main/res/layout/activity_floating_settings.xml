@@ -43,35 +43,6 @@
         android:layout_marginTop="8dp"
         android:text="@string/label_floating_only_when_ime_visible" />
 
-      <com.google.android.material.materialswitch.MaterialSwitch
-        android:id="@+id/switchImeVisibilityCompat"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="@string/label_floating_ime_visibility_compat" />
-
-      <TextView
-        android:id="@+id/tvImeVisibilityCompatDesc"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textColor="@android:color/darker_gray"
-        android:text="@string/desc_floating_ime_visibility_compat" />
-
-      <com.google.android.material.materialswitch.MaterialSwitch
-        android:id="@+id/switchImeVisibilityDebug"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="@string/label_floating_ime_visibility_debug" />
-
-      <TextView
-        android:id="@+id/tvImeVisibilityDebugDesc"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textColor="@android:color/darker_gray"
-        android:text="@string/desc_floating_ime_visibility_debug" />
 
       <TextView
         android:layout_width="match_parent"
@@ -142,6 +113,39 @@
           android:scrollbars="vertical" />
       </com.google.android.material.textfield.TextInputLayout>
 
+      <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/switchImeVisibilityCompat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/label_floating_ime_visibility_compat" />
+
+      <TextView
+        android:id="@+id/tvImeVisibilityCompatDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@android:color/darker_gray"
+        android:text="@string/desc_floating_ime_visibility_compat" />
+        
+      <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilImeVisibilityCompatPkgs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:helperText="@string/hint_ime_visibility_compat_pkgs">
+
+        <com.google.android.material.textfield.TextInputEditText
+          android:id="@+id/etImeVisibilityCompatPkgs"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:hint="@string/label_ime_visibility_compat_pkgs"
+          android:inputType="textNoSuggestions|textMultiLine"
+          android:minLines="3"
+          android:gravity="top|start"
+          android:overScrollMode="always"
+          android:scrollbars="vertical" />
+      </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
   </ScrollView>
 

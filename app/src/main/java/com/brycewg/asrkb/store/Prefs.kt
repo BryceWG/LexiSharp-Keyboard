@@ -90,15 +90,21 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE, true)
         set(value) = sp.edit { putBoolean(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE, value) }
 
-    // 键盘可见性兼容模式（默认关）
+    // 键盘可见性兼容模式（默认关）；仅对“兼容包名列表”中的应用生效
     var floatingImeVisibilityCompatEnabled: Boolean
         get() = sp.getBoolean(KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED, false)
         set(value) = sp.edit { putBoolean(KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED, value) }
 
-    // 键盘可见性调试提示（Toast），默认关
-    var floatingImeVisibilityDebugEnabled: Boolean
-        get() = sp.getBoolean(KEY_FLOATING_IME_VISIBILITY_DEBUG_ENABLED, false)
-        set(value) = sp.edit { putBoolean(KEY_FLOATING_IME_VISIBILITY_DEBUG_ENABLED, value) }
+    // 键盘可见性兼容：目标包名列表（每行一个，精准匹配）；默认内置 com.tencent.mm
+    var floatingImeVisibilityCompatPackages: String
+        get() = sp.getString(
+            KEY_FLOATING_IME_VISIBILITY_COMPAT_PACKAGES,
+            DEFAULT_FLOATING_IME_VISIBILITY_COMPAT_PACKAGES
+        ) ?: DEFAULT_FLOATING_IME_VISIBILITY_COMPAT_PACKAGES
+        set(value) = sp.edit { putString(KEY_FLOATING_IME_VISIBILITY_COMPAT_PACKAGES, value) }
+
+    fun getFloatingImeVisibilityCompatPackageRules(): List<String> =
+        floatingImeVisibilityCompatPackages.split('\n').map { it.trim() }.filter { it.isNotEmpty() }
 
     // 悬浮球透明度（0.2f - 1.0f）
     var floatingSwitcherAlpha: Float
@@ -537,7 +543,7 @@ class Prefs(context: Context) {
         private const val KEY_FLOATING_ASR_ENABLED = "floating_asr_enabled"
         private const val KEY_FLOATING_ONLY_WHEN_IME_VISIBLE = "floating_only_when_ime_visible"
         private const val KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED = "floating_ime_visibility_compat_enabled"
-        private const val KEY_FLOATING_IME_VISIBILITY_DEBUG_ENABLED = "floating_ime_visibility_debug_enabled"
+        private const val KEY_FLOATING_IME_VISIBILITY_COMPAT_PACKAGES = "floating_ime_visibility_compat_packages"
         private const val KEY_FLOATING_WRITE_COMPAT_PACKAGES = "floating_write_compat_packages"
         private const val KEY_POSTPROC_ENABLED = "postproc_enabled"
         private const val KEY_APP_LANGUAGE_TAG = "app_language_tag"
@@ -622,6 +628,8 @@ class Prefs(context: Context) {
         const val DEFAULT_FLOATING_BALL_SIZE_DP = 44
         // 悬浮写入兼容：默认目标包名（精准匹配，每行一个）
         const val DEFAULT_FLOATING_WRITE_COMPAT_PACKAGES = "org.telegram.messenger\nnu.gpu.nagram\ncom.ss.android.ugc.aweme"
+        // 键盘可见性兼容：默认目标包名（精准匹配，每行一个）
+        const val DEFAULT_FLOATING_IME_VISIBILITY_COMPAT_PACKAGES = "com.tencent.mm"
 
         // Soniox 默认端点
         const val SONIOX_API_BASE_URL = "https://api.soniox.com"
@@ -687,7 +695,7 @@ class Prefs(context: Context) {
         o.put(KEY_FLOATING_ASR_ENABLED, floatingAsrEnabled)
         o.put(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE, floatingSwitcherOnlyWhenImeVisible)
         o.put(KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED, floatingImeVisibilityCompatEnabled)
-        o.put(KEY_FLOATING_IME_VISIBILITY_DEBUG_ENABLED, floatingImeVisibilityDebugEnabled)
+        o.put(KEY_FLOATING_IME_VISIBILITY_COMPAT_PACKAGES, floatingImeVisibilityCompatPackages)
         o.put(KEY_POSTPROC_ENABLED, postProcessEnabled)
         o.put(KEY_LLM_ENDPOINT, llmEndpoint)
         o.put(KEY_LLM_API_KEY, llmApiKey)
@@ -763,7 +771,7 @@ class Prefs(context: Context) {
             optBool(KEY_FLOATING_ASR_ENABLED)?.let { floatingAsrEnabled = it }
             optBool(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE)?.let { floatingSwitcherOnlyWhenImeVisible = it }
             optBool(KEY_FLOATING_IME_VISIBILITY_COMPAT_ENABLED)?.let { floatingImeVisibilityCompatEnabled = it }
-            optBool(KEY_FLOATING_IME_VISIBILITY_DEBUG_ENABLED)?.let { floatingImeVisibilityDebugEnabled = it }
+            optString(KEY_FLOATING_IME_VISIBILITY_COMPAT_PACKAGES)?.let { floatingImeVisibilityCompatPackages = it }
             optBool(KEY_FLOATING_WRITE_COMPAT_ENABLED)?.let { floatingWriteTextCompatEnabled = it }
             optString(KEY_FLOATING_WRITE_COMPAT_PACKAGES)?.let { floatingWriteCompatPackages = it }
 
