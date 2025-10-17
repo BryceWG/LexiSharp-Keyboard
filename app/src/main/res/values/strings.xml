@@ -43,7 +43,7 @@
   <string name="settings_title">言犀键盘设置</string>
   <string name="title_asr_settings">ASR 设置</string>
   <string name="title_ai_settings">AI 后处理设置</string>
-  <string name="title_punct_settings">自定义标点设置</string>
+  <string name="title_punct_settings">自定义输入设置</string>
     <string name="title_floating_settings">悬浮球设置</string>
     <string name="volc_section_title">Volcano Engine 鉴权参数</string>
     <string name="sf_section_title">SiliconFlow 鉴权参数</string>
@@ -191,6 +191,19 @@
     <string name="label_auto_switch_password">密码框自动切换回上个输入法</string>
     <!-- Language & misc -->
     <string name="label_language">应用语言</string>
+    <string name="label_speech_preset_section">语音预置信息</string>
+    <string name="speech_preset_empty_placeholder">尚未添加预置信息</string>
+    <string name="speech_preset_untitled">未命名预置信息</string>
+    <string name="hint_speech_preset_name">预置信息名称</string>
+    <string name="hint_speech_preset_content">预置信息内容</string>
+    <string name="btn_speech_preset_add">新增预置信息</string>
+    <string name="btn_speech_preset_delete">删除当前预置</string>
+    <string name="speech_preset_default_name">预置信息%1$d</string>
+    <string name="toast_speech_preset_added">已新增预置信息</string>
+    <string name="toast_speech_preset_deleted">已删除预置信息</string>
+    <string name="dialog_speech_preset_delete_title">删除预置信息</string>
+    <string name="dialog_speech_preset_delete_message">确定删除“%1$s”吗？</string>
+    <string name="error_speech_preset_name_required">名称不能为空</string>
     <string name="lang_follow_system">跟随系统</string>
     <string name="lang_zh_cn">简体中文</string>
     <string name="lang_en">English</string>

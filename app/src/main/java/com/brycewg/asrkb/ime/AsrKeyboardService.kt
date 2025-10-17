@@ -1182,59 +1182,91 @@ class AsrKeyboardService : InputMethodService(), StreamingAsrEngine.Listener, co
                     goIdleWithTimingHint()
                 }
             } else {
-                val ic = currentInputConnection
-                val finalText = if (prefs.trimFinalTrailingPunct) trimTrailingPunctuation(text) else text
-                // 若最终识别为空，直接反馈明确提示，避免无提示等待
-                if (finalText.isBlank()) {
-                    txtStatus?.text = getString(R.string.asr_error_empty_result)
+                val trimmedFinal = if (prefs.trimFinalTrailingPunct) trimTrailingPunctuation(text) else text
+                val presetReplacement = try {
+                    prefs.findSpeechPresetReplacement(trimmedFinal)
+                } catch (_: Throwable) {
+                    null
+                }
+                if (prefs.postProcessEnabled && prefs.hasLlmKeys() && presetReplacement == null) {
+                    // Keep recognized text as composing while we post-process
+                    currentInputConnection?.setComposingText(text, 1)
+                    txtStatus?.text = getString(R.string.status_ai_processing)
+                    val raw = trimmedFinal
+                    val processed = try {
+                        postproc.process(raw, prefs).ifBlank { raw }
+                    } catch (_: Throwable) {
+                        raw
+                    }
+                    // �������ȥ����β��㣬��LLM�������Ҳִ��һ���޼�������ģ�����²��ر�㵼������ʧЧ
+                    val finalProcessed = if (prefs.trimFinalTrailingPunct) trimTrailingPunctuation(processed) else processed
+                    val ic = currentInputConnection
+                    ic?.setComposingText(finalProcessed, 1)
+                    ic?.finishComposingText()
+                    // Record this commit so user can swipe-down on backspace to revert to raw
+                    lastPostprocCommit = if (finalProcessed.isNotEmpty() && finalProcessed != raw) PostprocCommit(finalProcessed, raw) else null
                     vibrateTick()
                     committedStableLen = 0
-                    lastPartialText = null
-                    lastPostprocCommit = null
+                    // Track last ASR commit as what we actually inserted
+                    lastAsrCommitText = finalProcessed
+                    // ͳ�ƣ��ۼӱ���ʶ�������ύ��������AI�༭�����룬�����֧���ų���
+                    try { prefs.addAsrChars(finalProcessed.length) } catch (_: Throwable) { }
                     goIdleWithTimingHint()
-                    return@launch
-                }
-                val partial = lastPartialText
-                if (!partial.isNullOrEmpty()) {
-                    // 已有流式中间结果作为 composing
-                    ic?.finishComposingText()
-                    if (finalText.startsWith(partial)) {
-                        val remainder = finalText.substring(partial.length)
-                        if (remainder.isNotEmpty()) ic?.commitText(remainder, 1)
-                    } else {
-                        // 结果发生回退/改写：移除已显示的中间结果，直接写入最终
-                        ic?.deleteSurroundingText(partial.length, 0)
-                        ic?.commitText(finalText, 1)
-                    }
                 } else {
-                    // 传统一次性文件识别路径
-                    val trimDelta = text.length - finalText.length
-                    if (prefs.trimFinalTrailingPunct && trimDelta > 0) {
-                        val alreadyCommittedOverrun = (committedStableLen - finalText.length).coerceAtLeast(0)
-                        if (alreadyCommittedOverrun > 0) {
-                            ic?.deleteSurroundingText(alreadyCommittedOverrun, 0)
-                            committedStableLen -= alreadyCommittedOverrun
+                    val ic = currentInputConnection
+                    val finalText = presetReplacement ?: trimmedFinal
+                    // ������ʶ��Ϊ�գ�ֱ�ӷ�����ȷ��ʾ����������ʾ�ȴ�
+                    if (finalText.isBlank()) {
+                        txtStatus?.text = getString(R.string.asr_error_empty_result)
+                        vibrateTick()
+                        committedStableLen = 0
+                        lastPartialText = null
+                        lastPostprocCommit = null
+                        goIdleWithTimingHint()
+                        return@launch
+                    }
+                    val partial = lastPartialText
+                    if (!partial.isNullOrEmpty()) {
+                        // ������ʽ�м�����Ϊ composing
+                        ic?.finishComposingText()
+                        if (finalText.startsWith(partial)) {
+                            val remainder = finalText.substring(partial.length)
+                            if (remainder.isNotEmpty()) ic?.commitText(remainder, 1)
+                        } else {
+                            // �����������/��д���Ƴ�����ʾ���м�����ֱ��д������
+                            ic?.deleteSurroundingText(partial.length, 0)
+                            ic?.commitText(finalText, 1)
                         }
+                    } else {
+                        // ��ͳһ�����ļ�ʶ��·��
+                        val trimDelta = text.length - trimmedFinal.length
+                        if (prefs.trimFinalTrailingPunct && trimDelta > 0) {
+                            val alreadyCommittedOverrun = (committedStableLen - finalText.length).coerceAtLeast(0)
+                            if (alreadyCommittedOverrun > 0) {
+                                ic?.deleteSurroundingText(alreadyCommittedOverrun, 0)
+                                committedStableLen -= alreadyCommittedOverrun
+                            }
+                        }
+                        val remainder = if (finalText.length > committedStableLen) finalText.substring(committedStableLen) else ""
+                        ic?.finishComposingText()
+                        if (remainder.isNotEmpty()) ic?.commitText(remainder, 1)
                     }
-                    val remainder = if (finalText.length > committedStableLen) finalText.substring(committedStableLen) else ""
-                    ic?.finishComposingText()
-                    if (remainder.isNotEmpty()) ic?.commitText(remainder, 1)
+                    vibrateTick()
+                    committedStableLen = 0
+                    // Track last ASR commit as the full final text (not just remainder)
+                    lastAsrCommitText = finalText
+                    lastPartialText = null
+                    // 统计：累加本次识别最终提交的字数
+                    try { prefs.addAsrChars(finalText.length) } catch (_: Throwable) { }
+                    // 分段期间保持“正在聆听”，否则回到空闲并显示耗时提示
+                    if (asrEngine?.isRunning == true) {
+                        updateUiListening()
+                    } else {
+                        goIdleWithTimingHint()
+                    }
+                    // Clear any previous postproc commit context
+                    lastPostprocCommit = null
                 }
-                vibrateTick()
-                committedStableLen = 0
-                // Track last ASR commit as the full final text (not just remainder)
-                lastAsrCommitText = finalText
-                lastPartialText = null
-                // 统计：累加本次识别最终提交的字数
-                try { prefs.addAsrChars(finalText.length) } catch (_: Throwable) { }
-                // 分段期间保持“正在聆听”，否则回到空闲并显示耗时提示
-                if (asrEngine?.isRunning == true) {
-                    updateUiListening()
-                } else {
-                    goIdleWithTimingHint()
-                }
-                // Clear any previous postproc commit context
-                lastPostprocCommit = null
             }
         }
     }

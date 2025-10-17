@@ -109,7 +109,6 @@ class SettingsActivity : AppCompatActivity() {
         val switchHideRecentTasks = findViewById<MaterialSwitch>(R.id.switchHideRecentTasks)
         val spKeyboardHeight = findViewById<Spinner>(R.id.spKeyboardHeight)
 
-
         fun applyPrefsToUi() {
             switchTrimTrailingPunct.isChecked = prefs.trimFinalTrailingPunct
             switchAutoSwitchPassword.isChecked = prefs.autoSwitchOnPassword
@@ -117,58 +116,12 @@ class SettingsActivity : AppCompatActivity() {
             switchMicTapToggle.isChecked = prefs.micTapToggleEnabled
             switchSwapAiEditWithSwitcher.isChecked = prefs.swapAiEditWithImeSwitcher
             switchHideRecentTasks.isChecked = prefs.hideRecentTaskCard
+            spKeyboardHeight.setSelection((prefs.keyboardHeightTier - 1).coerceIn(0, 2))
             try {
                 tvAsrTotalChars.text = getString(R.string.label_asr_total_chars, prefs.totalAsrChars)
             } catch (_: Throwable) { }
         }
         applyPrefsToUi()
-
-        // 键盘高度：三档
-        val kbHeightOptions = arrayOf<String>(
-            getString(R.string.keyboard_height_small),
-            getString(R.string.keyboard_height_medium),
-            getString(R.string.keyboard_height_large)
-        )
-        spKeyboardHeight.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, kbHeightOptions)
-        spKeyboardHeight.setSelection((prefs.keyboardHeightTier - 1).coerceIn(0, 2))
-        // 已在 applyPrefsToUi 中统一设置上述字段
-
-        // 应用语言选择器设置（独立于高级视图）
-        val languageItems = listOf(
-            getString(R.string.lang_follow_system),
-            getString(R.string.lang_zh_cn),
-            getString(R.string.lang_en)
-        )
-        spLanguage.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, languageItems)
-        val savedTag = prefs.appLanguageTag
-        spLanguage.setSelection(
-            when (savedTag) {
-                "zh", "zh-CN", "zh-Hans" -> 1
-                "en" -> 2
-                else -> 0
-            }
-        )
-        val languageSpinnerInitialized = true
-
-        spLanguage.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
-                if (!languageSpinnerInitialized) return
-                val newTag = when (position) {
-                    // 使用通用中文标签，避免区域标签在部分设备上匹配异常
-                    1 -> "zh-CN"
-                    2 -> "en"
-                    else -> "" // 跟随系统
-                }
-                if (newTag != prefs.appLanguageTag) {
-                    prefs.appLanguageTag = newTag
-                    val locales = if (newTag.isBlank()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(newTag)
-                    AppCompatDelegate.setApplicationLocales(locales)
-                }
-            }
-
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-        }
-
         // AI编辑与切换键位置交换
         switchSwapAiEditWithSwitcher.setOnCheckedChangeListener { btn, isChecked ->
             hapticTapIfEnabled(btn)

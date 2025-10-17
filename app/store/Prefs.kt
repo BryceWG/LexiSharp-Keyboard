@@ -302,6 +302,77 @@ class Prefs(context: Context) {
         }
     }
 
+    var speechPresetsJson: String
+        get() = sp.getString(KEY_SPEECH_PRESETS, "") ?: ""
+        set(value) = sp.edit { putString(KEY_SPEECH_PRESETS, value) }
+
+    var activeSpeechPresetId: String
+        get() = sp.getString(KEY_SPEECH_PRESET_ACTIVE_ID, "") ?: ""
+        set(value) = sp.edit { putString(KEY_SPEECH_PRESET_ACTIVE_ID, value) }
+
+    fun getSpeechPresets(): List<SpeechPreset> {
+        if (speechPresetsJson.isBlank()) return emptyList()
+        return try {
+            val arr = org.json.JSONArray(speechPresetsJson)
+            val list = mutableListOf<SpeechPreset>()
+            for (i in 0 until arr.length()) {
+                val o = arr.optJSONObject(i) ?: continue
+                val id = o.optString("id").ifBlank { java.util.UUID.randomUUID().toString() }
+                val name = o.optString("name").trim()
+                if (name.isEmpty()) continue
+                val content = o.optString("content")
+                list.add(SpeechPreset(id, name, content))
+            }
+            list
+        } catch (_: Throwable) {
+            emptyList()
+        }
+    }
+
+    fun setSpeechPresets(list: List<SpeechPreset>) {
+        val sanitized = list.mapNotNull { p ->
+            val name = p.name.trim()
+            if (name.isEmpty()) {
+                null
+            } else {
+                val id = p.id.ifBlank { java.util.UUID.randomUUID().toString() }
+                SpeechPreset(id, name, p.content)
+            }
+        }
+        val arr = org.json.JSONArray()
+        sanitized.forEach { p ->
+            val o = org.json.JSONObject()
+            o.put("id", p.id)
+            o.put("name", p.name)
+            o.put("content", p.content)
+            arr.put(o)
+        }
+        speechPresetsJson = arr.toString()
+        if (sanitized.none { it.id == activeSpeechPresetId }) {
+            activeSpeechPresetId = sanitized.firstOrNull()?.id ?: ""
+        }
+    }
+
+    fun findSpeechPresetReplacement(original: String): String? {
+        val normalized = original.trim()
+        if (normalized.isEmpty()) return null
+        val presets = getSpeechPresets()
+        val strict = presets.firstOrNull { it.name.trim() == normalized }
+        val match = strict ?: presets.firstOrNull { it.name.trim().equals(normalized, ignoreCase = true) }
+        return match?.content
+    }
+
+    fun getActiveSpeechPreset(): SpeechPreset? {
+        val presets = getSpeechPresets()
+        if (presets.isEmpty()) return null
+        val id = activeSpeechPresetId
+        if (id.isNotBlank()) {
+            val found = presets.firstOrNull { it.id == id }
+            if (found != null) return found
+        }
+        return presets.firstOrNull()
+    }
+
     val activePromptContent: String
         get() {
             val id = activePromptId
@@ -627,6 +698,8 @@ class Prefs(context: Context) {
         private const val KEY_LLM_PROMPT = "llm_prompt"
         private const val KEY_LLM_PROMPT_PRESETS = "llm_prompt_presets"
         private const val KEY_LLM_PROMPT_ACTIVE_ID = "llm_prompt_active_id"
+        private const val KEY_SPEECH_PRESETS = "speech_presets"
+        private const val KEY_SPEECH_PRESET_ACTIVE_ID = "speech_preset_active_id"
         private const val KEY_ASR_VENDOR = "asr_vendor"
         private const val KEY_SF_API_KEY = "sf_api_key"
         private const val KEY_SF_MODEL = "sf_model"
@@ -805,6 +878,8 @@ class Prefs(context: Context) {
         o.put(KEY_LLM_PROMPT, llmPrompt)
         o.put(KEY_LLM_PROMPT_PRESETS, promptPresetsJson)
         o.put(KEY_LLM_PROMPT_ACTIVE_ID, activePromptId)
+        o.put(KEY_SPEECH_PRESETS, speechPresetsJson)
+        o.put(KEY_SPEECH_PRESET_ACTIVE_ID, activeSpeechPresetId)
         // 供应商设置（通用导出）
         o.put(KEY_ASR_VENDOR, asrVendor.id)
         // 遍历所有供应商字段，统一导出，避免逐个硬编码
@@ -898,6 +973,21 @@ class Prefs(context: Context) {
             optString(KEY_LLM_PROMPT_ACTIVE_ID)?.let { activePromptId = it }
             if (!o.has(KEY_LLM_PROMPT_PRESETS)) {
                 optString(KEY_LLM_PROMPT)?.let { llmPrompt = it }
+            }
+            val importedSpeechActiveId = if (o.has(KEY_SPEECH_PRESET_ACTIVE_ID)) o.optString(KEY_SPEECH_PRESET_ACTIVE_ID) else null
+            if (o.has(KEY_SPEECH_PRESETS)) {
+                optString(KEY_SPEECH_PRESETS)?.let { json ->
+                    speechPresetsJson = json
+                    val list = getSpeechPresets()
+                    setSpeechPresets(list)
+                }
+            }
+            if (importedSpeechActiveId != null) {
+                activeSpeechPresetId = importedSpeechActiveId
+                val currentSpeechPresets = getSpeechPresets()
+                if (currentSpeechPresets.isNotEmpty() && currentSpeechPresets.none { it.id == activeSpeechPresetId }) {
+                    activeSpeechPresetId = currentSpeechPresets.first().id
+                }
             }
 
             optString(KEY_ASR_VENDOR)?.let { asrVendor = AsrVendor.fromId(it) }

@@ -88,7 +88,83 @@
         android:textColor="?attr/colorOnSurface"
         android:textColorHint="?attr/colorOnSurfaceVariant" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.divider.MaterialDivider
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="24dp" />
+
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="16dp"
+      android:textColor="?attr/colorOnSurface"
+      android:textStyle="bold"
+      android:text="@string/label_speech_preset_section" />
+
+    <Spinner
+      android:id="@+id/spSpeechPresets"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="4dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+      android:id="@+id/tilSpeechPresetName"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:hint="@string/hint_speech_preset_name"
+      app:boxBackgroundMode="outline">
+
+      <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/etSpeechPresetName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:imeOptions="actionDone"
+        android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+      android:id="@+id/tilSpeechPresetContent"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:hint="@string/hint_speech_preset_content"
+      app:boxBackgroundMode="outline">
+
+      <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/etSpeechPresetContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="top|start"
+        android:inputType="textMultiLine"
+        android:minLines="2" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:gravity="end"
+      android:orientation="horizontal">
+
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSpeechPresetDelete"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_weight="1"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:text="@string/btn_speech_preset_delete" />
+
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSpeechPresetAdd"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        style="@style/Widget.Material3.Button"
+        android:text="@string/btn_speech_preset_add" />
+    </LinearLayout>
   </LinearLayout>
 
 </LinearLayout>
-
