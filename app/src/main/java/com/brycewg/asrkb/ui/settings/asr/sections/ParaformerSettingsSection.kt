@@ -40,13 +40,13 @@ internal class ParaformerSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.pf_variant_bilingual_int8),
             binding.activity.getString(R.string.pf_variant_bilingual_fp32),
             binding.activity.getString(R.string.pf_variant_trilingual_int8),
-            binding.activity.getString(R.string.pf_variant_trilingual_fp32)
+            binding.activity.getString(R.string.pf_variant_trilingual_fp32),
         )
         val variantCodes = listOf(
             "bilingual-int8",
             "bilingual-fp32",
             "trilingual-int8",
-            "trilingual-fp32"
+            "trilingual-fp32",
         )
 
         fun updateVariantSummary() {
@@ -77,7 +77,7 @@ internal class ParaformerSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.sv_keep_alive_5m),
             binding.activity.getString(R.string.sv_keep_alive_15m),
             binding.activity.getString(R.string.sv_keep_alive_30m),
-            binding.activity.getString(R.string.sv_keep_alive_always)
+            binding.activity.getString(R.string.sv_keep_alive_always),
         )
 
         fun updateKeepAliveSummary() {
@@ -128,7 +128,7 @@ internal class ParaformerSettingsSection : AsrSettingsSection {
                 preferenceKey = "pf_preload_explained",
                 readPref = { binding.prefs.pfPreloadEnabled },
                 writePref = { v -> binding.viewModel.updatePfPreload(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
     }
@@ -144,7 +144,7 @@ internal class ParaformerSettingsSection : AsrSettingsSection {
                 preferenceKey = "pf_use_itn_explained",
                 readPref = { safeReadPfUseItn(binding) },
                 writePref = { v -> binding.viewModel.updatePfUseItn(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
     }
@@ -186,7 +186,7 @@ internal class ParaformerSettingsSection : AsrSettingsSection {
                 startedTextResId = R.string.pf_download_started_in_bg,
                 failedTextResId = R.string.pf_download_status_failed,
                 logTag = TAG,
-                logMessage = "Failed to start paraformer download"
+                logMessage = "Failed to start paraformer download",
             )
         }
 
@@ -245,4 +245,3 @@ internal class ParaformerSettingsSection : AsrSettingsSection {
         private const val TAG = "ParaformerSettingsSection"
     }
 }
-

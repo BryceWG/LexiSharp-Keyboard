@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,12 +14,11 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.Toast
-import android.graphics.Rect
-import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.LocaleHelper
+import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.ui.floating.FloatingAsrService
 import com.brycewg.asrkb.ui.floating.FloatingImeHints
-import com.brycewg.asrkb.store.debug.DebugLogManager
 
 /**
  * 无障碍服务,用于悬浮球语音识别后将文本插入到当前焦点的输入框中
@@ -37,7 +37,7 @@ class AsrAccessibilityService : AccessibilityService() {
      */
     data class FocusContext(
         val prefix: String,
-        val suffix: String
+        val suffix: String,
     )
 
     companion object {
@@ -68,7 +68,7 @@ class AsrAccessibilityService : AccessibilityService() {
 
                 FocusContext(
                     prefix = full.substring(0, s),
-                    suffix = full.substring(e, full.length)
+                    suffix = full.substring(e, full.length),
                 )
             }
         }
@@ -262,11 +262,11 @@ class AsrAccessibilityService : AccessibilityService() {
      */
     private fun isRelevantEventType(eventType: Int): Boolean {
         return eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
-               eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ||
-               eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
-               eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED ||
-               eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
-               eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED
+            eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ||
+            eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
+            eventType == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED ||
+            eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
+            eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED
     }
 
     private fun tryDispatchImeVisibilityHint() {
@@ -291,7 +291,11 @@ class AsrAccessibilityService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (now - lastA11yAggEmitAt >= 1000L) {
             lastA11yAggEmitAt = now
-            val pkg = try { getActiveWindowPackage() } catch (_: Throwable) { null } ?: ""
+            val pkg = try {
+                getActiveWindowPackage()
+            } catch (_: Throwable) {
+                null
+            } ?: ""
             val d = mapOf(
                 "pkgTop" to pkg,
                 "winStateChanged" to aggWinStateChanged,
@@ -299,7 +303,7 @@ class AsrAccessibilityService : AccessibilityService() {
                 "viewFocused" to aggViewFocused,
                 "textSelChanged" to aggTextSelChanged,
                 "textChanged" to aggTextChanged,
-                "windowsChanged" to aggWindowsChanged
+                "windowsChanged" to aggWindowsChanged,
             )
             DebugLogManager.log("a11y", "events", d)
             aggWinStateChanged = 0
@@ -330,7 +334,6 @@ class AsrAccessibilityService : AccessibilityService() {
         return mWindow || hold
     }
 
-
     /**
      * 更新输入法可见性状态，并在状态变化时通知相关服务。
      */
@@ -343,8 +346,8 @@ class AsrAccessibilityService : AccessibilityService() {
                 event = if (active) "scene_active" else "scene_inactive",
                 data = mapOf(
                     "by" to "a11y",
-                    "pkg" to (getActiveWindowPackage() ?: "")
-                )
+                    "pkg" to (getActiveWindowPackage() ?: ""),
+                ),
             )
             // 附带一次决策解释
             try {
@@ -372,7 +375,7 @@ class AsrAccessibilityService : AccessibilityService() {
             "holdByFocus" to holdByFocus,
             "strategyUsed" to strategyUsed,
             "activePkg" to (activePkg ?: ""),
-            "resultActive" to resultActive
+            "resultActive" to resultActive,
         )
     }
 
@@ -424,16 +427,37 @@ class AsrAccessibilityService : AccessibilityService() {
             if (target != null) {
                 Log.d(TAG, "Found editable/focusable node; trying ACTION_SET_TEXT")
                 try {
-                    val nodeClass = try { target.className?.toString() } catch (_: Throwable) { null } ?: ""
-                    val editable = try { target.isEditable } catch (_: Throwable) { false }
+                    val nodeClass = try {
+                        target.className?.toString()
+                    } catch (_: Throwable) {
+                        null
+                    } ?: ""
+                    val editable = try {
+                        target.isEditable
+                    } catch (_: Throwable) {
+                        false
+                    }
                     val hasSetText = nodeHasAction(target, AccessibilityNodeInfo.ACTION_SET_TEXT)
                     val hasPaste = nodeHasAction(target, AccessibilityNodeInfo.ACTION_PASTE)
                     val hasLongClick = nodeHasAction(target, AccessibilityNodeInfo.ACTION_LONG_CLICK)
-                    val textLen = try { target.text?.length ?: 0 } catch (_: Throwable) { 0 }
-                    val selStart = try { target.textSelectionStart } catch (_: Throwable) { -1 }
-                    val selEnd = try { target.textSelectionEnd } catch (_: Throwable) { -1 }
+                    val textLen = try {
+                        target.text?.length ?: 0
+                    } catch (_: Throwable) {
+                        0
+                    }
+                    val selStart = try {
+                        target.textSelectionStart
+                    } catch (_: Throwable) {
+                        -1
+                    }
+                    val selEnd = try {
+                        target.textSelectionEnd
+                    } catch (_: Throwable) {
+                        -1
+                    }
                     DebugLogManager.log(
-                        "insert", "cap",
+                        "insert",
+                        "cap",
                         mapOf(
                             "nodeClass" to nodeClass,
                             "editable" to editable,
@@ -442,8 +466,8 @@ class AsrAccessibilityService : AccessibilityService() {
                             "hasLongClick" to hasLongClick,
                             "textLen" to textLen,
                             "selStart" to selStart,
-                            "selEnd" to selEnd
-                        )
+                            "selEnd" to selEnd,
+                        ),
                     )
                 } catch (t: Throwable) {
                     Log.w(TAG, "Failed to log insert capabilities", t)
@@ -498,8 +522,8 @@ class AsrAccessibilityService : AccessibilityService() {
                 "fallback_clipboard",
                 mapOf(
                     "reason" to (e::class.java.simpleName),
-                    "msg" to (e.message?.take(80) ?: "")
-                )
+                    "msg" to (e.message?.take(80) ?: ""),
+                ),
             )
             copyToClipboard(this, text)
             Toast.makeText(this, getString(com.brycewg.asrkb.R.string.floating_asr_copied), Toast.LENGTH_SHORT).show()
@@ -609,7 +633,8 @@ class AsrAccessibilityService : AccessibilityService() {
     private fun findFocusedEditableNode(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
         root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.let { f ->
             if (isEditableLike(f)) return f
-            @Suppress("DEPRECATION") f.recycle()
+            @Suppress("DEPRECATION")
+            f.recycle()
         }
         return findEditableNodeRecursive(root)
     }
@@ -620,10 +645,12 @@ class AsrAccessibilityService : AccessibilityService() {
             val child = node.getChild(i) ?: continue
             val result = findEditableNodeRecursive(child)
             if (result != null) {
-                @Suppress("DEPRECATION") child.recycle()
+                @Suppress("DEPRECATION")
+                child.recycle()
                 return result
             }
-            @Suppress("DEPRECATION") child.recycle()
+            @Suppress("DEPRECATION")
+            child.recycle()
         }
         return null
     }
@@ -709,7 +736,8 @@ class AsrAccessibilityService : AccessibilityService() {
                         val root = w.root ?: continue
                         val node = findFocusedEditableNode(root)
                         if (node != null) {
-                            @Suppress("DEPRECATION") node.recycle()
+                            @Suppress("DEPRECATION")
+                            node.recycle()
                             return true
                         }
                     } catch (t: Throwable) {
@@ -723,7 +751,8 @@ class AsrAccessibilityService : AccessibilityService() {
             val node = findFocusedEditableNode(root)
             val ok = node != null
             if (node != null) {
-                @Suppress("DEPRECATION") node.recycle()
+                @Suppress("DEPRECATION")
+                node.recycle()
             }
             ok
         } catch (e: Throwable) {
@@ -743,7 +772,9 @@ class AsrAccessibilityService : AccessibilityService() {
                         val root = w.root
                         if (root != null) return true
                         val r = Rect()
-                        try { w.getBoundsInScreen(r) } catch (_: Throwable) {}
+                        try {
+                            w.getBoundsInScreen(r)
+                        } catch (_: Throwable) {}
                         if (r.width() > 0 && r.height() > 0) return true
                         if (w.isActive || w.isFocused) return true
                     }

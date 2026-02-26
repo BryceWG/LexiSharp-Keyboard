@@ -18,7 +18,7 @@ internal object PrefsLlmProviderStore {
                 endpoint = prefs.llmEndpoint.ifBlank { Prefs.DEFAULT_LLM_ENDPOINT },
                 apiKey = prefs.llmApiKey,
                 model = prefs.llmModel.ifBlank { Prefs.DEFAULT_LLM_MODEL },
-                temperature = prefs.llmTemperature
+                temperature = prefs.llmTemperature,
             )
             setLlmProviders(prefs, json, listOf(migrated))
         }
@@ -47,4 +47,3 @@ internal object PrefsLlmProviderStore {
         return list.firstOrNull { it.id == id } ?: list.firstOrNull()
     }
 }
-

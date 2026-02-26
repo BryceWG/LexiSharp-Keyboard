@@ -37,7 +37,7 @@ internal class SenseVoiceSettingsSection : AsrSettingsSection {
     private fun bindModelVariantSelection(binding: AsrSettingsBinding) {
         val variantLabels = listOf(
             binding.activity.getString(R.string.sv_model_small_int8),
-            binding.activity.getString(R.string.sv_model_small_full)
+            binding.activity.getString(R.string.sv_model_small_full),
         )
         val variantCodes = listOf("small-int8", "small-full")
         val tvSvModelVariant = binding.view<TextView>(R.id.tvSvModelVariantValue)
@@ -79,7 +79,7 @@ internal class SenseVoiceSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.sv_lang_en),
             binding.activity.getString(R.string.sv_lang_ja),
             binding.activity.getString(R.string.sv_lang_ko),
-            binding.activity.getString(R.string.sv_lang_yue)
+            binding.activity.getString(R.string.sv_lang_yue),
         )
         val codes = listOf("auto", "zh", "en", "ja", "ko", "yue")
         val tvSvLanguage = binding.view<TextView>(R.id.tvSvLanguageValue)
@@ -141,7 +141,7 @@ internal class SenseVoiceSettingsSection : AsrSettingsSection {
                 preferenceKey = "sv_use_itn_explained",
                 readPref = { binding.prefs.svUseItn },
                 writePref = { v -> binding.viewModel.updateSvUseItn(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -155,7 +155,7 @@ internal class SenseVoiceSettingsSection : AsrSettingsSection {
                 preferenceKey = "sv_preload_explained",
                 readPref = { binding.prefs.svPreloadEnabled },
                 writePref = { v -> binding.viewModel.updateSvPreload(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -169,7 +169,7 @@ internal class SenseVoiceSettingsSection : AsrSettingsSection {
                 preferenceKey = "sv_pseudo_stream_explained",
                 readPref = { binding.prefs.svPseudoStreamEnabled },
                 writePref = { v -> binding.viewModel.updateSvPseudoStream(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
     }
@@ -180,7 +180,7 @@ internal class SenseVoiceSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.sv_keep_alive_5m),
             binding.activity.getString(R.string.sv_keep_alive_15m),
             binding.activity.getString(R.string.sv_keep_alive_30m),
-            binding.activity.getString(R.string.sv_keep_alive_always)
+            binding.activity.getString(R.string.sv_keep_alive_always),
         )
         val values = listOf(0, 5, 15, 30, -1)
         val tvSvKeepAlive = binding.view<TextView>(R.id.tvSvKeepAliveValue)
@@ -224,7 +224,7 @@ internal class SenseVoiceSettingsSection : AsrSettingsSection {
                 startedTextResId = R.string.sv_download_started_in_bg,
                 failedTextResId = R.string.sv_download_status_failed,
                 logTag = TAG,
-                logMessage = "Failed to start model download"
+                logMessage = "Failed to start model download",
             )
         }
 

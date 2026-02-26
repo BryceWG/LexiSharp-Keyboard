@@ -7,10 +7,10 @@ import android.widget.EditText
 import android.widget.TextView
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ui.SettingsOptionSheet
-import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.brycewg.asrkb.ui.installExplainedSwitch
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsBinding
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsSection
+import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 
@@ -31,7 +31,7 @@ internal class SonioxAsrSettingsSection : AsrSettingsSection {
                 preferenceKey = "soniox_streaming_explained",
                 readPref = { binding.prefs.sonioxStreamingEnabled },
                 writePref = { v -> binding.viewModel.updateSonioxStreaming(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -47,7 +47,7 @@ internal class SonioxAsrSettingsSection : AsrSettingsSection {
                 preferenceKey = "soniox_language_strict_explained",
                 readPref = { binding.prefs.sonioxLanguageHintsStrict },
                 writePref = { v -> binding.prefs.sonioxLanguageHintsStrict = v },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -75,7 +75,7 @@ internal class SonioxAsrSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.soniox_lang_vi),
             binding.activity.getString(R.string.soniox_lang_th),
             binding.activity.getString(R.string.soniox_lang_ms),
-            binding.activity.getString(R.string.soniox_lang_fil)
+            binding.activity.getString(R.string.soniox_lang_fil),
         )
         val sonioxLangCodes = listOf(
             "",
@@ -94,7 +94,7 @@ internal class SonioxAsrSettingsSection : AsrSettingsSection {
             "vi",
             "th",
             "ms",
-            "fil"
+            "fil",
         )
         val tvSonioxLanguage = binding.view<TextView>(R.id.tvSonioxLanguageValue)
 
@@ -154,7 +154,7 @@ internal class SonioxAsrSettingsSection : AsrSettingsSection {
                     }
                     binding.viewModel.updateSonioxLanguages(codes)
                     updateSonioxLangSummary()
-                }
+                },
             )
         }
     }

@@ -11,13 +11,13 @@ internal class AsrCommitRecorder(
     private val context: Context,
     private val prefs: Prefs,
     private val asrManager: AsrSessionManager,
-    private val logTag: String
+    private val logTag: String,
 ) {
     fun record(
         text: String,
         aiProcessed: Boolean,
         aiPostMs: Long = 0L,
-        aiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+        aiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE,
     ) {
         try {
             val chars = TextSanitizer.countEffectiveChars(text)
@@ -42,7 +42,7 @@ internal class AsrCommitRecorder(
                     procMs = procMs,
                     source = "ime",
                     aiProcessed = aiProcessed,
-                    charCount = chars
+                    charCount = chars,
                 )
 
                 if (!prefs.disableUsageStats) {
@@ -64,8 +64,8 @@ internal class AsrCommitRecorder(
                                 aiProcessed = aiProcessed,
                                 aiPostMs = aiPostMs,
                                 aiPostStatus = aiPostStatus,
-                                charCount = chars
-                            )
+                                charCount = chars,
+                            ),
                         )
                     } catch (e: Exception) {
                         Log.e(logTag, "Failed to add ASR history", e)
@@ -79,4 +79,3 @@ internal class AsrCommitRecorder(
         }
     }
 }
-

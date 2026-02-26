@@ -35,7 +35,7 @@ class SiliconFlowFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null,
-    httpClient: OkHttpClient? = null
+    httpClient: OkHttpClient? = null,
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration), PcmBatchRecognizer {
 
     companion object {
@@ -87,7 +87,7 @@ class SiliconFlowFileAsrEngine(
             }
         } catch (t: Throwable) {
             listener.onError(
-                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
+                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""),
             )
         }
     }
@@ -104,7 +104,7 @@ class SiliconFlowFileAsrEngine(
                 .addFormDataPart(
                     "file",
                     "audio.wav",
-                    tmp.asRequestBody("audio/wav".toMediaType())
+                    tmp.asRequestBody("audio/wav".toMediaType()),
                 )
                 .build()
 
@@ -120,17 +120,21 @@ class SiliconFlowFileAsrEngine(
                 if (!r.isSuccessful) {
                     val detail = formatHttpDetail(r.message, null)
                     listener.onError(
-                        context.getString(R.string.error_request_failed_http, r.code, detail)
+                        context.getString(R.string.error_request_failed_http, r.code, detail),
                     )
                     return
                 }
                 val text = try {
                     val obj = JSONObject(bodyStr)
                     obj.optString("text", "")
-                } catch (_: Throwable) { "" }
+                } catch (_: Throwable) {
+                    ""
+                }
                 if (text.isNotBlank()) {
                     val dt = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0)
-                    try { onRequestDuration?.invoke(dt) } catch (_: Throwable) {}
+                    try {
+                        onRequestDuration?.invoke(dt)
+                    } catch (_: Throwable) {}
                     listener.onFinal(text)
                 } else {
                     listener.onError(context.getString(R.string.error_asr_empty_result))
@@ -174,14 +178,16 @@ class SiliconFlowFileAsrEngine(
                 if (!r.isSuccessful) {
                     val detail = formatHttpDetail(r.message, null)
                     listener.onError(
-                        context.getString(R.string.error_request_failed_http, r.code, detail)
+                        context.getString(R.string.error_request_failed_http, r.code, detail),
                     )
                     return
                 }
                 val text = parseSfChatText(str)
                 if (text.isNotBlank()) {
                     val dt = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0)
-                    try { onRequestDuration?.invoke(dt) } catch (_: Throwable) {}
+                    try {
+                        onRequestDuration?.invoke(dt)
+                    } catch (_: Throwable) {}
                     listener.onFinal(text)
                 } else {
                     listener.onError(context.getString(R.string.error_asr_empty_result))
@@ -197,7 +203,7 @@ class SiliconFlowFileAsrEngine(
                 .addFormDataPart(
                     "file",
                     "audio.wav",
-                    tmp.asRequestBody("audio/wav".toMediaType())
+                    tmp.asRequestBody("audio/wav".toMediaType()),
                 )
                 .build()
             val request = Request.Builder()
@@ -210,7 +216,7 @@ class SiliconFlowFileAsrEngine(
                 if (!r.isSuccessful) {
                     val detail = formatHttpDetail(r.message, null)
                     listener.onError(
-                        context.getString(R.string.error_request_failed_http, r.code, detail)
+                        context.getString(R.string.error_request_failed_http, r.code, detail),
                     )
                     return
                 }
@@ -218,10 +224,14 @@ class SiliconFlowFileAsrEngine(
                 val text = try {
                     val obj = JSONObject(bodyStr)
                     obj.optString("text", "")
-                } catch (_: Throwable) { "" }
+                } catch (_: Throwable) {
+                    ""
+                }
                 if (text.isNotBlank()) {
                     val dt = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0)
-                    try { onRequestDuration?.invoke(dt) } catch (_: Throwable) {}
+                    try {
+                        onRequestDuration?.invoke(dt)
+                    } catch (_: Throwable) {}
                     listener.onFinal(text)
                 } else {
                     listener.onError(context.getString(R.string.error_asr_empty_result))
@@ -230,8 +240,9 @@ class SiliconFlowFileAsrEngine(
         }
     }
 
-    override suspend fun recognizeFromPcm(pcm: ByteArray) { recognize(pcm) }
-
+    override suspend fun recognizeFromPcm(pcm: ByteArray) {
+        recognize(pcm)
+    }
 
     /**
      * 构建 SiliconFlow Chat Completions API 请求体
@@ -239,31 +250,45 @@ class SiliconFlowFileAsrEngine(
     private fun buildSfChatCompletionsBody(model: String, base64Wav: String, prompt: String): String {
         val audioPart = JSONObject().apply {
             put("type", "audio_url")
-            put("audio_url", JSONObject().apply {
-                put("url", "data:audio/wav;base64,$base64Wav")
-            })
+            put(
+                "audio_url",
+                JSONObject().apply {
+                    put("url", "data:audio/wav;base64,$base64Wav")
+                },
+            )
         }
         val system = JSONObject().apply {
             put("role", "system")
-            put("content", org.json.JSONArray().apply {
-                put(JSONObject().apply {
-                    put("type", "text")
-                    put("text", prompt)
-                })
-            })
+            put(
+                "content",
+                org.json.JSONArray().apply {
+                    put(
+                        JSONObject().apply {
+                            put("type", "text")
+                            put("text", prompt)
+                        },
+                    )
+                },
+            )
         }
         val user = JSONObject().apply {
             put("role", "user")
-            put("content", org.json.JSONArray().apply {
-                put(audioPart)
-            })
+            put(
+                "content",
+                org.json.JSONArray().apply {
+                    put(audioPart)
+                },
+            )
         }
         return JSONObject().apply {
             put("model", model)
-            put("messages", org.json.JSONArray().apply {
-                put(system)
-                put(user)
-            })
+            put(
+                "messages",
+                org.json.JSONArray().apply {
+                    put(system)
+                    put(user)
+                },
+            )
         }.toString()
     }
 

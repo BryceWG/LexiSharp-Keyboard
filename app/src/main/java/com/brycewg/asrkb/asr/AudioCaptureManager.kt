@@ -15,12 +15,12 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
-import com.brycewg.asrkb.store.debug.DebugLogManager
 
 /**
  * 音频采集管理器
@@ -43,7 +43,7 @@ class AudioCaptureManager(
     private val sampleRate: Int = 16000,
     private val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO,
     private val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT,
-    private val chunkMillis: Int = 200
+    private val chunkMillis: Int = 200,
 ) {
     private val bytesPerSample = 2 // 16bit mono PCM
     private val prefs by lazy { Prefs(context) }
@@ -68,7 +68,7 @@ class AudioCaptureManager(
     fun hasPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         ) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -80,7 +80,7 @@ class AudioCaptureManager(
                 sampleRate = sampleRate,
                 channelConfig = channelConfig,
                 audioEncoding = audioFormat,
-                bufferSize = bufferSize
+                bufferSize = bufferSize,
             )
         } else {
             AudioRecord(
@@ -88,7 +88,7 @@ class AudioCaptureManager(
                 sampleRate,
                 channelConfig,
                 audioFormat,
-                bufferSize
+                bufferSize,
             )
         }
     }
@@ -101,7 +101,7 @@ class AudioCaptureManager(
             sampleRate: Int,
             channelConfig: Int,
             audioEncoding: Int,
-            bufferSize: Int
+            bufferSize: Int,
         ): AudioRecord {
             val format = AudioFormat.Builder()
                 .setSampleRate(sampleRate)
@@ -137,15 +137,17 @@ class AudioCaptureManager(
                 event = "acm_start",
                 data = mapOf(
                     "sr" to sampleRate,
-                    "chunkMs" to chunkMillis
-                )
+                    "chunkMs" to chunkMillis,
+                ),
             )
         } catch (_: Throwable) { }
         // 1. 权限检查
         if (!hasPermission()) {
             val error = SecurityException("Missing RECORD_AUDIO permission")
             Log.e(TAG, "Permission check failed", error)
-            try { DebugLogManager.log("audio", "acm_error", mapOf("stage" to "perm", "msg" to error.message)) } catch (_: Throwable) { }
+            try {
+                DebugLogManager.log("audio", "acm_error", mapOf("stage" to "perm", "msg" to error.message))
+            } catch (_: Throwable) { }
             throw error
         }
 
@@ -163,7 +165,11 @@ class AudioCaptureManager(
         if (prefs.headsetMicPriorityEnabled) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 // 若已有通信设备（可能由预热设置），则不重复设置，也不在 finally 清理
-                val cur = try { audioManager.getCommunicationDevice() } catch (_: Throwable) { null }
+                val cur = try {
+                    audioManager.getCommunicationDevice()
+                } catch (_: Throwable) {
+                    null
+                }
                 if (cur != null && (cur.type == AudioDeviceInfo.TYPE_BLE_HEADSET || cur.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO || cur.type == AudioDeviceInfo.TYPE_WIRED_HEADSET)) {
                     preferredInputDevice = cur
                     routePrepared = true
@@ -195,7 +201,11 @@ class AudioCaptureManager(
 
                     if (preferredInputDevice?.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
                         // 通话模式可改善部分设备的路由与增益（仅在当前非通话模式时切换）
-                        val curMode = try { audioManager.mode } catch (_: Throwable) { AudioManager.MODE_NORMAL }
+                        val curMode = try {
+                            audioManager.mode
+                        } catch (_: Throwable) {
+                            AudioManager.MODE_NORMAL
+                        }
                         if (curMode != AudioManager.MODE_IN_COMMUNICATION) {
                             previousAudioMode = curMode
                             try {
@@ -273,14 +283,20 @@ class AudioCaptureManager(
             try {
                 activeRecorder.startRecording()
                 Log.d(TAG, "AudioRecord started successfully")
-                try { DebugLogManager.log("audio", "recorder_started") } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("audio", "recorder_started")
+                } catch (_: Throwable) { }
             } catch (se: SecurityException) {
                 Log.e(TAG, "SecurityException during startRecording", se)
-                try { DebugLogManager.log("audio", "acm_error", mapOf("stage" to "start", "type" to "security", "msg" to se.message)) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("audio", "acm_error", mapOf("stage" to "start", "type" to "security", "msg" to se.message))
+                } catch (_: Throwable) { }
                 throw se
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to start recording", t)
-                try { DebugLogManager.log("audio", "acm_error", mapOf("stage" to "start", "type" to "start_fail", "msg" to t.message)) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("audio", "acm_error", mapOf("stage" to "start", "type" to "start_fail", "msg" to t.message))
+                } catch (_: Throwable) { }
                 throw IllegalStateException("Failed to start recording", t)
             }
 
@@ -301,7 +317,9 @@ class AudioCaptureManager(
                     activeRecorder.read(buf, 0, buf.size)
                 } catch (t: Throwable) {
                     Log.e(TAG, "Error reading audio data", t)
-                    try { DebugLogManager.log("audio", "acm_error", mapOf("stage" to "read", "msg" to t.message)) } catch (_: Throwable) { }
+                    try {
+                        DebugLogManager.log("audio", "acm_error", mapOf("stage" to "read", "msg" to t.message))
+                    } catch (_: Throwable) { }
                     throw IllegalStateException("Error reading audio data", t)
                 }
 
@@ -332,7 +350,7 @@ class AudioCaptureManager(
             try {
                 DebugLogManager.log(
                     category = "audio",
-                    event = "acm_cleanup"
+                    event = "acm_cleanup",
                 )
             } catch (_: Throwable) { }
             // 清理通信设备与 SCO / 恢复模式
@@ -367,7 +385,7 @@ class AudioCaptureManager(
         current: AudioRecord,
         buf: ByteArray,
         bufferSize: Int,
-        avoidMicFallback: Boolean
+        avoidMicFallback: Boolean,
     ): Pair<AudioRecord, ByteArray?> {
         if (!hasPermission()) {
             val error = SecurityException("RECORD_AUDIO permission was revoked during warmup")
@@ -516,7 +534,11 @@ class AudioCaptureManager(
         var listenerToken: Any? = null
         var setOk = false
         var routeReady = false
-        val t0 = try { android.os.SystemClock.elapsedRealtime() } catch (_: Throwable) { 0L }
+        val t0 = try {
+            android.os.SystemClock.elapsedRealtime()
+        } catch (_: Throwable) {
+            0L
+        }
         try {
             val candidates = try {
                 audioManager.getAvailableCommunicationDevices()
@@ -545,7 +567,11 @@ class AudioCaptureManager(
             }
             if (!setOk) return CommRouteResult(false, selected, null, false)
 
-            val cur = try { audioManager.getCommunicationDevice() } catch (_: Throwable) { null }
+            val cur = try {
+                audioManager.getCommunicationDevice()
+            } catch (_: Throwable) {
+                null
+            }
             if (cur != null && selected.id == cur.id) {
                 val dt = if (t0 > 0) (android.os.SystemClock.elapsedRealtime() - t0) else -1
                 if (dt >= 0) Log.i(TAG, "Communication device ready immediately in ${dt}ms (id=${cur.id})")
@@ -556,7 +582,11 @@ class AudioCaptureManager(
             routeReady = withTimeoutOrNull(2000L) {
                 suspendCancellableCoroutine<Boolean> { cont ->
                     val exec = java.util.concurrent.Executor { r ->
-                        try { r.run() } catch (t: Throwable) { Log.w(TAG, "CommDevice listener runnable error", t) }
+                        try {
+                            r.run()
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "CommDevice listener runnable error", t)
+                        }
                     }
                     val l = AudioManager.OnCommunicationDeviceChangedListener { dev ->
                         selected?.let { sel ->
@@ -575,7 +605,9 @@ class AudioCaptureManager(
                         if (cont.isActive) cont.resume(false)
                     }
                     cont.invokeOnCancellation {
-                        try { audioManager.removeOnCommunicationDeviceChangedListener(l) } catch (_: Throwable) {}
+                        try {
+                            audioManager.removeOnCommunicationDeviceChangedListener(l)
+                        } catch (_: Throwable) {}
                     }
                 }
             } ?: false
@@ -628,7 +660,11 @@ class AudioCaptureManager(
 
             val filter = IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED)
             var receiver: android.content.BroadcastReceiver? = null
-            val t0 = try { android.os.SystemClock.elapsedRealtime() } catch (_: Throwable) { 0L }
+            val t0 = try {
+                android.os.SystemClock.elapsedRealtime()
+            } catch (_: Throwable) {
+                0L
+            }
             val ok = withTimeoutOrNull(2500L) {
                 suspendCancellableCoroutine<Boolean> { cont ->
                     receiver = object : android.content.BroadcastReceiver() {
@@ -636,7 +672,7 @@ class AudioCaptureManager(
                             if (intent?.action != AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED) return
                             val state = intent.getIntExtra(
                                 AudioManager.EXTRA_SCO_AUDIO_STATE,
-                                AudioManager.SCO_AUDIO_STATE_ERROR
+                                AudioManager.SCO_AUDIO_STATE_ERROR,
                             )
                             when (state) {
                                 AudioManager.SCO_AUDIO_STATE_CONNECTED -> {
@@ -648,7 +684,11 @@ class AudioCaptureManager(
                             }
                         }
                     }
-                    try { context.registerReceiver(receiver, filter) } catch (t: Throwable) { Log.w(TAG, "registerReceiver failed", t) }
+                    try {
+                        context.registerReceiver(receiver, filter)
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "registerReceiver failed", t)
+                    }
                     try {
                         if (!am.isBluetoothScoOn) am.startBluetoothSco()
                     } catch (t: Throwable) {
@@ -656,11 +696,15 @@ class AudioCaptureManager(
                         if (cont.isActive) cont.resume(false)
                     }
                     cont.invokeOnCancellation {
-                        try { receiver?.let { context.unregisterReceiver(it) } } catch (_: Throwable) {}
+                        try {
+                            receiver?.let { context.unregisterReceiver(it) }
+                        } catch (_: Throwable) {}
                     }
                 }
             } ?: false
-            try { receiver?.let { context.unregisterReceiver(it) } } catch (_: Throwable) {}
+            try {
+                receiver?.let { context.unregisterReceiver(it) }
+            } catch (_: Throwable) {}
             ok
         } catch (t: Throwable) {
             Log.w(TAG, "startScoAndAwaitConnected exception", t)
@@ -693,6 +737,6 @@ class AudioCaptureManager(
         val commDeviceSet: Boolean,
         val selectedDevice: AudioDeviceInfo?,
         val listenerToken: Any?,
-        val routeReady: Boolean
+        val routeReady: Boolean,
     )
 }

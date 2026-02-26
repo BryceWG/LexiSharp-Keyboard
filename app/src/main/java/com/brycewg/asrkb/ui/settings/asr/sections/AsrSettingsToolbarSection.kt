@@ -12,4 +12,3 @@ internal class AsrSettingsToolbarSection : AsrSettingsSection {
         toolbar.setNavigationOnClickListener { binding.activity.finish() }
     }
 }
-

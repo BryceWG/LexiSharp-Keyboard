@@ -6,8 +6,8 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.ui.SettingsOptionSheet
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.SettingsOptionSheet
 import com.brycewg.asrkb.util.HapticFeedbackHelper
 import com.google.android.material.slider.Slider
 
@@ -22,7 +22,7 @@ internal class AsrSettingsBinding(
     val funAsrNanoModelPicker: ActivityResultLauncher<String>,
     val telespeechModelPicker: ActivityResultLauncher<String>,
     val paraformerModelPicker: ActivityResultLauncher<String>,
-    val punctuationModelPicker: ActivityResultLauncher<String>
+    val punctuationModelPicker: ActivityResultLauncher<String>,
 ) {
 
     inline fun <reified T : View> view(id: Int): T = rootView.findViewById(id)
@@ -59,14 +59,14 @@ internal class AsrSettingsBinding(
         titleResId: Int,
         items: Array<String>,
         currentIndex: Int,
-        onSelected: (Int) -> Unit
+        onSelected: (Int) -> Unit,
     ) {
         SettingsOptionSheet.showSingleChoice(
             context = activity,
             titleResId = titleResId,
             items = items.toList(),
             selectedIndex = currentIndex,
-            onSelected = onSelected
+            onSelected = onSelected,
         )
     }
 

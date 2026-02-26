@@ -18,7 +18,7 @@ internal class PostprocessPipeline(
     private val prefs: Prefs,
     private val inputHelper: InputConnectionHelper,
     private val llmPostProcessor: LlmPostProcessor,
-    private val logTag: String
+    private val logTag: String,
 ) {
     data class Result(
         val finalText: String,
@@ -26,7 +26,7 @@ internal class PostprocessPipeline(
         val postprocFailed: Boolean,
         val aiUsed: Boolean,
         val aiPostMs: Long,
-        val aiPostStatus: AsrHistoryStore.AiPostStatus
+        val aiPostStatus: AsrHistoryStore.AiPostStatus,
     )
 
     suspend fun process(
@@ -34,7 +34,7 @@ internal class PostprocessPipeline(
         text: String,
         isCancelled: () -> Boolean,
         onFinalReady: () -> Unit,
-        onPostprocFailed: () -> Unit
+        onPostprocFailed: () -> Unit,
     ): Result? {
         val rawText = try {
             if (prefs.trimFinalTrailingPunct) TextSanitizer.trimTrailingPunctAndEmoji(text) else text
@@ -55,7 +55,7 @@ internal class PostprocessPipeline(
                 onEmit = emit@{ typed ->
                     if (isCancelled() || committed) return@emit
                     inputHelper.setComposingText(ic, typed)
-                }
+                },
             )
         } else {
             null
@@ -82,7 +82,7 @@ internal class PostprocessPipeline(
                 prefs,
                 text,
                 llmPostProcessor,
-                onStreamingUpdate = onStreamingUpdate
+                onStreamingUpdate = onStreamingUpdate,
             )
         } catch (t: Throwable) {
             Log.e(logTag, "applyWithAi failed", t)
@@ -161,7 +161,7 @@ internal class PostprocessPipeline(
             postprocFailed = postprocFailed,
             aiUsed = aiUsed,
             aiPostMs = aiPostMs,
-            aiPostStatus = aiPostStatus
+            aiPostStatus = aiPostStatus,
         )
     }
 }

@@ -12,13 +12,13 @@ import java.io.File
 
 internal data class AsrVendorPartition(
     val configured: List<AsrVendor>,
-    val unconfigured: List<AsrVendor>
+    val unconfigured: List<AsrVendor>,
 )
 
 internal fun partitionAsrVendorsByConfigured(
     context: Context,
     prefs: Prefs,
-    vendors: List<AsrVendor>
+    vendors: List<AsrVendor>,
 ): AsrVendorPartition {
     val configured = mutableListOf<AsrVendor>()
     val unconfigured = mutableListOf<AsrVendor>()
@@ -31,14 +31,14 @@ internal fun partitionAsrVendorsByConfigured(
     }
     return AsrVendorPartition(
         configured = configured,
-        unconfigured = unconfigured
+        unconfigured = unconfigured,
     )
 }
 
 internal fun isAsrVendorConfigured(
     context: Context,
     prefs: Prefs,
-    vendor: AsrVendor
+    vendor: AsrVendor,
 ): Boolean {
     return try {
         when (vendor) {

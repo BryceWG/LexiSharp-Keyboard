@@ -13,7 +13,9 @@ import java.util.UUID
  */
 @Serializable
 enum class EntryType {
-    TEXT, IMAGE, FILE
+    TEXT,
+    IMAGE,
+    FILE,
 }
 
 /**
@@ -21,10 +23,10 @@ enum class EntryType {
  */
 @Serializable
 enum class DownloadStatus {
-    NONE,        // 未下载
+    NONE, // 未下载
     DOWNLOADING, // 下载中
-    COMPLETED,   // 已完成
-    FAILED       // 失败
+    COMPLETED, // 已完成
+    FAILED, // 失败
 }
 
 /**
@@ -40,17 +42,23 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
     @Serializable
     data class Entry(
         val id: String,
-        val text: String = "",              // 文本内容（保持向后兼容）
+        // 文本内容（保持向后兼容）
+        val text: String = "",
         val ts: Long,
         val pinned: Boolean,
         // 新增字段：支持文件类型
         val type: EntryType = EntryType.TEXT,
-        val fileName: String? = null,       // 文件名
-        val fileSize: Long? = null,         // 文件大小（字节）
-        val mimeType: String? = null,       // MIME 类型
-        val localFilePath: String? = null,  // 本地文件路径
+        // 文件名
+        val fileName: String? = null,
+        // 文件大小（字节）
+        val fileSize: Long? = null,
+        // MIME 类型
+        val mimeType: String? = null,
+        // 本地文件路径
+        val localFilePath: String? = null,
         val downloadStatus: DownloadStatus = DownloadStatus.NONE,
-        val serverFileName: String? = null  // 服务器上的文件名（用于下载）
+        // 服务器上的文件名（用于下载）
+        val serverFileName: String? = null,
     ) {
         /**
          * 用于列表 / 信息栏展示的文本。
@@ -72,7 +80,12 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
     }
 
     private val sp by lazy { context.getSharedPreferences("asr_prefs", Context.MODE_PRIVATE) }
-    private val json by lazy { Json { ignoreUnknownKeys = true; encodeDefaults = true } }
+    private val json by lazy {
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
+    }
 
     companion object {
         private const val TAG = "ClipboardHistoryStore"
@@ -206,7 +219,9 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
                 history.removeAt(idx)
                 sp.edit().putString(KEY_CLIP_HISTORY_JSON, json.encodeToString(history)).apply()
                 true
-            } else false
+            } else {
+                false
+            }
         } catch (t: Throwable) {
             Log.e(TAG, "deleteHistoryById failed", t)
             false
@@ -243,7 +258,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
         fileSize: Long? = null,
         mimeType: String? = null,
         localFilePath: String? = null,
-        downloadStatus: DownloadStatus = DownloadStatus.NONE
+        downloadStatus: DownloadStatus = DownloadStatus.NONE,
     ): Boolean {
         try {
             // 先清理旧的文件条目，保证「最多一个文件记录」
@@ -261,7 +276,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
                 mimeType = mimeType,
                 localFilePath = localFilePath,
                 downloadStatus = downloadStatus,
-                serverFileName = serverFileName
+                serverFileName = serverFileName,
             )
 
             his.add(0, entry)
@@ -280,7 +295,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
     fun updateFileEntry(
         id: String,
         localFilePath: String?,
-        downloadStatus: DownloadStatus
+        downloadStatus: DownloadStatus,
     ): Boolean {
         try {
             val history = getHistory().toMutableList()
@@ -289,7 +304,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
                 val old = history[idx]
                 history[idx] = old.copy(
                     localFilePath = localFilePath ?: old.localFilePath,
-                    downloadStatus = downloadStatus
+                    downloadStatus = downloadStatus,
                 )
                 sp.edit().putString(KEY_CLIP_HISTORY_JSON, json.encodeToString(history)).apply()
                 return true
@@ -302,7 +317,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
                 val old = pinned[idxP]
                 pinned[idxP] = old.copy(
                     localFilePath = localFilePath ?: old.localFilePath,
-                    downloadStatus = downloadStatus
+                    downloadStatus = downloadStatus,
                 )
                 sp.edit().putString(KEY_CLIP_PINNED_JSON, json.encodeToString(pinned)).apply()
                 return true

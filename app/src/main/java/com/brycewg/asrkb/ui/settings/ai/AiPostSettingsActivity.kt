@@ -18,9 +18,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
-import com.brycewg.asrkb.ui.BaseActivity
 import androidx.lifecycle.lifecycleScope
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.LlmPostProcessor
@@ -29,6 +27,7 @@ import com.brycewg.asrkb.asr.partitionLlmVendorsByConfigured
 import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.PromptPreset
+import com.brycewg.asrkb.ui.BaseActivity
 import com.brycewg.asrkb.ui.SettingsOptionSheet
 import com.brycewg.asrkb.ui.installExplainedSwitch
 import com.brycewg.asrkb.ui.settings.search.SettingsSearchNavigator
@@ -38,8 +37,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.slider.Slider
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -177,7 +176,7 @@ class AiPostSettingsActivity : BaseActivity() {
             Toast.makeText(
                 this,
                 getString(R.string.toast_search_changed_llm_vendor, getString(vendor.displayNameResId)),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
         }
         intent?.removeExtra(SettingsSearchNavigator.EXTRA_FORCE_LLM_VENDOR_ID)
@@ -204,7 +203,7 @@ class AiPostSettingsActivity : BaseActivity() {
             readPref = { prefs.postProcessEnabled },
             writePref = { v -> prefs.postProcessEnabled = v },
             onChanged = { sendRefreshBroadcast() },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
 
         // AI 后处理：打字机效果
@@ -218,7 +217,7 @@ class AiPostSettingsActivity : BaseActivity() {
             preferenceKey = "postproc_typewriter_explained",
             readPref = { prefs.postprocTypewriterEnabled },
             writePref = { v -> prefs.postprocTypewriterEnabled = v },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
 
         // AI 编辑默认范围开关：使用上次识别结果
@@ -232,7 +231,7 @@ class AiPostSettingsActivity : BaseActivity() {
             preferenceKey = "ai_edit_default_use_last_asr_explained",
             readPref = { prefs.aiEditDefaultToLastAsr },
             writePref = { v -> prefs.aiEditDefaultToLastAsr = v },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
 
         // 少于特定字数跳过 AI 后处理
@@ -334,7 +333,7 @@ class AiPostSettingsActivity : BaseActivity() {
         val imgSfFreeLlmPoweredBy = findViewById<ImageView>(R.id.imgSfFreeLlmPoweredBy)
         val isDarkMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         imgSfFreeLlmPoweredBy.setImageResource(
-            if (isDarkMode) R.drawable.powered_by_siliconflow_dark else R.drawable.powered_by_siliconflow_light
+            if (isDarkMode) R.drawable.powered_by_siliconflow_dark else R.drawable.powered_by_siliconflow_light,
         )
 
         // SF register button
@@ -645,10 +644,10 @@ class AiPostSettingsActivity : BaseActivity() {
         }
         if (showCustomReasoningParams) {
             etBuiltinReasoningParamsOnJson.setTextIfDifferent(
-                prefs.getLlmVendorReasoningParamsOnJson(vendor)
+                prefs.getLlmVendorReasoningParamsOnJson(vendor),
             )
             etBuiltinReasoningParamsOffJson.setTextIfDifferent(
-                prefs.getLlmVendorReasoningParamsOffJson(vendor)
+                prefs.getLlmVendorReasoningParamsOffJson(vendor),
             )
         }
         isUpdatingProgrammatically = false
@@ -729,10 +728,10 @@ class AiPostSettingsActivity : BaseActivity() {
         }
         if (showCustomReasoningParams) {
             etSfReasoningParamsOnJson.setTextIfDifferent(
-                prefs.getLlmVendorReasoningParamsOnJson(LlmVendor.SF_FREE)
+                prefs.getLlmVendorReasoningParamsOnJson(LlmVendor.SF_FREE),
             )
             etSfReasoningParamsOffJson.setTextIfDifferent(
-                prefs.getLlmVendorReasoningParamsOffJson(LlmVendor.SF_FREE)
+                prefs.getLlmVendorReasoningParamsOffJson(LlmVendor.SF_FREE),
             )
         }
         isUpdatingProgrammatically = false
@@ -769,10 +768,10 @@ class AiPostSettingsActivity : BaseActivity() {
         layoutCustomReasoningMode.visibility = View.VISIBLE
         switchCustomReasoningMode.isChecked = provider?.enableReasoning ?: false
         etCustomReasoningParamsOnJson.setTextIfDifferent(
-            provider?.reasoningParamsOnJson.orEmpty()
+            provider?.reasoningParamsOnJson.orEmpty(),
         )
         etCustomReasoningParamsOffJson.setTextIfDifferent(
-            provider?.reasoningParamsOffJson.orEmpty()
+            provider?.reasoningParamsOffJson.orEmpty(),
         )
         val temperature = (provider?.temperature ?: prefs.llmTemperature).coerceIn(0f, 2f)
         sliderLlmTemperature.value = temperature
@@ -794,14 +793,14 @@ class AiPostSettingsActivity : BaseActivity() {
         titleResId: Int,
         items: List<String>,
         selectedIndex: Int,
-        onSelected: (Int) -> Unit
+        onSelected: (Int) -> Unit,
     ) {
         SettingsOptionSheet.showSingleChoice(
             context = this,
             titleResId = titleResId,
             items = items,
             selectedIndex = selectedIndex,
-            onSelected = onSelected
+            onSelected = onSelected,
         )
     }
 
@@ -813,7 +812,7 @@ class AiPostSettingsActivity : BaseActivity() {
         val vendorItems = vendors.map { vendor ->
             SettingsOptionSheet.TaggedItem(
                 title = getString(vendor.displayNameResId),
-                tags = emptyList()
+                tags = emptyList(),
             )
         }
         val indexByVendor = vendors.withIndex().associate { it.value to it.index }
@@ -822,7 +821,7 @@ class AiPostSettingsActivity : BaseActivity() {
             indexByVendor[vendor]?.let { idx ->
                 SettingsOptionSheet.TaggedIndexedItem(
                     originalIndex = idx,
-                    item = vendorItems[idx]
+                    item = vendorItems[idx],
                 )
             }
         }
@@ -830,7 +829,7 @@ class AiPostSettingsActivity : BaseActivity() {
             indexByVendor[vendor]?.let { idx ->
                 SettingsOptionSheet.TaggedIndexedItem(
                     originalIndex = idx,
-                    item = vendorItems[idx]
+                    item = vendorItems[idx],
                 )
             }
         }
@@ -841,14 +840,14 @@ class AiPostSettingsActivity : BaseActivity() {
             groups = listOf(
                 SettingsOptionSheet.TaggedGroup(
                     label = getString(R.string.llm_vendor_group_configured),
-                    items = configuredItems
+                    items = configuredItems,
                 ),
                 SettingsOptionSheet.TaggedGroup(
                     label = getString(R.string.llm_vendor_group_unconfigured),
-                    items = unconfiguredItems
-                )
+                    items = unconfiguredItems,
+                ),
             ),
-            selectedIndex = selectedIndex
+            selectedIndex = selectedIndex,
         ) { which ->
             val selected = vendors.getOrNull(which) ?: return@showSingleChoiceTaggedGrouped
             viewModel.selectVendor(prefs, selected)
@@ -875,7 +874,7 @@ class AiPostSettingsActivity : BaseActivity() {
         showSingleChoiceBottomSheet(
             titleResId = R.string.label_sf_free_llm_model,
             items = models.toList(),
-            selectedIndex = selectedIndex
+            selectedIndex = selectedIndex,
         ) { which ->
             if (which == models.size - 1) {
                 // Custom option selected - show input field
@@ -916,7 +915,7 @@ class AiPostSettingsActivity : BaseActivity() {
         showSingleChoiceBottomSheet(
             titleResId = R.string.label_llm_model_select,
             items = models.toList(),
-            selectedIndex = selectedIndex
+            selectedIndex = selectedIndex,
         ) { which ->
             if (which == models.size - 1) {
                 // Custom option selected - show input field
@@ -943,7 +942,7 @@ class AiPostSettingsActivity : BaseActivity() {
         showSingleChoiceBottomSheet(
             titleResId = R.string.label_llm_choose_profile,
             items = titles.toList(),
-            selectedIndex = selectedIndex
+            selectedIndex = selectedIndex,
         ) { which ->
             val selected = profiles.getOrNull(which)
             if (selected != null) {
@@ -969,7 +968,7 @@ class AiPostSettingsActivity : BaseActivity() {
         showSingleChoiceBottomSheet(
             titleResId = R.string.label_llm_model_select,
             items = models.toList(),
-            selectedIndex = selectedIndex
+            selectedIndex = selectedIndex,
         ) { which ->
             if (which == models.size - 1) {
                 tilCustomModelId.visibility = View.VISIBLE
@@ -1185,7 +1184,7 @@ class AiPostSettingsActivity : BaseActivity() {
         showSingleChoiceBottomSheet(
             titleResId = R.string.label_llm_prompt_presets,
             items = titles.toList(),
-            selectedIndex = selectedIndex
+            selectedIndex = selectedIndex,
         ) { which ->
             val selected = presets.getOrNull(which)
             if (selected != null) {
@@ -1358,9 +1357,11 @@ class AiPostSettingsActivity : BaseActivity() {
      * Send broadcast to refresh keyboard UI (e.g., update AI post-process button toggle state)
      */
     private fun sendRefreshBroadcast() {
-        sendBroadcast(Intent(AsrKeyboardService.ACTION_REFRESH_IME_UI).apply {
-            setPackage(packageName)
-        })
+        sendBroadcast(
+            Intent(AsrKeyboardService.ACTION_REFRESH_IME_UI).apply {
+                setPackage(packageName)
+            },
+        )
     }
 
     private fun openUrlSafely(url: String) {

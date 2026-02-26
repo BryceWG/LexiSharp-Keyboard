@@ -5,10 +5,10 @@ import android.widget.EditText
 import android.widget.TextView
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
-import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.brycewg.asrkb.ui.installExplainedSwitch
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsBinding
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsSection
+import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 
@@ -33,7 +33,7 @@ internal class DashScopeAsrSettingsSection : AsrSettingsSection {
                 preferenceKey = "dash_funasr_semantic_punct_explained",
                 readPref = { binding.prefs.dashFunAsrSemanticPunctEnabled },
                 writePref = { v -> binding.prefs.dashFunAsrSemanticPunctEnabled = v },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -51,12 +51,12 @@ internal class DashScopeAsrSettingsSection : AsrSettingsSection {
         val modelLabels = listOf(
             binding.activity.getString(R.string.dash_model_qwen_file),
             binding.activity.getString(R.string.dash_model_qwen_realtime),
-            binding.activity.getString(R.string.dash_model_fun_realtime)
+            binding.activity.getString(R.string.dash_model_fun_realtime),
         )
         val modelValues = listOf(
             Prefs.DEFAULT_DASH_MODEL,
             Prefs.DASH_MODEL_QWEN3_REALTIME,
-            Prefs.DASH_MODEL_FUN_ASR_REALTIME
+            Prefs.DASH_MODEL_FUN_ASR_REALTIME,
         )
         val tvDashModel = binding.view<TextView>(R.id.tvDashModelValue)
 
@@ -109,7 +109,7 @@ internal class DashScopeAsrSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.dash_lang_pt),
             binding.activity.getString(R.string.dash_lang_ar),
             binding.activity.getString(R.string.dash_lang_it),
-            binding.activity.getString(R.string.dash_lang_es)
+            binding.activity.getString(R.string.dash_lang_es),
         )
         val langCodes = listOf("", "zh", "en", "ja", "de", "ko", "ru", "fr", "pt", "ar", "it", "es")
         val tvDashLanguage = binding.view<TextView>(R.id.tvDashLanguageValue)
@@ -134,7 +134,7 @@ internal class DashScopeAsrSettingsSection : AsrSettingsSection {
     private fun bindRegionSelection(binding: AsrSettingsBinding) {
         val regionLabels = listOf(
             binding.activity.getString(R.string.dash_region_cn),
-            binding.activity.getString(R.string.dash_region_intl)
+            binding.activity.getString(R.string.dash_region_intl),
         )
         val regionValues = listOf("cn", "intl")
         val tvDashRegion = binding.view<TextView>(R.id.tvDashRegionValue)

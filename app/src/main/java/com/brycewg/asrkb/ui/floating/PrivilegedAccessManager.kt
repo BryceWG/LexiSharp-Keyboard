@@ -28,7 +28,7 @@ internal object PrivilegedAccessManager {
     enum class PrivilegedMethod {
         Shizuku,
         Root,
-        None
+        None,
     }
 
     enum class ShizukuPermissionRequestResult {
@@ -36,7 +36,7 @@ internal object PrivilegedAccessManager {
         Requested,
         WaitingForBinder,
         NotInstalled,
-        Failed
+        Failed,
     }
 
     data class ExecResult(
@@ -45,12 +45,12 @@ internal object PrivilegedAccessManager {
         val exitCode: Int? = null,
         val stdout: String? = null,
         val stderr: String? = null,
-        val reason: String? = null
+        val reason: String? = null,
     )
 
     data class CapabilitySnapshot(
         val shizukuGranted: Boolean,
-        val rootAvailable: Boolean
+        val rootAvailable: Boolean,
     ) {
         val hasAny: Boolean
             get() = shizukuGranted || rootAvailable
@@ -112,7 +112,7 @@ internal object PrivilegedAccessManager {
         val app = context.applicationContext
         return CapabilitySnapshot(
             shizukuGranted = isShizukuGranted(app),
-            rootAvailable = isRootProbablyAvailable()
+            rootAvailable = isRootProbablyAvailable(),
         )
     }
 
@@ -215,7 +215,7 @@ internal object PrivilegedAccessManager {
             "/system/xbin/su",
             "/sbin/su",
             "/vendor/bin/su",
-            "/su/bin/su"
+            "/su/bin/su",
         )
         if (candidates.any { File(it).exists() }) return true
 
@@ -262,7 +262,7 @@ internal object PrivilegedAccessManager {
                 exitCode = exit,
                 stdout = stdout.ifBlank { null },
                 stderr = stderr.ifBlank { null },
-                reason = if (exit != null && exit != 0 && stderr.isBlank()) "non_zero_exit" else null
+                reason = if (exit != null && exit != 0 && stderr.isBlank()) "non_zero_exit" else null,
             )
         } catch (t: Throwable) {
             if (BuildConfig.DEBUG) Log.d(TAG, "runShizukuShell failed", t)
@@ -277,7 +277,7 @@ internal object PrivilegedAccessManager {
                 "newProcess",
                 Array<String>::class.java,
                 Array<String>::class.java,
-                String::class.java
+                String::class.java,
             )
             method.isAccessible = true
             method.invoke(null, cmd, null, null) as? Process
@@ -304,7 +304,7 @@ internal object PrivilegedAccessManager {
                 exitCode = exit,
                 stdout = stdout.ifBlank { null },
                 stderr = stderr.ifBlank { null },
-                reason = if (exit != null && exit != 0 && stderr.isBlank()) "non_zero_exit" else null
+                reason = if (exit != null && exit != 0 && stderr.isBlank()) "non_zero_exit" else null,
             )
         } catch (t: Throwable) {
             if (BuildConfig.DEBUG) Log.d(TAG, "runRootShell failed", t)

@@ -8,7 +8,7 @@ import com.brycewg.asrkb.R
 enum class ExtensionButtonAction(
     val id: String,
     val titleResId: Int,
-    val iconResId: Int
+    val iconResId: Int,
 ) {
     /**
      * 禁用（不显示按钮或显示为灰色）
@@ -16,7 +16,7 @@ enum class ExtensionButtonAction(
     NONE(
         id = "none",
         titleResId = R.string.ext_btn_none,
-        iconResId = R.drawable.dots_three_outline
+        iconResId = R.drawable.dots_three_outline,
     ),
 
     /**
@@ -25,7 +25,7 @@ enum class ExtensionButtonAction(
     SELECT(
         id = "select",
         titleResId = R.string.ext_btn_select,
-        iconResId = R.drawable.selection_toggle
+        iconResId = R.drawable.selection_toggle,
     ),
 
     /**
@@ -34,7 +34,7 @@ enum class ExtensionButtonAction(
     SELECT_ALL(
         id = "select_all",
         titleResId = R.string.ext_btn_select_all,
-        iconResId = R.drawable.selection_all_toggle
+        iconResId = R.drawable.selection_all_toggle,
     ),
 
     /**
@@ -43,7 +43,7 @@ enum class ExtensionButtonAction(
     COPY(
         id = "copy",
         titleResId = R.string.ext_btn_copy,
-        iconResId = R.drawable.copy_toggle
+        iconResId = R.drawable.copy_toggle,
     ),
 
     /**
@@ -52,7 +52,7 @@ enum class ExtensionButtonAction(
     PASTE(
         id = "paste",
         titleResId = R.string.ext_btn_paste,
-        iconResId = R.drawable.selection_background_toggle
+        iconResId = R.drawable.selection_background_toggle,
     ),
 
     /**
@@ -61,7 +61,7 @@ enum class ExtensionButtonAction(
     CLIPBOARD(
         id = "clipboard",
         titleResId = R.string.ext_btn_clipboard,
-        iconResId = R.drawable.clipboard_toggle
+        iconResId = R.drawable.clipboard_toggle,
     ),
 
     /**
@@ -70,7 +70,7 @@ enum class ExtensionButtonAction(
     HIDE_KEYBOARD(
         id = "hide_keyboard",
         titleResId = R.string.ext_btn_hide,
-        iconResId = R.drawable.caret_circle_down_toggle
+        iconResId = R.drawable.caret_circle_down_toggle,
     ),
 
     /**
@@ -79,9 +79,8 @@ enum class ExtensionButtonAction(
     SILENCE_AUTOSTOP_TOGGLE(
         id = "silence_autostop_toggle",
         titleResId = R.string.ext_btn_silence_autostop,
-        iconResId = R.drawable.hand_palm
+        iconResId = R.drawable.hand_palm,
     ),
-
 
     /**
      * 光标左移一位（长按连发）
@@ -89,7 +88,7 @@ enum class ExtensionButtonAction(
     CURSOR_LEFT(
         id = "cursor_left",
         titleResId = R.string.ext_btn_cursor_left,
-        iconResId = R.drawable.arrow_left_toggle
+        iconResId = R.drawable.arrow_left_toggle,
     ),
 
     /**
@@ -98,7 +97,7 @@ enum class ExtensionButtonAction(
     CURSOR_RIGHT(
         id = "cursor_right",
         titleResId = R.string.ext_btn_cursor_right,
-        iconResId = R.drawable.arrow_right_toggle
+        iconResId = R.drawable.arrow_right_toggle,
     ),
 
     /**
@@ -107,7 +106,7 @@ enum class ExtensionButtonAction(
     MOVE_START(
         id = "move_start",
         titleResId = R.string.ext_btn_move_start,
-        iconResId = R.drawable.arrow_line_left_toggle
+        iconResId = R.drawable.arrow_line_left_toggle,
     ),
 
     /**
@@ -116,7 +115,7 @@ enum class ExtensionButtonAction(
     MOVE_END(
         id = "move_end",
         titleResId = R.string.ext_btn_move_end,
-        iconResId = R.drawable.arrow_line_right_toggle
+        iconResId = R.drawable.arrow_line_right_toggle,
     ),
 
     /**
@@ -125,7 +124,7 @@ enum class ExtensionButtonAction(
     NUMPAD(
         id = "numpad",
         titleResId = R.string.ext_btn_numpad,
-        iconResId = R.drawable.numpad_toggle
+        iconResId = R.drawable.numpad_toggle,
     ),
 
     /**
@@ -134,8 +133,9 @@ enum class ExtensionButtonAction(
     UNDO(
         id = "undo",
         titleResId = R.string.ext_btn_undo,
-        iconResId = R.drawable.arrow_u_up_left_toggle
-    );
+        iconResId = R.drawable.arrow_u_up_left_toggle,
+    ),
+    ;
 
     companion object {
         /**
@@ -154,4 +154,3 @@ enum class ExtensionButtonAction(
         }
     }
 }
-

@@ -48,4 +48,3 @@ internal object SpeechPresetStore {
         return match?.content
     }
 }
-

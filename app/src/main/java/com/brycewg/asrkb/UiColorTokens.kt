@@ -25,7 +25,6 @@ object UiColorTokens {
     /** 容器前景色 */
     val containerFg = com.google.android.material.R.attr.colorOnSurfaceVariant
 
-
     // ==================== 键盘相关 ====================
 
     /** 键盘按键背景 */
@@ -36,7 +35,6 @@ object UiColorTokens {
 
     /** 键盘容器背景 */
     val kbdContainerBg = com.google.android.material.R.attr.colorSurfaceVariant
-
 
     // ==================== 强调与状态色 ====================
 
@@ -76,7 +74,6 @@ object UiColorTokens {
     /** 错误容器前景色 */
     val onErrorContainer = com.google.android.material.R.attr.colorOnErrorContainer
 
-
     // ==================== 选中与高亮 ====================
 
     /** 选中项背景色 */
@@ -91,7 +88,6 @@ object UiColorTokens {
     /** 遮罩色（用于暗化/系统栏对齐等） */
     val scrim = R.attr.asrScrimColor
 
-
     // ==================== 边框与分割线 ====================
 
     /** 主要边框色 */
@@ -99,7 +95,6 @@ object UiColorTokens {
 
     /** 次要边框色（更淡） */
     val outlineVariant = com.google.android.material.R.attr.colorOutlineVariant
-
 
     // ==================== 悬浮球相关 ====================
 
@@ -111,7 +106,6 @@ object UiColorTokens {
 
     /** 悬浮球错误状态色 */
     val floatingError = android.R.attr.colorError
-
 
     // ==================== 状态芯片 ====================
 

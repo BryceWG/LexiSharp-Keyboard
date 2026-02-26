@@ -9,4 +9,3 @@ internal interface AsrSettingsSection {
 
     fun onPause(binding: AsrSettingsBinding) {}
 }
-

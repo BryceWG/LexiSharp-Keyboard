@@ -25,7 +25,7 @@ class OpenAiFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null,
-    httpClient: OkHttpClient? = null
+    httpClient: OkHttpClient? = null,
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration), PcmBatchRecognizer {
 
     companion object {
@@ -57,7 +57,7 @@ class OpenAiFileAsrEngine(
                 .addFormDataPart(
                     "file",
                     "audio.wav",
-                    tmp.asRequestBody("audio/wav".toMediaType())
+                    tmp.asRequestBody("audio/wav".toMediaType()),
                 )
                 .addFormDataPart("response_format", "json")
             if (usePrompt && prompt.isNotEmpty()) {
@@ -85,14 +85,16 @@ class OpenAiFileAsrEngine(
                     val extra = extractErrorHint(bodyStr)
                     val detail = formatHttpDetail(r.message, extra)
                     listener.onError(
-                        context.getString(R.string.error_request_failed_http, r.code, detail)
+                        context.getString(R.string.error_request_failed_http, r.code, detail),
                     )
                     return
                 }
                 val text = parseTextFromResponse(bodyStr)
                 if (text.isNotBlank()) {
                     val dt = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0)
-                    try { onRequestDuration?.invoke(dt) } catch (_: Throwable) {}
+                    try {
+                        onRequestDuration?.invoke(dt)
+                    } catch (_: Throwable) {}
                     listener.onFinal(text)
                 } else {
                     listener.onError(context.getString(R.string.error_asr_empty_result))
@@ -100,12 +102,14 @@ class OpenAiFileAsrEngine(
             }
         } catch (t: Throwable) {
             listener.onError(
-                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
+                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""),
             )
         }
     }
 
-    override suspend fun recognizeFromPcm(pcm: ByteArray) { recognize(pcm) }
+    override suspend fun recognizeFromPcm(pcm: ByteArray) {
+        recognize(pcm)
+    }
 
     /**
      * 从响应体中提取错误提示信息

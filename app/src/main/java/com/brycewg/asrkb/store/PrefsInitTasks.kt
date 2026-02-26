@@ -23,6 +23,7 @@ internal object PrefsInitTasks {
     private const val TAG = "Prefs"
 
     @Volatile private var toggleListenerRegistered: Boolean = false
+
     @Volatile private var fnLegacyCleanupStarted: Boolean = false
 
     private val globalToggleListener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
@@ -173,7 +174,7 @@ internal object PrefsInitTasks {
 
             val legacyTargets = listOf(
                 File(File(base, "sensevoice"), "nano-int8"),
-                File(File(base, "sensevoice"), "nano-full")
+                File(File(base, "sensevoice"), "nano-full"),
             )
 
             CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {

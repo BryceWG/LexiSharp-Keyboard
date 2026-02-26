@@ -2,10 +2,10 @@ package com.brycewg.asrkb.ui.settings.asr.sections
 
 import android.widget.EditText
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.brycewg.asrkb.ui.installExplainedSwitch
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsBinding
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsSection
+import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 
@@ -38,7 +38,7 @@ internal class GeminiAsrSettingsSection : AsrSettingsSection {
                 preferenceKey = "gemini_disable_thinking_explained",
                 readPref = { binding.prefs.geminiDisableThinking },
                 writePref = { v -> binding.prefs.geminiDisableThinking = v },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 

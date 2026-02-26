@@ -5,8 +5,8 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.util.AttributeSet
-import android.view.View
 import android.util.TypedValue
+import android.view.View
 import com.brycewg.asrkb.UiColorTokens
 import com.brycewg.asrkb.UiColors
 
@@ -18,7 +18,7 @@ import com.brycewg.asrkb.UiColors
 class PunctKeyView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
+    defStyleAttr: Int = 0,
 ) : View(context, attrs, defStyleAttr) {
 
     private var primaryText: String = ""
@@ -45,7 +45,11 @@ class PunctKeyView @JvmOverloads constructor(
         super.onDraw(canvas)
 
         // 取色：键盘按键前景色
-        val fg = try { UiColors.get(context, UiColorTokens.kbdKeyFg) } catch (_: Throwable) { 0xFF222222.toInt() }
+        val fg = try {
+            UiColors.get(context, UiColorTokens.kbdKeyFg)
+        } catch (_: Throwable) {
+            0xFF222222.toInt()
+        }
         primaryPaint.color = fg
         secondaryPaint.color = fg
 

@@ -60,9 +60,9 @@ internal class BackupAsrSection : AsrSettingsSection {
                         SettingsOptionSheet.Tag(
                             label = binding.activity.getString(tag.labelResId),
                             bgColorResId = tag.bgColorResId,
-                            textColorResId = tag.textColorResId
+                            textColorResId = tag.textColorResId,
                         )
-                    }
+                    },
                 )
             }
             val curIdx = vendorOrder.indexOf(binding.prefs.backupAsrVendor).coerceAtLeast(0)
@@ -70,13 +70,13 @@ internal class BackupAsrSection : AsrSettingsSection {
             val partition = partitionAsrVendorsByConfigured(
                 context = binding.activity,
                 prefs = binding.prefs,
-                vendors = vendorOrder
+                vendors = vendorOrder,
             )
             val configuredItems = partition.configured.mapNotNull { vendor ->
                 indexByVendor[vendor]?.let { idx ->
                     SettingsOptionSheet.TaggedIndexedItem(
                         originalIndex = idx,
-                        item = vendorItems[idx]
+                        item = vendorItems[idx],
                     )
                 }
             }
@@ -84,7 +84,7 @@ internal class BackupAsrSection : AsrSettingsSection {
                 indexByVendor[vendor]?.let { idx ->
                     SettingsOptionSheet.TaggedIndexedItem(
                         originalIndex = idx,
-                        item = vendorItems[idx]
+                        item = vendorItems[idx],
                     )
                 }
             }
@@ -94,14 +94,14 @@ internal class BackupAsrSection : AsrSettingsSection {
                 groups = listOf(
                     SettingsOptionSheet.TaggedGroup(
                         label = binding.activity.getString(R.string.asr_vendor_group_configured),
-                        items = configuredItems
+                        items = configuredItems,
                     ),
                     SettingsOptionSheet.TaggedGroup(
                         label = binding.activity.getString(R.string.asr_vendor_group_unconfigured),
-                        items = unconfiguredItems
-                    )
+                        items = unconfiguredItems,
+                    ),
                 ),
-                selectedIndex = curIdx
+                selectedIndex = curIdx,
             ) { selectedIdx ->
                 val vendor = vendorOrder.getOrNull(selectedIdx) ?: AsrVendor.SiliconFlow
                 binding.prefs.backupAsrVendor = vendor
@@ -114,13 +114,13 @@ internal class BackupAsrSection : AsrSettingsSection {
             val items = arrayOf(
                 binding.activity.getString(R.string.option_backup_asr_timeout_sensitivity_relaxed),
                 binding.activity.getString(R.string.option_backup_asr_timeout_sensitivity_balanced),
-                binding.activity.getString(R.string.option_backup_asr_timeout_sensitivity_sensitive)
+                binding.activity.getString(R.string.option_backup_asr_timeout_sensitivity_sensitive),
             )
             val curIdx = binding.prefs.backupAsrTimeoutSensitivity.coerceIn(0, 2)
             binding.showSingleChoiceDialog(
                 titleResId = R.string.label_backup_asr_timeout_sensitivity,
                 items = items,
-                currentIndex = curIdx
+                currentIndex = curIdx,
             ) { selectedIdx ->
                 binding.prefs.backupAsrTimeoutSensitivity = selectedIdx.coerceIn(0, 2)
                 updateTimeoutSensitivitySummary()
@@ -128,4 +128,3 @@ internal class BackupAsrSection : AsrSettingsSection {
         }
     }
 }
-

@@ -8,10 +8,10 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.asr.VadAutoStopGuard
 import com.brycewg.asrkb.store.Prefs
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import com.brycewg.asrkb.store.debug.DebugLogManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * 键盘动作处理器：作为控制器/ViewModel 管理键盘的核心状态和业务逻辑
@@ -30,7 +30,7 @@ class KeyboardActionHandler(
     private val prefs: Prefs,
     private val asrManager: AsrSessionManager,
     private val inputHelper: InputConnectionHelper,
-    private val llmPostProcessor: LlmPostProcessor
+    private val llmPostProcessor: LlmPostProcessor,
 ) : AsrSessionManager.Listener {
 
     companion object {
@@ -59,6 +59,7 @@ class KeyboardActionHandler(
 
     // 强制停止标记：用于忽略上一会话迟到的 onFinal/onStopped
     private var dropPendingFinal: Boolean = false
+
     // 操作序列号：用于取消在途处理（强制停止/新会话开始都会递增）
     private var opSeq: Long = 0L
 
@@ -72,14 +73,14 @@ class KeyboardActionHandler(
         opSeqProvider = { opSeq },
         audioMsProvider = { asrManager.peekLastAudioMsForStats() },
         usingBackupEngineProvider = { asrManager.getEngine() is com.brycewg.asrkb.asr.ParallelAsrEngine },
-        onTimeout = { transitionToIdle() }
+        onTimeout = { transitionToIdle() },
     )
 
     private val commitRecorder = AsrCommitRecorder(
         context = context,
         prefs = prefs,
         asrManager = asrManager,
-        logTag = TAG
+        logTag = TAG,
     )
 
     private val postprocessPipeline = PostprocessPipeline(
@@ -88,7 +89,7 @@ class KeyboardActionHandler(
         prefs = prefs,
         inputHelper = inputHelper,
         llmPostProcessor = llmPostProcessor,
-        logTag = TAG
+        logTag = TAG,
     )
 
     private val dictationUseCase = DictationUseCase(
@@ -107,7 +108,7 @@ class KeyboardActionHandler(
         transitionToState = { transitionToState(it) },
         transitionToIdle = { keepMessage -> transitionToIdle(keepMessage = keepMessage) },
         transitionToIdleWithTiming = { showBackupUsedHint -> transitionToIdleWithTiming(showBackupUsedHint) },
-        scheduleProcessingTimeout = { audioMsOverride -> scheduleProcessingTimeout(audioMsOverride) }
+        scheduleProcessingTimeout = { audioMsOverride -> scheduleProcessingTimeout(audioMsOverride) },
     )
 
     private val aiEditUseCase = AiEditUseCase(
@@ -124,7 +125,7 @@ class KeyboardActionHandler(
         updateSessionContext = { transform -> sessionContext = transform(sessionContext) },
         transitionToState = { transitionToState(it) },
         transitionToIdle = { keepMessage -> transitionToIdle(keepMessage = keepMessage) },
-        transitionToIdleWithTiming = { showBackupUsedHint -> transitionToIdleWithTiming(showBackupUsedHint) }
+        transitionToIdleWithTiming = { showBackupUsedHint -> transitionToIdleWithTiming(showBackupUsedHint) },
     )
 
     private val promptApplyUseCase = PromptApplyUseCase(
@@ -137,7 +138,7 @@ class KeyboardActionHandler(
         saveUndoSnapshot = { ic -> saveUndoSnapshot(ic) },
         getLastAsrCommitText = { sessionContext.lastAsrCommitText },
         updateSessionContext = { transform -> sessionContext = transform(sessionContext) },
-        logTag = TAG
+        logTag = TAG,
     )
 
     private val extensionButtonDispatcher = ExtensionButtonActionDispatcher(
@@ -146,7 +147,7 @@ class KeyboardActionHandler(
         inputHelper = inputHelper,
         uiListenerProvider = { uiListener },
         handleUndo = { ic -> handleUndo(ic) },
-        logTag = TAG
+        logTag = TAG,
     )
 
     private val retryUseCase = RetryUseCase(
@@ -156,12 +157,14 @@ class KeyboardActionHandler(
         transitionToState = { transitionToState(it) },
         transitionToIdle = { transitionToIdle() },
         scheduleProcessingTimeout = { scheduleProcessingTimeout() },
-        logTag = TAG
+        logTag = TAG,
     )
+
     // 长按期间的"按住状态"和自动重启计数（用于应对录音被系统提前中断的设备差异）
     private var micHoldActive: Boolean = false
     private var micHoldRestartCount: Int = 0
     private var autoStopSuppression: AutoCloseable? = null
+
     // 自动启动录音标志：标识当前录音是否由键盘面板自动启动
     private var isAutoStartedRecording: Boolean = false
 
@@ -226,25 +229,29 @@ class KeyboardActionHandler(
                     "state" to currentState::class.java.simpleName,
                     "opSeq" to opSeq,
                     "dropPendingFinal" to dropPendingFinal,
-                    "isAutoStarted" to isAutoStartedRecording
-                )
+                    "isAutoStarted" to isAutoStartedRecording,
+                ),
             )
         } catch (_: Throwable) { }
         when (currentState) {
             is KeyboardState.Idle -> {
                 // 开始录音
                 startNormalListening()
-                try { DebugLogManager.log("ime", "mic_tap_action", mapOf("action" to "start_listening", "opSeq" to opSeq)) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("ime", "mic_tap_action", mapOf("action" to "start_listening", "opSeq" to opSeq))
+                } catch (_: Throwable) { }
             }
             is KeyboardState.Listening -> {
                 // 停止录音：如果是自动启动的录音，或者正常的点按模式，都执行停止
                 // 统一进入 Processing，显示"识别中"直到最终结果（即使未开启后处理）
-                isAutoStartedRecording = false  // 清除自动启动标志
+                isAutoStartedRecording = false // 清除自动启动标志
                 asrManager.stopRecording()
                 transitionToState(KeyboardState.Processing)
                 scheduleProcessingTimeout()
                 uiListener?.onStatusMessage(context.getString(R.string.status_recognizing))
-                try { DebugLogManager.log("ime", "mic_tap_action", mapOf("action" to "stop_and_process", "opSeq" to opSeq)) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("ime", "mic_tap_action", mapOf("action" to "stop_and_process", "opSeq" to opSeq))
+                } catch (_: Throwable) { }
             }
             is KeyboardState.Processing -> {
                 // 强制停止：立即回到 Idle，并忽略本会话迟到的 onFinal/onStopped
@@ -252,12 +259,16 @@ class KeyboardActionHandler(
                 dropPendingFinal = true
                 transitionToIdle(keepMessage = true)
                 uiListener?.onStatusMessage(context.getString(R.string.status_cancelled))
-                try { DebugLogManager.log("ime", "mic_tap_action", mapOf("action" to "force_stop", "opSeq" to opSeq)) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("ime", "mic_tap_action", mapOf("action" to "force_stop", "opSeq" to opSeq))
+                } catch (_: Throwable) { }
             }
             else -> {
                 // 其他状态忽略
                 Log.w(TAG, "handleMicTapToggle: ignored in state $currentState")
-                try { DebugLogManager.log("ime", "mic_tap_action", mapOf("action" to "ignored", "state" to currentState::class.java.simpleName)) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("ime", "mic_tap_action", mapOf("action" to "ignored", "state" to currentState::class.java.simpleName))
+                } catch (_: Throwable) { }
             }
         }
     }
@@ -277,15 +288,15 @@ class KeyboardActionHandler(
                     "state" to currentState::class.java.simpleName,
                     "opSeq" to opSeq,
                     "dropPendingFinal" to dropPendingFinal,
-                    "isAutoStarted" to isAutoStartedRecording
-                )
+                    "isAutoStarted" to isAutoStartedRecording,
+                ),
             )
         } catch (_: Throwable) { }
         when (currentState) {
             is KeyboardState.Idle -> startNormalListening()
             is KeyboardState.Listening -> {
                 // 如果正在录音（可能是自动启动的），长按应该停止并重新开始
-                isAutoStartedRecording = false  // 清除自动启动标志
+                isAutoStartedRecording = false // 清除自动启动标志
             }
             is KeyboardState.Processing -> {
                 // 强制停止：根据模式决定后续动作
@@ -295,17 +306,23 @@ class KeyboardActionHandler(
                 if (!prefs.micTapToggleEnabled) {
                     // 长按模式：直接开始新一轮录音
                     startNormalListening()
-                    try { DebugLogManager.log("ime", "mic_down_action", mapOf("action" to "force_stop_and_restart", "opSeq" to opSeq)) } catch (_: Throwable) { }
+                    try {
+                        DebugLogManager.log("ime", "mic_down_action", mapOf("action" to "force_stop_and_restart", "opSeq" to opSeq))
+                    } catch (_: Throwable) { }
                 } else {
                     // 点按切换模式：仅取消并回到空闲
                     transitionToIdle(keepMessage = true)
                     uiListener?.onStatusMessage(context.getString(R.string.status_cancelled))
-                    try { DebugLogManager.log("ime", "mic_down_action", mapOf("action" to "force_stop_to_idle", "opSeq" to opSeq)) } catch (_: Throwable) { }
+                    try {
+                        DebugLogManager.log("ime", "mic_down_action", mapOf("action" to "force_stop_to_idle", "opSeq" to opSeq))
+                    } catch (_: Throwable) { }
                 }
             }
             else -> {
                 Log.w(TAG, "handleMicPressDown: ignored in state $currentState")
-                try { DebugLogManager.log("ime", "mic_down_action", mapOf("action" to "ignored", "state" to currentState::class.java.simpleName)) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("ime", "mic_down_action", mapOf("action" to "ignored", "state" to currentState::class.java.simpleName))
+                } catch (_: Throwable) { }
             }
         }
     }
@@ -364,7 +381,7 @@ class KeyboardActionHandler(
         autoEnterOnce = autoEnterAfterFinal
         micHoldActive = false
         releaseAutoStopSuppression()
-        isAutoStartedRecording = false  // 清除自动启动标志
+        isAutoStartedRecording = false // 清除自动启动标志
         try {
             DebugLogManager.log(
                 category = "ime",
@@ -372,8 +389,8 @@ class KeyboardActionHandler(
                 data = mapOf(
                     "autoEnter" to autoEnterAfterFinal,
                     "state" to currentState::class.java.simpleName,
-                    "opSeq" to opSeq
-                )
+                    "opSeq" to opSeq,
+                ),
             )
         } catch (_: Throwable) { }
         if (asrManager.isRunning()) {
@@ -382,16 +399,22 @@ class KeyboardActionHandler(
             transitionToState(KeyboardState.Processing)
             scheduleProcessingTimeout()
             uiListener?.onStatusMessage(context.getString(R.string.status_recognizing))
-            try { DebugLogManager.log("ime", "mic_up_action", mapOf("action" to "stop_and_process", "autoEnter" to autoEnterAfterFinal, "opSeq" to opSeq)) } catch (_: Throwable) { }
+            try {
+                DebugLogManager.log("ime", "mic_up_action", mapOf("action" to "stop_and_process", "autoEnter" to autoEnterAfterFinal, "opSeq" to opSeq))
+            } catch (_: Throwable) { }
         } else {
             // 异常：UI 处于 Listening，但引擎未在运行（例如启动失败/被系统打断）。
             // 为避免卡住“正在聆听”，直接归位到 Idle 并提示“已取消”。
             if (currentState is KeyboardState.Listening || currentState is KeyboardState.AiEditListening) {
                 // 确保释放音频焦点/路由（即使引擎未在运行）
-                try { asrManager.stopRecording() } catch (_: Throwable) { }
+                try {
+                    asrManager.stopRecording()
+                } catch (_: Throwable) { }
                 transitionToIdle(keepMessage = true)
                 uiListener?.onStatusMessage(context.getString(R.string.status_cancelled))
-                try { DebugLogManager.log("ime", "mic_up_action", mapOf("action" to "not_running_cancel", "opSeq" to opSeq)) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("ime", "mic_up_action", mapOf("action" to "not_running_cancel", "opSeq" to opSeq))
+                } catch (_: Throwable) { }
             }
         }
     }
@@ -459,7 +482,7 @@ class KeyboardActionHandler(
      */
     fun handleExtensionButtonClick(
         action: com.brycewg.asrkb.ime.ExtensionButtonAction,
-        ic: InputConnection?
+        ic: InputConnection?,
     ): ExtensionButtonActionResult {
         return extensionButtonDispatcher.dispatch(action, ic)
     }
@@ -468,15 +491,15 @@ class KeyboardActionHandler(
      * 扩展按钮动作结果
      */
     enum class ExtensionButtonActionResult {
-        SUCCESS,                    // 成功完成
-        FAILED,                     // 失败
-        NEED_TOGGLE_SELECTION,      // 需要 IME 切换选择模式
-        NEED_CURSOR_LEFT,           // 需要 IME 处理左移（支持长按）
-        NEED_CURSOR_RIGHT,          // 需要 IME 处理右移（支持长按）
-        NEED_SHOW_NUMPAD,           // 需要 IME 显示数字键盘
-        NEED_SHOW_CLIPBOARD,        // 需要 IME 显示剪贴板面板
-        NEED_HIDE_KEYBOARD,         // 需要 IME 收起键盘
-        NEED_TOGGLE_CONTINUOUS_TALK // 需要 IME 切换畅说模式
+        SUCCESS, // 成功完成
+        FAILED, // 失败
+        NEED_TOGGLE_SELECTION, // 需要 IME 切换选择模式
+        NEED_CURSOR_LEFT, // 需要 IME 处理左移（支持长按）
+        NEED_CURSOR_RIGHT, // 需要 IME 处理右移（支持长按）
+        NEED_SHOW_NUMPAD, // 需要 IME 显示数字键盘
+        NEED_SHOW_CLIPBOARD, // 需要 IME 显示剪贴板面板
+        NEED_HIDE_KEYBOARD, // 需要 IME 收起键盘
+        NEED_TOGGLE_CONTINUOUS_TALK, // 需要 IME 切换畅说模式
     }
 
     /**
@@ -536,7 +559,7 @@ class KeyboardActionHandler(
             fullText = label,
             displaySnippet = label,
             type = ClipboardPreviewType.FILE,
-            fileEntryId = entry.id
+            fileEntryId = entry.id,
         )
         sessionContext = sessionContext.copy(clipboardPreview = preview)
         uiListener?.onShowClipboardPreview(preview)
@@ -678,51 +701,77 @@ class KeyboardActionHandler(
             // 若仍在长按且为非点按模式，并且上一轮录音时长极短，则判定为系统提前中断，自动重启一次录音
             // 这样用户的“持续按住说话”不会因为系统打断而直接被判定为取消
             // 仅用于早停判定：读取但不清空，避免影响后续统计与历史写入
-            val earlyMs = try { asrManager.peekLastAudioMsForStats() } catch (t: Throwable) { 0L }
+            val earlyMs = try {
+                asrManager.peekLastAudioMsForStats()
+            } catch (t: Throwable) {
+                0L
+            }
             if (!prefs.micTapToggleEnabled && micHoldActive && earlyMs in 1..250) {
                 if (micHoldRestartCount < 1) {
                     micHoldRestartCount += 1
-                    try { DebugLogManager.log("ime", "auto_restart_after_early_stop", mapOf("audioMs" to earlyMs, "count" to micHoldRestartCount, "opSeq" to opSeq)) } catch (_: Throwable) { }
+                    try {
+                        DebugLogManager.log("ime", "auto_restart_after_early_stop", mapOf("audioMs" to earlyMs, "count" to micHoldRestartCount, "opSeq" to opSeq))
+                    } catch (_: Throwable) { }
                     startNormalListening()
                     return@launch
                 } else {
-                    try { DebugLogManager.log("ime", "auto_restart_skip", mapOf("audioMs" to earlyMs, "count" to micHoldRestartCount, "opSeq" to opSeq)) } catch (_: Throwable) { }
+                    try {
+                        DebugLogManager.log("ime", "auto_restart_skip", mapOf("audioMs" to earlyMs, "count" to micHoldRestartCount, "opSeq" to opSeq))
+                    } catch (_: Throwable) { }
                 }
             }
             // 若强制停止，忽略迟到的 onStopped
             if (dropPendingFinal) return@launch
             // 若此时已经开始了新的录音（引擎运行中），则将本次 onStopped 视为上一会话的迟到事件并忽略。
             if (asrManager.isRunning()) {
-                try { asrManager.popLastAudioMsForStats() } catch (_: Throwable) { }
-                try { DebugLogManager.log("ime", "asr_stopped_ignored", mapOf("reason" to "new_session_running", "opSeq" to opSeq)) } catch (_: Throwable) { }
+                try {
+                    asrManager.popLastAudioMsForStats()
+                } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("ime", "asr_stopped_ignored", mapOf("reason" to "new_session_running", "opSeq" to opSeq))
+                } catch (_: Throwable) { }
                 return@launch
             }
             // 误触极短录音：直接取消，避免进入“识别中…”阻塞后续长按
             val audioMs = earlyMs
             // 若前面 earlyMs==0（例如未知或异常），再尝试一次以兼容既有逻辑
-            val audioMsVal = if (audioMs != 0L) audioMs else try { asrManager.peekLastAudioMsForStats() } catch (t: Throwable) {
-                Log.w(TAG, "popLastAudioMsForStats failed", t)
-                0L
+            val audioMsVal = if (audioMs != 0L) {
+                audioMs
+            } else {
+                try {
+                    asrManager.peekLastAudioMsForStats()
+                } catch (t: Throwable) {
+                    Log.w(TAG, "popLastAudioMsForStats failed", t)
+                    0L
+                }
             }
             if (audioMsVal in 1..250) {
                 // 将后续迟到回调丢弃并归位
                 dropPendingFinal = true
                 transitionToIdle()
                 uiListener?.onStatusMessage(context.getString(R.string.status_cancelled))
-                try { DebugLogManager.log("ime", "asr_stopped", mapOf("audioMs" to audioMsVal, "action" to "cancel_short", "opSeq" to opSeq)) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("ime", "asr_stopped", mapOf("audioMs" to audioMsVal, "action" to "cancel_short", "opSeq" to opSeq))
+                } catch (_: Throwable) { }
                 return@launch
             }
             // 正常流程：进入 Processing，等待最终结果或兜底
             transitionToState(KeyboardState.Processing)
             scheduleProcessingTimeout(audioMsVal)
             uiListener?.onStatusMessage(context.getString(R.string.status_recognizing))
-            try { DebugLogManager.log("ime", "asr_stopped", mapOf("audioMs" to audioMs, "action" to "enter_processing", "opSeq" to opSeq)) } catch (_: Throwable) { }
+            try {
+                DebugLogManager.log("ime", "asr_stopped", mapOf("audioMs" to audioMs, "action" to "enter_processing", "opSeq" to opSeq))
+            } catch (_: Throwable) { }
         }
     }
 
     override fun onLocalModelLoadStart() {
         // 记录开始时间，用于计算加载耗时
-        try { modelLoadStartUptimeMs = android.os.SystemClock.uptimeMillis() } catch (_: Throwable) { modelLoadStartUptimeMs = 0L }
+        try {
+            modelLoadStartUptimeMs = android.os.SystemClock.uptimeMillis()
+        } catch (_: Throwable) {
+            modelLoadStartUptimeMs = 0L
+        }
         val resId = if (currentState is KeyboardState.Listening || currentState is KeyboardState.AiEditListening) {
             R.string.sv_loading_model_while_listening
         } else {
@@ -735,7 +784,9 @@ class KeyboardActionHandler(
         val dt = try {
             val now = android.os.SystemClock.uptimeMillis()
             if (modelLoadStartUptimeMs > 0L && now >= modelLoadStartUptimeMs) now - modelLoadStartUptimeMs else -1L
-        } catch (_: Throwable) { -1L }
+        } catch (_: Throwable) {
+            -1L
+        }
         if (dt > 0) {
             uiListener?.onStatusMessage(context.getString(R.string.sv_model_ready_with_ms, dt))
         } else {
@@ -760,19 +811,22 @@ class KeyboardActionHandler(
                 data = mapOf(
                     "from" to prev::class.java.simpleName,
                     "to" to newState::class.java.simpleName,
-                    "opSeq" to opSeq
-                )
+                    "opSeq" to opSeq,
+                ),
             )
         } catch (_: Throwable) { }
         // 仅在携带文本上下文的状态下同步到 AsrSessionManager，
         // 避免切到 Processing 后丢失 partialText 影响最终合并
         when (newState) {
             is KeyboardState.Listening,
-            is KeyboardState.AiEditListening -> asrManager.setCurrentState(newState)
+            is KeyboardState.AiEditListening,
+            -> asrManager.setCurrentState(newState)
             else -> { /* keep previous contextual state in AsrSessionManager */ }
         }
         if (newState !is KeyboardState.Idle) {
-            try { uiListener?.onHideRetryChip() } catch (_: Throwable) {}
+            try {
+                uiListener?.onHideRetryChip()
+            } catch (_: Throwable) {}
         }
         uiListener?.onStateChanged(newState)
     }
@@ -780,10 +834,12 @@ class KeyboardActionHandler(
     private fun transitionToIdle(keepMessage: Boolean = false) {
         // 新的显式归位：递增操作序列，取消在途处理
         opSeq++
-        try { DebugLogManager.log("ime", "opseq_inc", mapOf("at" to "to_idle", "opSeq" to opSeq)) } catch (_: Throwable) { }
+        try {
+            DebugLogManager.log("ime", "opseq_inc", mapOf("at" to "to_idle", "opSeq" to opSeq))
+        } catch (_: Throwable) { }
         processingTimeoutController.cancel()
         autoEnterOnce = false
-        isAutoStartedRecording = false  // 清除自动启动标志
+        isAutoStartedRecording = false // 清除自动启动标志
         transitionToState(KeyboardState.Idle)
         if (!keepMessage) {
             uiListener?.onStatusMessage(context.getString(R.string.status_idle))
@@ -793,11 +849,15 @@ class KeyboardActionHandler(
     private fun startNormalListening() {
         // 开启新一轮录音：递增操作序列，取消在途处理
         opSeq++
-        try { DebugLogManager.log("ime", "opseq_inc", mapOf("at" to "start_listening", "opSeq" to opSeq)) } catch (_: Throwable) { }
+        try {
+            DebugLogManager.log("ime", "opseq_inc", mapOf("at" to "start_listening", "opSeq" to opSeq))
+        } catch (_: Throwable) { }
         processingTimeoutController.cancel()
         dropPendingFinal = false
         autoEnterOnce = false
-        try { uiListener?.onHideRetryChip() } catch (_: Throwable) {}
+        try {
+            uiListener?.onHideRetryChip()
+        } catch (_: Throwable) {}
         val state = KeyboardState.Listening()
         transitionToState(state)
         asrManager.startRecording(state)
@@ -863,7 +923,6 @@ class KeyboardActionHandler(
             }
         }
     }
-
 
     /**
      * 获取当前输入连接（需要从外部注入）

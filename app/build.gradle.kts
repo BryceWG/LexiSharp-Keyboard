@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
+    id("org.jlleitschuh.gradle.ktlint")
 }
 
 android {
@@ -31,7 +32,8 @@ android {
     signingConfigs {
         create("release") {
             // 从环境变量读取签名配置
-            storeFile = System.getenv("KEYSTORE_FILE")?.let { file(it) }
+            val keystoreFile = System.getenv("KEYSTORE_FILE")
+            storeFile = keystoreFile?.takeIf { it.isNotBlank() }?.let { file(it) }
             storePassword = System.getenv("KEYSTORE_PASSWORD")
             keyAlias = System.getenv("KEY_ALIAS")
             keyPassword = System.getenv("KEY_PASSWORD")
@@ -46,7 +48,7 @@ android {
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
 
             signingConfig = signingConfigs.findByName("release")?.takeIf {
@@ -86,14 +88,14 @@ android {
             excludes += listOf(
                 "**/libonnxruntime4j_jni.so",
                 "**/libsherpa-onnx-c-api.so",
-                "**/libsherpa-onnx-cxx-api.so"
+                "**/libsherpa-onnx-cxx-api.so",
             )
         }
         resources {
             excludes += listOf(
                 "META-INF/services/lombok.*",
                 "README.md",
-                "META-INF/README.md"
+                "META-INF/README.md",
             )
         }
     }
@@ -113,7 +115,7 @@ tasks.withType(JavaCompile::class.java).configureEach {
     javaCompiler.set(
         toolchainService.compilerFor {
             languageVersion.set(JavaLanguageVersion.of(21))
-        }
+        },
     )
 }
 

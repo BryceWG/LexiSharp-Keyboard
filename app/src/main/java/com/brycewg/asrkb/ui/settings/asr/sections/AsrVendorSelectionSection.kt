@@ -20,9 +20,9 @@ internal class AsrVendorSelectionSection : AsrSettingsSection {
                     SettingsOptionSheet.Tag(
                         label = binding.activity.getString(tag.labelResId),
                         bgColorResId = tag.bgColorResId,
-                        textColorResId = tag.textColorResId
+                        textColorResId = tag.textColorResId,
                     )
-                }
+                },
             )
         }
 
@@ -33,13 +33,13 @@ internal class AsrVendorSelectionSection : AsrSettingsSection {
             val partition = partitionAsrVendorsByConfigured(
                 context = binding.activity,
                 prefs = binding.prefs,
-                vendors = vendorOrder
+                vendors = vendorOrder,
             )
             val configuredItems = partition.configured.mapNotNull { vendor ->
                 indexByVendor[vendor]?.let { idx ->
                     SettingsOptionSheet.TaggedIndexedItem(
                         originalIndex = idx,
-                        item = vendorItems[idx]
+                        item = vendorItems[idx],
                     )
                 }
             }
@@ -47,7 +47,7 @@ internal class AsrVendorSelectionSection : AsrSettingsSection {
                 indexByVendor[vendor]?.let { idx ->
                     SettingsOptionSheet.TaggedIndexedItem(
                         originalIndex = idx,
-                        item = vendorItems[idx]
+                        item = vendorItems[idx],
                     )
                 }
             }
@@ -57,14 +57,14 @@ internal class AsrVendorSelectionSection : AsrSettingsSection {
                 groups = listOf(
                     SettingsOptionSheet.TaggedGroup(
                         label = binding.activity.getString(R.string.asr_vendor_group_configured),
-                        items = configuredItems
+                        items = configuredItems,
                     ),
                     SettingsOptionSheet.TaggedGroup(
                         label = binding.activity.getString(R.string.asr_vendor_group_unconfigured),
-                        items = unconfiguredItems
-                    )
+                        items = unconfiguredItems,
+                    ),
                 ),
-                selectedIndex = curIdx
+                selectedIndex = curIdx,
             ) { selectedIdx ->
                 val vendor = vendorOrder.getOrNull(selectedIdx) ?: AsrVendor.Volc
                 binding.viewModel.updateVendor(vendor)

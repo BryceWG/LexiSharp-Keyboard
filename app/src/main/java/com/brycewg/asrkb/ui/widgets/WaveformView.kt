@@ -17,14 +17,16 @@ import kotlin.math.pow
 class WaveformView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
+    defStyleAttr: Int = 0,
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     private var isActive = false
 
     /** 波形灵敏度（1-10），数值越大响应越明显 */
     var sensitivity: Int = 5
-        set(value) { field = value.coerceIn(1, 10) }
+        set(value) {
+            field = value.coerceIn(1, 10)
+        }
 
     private val waveView: WaveLineView = WaveLineView(context).apply {
         // 透明背景，融入容器

@@ -29,7 +29,7 @@ class AiPostSettingsViewModel : ViewModel() {
         val apiKey: String = "",
         val model: String = "",
         val temperature: Float = Prefs.DEFAULT_LLM_TEMPERATURE,
-        val reasoningEnabled: Boolean = false
+        val reasoningEnabled: Boolean = false,
     )
 
     private val _builtinVendorConfig = MutableStateFlow(BuiltinVendorConfig())
@@ -88,7 +88,7 @@ class AiPostSettingsViewModel : ViewModel() {
             apiKey = prefs.getLlmVendorApiKey(vendor),
             model = prefs.getLlmVendorModel(vendor),
             temperature = prefs.getLlmVendorTemperature(vendor),
-            reasoningEnabled = prefs.getLlmVendorReasoningEnabled(vendor)
+            reasoningEnabled = prefs.getLlmVendorReasoningEnabled(vendor),
         )
     }
 
@@ -171,12 +171,14 @@ class AiPostSettingsViewModel : ViewModel() {
         return when (vendor.reasoningMode) {
             ReasoningMode.ENABLE_THINKING,
             ReasoningMode.REASONING_EFFORT,
-            ReasoningMode.THINKING_TYPE -> {
+            ReasoningMode.THINKING_TYPE,
+            -> {
                 // Only show switch if the model supports reasoning
                 vendor.reasoningModels.isEmpty() || vendor.reasoningModels.contains(model)
             }
             ReasoningMode.MODEL_SELECTION,
-            ReasoningMode.NONE -> false
+            ReasoningMode.NONE,
+            -> false
         }
     }
 
@@ -219,7 +221,7 @@ class AiPostSettingsViewModel : ViewModel() {
      */
     fun updateActiveLlmProvider(
         prefs: Prefs,
-        mutator: (Prefs.LlmProvider) -> Prefs.LlmProvider
+        mutator: (Prefs.LlmProvider) -> Prefs.LlmProvider,
     ) {
         try {
             val list = _llmProfiles.value.toMutableList()
@@ -251,7 +253,7 @@ class AiPostSettingsViewModel : ViewModel() {
      * Creates a new default LLM provider with optional mutation
      */
     private fun createDefaultLlmProvider(
-        mutator: ((Prefs.LlmProvider) -> Prefs.LlmProvider)? = null
+        mutator: ((Prefs.LlmProvider) -> Prefs.LlmProvider)? = null,
     ): Prefs.LlmProvider {
         val defaultProvider = Prefs.LlmProvider(
             id = UUID.randomUUID().toString(),
@@ -260,7 +262,7 @@ class AiPostSettingsViewModel : ViewModel() {
             apiKey = "",
             model = Prefs.DEFAULT_LLM_MODEL,
             temperature = Prefs.DEFAULT_LLM_TEMPERATURE,
-            models = emptyList()
+            models = emptyList(),
         )
         return mutator?.invoke(defaultProvider) ?: defaultProvider
     }
@@ -278,7 +280,7 @@ class AiPostSettingsViewModel : ViewModel() {
                 apiKey = "",
                 model = Prefs.DEFAULT_LLM_MODEL,
                 temperature = Prefs.DEFAULT_LLM_TEMPERATURE,
-                models = emptyList()
+                models = emptyList(),
             )
 
             val list = _llmProfiles.value.toMutableList()
@@ -371,7 +373,7 @@ class AiPostSettingsViewModel : ViewModel() {
      */
     fun updateActivePromptPreset(
         prefs: Prefs,
-        mutator: (PromptPreset) -> PromptPreset
+        mutator: (PromptPreset) -> PromptPreset,
     ) {
         try {
             val list = _promptPresets.value.toMutableList()
@@ -399,7 +401,7 @@ class AiPostSettingsViewModel : ViewModel() {
             val newPreset = PromptPreset(
                 id = UUID.randomUUID().toString(),
                 title = defaultTitle,
-                content = defaultContent
+                content = defaultContent,
             )
 
             val list = _promptPresets.value.toMutableList()

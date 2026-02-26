@@ -8,16 +8,15 @@ import android.graphics.Outline
 import android.graphics.PixelFormat
 import android.os.Build
 import android.util.Log
+import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
-import android.view.WindowManager
-import android.view.WindowInsets
 import android.view.ViewOutlineProvider
+import android.view.WindowInsets
+import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
-import androidx.core.graphics.toColorInt
-import android.view.ContextThemeWrapper
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.UiColors
 import com.brycewg.asrkb.store.Prefs
@@ -32,7 +31,7 @@ import kotlin.math.sqrt
 class FloatingBallViewManager(
     private val context: Context,
     private val prefs: Prefs,
-    private val windowManager: WindowManager
+    private val windowManager: WindowManager,
 ) {
     companion object {
         private const val TAG = "FloatingBallViewManager"
@@ -56,7 +55,7 @@ class FloatingBallViewManager(
     private var lp: WindowManager.LayoutParams? = null
 
     // 动画
-    
+
     private var rippleAnimators: MutableList<Animator> = mutableListOf()
     private var edgeAnimator: ValueAnimator? = null
     private var edgeHandleVisible: Boolean = false
@@ -68,7 +67,7 @@ class FloatingBallViewManager(
     private var completionResetPosted: Boolean = false
     private var monetContext: Context? = null
     private var currentState: FloatingBallState = FloatingBallState.Idle
-    
+
     // 贴边半隐时仅显示“箭头把手”的宽度（需与布局一致）
 
     // 记录“旋转前”的贴边锚点，用于横竖屏切换时的位置映射
@@ -85,7 +84,11 @@ class FloatingBallViewManager(
         if (ballView != null) {
             applyBallAlpha()
             applyBallSize()
-            try { updateStateVisual(currentState) } catch (e: Throwable) { Log.w(TAG, "Failed to refresh state on existing view", e) }
+            try {
+                updateStateVisual(currentState)
+            } catch (e: Throwable) {
+                Log.w(TAG, "Failed to refresh state on existing view", e)
+            }
             return true
         }
 
@@ -111,24 +114,32 @@ class FloatingBallViewManager(
             // 获取 Monet 动态颜色
             val colorSecondaryContainer = getMonetColor(
                 com.google.android.material.R.attr.colorSecondaryContainer,
-                0xFF6200EE.toInt()
+                0xFF6200EE.toInt(),
             )
             val colorSecondary = getMonetColor(
                 com.google.android.material.R.attr.colorSecondary,
-                colorSecondaryContainer
+                colorSecondaryContainer,
             )
 
             // 将相对更重的初始化（波纹背景/自定义进度指示器）延后到下一帧，
             // 以降低 addView 当帧的主线程压力，避免与 IME 显示竞争导致掉帧。
             view.post {
-                try { setupRippleBackgrounds(colorSecondary) } catch (e: Throwable) {
+                try {
+                    setupRippleBackgrounds(colorSecondary)
+                } catch (e: Throwable) {
                     Log.w(TAG, "Deferred ripple setup failed", e)
                 }
-                try { setupProcessingSpinner(ballContainer, colorSecondary) } catch (e: Throwable) {
+                try {
+                    setupProcessingSpinner(ballContainer, colorSecondary)
+                } catch (e: Throwable) {
                     Log.w(TAG, "Deferred spinner setup failed", e)
                 }
                 // 延后初始化完成后，根据当前状态刷新一次，以确保 Processing 时能立刻显示动画
-                try { updateStateVisual(currentState) } catch (e: Throwable) { Log.w(TAG, "Failed to apply state after deferred init", e) }
+                try {
+                    updateStateVisual(currentState)
+                } catch (e: Throwable) {
+                    Log.w(TAG, "Failed to apply state after deferred init", e)
+                }
             }
 
             // 绑定点击和拖动监听
@@ -147,7 +158,11 @@ class FloatingBallViewManager(
             applyBallAlpha()
             applyBallSize()
             // 应用初始状态
-            try { updateStateVisual(initialState) } catch (e: Throwable) { Log.w(TAG, "Failed to apply initial state", e) }
+            try {
+                updateStateVisual(initialState)
+            } catch (e: Throwable) {
+                Log.w(TAG, "Failed to apply initial state", e)
+            }
             Log.d(TAG, "Ball view added successfully")
             return true
         } catch (e: Throwable) {
@@ -268,14 +283,22 @@ class FloatingBallViewManager(
 
         when (state) {
             is FloatingBallState.Recording -> {
-                try { ballIcon?.setImageResource(R.drawable.microphone_floatingball) } catch (e: Throwable) { Log.w(TAG, "Failed to set ball icon (recording)", e) }
+                try {
+                    ballIcon?.setImageResource(R.drawable.microphone_floatingball)
+                } catch (e: Throwable) {
+                    Log.w(TAG, "Failed to set ball icon (recording)", e)
+                }
                 processingSpinner?.visibility = View.GONE
                 stopProcessingSpinner()
                 startRippleAnimation()
                 startRecordingBreathAnimation()
             }
             is FloatingBallState.Processing -> {
-                try { ballIcon?.setImageResource(R.drawable.microphone_floatingball) } catch (e: Throwable) { Log.w(TAG, "Failed to set ball icon (processing)", e) }
+                try {
+                    ballIcon?.setImageResource(R.drawable.microphone_floatingball)
+                } catch (e: Throwable) {
+                    Log.w(TAG, "Failed to set ball icon (processing)", e)
+                }
                 stopRippleAnimation()
                 stopRecordingBreathAnimation()
                 processingSpinner?.visibility = View.VISIBLE
@@ -290,7 +313,11 @@ class FloatingBallViewManager(
             }
             else -> {
                 // Idle, MoveMode
-                try { ballIcon?.setImageResource(R.drawable.microphone_floatingball) } catch (e: Throwable) { Log.w(TAG, "Failed to set ball icon (idle/move)", e) }
+                try {
+                    ballIcon?.setImageResource(R.drawable.microphone_floatingball)
+                } catch (e: Throwable) {
+                    Log.w(TAG, "Failed to set ball icon (idle/move)", e)
+                }
                 stopRippleAnimation()
                 stopRecordingBreathAnimation()
                 processingSpinner?.visibility = View.GONE
@@ -770,7 +797,7 @@ class FloatingBallViewManager(
             if (parent == null) {
                 val lpSpinner = android.widget.FrameLayout.LayoutParams(
                     android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
                 ).apply { gravity = Gravity.CENTER }
                 ballContainer.addView(processingSpinner, lpSpinner)
             }
@@ -788,12 +815,13 @@ class FloatingBallViewManager(
             56
         }
         val params = WindowManager.LayoutParams(
-            dp(size), dp(size),
+            dp(size),
+            dp(size),
             type,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            PixelFormat.TRANSLUCENT
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT,
         )
         params.gravity = Gravity.TOP or Gravity.START
 
@@ -930,7 +958,7 @@ class FloatingBallViewManager(
     private data class DockAnchor(
         val side: DockSide,
         val fraction: Float,
-        val hidden: Boolean
+        val hidden: Boolean,
     )
 
     private fun dockSideToPrefValue(side: DockSide): Int {
@@ -970,7 +998,7 @@ class FloatingBallViewManager(
         screenW: Int,
         screenH: Int,
         vw: Int,
-        vh: Int
+        vh: Int,
     ): DockAnchor {
         val margin = dp(0)
         val minX = margin
@@ -1057,7 +1085,7 @@ class FloatingBallViewManager(
         screenH: Int,
         vw: Int,
         vh: Int,
-        visibleXHint: Int? = null
+        visibleXHint: Int? = null,
     ): Pair<Int, Int> {
         val margin = dp(0)
         val minX = margin
@@ -1187,7 +1215,7 @@ class FloatingBallViewManager(
                 val metrics = windowManager.currentWindowMetrics
                 val bounds = metrics.bounds
                 val insets = metrics.windowInsets.getInsetsIgnoringVisibility(
-                    WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
+                    WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout(),
                 )
                 val w = (bounds.width() - insets.left - insets.right).coerceAtLeast(0)
                 val h = (bounds.height() - insets.top - insets.bottom).coerceAtLeast(0)

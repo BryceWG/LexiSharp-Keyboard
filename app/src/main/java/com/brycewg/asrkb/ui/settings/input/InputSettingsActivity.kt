@@ -15,13 +15,13 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
-import com.brycewg.asrkb.ui.BaseActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.BaseActivity
 import com.brycewg.asrkb.ui.SettingsOptionSheet
 import com.brycewg.asrkb.ui.installExplainedSwitch
 import com.brycewg.asrkb.ui.settings.search.SettingsSearchNavigator
@@ -153,7 +153,7 @@ class InputSettingsActivity : BaseActivity() {
             preferenceKey = "trim_trailing_punct_explained",
             readPref = { prefs.trimFinalTrailingPunct },
             writePref = { v -> prefs.trimFinalTrailingPunct = v },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
         switchExternalImeAidl.setOnCheckedChangeListener { btn, isChecked ->
             hapticTapIfEnabled(btn)
@@ -172,7 +172,7 @@ class InputSettingsActivity : BaseActivity() {
             preferenceKey = "mic_tap_toggle_explained",
             readPref = { prefs.micTapToggleEnabled },
             writePref = { v -> prefs.micTapToggleEnabled = v },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
         switchAutoStartRecordingOnShow.installExplainedSwitch(
             context = this,
@@ -182,7 +182,7 @@ class InputSettingsActivity : BaseActivity() {
             preferenceKey = "auto_start_recording_on_show_explained",
             readPref = { prefs.autoStartRecordingOnShow },
             writePref = { v -> prefs.autoStartRecordingOnShow = v },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
         switchReturnPrevImeOnHide.installExplainedSwitch(
             context = this,
@@ -192,7 +192,7 @@ class InputSettingsActivity : BaseActivity() {
             preferenceKey = "return_prev_ime_on_hide_explained",
             readPref = { prefs.returnPrevImeOnHide },
             writePref = { v -> prefs.returnPrevImeOnHide = v },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
         switchFcitx5ReturnOnSwitcher.installExplainedSwitch(
             context = this,
@@ -202,7 +202,7 @@ class InputSettingsActivity : BaseActivity() {
             preferenceKey = "fcitx5_return_on_switcher_explained",
             readPref = { prefs.fcitx5ReturnOnImeSwitch },
             writePref = { v -> prefs.fcitx5ReturnOnImeSwitch = v },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
         switchHideRecentTasks.installExplainedSwitch(
             context = this,
@@ -213,7 +213,7 @@ class InputSettingsActivity : BaseActivity() {
             readPref = { prefs.hideRecentTaskCard },
             writePref = { v -> prefs.hideRecentTaskCard = v },
             onChanged = { enabled -> applyExcludeFromRecents(enabled) },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
         switchDuckMediaOnRecord.installExplainedSwitch(
             context = this,
@@ -223,7 +223,7 @@ class InputSettingsActivity : BaseActivity() {
             preferenceKey = "duck_media_on_record_explained",
             readPref = { prefs.duckMediaOnRecordEnabled },
             writePref = { v -> prefs.duckMediaOnRecordEnabled = v },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
         switchOfflineDenoise.installExplainedSwitch(
             context = this,
@@ -233,7 +233,7 @@ class InputSettingsActivity : BaseActivity() {
             preferenceKey = "offline_denoise_explained",
             readPref = { prefs.offlineDenoiseEnabled },
             writePref = { v -> prefs.offlineDenoiseEnabled = v },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
         switchHeadsetMicPriority.installExplainedSwitch(
             context = this,
@@ -249,8 +249,12 @@ class InputSettingsActivity : BaseActivity() {
                     if (!granted) {
                         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.BLUETOOTH_CONNECT), REQ_BT_CONNECT)
                         false
-                    } else true
-                } else true
+                    } else {
+                        true
+                    }
+                } else {
+                    true
+                }
             },
             onChanged = { enabled ->
                 if (!enabled) {
@@ -258,12 +262,11 @@ class InputSettingsActivity : BaseActivity() {
                     com.brycewg.asrkb.asr.BluetoothRouteManager.setImeActive(this, false)
                 }
             },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
 
         // 初始应用一次"从最近任务中排除"设置
         applyExcludeFromRecents(prefs.hideRecentTaskCard)
-
     }
 
     override fun onPostResume() {
@@ -326,7 +329,7 @@ class InputSettingsActivity : BaseActivity() {
     private fun setupHapticFeedbackStrengthSlider(
         prefs: Prefs,
         slider: com.google.android.material.slider.Slider,
-        tvValue: TextView
+        tvValue: TextView,
     ) {
         var lastLevel = prefs.hapticFeedbackLevel
         slider.value = lastLevel.toFloat()
@@ -335,7 +338,7 @@ class InputSettingsActivity : BaseActivity() {
         slider.addOnChangeListener { _, value, fromUser ->
             val newLevel = value.toInt().coerceIn(
                 Prefs.HAPTIC_FEEDBACK_LEVEL_OFF,
-                Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY
+                Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY,
             )
             if (prefs.hapticFeedbackLevel != newLevel) {
                 prefs.hapticFeedbackLevel = newLevel
@@ -370,7 +373,7 @@ class InputSettingsActivity : BaseActivity() {
     private fun setupBottomPaddingSlider(
         prefs: Prefs,
         slider: com.google.android.material.slider.Slider,
-        tvValue: TextView
+        tvValue: TextView,
     ) {
         // 初始化滑动条值
         slider.value = prefs.keyboardBottomPaddingDp.toFloat()
@@ -393,7 +396,7 @@ class InputSettingsActivity : BaseActivity() {
     private fun setupWaveformSensitivitySlider(
         prefs: Prefs,
         slider: com.google.android.material.slider.Slider,
-        tvValue: TextView
+        tvValue: TextView,
     ) {
         // 初始化滑动条值
         slider.value = prefs.waveformSensitivity.toFloat()
@@ -419,7 +422,7 @@ class InputSettingsActivity : BaseActivity() {
             getString(R.string.lang_zh_cn),
             getString(R.string.lang_zh_tw),
             getString(R.string.lang_ja),
-            getString(R.string.lang_en)
+            getString(R.string.lang_en),
         )
 
         fun getLanguageIndex(tag: String): Int = when (tag) {
@@ -460,7 +463,7 @@ class InputSettingsActivity : BaseActivity() {
                         }
                         AppCompatDelegate.setApplicationLocales(locales)
                     }
-                }
+                },
             )
         }
     }
@@ -475,7 +478,7 @@ class InputSettingsActivity : BaseActivity() {
             val imm = getSystemService(InputMethodManager::class.java)
             val enabledImes = imm?.enabledInputMethodList ?: emptyList()
             val options = mutableListOf(
-                ImeOption("", getString(R.string.ime_switch_target_previous))
+                ImeOption("", getString(R.string.ime_switch_target_previous)),
             )
             enabledImes
                 .filter { it.packageName != packageName }
@@ -513,7 +516,7 @@ class InputSettingsActivity : BaseActivity() {
                         prefs.imeSwitchTargetId = selectedId
                     }
                     updateSummary(options)
-                }
+                },
             )
         }
     }
@@ -530,14 +533,14 @@ class InputSettingsActivity : BaseActivity() {
         titleRes: Int,
         items: List<String>,
         currentIndex: Int,
-        onSelected: (Int) -> Unit
+        onSelected: (Int) -> Unit,
     ) {
         SettingsOptionSheet.showSingleChoice(
             context = this,
             titleResId = titleRes,
             items = items,
             selectedIndex = currentIndex,
-            onSelected = onSelected
+            onSelected = onSelected,
         )
     }
 
@@ -545,9 +548,11 @@ class InputSettingsActivity : BaseActivity() {
      * 发送刷新 IME UI 的广播
      */
     private fun sendRefreshBroadcast() {
-        sendBroadcast(Intent(AsrKeyboardService.ACTION_REFRESH_IME_UI).apply {
-            setPackage(packageName)
-        })
+        sendBroadcast(
+            Intent(AsrKeyboardService.ACTION_REFRESH_IME_UI).apply {
+                setPackage(packageName)
+            },
+        )
     }
 
     /**
@@ -718,7 +723,7 @@ class InputSettingsActivity : BaseActivity() {
                     view: android.widget.AbsListView?,
                     firstVisibleItem: Int,
                     visibleItemCount: Int,
-                    totalItemCount: Int
+                    totalItemCount: Int,
                 ) {
                     updateListVisual(dialog.listView)
                 }

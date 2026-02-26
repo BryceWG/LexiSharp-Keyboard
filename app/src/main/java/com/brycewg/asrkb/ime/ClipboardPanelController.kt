@@ -127,7 +127,7 @@ internal class ClipboardPanelController(
             override fun onMove(
                 recyclerView: RecyclerView,
                 viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
+                target: RecyclerView.ViewHolder,
             ): Boolean = false
 
             override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
@@ -190,4 +190,3 @@ internal class ClipboardPanelController(
         showPopupMenuKeepingIme(popup)
     }
 }
-

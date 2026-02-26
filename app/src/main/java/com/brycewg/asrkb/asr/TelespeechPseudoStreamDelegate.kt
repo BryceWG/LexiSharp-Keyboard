@@ -22,7 +22,7 @@ internal class TelespeechPseudoStreamDelegate(
     private val listener: StreamingAsrEngine.Listener,
     private val sampleRate: Int,
     private val onRequestDuration: ((Long) -> Unit)?,
-    private val tag: String
+    private val tag: String,
 ) {
     private val previewMutex = Mutex()
 
@@ -157,8 +157,8 @@ internal class TelespeechPseudoStreamDelegate(
                 listener.onError(
                     context.getString(
                         R.string.error_recognize_failed_with_reason,
-                        t.message ?: ""
-                    )
+                        t.message ?: "",
+                    ),
                 )
             } catch (e: Throwable) {
                 Log.e(tag, "Failed to notify final recognition error", e)
@@ -191,7 +191,7 @@ internal class TelespeechPseudoStreamDelegate(
                         Toast.makeText(
                             context,
                             context.getString(R.string.sv_loading_model),
-                            Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT,
                         ).show()
                     } catch (t: Throwable) {
                         Log.e(tag, "Failed to show toast", t)
@@ -216,7 +216,7 @@ internal class TelespeechPseudoStreamDelegate(
 
     private suspend fun decodeOnce(
         pcm: ByteArray,
-        reportErrorToUser: Boolean
+        reportErrorToUser: Boolean,
     ): String? {
         val manager = TelespeechOnnxManager.getInstance()
         if (!manager.isOnnxAvailable()) {
@@ -325,7 +325,7 @@ internal class TelespeechPseudoStreamDelegate(
             keepAliveMs = keepMs,
             alwaysKeep = alwaysKeep,
             onLoadStart = { notifyLoadStart() },
-            onLoadDone = { notifyLoadDone() }
+            onLoadDone = { notifyLoadDone() },
         )
 
         if (text.isNullOrBlank()) {

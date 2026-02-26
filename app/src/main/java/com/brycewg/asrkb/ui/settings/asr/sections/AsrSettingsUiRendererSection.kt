@@ -67,7 +67,7 @@ internal class AsrSettingsUiRendererSection : AsrSettingsSection {
             AsrVendor.SenseVoice to binding.view<View>(R.id.groupSenseVoice),
             AsrVendor.FunAsrNano to binding.view<View>(R.id.groupFunAsrNano),
             AsrVendor.Telespeech to binding.view<View>(R.id.groupTelespeech),
-            AsrVendor.Paraformer to binding.view<View>(R.id.groupParaformer)
+            AsrVendor.Paraformer to binding.view<View>(R.id.groupParaformer),
         )
         visMap.forEach { (vendor, view) ->
             val vis = if (vendor == state.selectedVendor) View.VISIBLE else View.GONE

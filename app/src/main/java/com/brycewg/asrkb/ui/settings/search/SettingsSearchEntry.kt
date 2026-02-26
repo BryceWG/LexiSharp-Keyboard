@@ -32,5 +32,5 @@ data class SettingsSearchEntry(
      *
      * 值为 [com.brycewg.asrkb.asr.LlmVendor.id]。
      */
-    val forceLlmVendorId: String? = null
+    val forceLlmVendorId: String? = null,
 )

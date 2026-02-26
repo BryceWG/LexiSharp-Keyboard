@@ -20,7 +20,7 @@ internal object PromptPresetMigrations {
         localizedDefaults: List<PromptPreset>,
         knownDefaultVariants: List<List<PromptPreset>>,
         legacyPrompt: String,
-        initializedFromDefaults: Boolean
+        initializedFromDefaults: Boolean,
     ): List<PromptPreset> {
         if (legacyPrompt.isBlank()) return current
         val knownBuiltinContents = knownDefaultVariants
@@ -33,7 +33,7 @@ internal object PromptPresetMigrations {
         val migratedPreset = PromptPreset(
             id = java.util.UUID.randomUUID().toString(),
             title = prefs.getLocalizedString(R.string.llm_prompt_preset_mine_title),
-            content = legacyPrompt
+            content = legacyPrompt,
         )
         val updated = current + migratedPreset
         val shouldActivate = initializedFromDefaults ||
@@ -49,7 +49,7 @@ internal object PromptPresetMigrations {
 
     private fun matchesDefaultPromptPresets(
         presets: List<PromptPreset>,
-        defaults: List<PromptPreset>
+        defaults: List<PromptPreset>,
     ): Boolean {
         if (presets.size != defaults.size) return false
         return presets.map { it.title to it.content } == defaults.map { it.title to it.content }
@@ -58,7 +58,7 @@ internal object PromptPresetMigrations {
     private fun matchesAnyDefaultPromptPresets(
         presets: List<PromptPreset>,
         localizedDefaults: List<PromptPreset>,
-        knownDefaultVariants: List<List<PromptPreset>>
+        knownDefaultVariants: List<List<PromptPreset>>,
     ): Boolean {
         if (matchesDefaultPromptPresets(presets, localizedDefaults)) return true
         return knownDefaultVariants.any { defaults -> matchesDefaultPromptPresets(presets, defaults) }
@@ -68,7 +68,7 @@ internal object PromptPresetMigrations {
         prefs: Prefs,
         current: List<PromptPreset>,
         localizedDefaults: List<PromptPreset>,
-        knownDefaultVariants: List<List<PromptPreset>>
+        knownDefaultVariants: List<List<PromptPreset>>,
     ): List<PromptPreset> {
         if (current.isEmpty() || localizedDefaults.isEmpty()) return current
         val builtinIds = localizedDefaults.map { it.id }.toSet()
@@ -114,7 +114,7 @@ internal object PromptPresetMigrations {
         prefs: Prefs,
         current: List<PromptPreset>,
         localizedDefaults: List<PromptPreset>,
-        knownDefaultVariants: List<List<PromptPreset>>
+        knownDefaultVariants: List<List<PromptPreset>>,
     ): List<PromptPreset> {
         if (current.isEmpty() || localizedDefaults.isEmpty()) return current
         val defaultById = localizedDefaults.associateBy { it.id }
@@ -135,7 +135,7 @@ internal object PromptPresetMigrations {
             changed = true
             preset.copy(
                 title = localized.title,
-                content = localized.content
+                content = localized.content,
             )
         }
         if (!changed) return current

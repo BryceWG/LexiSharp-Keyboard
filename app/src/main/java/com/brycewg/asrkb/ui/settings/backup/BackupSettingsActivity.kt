@@ -11,11 +11,10 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.brycewg.asrkb.ui.BaseActivity
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.BaseActivity
 import com.brycewg.asrkb.ui.settings.search.SettingsSearchNavigator
 import com.brycewg.asrkb.util.HapticFeedbackHelper
 import com.google.android.material.appbar.MaterialToolbar
@@ -24,11 +23,7 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -71,13 +66,13 @@ class BackupSettingsActivity : BaseActivity() {
         val btnImport = findViewById<MaterialButton>(R.id.btnImportFromFile)
 
         val exportLauncher = registerForActivityResult(
-            ActivityResultContracts.CreateDocument("application/json")
+            ActivityResultContracts.CreateDocument("application/json"),
         ) { uri: Uri? ->
             if (uri != null) exportSettings(uri)
         }
 
         val importLauncher = registerForActivityResult(
-            ActivityResultContracts.OpenDocument()
+            ActivityResultContracts.OpenDocument(),
         ) { uri: Uri? ->
             if (uri != null) importSettings(uri)
         }
@@ -214,7 +209,11 @@ class BackupSettingsActivity : BaseActivity() {
 
             withContext(Dispatchers.Main) {
                 if (imported) {
-                    try { sendBroadcast(android.content.Intent(com.brycewg.asrkb.ime.AsrKeyboardService.ACTION_REFRESH_IME_UI)) } catch (e: Exception) { Log.e(TAG, "Failed to send refresh broadcast", e) }
+                    try {
+                        sendBroadcast(android.content.Intent(com.brycewg.asrkb.ime.AsrKeyboardService.ACTION_REFRESH_IME_UI))
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to send refresh broadcast", e)
+                    }
                     Toast.makeText(this@BackupSettingsActivity, getString(R.string.toast_webdav_download_success), Toast.LENGTH_SHORT).show()
                 } else {
                     val reasonText = errorReason ?: getString(R.string.toast_import_failed)

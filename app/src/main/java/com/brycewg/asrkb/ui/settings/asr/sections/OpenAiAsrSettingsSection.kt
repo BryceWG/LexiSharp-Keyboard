@@ -3,10 +3,10 @@ package com.brycewg.asrkb.ui.settings.asr.sections
 import android.widget.EditText
 import android.widget.TextView
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.brycewg.asrkb.ui.installExplainedSwitch
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsBinding
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsSection
+import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 
@@ -39,7 +39,7 @@ internal class OpenAiAsrSettingsSection : AsrSettingsSection {
                 preferenceKey = "openai_use_prompt_explained",
                 readPref = { binding.prefs.oaAsrUsePrompt },
                 writePref = { v -> binding.viewModel.updateOpenAiUsePrompt(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -64,7 +64,7 @@ internal class OpenAiAsrSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.dash_lang_pt),
             binding.activity.getString(R.string.dash_lang_ar),
             binding.activity.getString(R.string.dash_lang_it),
-            binding.activity.getString(R.string.dash_lang_es)
+            binding.activity.getString(R.string.dash_lang_es),
         )
         val langCodes = listOf("", "zh", "en", "ja", "de", "ko", "ru", "fr", "pt", "ar", "it", "es")
         val tvOpenAiLanguage = binding.view<TextView>(R.id.tvOpenAiLanguageValue)

@@ -37,7 +37,7 @@ internal class AsrSilenceDetectionSection : AsrSettingsSection {
                     }
                 }
             },
-            hapticFeedback = { binding.hapticTapIfEnabled(it) }
+            hapticFeedback = { binding.hapticTapIfEnabled(it) },
         )
 
         binding.setupSlider(sliderSilenceWindow) { value ->
@@ -56,7 +56,7 @@ internal class AsrSilenceDetectionSection : AsrSettingsSection {
                         VadDetector.rebuildGlobal(
                             binding.activity.applicationContext,
                             16000,
-                            binding.prefs.autoStopSilenceSensitivity
+                            binding.prefs.autoStopSilenceSensitivity,
                         )
                         Toast.makeText(binding.activity, R.string.toast_vad_sensitivity_applied, Toast.LENGTH_SHORT).show()
                     }
@@ -71,4 +71,3 @@ internal class AsrSilenceDetectionSection : AsrSettingsSection {
         private const val TAG = "AsrSilenceDetectionSection"
     }
 }
-

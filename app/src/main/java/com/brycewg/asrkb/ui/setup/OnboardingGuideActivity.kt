@@ -48,7 +48,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
     private enum class AsrChoice {
         SiliconFlowFree,
         LocalModel,
-        OnlineCustom
+        OnlineCustom,
     }
 
     private lateinit var prefs: Prefs
@@ -108,14 +108,14 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
             statusViewId = R.id.tvImeEnableStatus,
             actionButtonId = R.id.btnImeEnableAction,
             granted = isOurImeEnabled(),
-            onRequest = { requestEnableIme() }
+            onRequest = { requestEnableIme() },
         )
         updatePermissionCard(
             root = root,
             statusViewId = R.id.tvImeSwitchStatus,
             actionButtonId = R.id.btnImeSwitchAction,
             granted = isOurImeCurrent(),
-            onRequest = { requestSwitchIme() }
+            onRequest = { requestSwitchIme() },
         )
 
         updatePermissionCard(
@@ -123,7 +123,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
             statusViewId = R.id.tvMicStatus,
             actionButtonId = R.id.btnMicAction,
             granted = hasMicrophonePermission(),
-            onRequest = { requestMicrophonePermission() }
+            onRequest = { requestMicrophonePermission() },
         )
 
         val overlayGranted = hasOverlayPermission()
@@ -132,14 +132,14 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
             statusViewId = R.id.tvOverlayRequiredStatus,
             actionButtonId = R.id.btnOverlayRequiredAction,
             granted = overlayGranted,
-            onRequest = { requestOverlayPermission() }
+            onRequest = { requestOverlayPermission() },
         )
         updatePermissionCard(
             root = root,
             statusViewId = R.id.tvOverlayOptionalStatus,
             actionButtonId = R.id.btnOverlayOptionalAction,
             granted = overlayGranted,
-            onRequest = { requestOverlayPermission() }
+            onRequest = { requestOverlayPermission() },
         )
 
         val a11yGranted = hasAccessibilityPermission()
@@ -148,14 +148,14 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
             statusViewId = R.id.tvA11yRequiredStatus,
             actionButtonId = R.id.btnA11yRequiredAction,
             granted = a11yGranted,
-            onRequest = { requestAccessibilityPermission() }
+            onRequest = { requestAccessibilityPermission() },
         )
         updatePermissionCard(
             root = root,
             statusViewId = R.id.tvA11yOptionalStatus,
             actionButtonId = R.id.btnA11yOptionalAction,
             granted = a11yGranted,
-            onRequest = { requestAccessibilityPermission() }
+            onRequest = { requestAccessibilityPermission() },
         )
 
         updatePermissionCard(
@@ -163,7 +163,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
             statusViewId = R.id.tvNotifStatus,
             actionButtonId = R.id.btnNotifAction,
             granted = hasNotificationPermission(),
-            onRequest = { requestNotificationPermission() }
+            onRequest = { requestNotificationPermission() },
         )
     }
 
@@ -266,7 +266,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
         tvPageIndicator.text = getString(
             R.string.onboarding_page_indicator,
             current + 1,
-            total
+            total,
         )
         progressOnboarding.setProgressCompat(current + 1, true)
 
@@ -295,7 +295,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
         statusViewId: Int,
         actionButtonId: Int,
         granted: Boolean,
-        onRequest: () -> Unit
+        onRequest: () -> Unit,
     ) {
         val statusView = root.findViewById<TextView>(statusViewId)
         val actionButton = root.findViewById<Button>(actionButtonId)
@@ -347,7 +347,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
         try {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                "package:$packageName".toUri()
+                "package:$packageName".toUri(),
             )
             startActivity(intent)
         } catch (e: Exception) {
@@ -429,7 +429,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
     private fun hasMicrophonePermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         ) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -439,7 +439,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
                 this,
-                Manifest.permission.POST_NOTIFICATIONS
+                Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
         } else {
             true
@@ -451,7 +451,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
             val expectedComponentName = "$packageName/com.brycewg.asrkb.ui.AsrAccessibilityService"
             val enabledServicesSetting = Settings.Secure.getString(
                 contentResolver,
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
             )
             enabledServicesSetting?.contains(expectedComponentName) == true
         } catch (e: Exception) {
@@ -482,7 +482,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
         return try {
             val enabled = Settings.Secure.getString(
                 contentResolver,
-                Settings.Secure.ENABLED_INPUT_METHODS
+                Settings.Secure.ENABLED_INPUT_METHODS,
             )
             val ids = getOurImeIdCandidates()
             ids.any { enabled?.contains(it) == true } ||
@@ -497,7 +497,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
         return try {
             val current = Settings.Secure.getString(
                 contentResolver,
-                Settings.Secure.DEFAULT_INPUT_METHOD
+                Settings.Secure.DEFAULT_INPUT_METHOD,
             )
             val ids = getOurImeIdCandidates()
             current != null && ids.contains(current)
@@ -511,7 +511,7 @@ class OnboardingGuideActivity : BaseActivity(), OnboardingPagerAdapter.Callbacks
         val component = ComponentName(this, AsrKeyboardService::class.java)
         return setOf(
             component.flattenToShortString(),
-            component.flattenToString()
+            component.flattenToString(),
         )
     }
 }

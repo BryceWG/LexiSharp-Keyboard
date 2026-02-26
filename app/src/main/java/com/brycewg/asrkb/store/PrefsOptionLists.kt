@@ -9,12 +9,11 @@ package com.brycewg.asrkb.store
 internal object PrefsOptionLists {
     val SF_FREE_ASR_MODELS = listOf(
         "FunAudioLLM/SenseVoiceSmall",
-        "TeleAI/TeleSpeechASR"
+        "TeleAI/TeleSpeechASR",
     )
 
     val SF_FREE_LLM_MODELS = listOf(
         "Qwen/Qwen3-8B",
-        "THUDM/GLM-4-9B-0414"
+        "THUDM/GLM-4-9B-0414",
     )
 }
-

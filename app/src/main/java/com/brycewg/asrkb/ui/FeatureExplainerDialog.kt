@@ -8,7 +8,6 @@ import android.widget.CheckBox
 import android.widget.TextView
 import androidx.annotation.StringRes
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.store.Prefs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 
@@ -49,7 +48,7 @@ class FeatureExplainerDialog private constructor(
     private val currentState: Boolean,
     private val preferenceKey: String?,
     private val onConfirm: (() -> Unit)?,
-    private val onCancel: (() -> Unit)?
+    private val onCancel: (() -> Unit)?,
 ) {
 
     /**
@@ -277,7 +276,7 @@ class FeatureExplainerDialog private constructor(
                 currentState = currentState,
                 preferenceKey = preferenceKey,
                 onConfirm = onConfirm,
-                onCancel = onCancel
+                onCancel = onCancel,
             )
         }
     }
@@ -326,7 +325,7 @@ fun MaterialSwitch.installExplainedSwitch(
     writePref: (Boolean) -> Unit,
     onChanged: ((Boolean) -> Unit)? = null,
     preCheck: ((Boolean) -> Boolean)? = null,
-    hapticFeedback: ((View?) -> Unit)? = null
+    hapticFeedback: ((View?) -> Unit)? = null,
 ) {
     // 通过触摸事件拦截系统默认切换，改为由弹窗控制
     this.setOnTouchListener { v, event ->

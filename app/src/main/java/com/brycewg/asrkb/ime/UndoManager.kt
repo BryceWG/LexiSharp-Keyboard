@@ -6,7 +6,7 @@ import android.view.inputmethod.InputConnection
 internal class UndoManager(
     private val inputHelper: InputConnectionHelper,
     private val logTag: String,
-    private val maxSnapshots: Int = 3
+    private val maxSnapshots: Int = 3,
 ) {
     private val snapshots = ArrayDeque<UndoSnapshot>(maxSnapshots)
 
@@ -62,4 +62,3 @@ internal class UndoManager(
         }
     }
 }
-

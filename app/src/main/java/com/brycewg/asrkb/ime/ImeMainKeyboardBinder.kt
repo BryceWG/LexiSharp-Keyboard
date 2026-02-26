@@ -159,8 +159,8 @@ internal class ImeMainKeyboardBinder(
         views.btnPunct2?.setOnTouchListener(
             createSwipeUpToAltListener(
                 primary = { prefs.punct1 },
-                secondary = { prefs.punct2 }
-            )
+                secondary = { prefs.punct2 },
+            ),
         )
 
         // 右侧合并标点键（3/4）
@@ -171,8 +171,8 @@ internal class ImeMainKeyboardBinder(
         views.btnPunct3?.setOnTouchListener(
             createSwipeUpToAltListener(
                 primary = { prefs.punct3 },
-                secondary = { prefs.punct4 }
-            )
+                secondary = { prefs.punct4 },
+            ),
         )
 
         // 第四个按键：供应商切换按钮（样式与 Prompt 选择类似）
@@ -218,7 +218,7 @@ internal class ImeMainKeyboardBinder(
      */
     private fun createSwipeUpToAltListener(
         primary: () -> String,
-        secondary: () -> String
+        secondary: () -> String,
     ): View.OnTouchListener {
         val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
         val thresholdPx = (24f * context.resources.displayMetrics.density).toInt().coerceAtLeast(touchSlop)
@@ -249,4 +249,3 @@ internal class ImeMainKeyboardBinder(
         }
     }
 }
-

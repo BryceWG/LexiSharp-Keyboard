@@ -15,7 +15,7 @@ import com.brycewg.asrkb.R
  * 承载四个固定页面：权限、ASR 选择、隐私、相关信息。
  */
 internal class OnboardingPagerAdapter(
-    private val callbacks: Callbacks
+    private val callbacks: Callbacks,
 ) : RecyclerView.Adapter<OnboardingPagerAdapter.PageViewHolder>() {
 
     interface Callbacks {

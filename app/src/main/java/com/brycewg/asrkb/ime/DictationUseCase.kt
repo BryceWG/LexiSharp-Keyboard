@@ -23,13 +23,13 @@ internal class DictationUseCase(
     private val transitionToState: (KeyboardState) -> Unit,
     private val transitionToIdle: (keepMessage: Boolean) -> Unit,
     private val transitionToIdleWithTiming: (showBackupUsedHint: Boolean) -> Unit,
-    private val scheduleProcessingTimeout: (audioMsOverride: Long?) -> Unit
+    private val scheduleProcessingTimeout: (audioMsOverride: Long?) -> Unit,
 ) {
     suspend fun handleFinal(
         ic: InputConnection,
         text: String,
         state: KeyboardState.Listening,
-        seq: Long
+        seq: Long,
     ) {
         if (prefs.postProcessEnabled && prefs.hasLlmKeys()) {
             handleWithPostprocess(ic, text, state, seq)
@@ -42,7 +42,7 @@ internal class DictationUseCase(
         ic: InputConnection,
         text: String,
         state: KeyboardState.Listening,
-        seq: Long
+        seq: Long,
     ) {
         if (isCancelled(seq)) return
 
@@ -56,7 +56,7 @@ internal class DictationUseCase(
             onFinalReady = { processingTimeoutController.cancel() },
             onPostprocFailed = {
                 uiListenerProvider()?.onStatusMessage(context.getString(R.string.status_llm_failed_used_raw))
-            }
+            },
         ) ?: return
 
         if (isCancelled(seq)) return
@@ -86,7 +86,7 @@ internal class DictationUseCase(
                     PostprocCommit(finalOut, rawText)
                 } else {
                     null
-                }
+                },
             )
         }
 
@@ -94,7 +94,7 @@ internal class DictationUseCase(
             text = finalOut,
             aiProcessed = aiUsed,
             aiPostMs = aiPostMs,
-            aiPostStatus = aiPostStatus
+            aiPostStatus = aiPostStatus,
         )
 
         uiListenerProvider()?.onVibrate()
@@ -123,7 +123,7 @@ internal class DictationUseCase(
         ic: InputConnection,
         text: String,
         state: KeyboardState.Listening,
-        seq: Long
+        seq: Long,
     ) {
         val finalToCommit = com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, text)
 
@@ -164,7 +164,7 @@ internal class DictationUseCase(
         updateSessionContext { prev ->
             prev.copy(
                 lastAsrCommitText = finalToCommit,
-                lastPostprocCommit = null
+                lastPostprocCommit = null,
             )
         }
 

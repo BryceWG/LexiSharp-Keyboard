@@ -17,8 +17,8 @@ import android.widget.TextView
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
 import androidx.annotation.StringRes
-import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.ui.settings.ai.AiPostSettingsActivity
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsActivity
 import com.brycewg.asrkb.ui.settings.backup.BackupSettingsActivity
@@ -60,26 +60,26 @@ object SettingsSearchIndex {
         @param:LayoutRes @field:LayoutRes val layoutResId: Int,
         @param:StringRes @field:StringRes val screenTitleResId: Int,
         val activityClass: Class<out Activity>,
-        val manualMappings: List<ManualMapping>
+        val manualMappings: List<ManualMapping>,
     )
 
     private data class ManualMapping(
         @param:StringRes @field:StringRes val labelResId: Int,
-        @param:IdRes @field:IdRes val targetViewId: Int
+        @param:IdRes @field:IdRes val targetViewId: Int,
     )
 
     private data class VendorHint(
         val title: String,
         val asrVendorId: String? = null,
         val llmVendorId: String? = null,
-        val keywords: List<String> = emptyList()
+        val keywords: List<String> = emptyList(),
     )
 
     private fun buildIndex(context: Context): List<SettingsSearchEntry> {
         val minCardTitlePx = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_SP,
             18f,
-            context.resources.displayMetrics
+            context.resources.displayMetrics,
         )
         val specs = listOf(
             ScreenSpec(
@@ -94,7 +94,7 @@ object SettingsSearchIndex {
                     ManualMapping(R.string.label_waveform_sensitivity, R.id.sliderWaveformSensitivity),
                     ManualMapping(R.string.label_language, R.id.tvLanguageValue),
                     ManualMapping(R.string.label_extension_buttons, R.id.tvExtensionButtonsValue),
-                )
+                ),
             ),
             ScreenSpec(
                 layoutResId = R.layout.activity_asr_settings,
@@ -104,7 +104,7 @@ object SettingsSearchIndex {
                     ManualMapping(R.string.label_asr_vendor, R.id.tvAsrVendorValue),
                     ManualMapping(R.string.label_silence_window_ms, R.id.sliderSilenceWindow),
                     ManualMapping(R.string.label_silence_sensitivity, R.id.sliderSilenceSensitivity),
-                )
+                ),
             ),
             ScreenSpec(
                 layoutResId = R.layout.activity_ai_post_settings,
@@ -113,7 +113,7 @@ object SettingsSearchIndex {
                 manualMappings = listOf(
                     ManualMapping(R.string.label_llm_vendor, R.id.tvLlmVendor),
                     ManualMapping(R.string.title_ai_skip_under, R.id.sliderSkipAiUnderChars),
-                )
+                ),
             ),
             ScreenSpec(
                 layoutResId = R.layout.activity_floating_settings,
@@ -122,7 +122,7 @@ object SettingsSearchIndex {
                 manualMappings = listOf(
                     ManualMapping(R.string.label_floating_alpha, R.id.sliderFloatingAlpha),
                     ManualMapping(R.string.label_floating_size, R.id.sliderFloatingSize),
-                )
+                ),
             ),
             ScreenSpec(
                 layoutResId = R.layout.activity_other_settings,
@@ -130,13 +130,13 @@ object SettingsSearchIndex {
                 activityClass = OtherSettingsActivity::class.java,
                 manualMappings = listOf(
                     ManualMapping(R.string.label_speech_preset_section, R.id.tvSpeechPresetsValue),
-                )
+                ),
             ),
             ScreenSpec(
                 layoutResId = R.layout.activity_backup_settings,
                 screenTitleResId = R.string.title_backup_settings,
                 activityClass = BackupSettingsActivity::class.java,
-                manualMappings = emptyList()
+                manualMappings = emptyList(),
             ),
         )
 
@@ -159,7 +159,7 @@ object SettingsSearchIndex {
                     targetViewId = mapping.targetViewId,
                     keywords = sectionPathAndVendors.keywords,
                     forceAsrVendorId = sectionPathAndVendors.forceAsrVendorId,
-                    forceLlmVendorId = sectionPathAndVendors.forceLlmVendorId
+                    forceLlmVendorId = sectionPathAndVendors.forceLlmVendorId,
                 )
                 unique.putIfAbsent(manual.uniqueKey(), manual)
             }
@@ -199,7 +199,7 @@ object SettingsSearchIndex {
     private fun collectAutoEntries(
         spec: ScreenSpec,
         root: View,
-        minCardTitlePx: Float
+        minCardTitlePx: Float,
     ): List<SettingsSearchEntry> {
         val results = mutableListOf<SettingsSearchEntry>()
         collectFromView(
@@ -210,7 +210,7 @@ object SettingsSearchIndex {
             forceAsrVendorId = null,
             forceLlmVendorId = null,
             minCardTitlePx = minCardTitlePx,
-            out = results
+            out = results,
         )
         return results
     }
@@ -223,7 +223,7 @@ object SettingsSearchIndex {
         forceAsrVendorId: String?,
         forceLlmVendorId: String?,
         minCardTitlePx: Float,
-        out: MutableList<SettingsSearchEntry>
+        out: MutableList<SettingsSearchEntry>,
     ) {
         when (view) {
             is MaterialSwitch -> {
@@ -238,8 +238,8 @@ object SettingsSearchIndex {
                             targetViewId = view.id,
                             keywords = extraKeywords,
                             forceAsrVendorId = forceAsrVendorId,
-                            forceLlmVendorId = forceLlmVendorId
-                        )
+                            forceLlmVendorId = forceLlmVendorId,
+                        ),
                     )
                 }
             }
@@ -256,8 +256,8 @@ object SettingsSearchIndex {
                             targetViewId = view.id,
                             keywords = extraKeywords,
                             forceAsrVendorId = forceAsrVendorId,
-                            forceLlmVendorId = forceLlmVendorId
-                        )
+                            forceLlmVendorId = forceLlmVendorId,
+                        ),
                     )
                 }
             }
@@ -275,8 +275,8 @@ object SettingsSearchIndex {
                             targetViewId = editTextId,
                             keywords = extraKeywords,
                             forceAsrVendorId = forceAsrVendorId,
-                            forceLlmVendorId = forceLlmVendorId
-                        )
+                            forceLlmVendorId = forceLlmVendorId,
+                        ),
                     )
                 }
             }
@@ -319,7 +319,7 @@ object SettingsSearchIndex {
                     val labelMinPx = TypedValue.applyDimension(
                         TypedValue.COMPLEX_UNIT_SP,
                         14f,
-                        childTextView.resources.displayMetrics
+                        childTextView.resources.displayMetrics,
                     )
                     val isLabelCandidate =
                         !childTextView.isClickable &&
@@ -347,8 +347,8 @@ object SettingsSearchIndex {
                                     targetViewId = childTextView.id,
                                     keywords = nextKeywords,
                                     forceAsrVendorId = nextForceAsrVendorId,
-                                    forceLlmVendorId = nextForceLlmVendorId
-                                )
+                                    forceLlmVendorId = nextForceLlmVendorId,
+                                ),
                             )
                         }
                         pendingLabel = null
@@ -372,7 +372,7 @@ object SettingsSearchIndex {
                     forceAsrVendorId = nextForceAsrVendorId,
                     forceLlmVendorId = nextForceLlmVendorId,
                     minCardTitlePx = minCardTitlePx,
-                    out = out
+                    out = out,
                 )
             }
         }
@@ -383,14 +383,15 @@ object SettingsSearchIndex {
         return when (viewId) {
             R.id.groupSfFreeLlm,
             R.id.groupBuiltinLlm,
-            R.id.groupCustomLlm -> true
+            R.id.groupCustomLlm,
+            -> true
             else -> false
         }
     }
 
     private fun buildAiPostProcessModelVendorSubgroupEntries(
         spec: ScreenSpec,
-        context: Context
+        context: Context,
     ): List<SettingsSearchEntry> {
         val sectionTitle = runCatching { context.getString(R.string.section_post_process_model) }.getOrNull().orEmpty()
         if (sectionTitle.isBlank()) return emptyList()
@@ -412,8 +413,8 @@ object SettingsSearchIndex {
                         activityClass = spec.activityClass,
                         targetViewId = targetViewId,
                         keywords = listOf(vendor.id),
-                        forceLlmVendorId = vendor.id
-                    )
+                        forceLlmVendorId = vendor.id,
+                    ),
                 )
             }
         }
@@ -449,13 +450,13 @@ object SettingsSearchIndex {
         val sectionPath: List<String>,
         val forceAsrVendorId: String?,
         val forceLlmVendorId: String?,
-        val keywords: List<String>
+        val keywords: List<String>,
     )
 
     private fun resolveSectionPathAndVendors(
         root: View,
         @IdRes targetViewId: Int,
-        minCardTitlePx: Float
+        minCardTitlePx: Float,
     ): ResolvedPathAndVendors {
         val target = root.findViewById<View>(targetViewId)
         if (target == null) {
@@ -463,7 +464,7 @@ object SettingsSearchIndex {
                 sectionPath = emptyList(),
                 forceAsrVendorId = null,
                 forceLlmVendorId = null,
-                keywords = emptyList()
+                keywords = emptyList(),
             )
         }
 
@@ -491,7 +492,7 @@ object SettingsSearchIndex {
             sectionPath = sectionPath,
             forceAsrVendorId = vendorHint?.asrVendorId,
             forceLlmVendorId = vendorHint?.llmVendorId,
-            keywords = keywords
+            keywords = keywords,
         )
     }
 
@@ -501,76 +502,77 @@ object SettingsSearchIndex {
             R.id.groupVolc -> VendorHint(
                 title = context.getString(R.string.vendor_volc),
                 asrVendorId = "volc",
-                keywords = listOf("volc")
+                keywords = listOf("volc"),
             )
             R.id.groupSf,
             R.id.groupSfFreeModel,
-            R.id.groupSfApiKey -> VendorHint(
+            R.id.groupSfApiKey,
+            -> VendorHint(
                 title = context.getString(R.string.vendor_sf),
                 asrVendorId = "siliconflow",
-                keywords = listOf("siliconflow", "sf")
+                keywords = listOf("siliconflow", "sf"),
             )
             R.id.groupEleven -> VendorHint(
                 title = context.getString(R.string.vendor_eleven),
                 asrVendorId = "elevenlabs",
-                keywords = listOf("eleven", "elevenlabs")
+                keywords = listOf("eleven", "elevenlabs"),
             )
             R.id.groupOpenAI -> VendorHint(
                 title = context.getString(R.string.vendor_openai),
                 asrVendorId = "openai",
-                keywords = listOf("openai")
+                keywords = listOf("openai"),
             )
             R.id.groupDashScope -> VendorHint(
                 title = context.getString(R.string.vendor_dashscope),
                 asrVendorId = "dashscope",
-                keywords = listOf("dashscope")
+                keywords = listOf("dashscope"),
             )
             R.id.groupGemini -> VendorHint(
                 title = context.getString(R.string.vendor_gemini),
                 asrVendorId = "gemini",
-                keywords = listOf("gemini")
+                keywords = listOf("gemini"),
             )
             R.id.groupSoniox -> VendorHint(
                 title = context.getString(R.string.vendor_soniox),
                 asrVendorId = "soniox",
-                keywords = listOf("soniox")
+                keywords = listOf("soniox"),
             )
             R.id.groupZhipu -> VendorHint(
                 title = context.getString(R.string.vendor_zhipu),
                 asrVendorId = "zhipu",
-                keywords = listOf("zhipu", "glm")
+                keywords = listOf("zhipu", "glm"),
             )
             R.id.groupSenseVoice -> VendorHint(
                 title = context.getString(R.string.vendor_sensevoice),
                 asrVendorId = "sensevoice",
-                keywords = listOf("sensevoice")
+                keywords = listOf("sensevoice"),
             )
             R.id.groupFunAsrNano -> VendorHint(
                 title = context.getString(R.string.vendor_funasr_nano),
                 asrVendorId = "funasr_nano",
-                keywords = listOf("funasr", "funasr_nano")
+                keywords = listOf("funasr", "funasr_nano"),
             )
             R.id.groupTelespeech -> VendorHint(
                 title = context.getString(R.string.vendor_telespeech),
                 asrVendorId = "telespeech",
-                keywords = listOf("telespeech")
+                keywords = listOf("telespeech"),
             )
             R.id.groupParaformer -> VendorHint(
                 title = context.getString(R.string.vendor_paraformer),
                 asrVendorId = "paraformer",
-                keywords = listOf("paraformer", "zipformer")
+                keywords = listOf("paraformer", "zipformer"),
             )
 
             // ======== LLM 分组 ========
             R.id.groupSfFreeLlm -> VendorHint(
                 title = context.getString(R.string.llm_vendor_sf_free),
                 llmVendorId = "sf_free",
-                keywords = listOf("sf_free", "siliconflow", "sf")
+                keywords = listOf("sf_free", "siliconflow", "sf"),
             )
             R.id.groupCustomLlm -> VendorHint(
                 title = context.getString(R.string.llm_vendor_custom),
                 llmVendorId = "custom",
-                keywords = listOf("custom")
+                keywords = listOf("custom"),
             )
             else -> null
         }

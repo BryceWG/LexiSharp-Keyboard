@@ -21,4 +21,3 @@ internal object DashScopePrefsCompat {
         return if (funAsr) Prefs.DASH_MODEL_FUN_ASR_REALTIME else Prefs.DASH_MODEL_QWEN3_REALTIME
     }
 }
-

@@ -21,21 +21,41 @@ fun preloadLocalAsrIfConfigured(
     onLoadStart: (() -> Unit)? = null,
     onLoadDone: (() -> Unit)? = null,
     suppressToastOnStart: Boolean = false,
-    forImmediateUse: Boolean = false
+    forImmediateUse: Boolean = false,
 ) {
     try {
         when (prefs.asrVendor) {
             AsrVendor.SenseVoice -> preloadSenseVoiceIfConfigured(
-                context, prefs, onLoadStart, onLoadDone, suppressToastOnStart, forImmediateUse
+                context,
+                prefs,
+                onLoadStart,
+                onLoadDone,
+                suppressToastOnStart,
+                forImmediateUse,
             )
             AsrVendor.FunAsrNano -> preloadFunAsrNanoIfConfigured(
-                context, prefs, onLoadStart, onLoadDone, suppressToastOnStart, forImmediateUse
+                context,
+                prefs,
+                onLoadStart,
+                onLoadDone,
+                suppressToastOnStart,
+                forImmediateUse,
             )
             AsrVendor.Telespeech -> preloadTelespeechIfConfigured(
-                context, prefs, onLoadStart, onLoadDone, suppressToastOnStart, forImmediateUse
+                context,
+                prefs,
+                onLoadStart,
+                onLoadDone,
+                suppressToastOnStart,
+                forImmediateUse,
             )
             AsrVendor.Paraformer -> preloadParaformerIfConfigured(
-                context, prefs, onLoadStart, onLoadDone, suppressToastOnStart, forImmediateUse
+                context,
+                prefs,
+                onLoadStart,
+                onLoadDone,
+                suppressToastOnStart,
+                forImmediateUse,
             )
             else -> { /* no-op for cloud vendors */ }
         }
@@ -71,7 +91,8 @@ fun isLocalAsrVendor(vendor: AsrVendor): Boolean {
         AsrVendor.SenseVoice,
         AsrVendor.FunAsrNano,
         AsrVendor.Telespeech,
-        AsrVendor.Paraformer -> true
+        AsrVendor.Paraformer,
+        -> true
         else -> false
     }
 }
@@ -118,9 +139,11 @@ fun isLocalAsrReady(prefs: Prefs): Boolean {
 suspend fun awaitLocalAsrReady(
     prefs: Prefs,
     pollIntervalMs: Long = 50L,
-    maxWaitMs: Long = 0L
+    maxWaitMs: Long = 0L,
 ): Boolean {
-    val vendor = try { prefs.asrVendor } catch (t: Throwable) {
+    val vendor = try {
+        prefs.asrVendor
+    } catch (t: Throwable) {
         Log.e("LocalModelPreload", "awaitLocalAsrReady: read vendor failed", t)
         return false
     }

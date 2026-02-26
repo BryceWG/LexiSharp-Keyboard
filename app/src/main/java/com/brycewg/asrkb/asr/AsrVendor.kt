@@ -12,7 +12,8 @@ enum class AsrVendor(val id: String) {
     SenseVoice("sensevoice"),
     FunAsrNano("funasr_nano"),
     Telespeech("telespeech"),
-    Paraformer("paraformer");
+    Paraformer("paraformer"),
+    ;
 
     companion object {
         fun fromId(id: String?): AsrVendor = when (id?.lowercase()) {

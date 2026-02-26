@@ -8,14 +8,18 @@ import com.brycewg.asrkb.R
 enum class ReasoningMode {
     /** No reasoning control support */
     NONE,
+
     /** Control via model selection (DeepSeek, Moonshot) */
     MODEL_SELECTION,
+
     /** SiliconFlow: enable_thinking parameter */
     ENABLE_THINKING,
+
     /** Gemini/Groq/Cerebras/OhMyGPT: reasoning_effort parameter */
     REASONING_EFFORT,
+
     /** Volcengine/Zhipu: thinking.type parameter */
-    THINKING_TYPE
+    THINKING_TYPE,
 }
 
 /**
@@ -37,7 +41,7 @@ enum class LlmVendor(
     /** How this vendor controls reasoning/thinking mode */
     val reasoningMode: ReasoningMode = ReasoningMode.NONE,
     /** Models that support reasoning control (empty = all models) */
-    val reasoningModels: Set<String> = emptySet()
+    val reasoningModels: Set<String> = emptySet(),
 ) {
     /** SiliconFlow - supports free tier and paid API */
     SF_FREE(
@@ -57,7 +61,7 @@ enum class LlmVendor(
             "Qwen/Qwen3-Next-80B-A3B-Thinking",
             "deepseek-ai/DeepSeek-V3.1-Terminus",
             "deepseek-ai/DeepSeek-V3.2",
-            "zai-org/GLM-4.6"
+            "zai-org/GLM-4.6",
         ),
         registerUrl = "https://cloud.siliconflow.cn/i/g8thUcWa",
         guideUrl = "https://docs.siliconflow.cn/cn/api-reference/chat-completions/chat-completions",
@@ -74,8 +78,8 @@ enum class LlmVendor(
             "Qwen/Qwen3-235B-A22B-Thinking-2507",
             "deepseek-ai/DeepSeek-V3.1-Terminus",
             "deepseek-ai/DeepSeek-V3.2",
-            "zai-org/GLM-4.6"
-        )
+            "zai-org/GLM-4.6",
+        ),
     ),
 
     /** OpenAI - GPT models */
@@ -89,7 +93,7 @@ enum class LlmVendor(
         guideUrl = "https://platform.openai.com/docs/quickstart",
         temperatureMin = 0f,
         temperatureMax = 2f,
-        reasoningMode = ReasoningMode.NONE
+        reasoningMode = ReasoningMode.NONE,
     ),
 
     /** Google Gemini */
@@ -104,7 +108,7 @@ enum class LlmVendor(
             "gemini-2.5-flash",
             "gemini-2.5-pro",
             "gemini-3-flash-preview",
-            "gemini-3-pro-preview"
+            "gemini-3-pro-preview",
         ),
         registerUrl = "https://aistudio.google.com/apikey",
         guideUrl = "https://ai.google.dev/gemini-api/docs/openai?hl=zh-cn",
@@ -116,8 +120,8 @@ enum class LlmVendor(
             "gemini-2.5-flash",
             "gemini-2.5-pro",
             "gemini-3-flash-preview",
-            "gemini-3-pro-preview"
-        )
+            "gemini-3-pro-preview",
+        ),
     ),
 
     /** DeepSeek - V3.2 models */
@@ -131,8 +135,9 @@ enum class LlmVendor(
         guideUrl = "https://api-docs.deepseek.com/",
         temperatureMin = 0f,
         temperatureMax = 2f,
-        reasoningMode = ReasoningMode.MODEL_SELECTION,  // chat=non-thinking, reasoner=thinking
-        reasoningModels = setOf("deepseek-reasoner")
+        // chat=non-thinking, reasoner=thinking
+        reasoningMode = ReasoningMode.MODEL_SELECTION,
+        reasoningModels = setOf("deepseek-reasoner"),
     ),
 
     /** Moonshot (Kimi) */
@@ -143,14 +148,14 @@ enum class LlmVendor(
         defaultModel = "kimi-k2-0905-preview",
         models = listOf(
             "kimi-k2-0905-preview",
-            "kimi-k2-thinking"
+            "kimi-k2-thinking",
         ),
         registerUrl = "https://platform.moonshot.cn/console/api-keys",
         guideUrl = "https://platform.moonshot.cn/docs/api/chat",
         temperatureMin = 0f,
         temperatureMax = 1f,
         reasoningMode = ReasoningMode.MODEL_SELECTION,
-        reasoningModels = setOf("kimi-k2-thinking")
+        reasoningModels = setOf("kimi-k2-thinking"),
     ),
 
     /** Zhipu GLM */
@@ -166,14 +171,14 @@ enum class LlmVendor(
             "glm-4.5-air",
             "glm-4.5-flash",
             "glm-4-plus",
-            "glm-4-flashx"
+            "glm-4-flashx",
         ),
         registerUrl = "https://bigmodel.cn/usercenter/proj-mgmt/apikeys",
         guideUrl = "https://docs.bigmodel.cn/api-reference",
         temperatureMin = 0f,
         temperatureMax = 1f,
         reasoningMode = ReasoningMode.THINKING_TYPE,
-        reasoningModels = setOf("glm-4.7","glm-4.6", "glm-4.5", "glm-4.5-air", "glm-4.5-flash")
+        reasoningModels = setOf("glm-4.7", "glm-4.6", "glm-4.5", "glm-4.5-air", "glm-4.5-flash"),
     ),
 
     /** Volcengine (火山引擎) */
@@ -187,7 +192,7 @@ enum class LlmVendor(
             "doubao-seed-1-6-251015",
             "doubao-seed-1-6-flash-250828",
             "deepseek-v3-1-terminus",
-            "deepseek-v3-2-251201"
+            "deepseek-v3-2-251201",
         ),
         registerUrl = "https://console.volcengine.com/ark",
         guideUrl = "https://www.volcengine.com/docs/82379/1399328",
@@ -199,8 +204,8 @@ enum class LlmVendor(
             "doubao-seed-1-6-251015",
             "doubao-seed-1-6-flash-250828",
             "deepseek-v3-1-terminus",
-            "deepseek-v3-2-251201"
-        )
+            "deepseek-v3-2-251201",
+        ),
     ),
 
     /** Groq - fast inference */
@@ -215,7 +220,7 @@ enum class LlmVendor(
             "openai/gpt-oss-120b",
             "openai/gpt-oss-20b",
             "llama-3.3-70b-versatile",
-            "meta-llama/llama-4-maverick-17b-128e-instruct"
+            "meta-llama/llama-4-maverick-17b-128e-instruct",
         ),
         registerUrl = "https://console.groq.com/keys",
         guideUrl = "https://console.groq.com/docs/api-reference#chat-create",
@@ -225,8 +230,8 @@ enum class LlmVendor(
         reasoningModels = setOf(
             "qwen/qwen3-32b",
             "openai/gpt-oss-120b",
-            "openai/gpt-oss-20b"
-        )
+            "openai/gpt-oss-20b",
+        ),
     ),
 
     /** Cerebras - fast inference */
@@ -241,14 +246,14 @@ enum class LlmVendor(
             "qwen-3-32b",
             "qwen-3-235b-a22b-instruct-2507",
             "gpt-oss-120b",
-            "zai-glm-4.6"
+            "zai-glm-4.6",
         ),
         registerUrl = "https://cloud.cerebras.ai/platform",
         guideUrl = "https://inference-docs.cerebras.ai/api-reference/chat-completions",
         temperatureMin = 0f,
         temperatureMax = 1.5f,
         reasoningMode = ReasoningMode.REASONING_EFFORT,
-        reasoningModels = setOf("gpt-oss-120b")
+        reasoningModels = setOf("gpt-oss-120b"),
     ),
 
     /** OhMyGPT - multi-provider relay */
@@ -269,7 +274,7 @@ enum class LlmVendor(
             "gemini-2.5-flash-lite",
             "gemini-2.5-flash",
             "claude-haiku-4-5",
-            "claude-sonnet-4-5"
+            "claude-sonnet-4-5",
         ),
         registerUrl = "https://x.dogenet.win/i/CXuHm49s",
         guideUrl = "https://docs.ohmygpt.com/zh",
@@ -277,10 +282,13 @@ enum class LlmVendor(
         temperatureMax = 2f,
         reasoningMode = ReasoningMode.REASONING_EFFORT,
         reasoningModels = setOf(
-            "gemini-2.5-flash-lite", "gemini-2.5-flash",
-            "claude-haiku-4-5", "claude-sonnet-4-5",
-            "gpt-5-mini", "gpt-5-nano"
-        )
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-flash",
+            "claude-haiku-4-5",
+            "claude-sonnet-4-5",
+            "gpt-5-mini",
+            "gpt-5-nano",
+        ),
     ),
 
     /** Fireworks AI - fast inference with multiple models */
@@ -301,7 +309,7 @@ enum class LlmVendor(
             "accounts/fireworks/models/gpt-oss-20b",
             // GLM models
             "accounts/fireworks/models/glm-4p6",
-            "accounts/fireworks/models/glm-4p7"
+            "accounts/fireworks/models/glm-4p7",
         ),
         registerUrl = "https://fireworks.ai/login",
         guideUrl = "https://docs.fireworks.ai/",
@@ -317,8 +325,8 @@ enum class LlmVendor(
             "accounts/fireworks/models/glm-4p7",
             // GPT-OSS: only low/medium/high, no 'none' support
             "accounts/fireworks/models/gpt-oss-120b",
-            "accounts/fireworks/models/gpt-oss-20b"
-        )
+            "accounts/fireworks/models/gpt-oss-20b",
+        ),
     ),
 
     /** Alibaba DashScope - 阿里云百炼 */
@@ -330,7 +338,7 @@ enum class LlmVendor(
         models = listOf(
             "qwen3.5-plus",
             "qwen3.5-397b-a17b",
-            "qwen3-max"
+            "qwen3-max",
         ),
         registerUrl = "https://dashscope.aliyun.com/",
         guideUrl = "https://help.aliyun.com/zh/dashscope/",
@@ -340,8 +348,8 @@ enum class LlmVendor(
         reasoningModels = setOf(
             "qwen3.5-plus",
             "qwen3.5-397b-a17b",
-            "qwen3-max"
-        )
+            "qwen3-max",
+        ),
     ),
 
     /** Custom - user-defined OpenAI-compatible API */
@@ -352,8 +360,9 @@ enum class LlmVendor(
         defaultModel = "",
         models = emptyList(),
         registerUrl = "",
-        guideUrl = ""
-    );
+        guideUrl = "",
+    ),
+    ;
 
     /** Whether this vendor requires an API key */
     val requiresApiKey: Boolean
@@ -367,7 +376,7 @@ enum class LlmVendor(
     fun supportsReasoningControl(model: String): Boolean {
         return when (reasoningMode) {
             ReasoningMode.NONE -> false
-            ReasoningMode.MODEL_SELECTION -> false  // Controlled via model selection, no switch needed
+            ReasoningMode.MODEL_SELECTION -> false // Controlled via model selection, no switch needed
             else -> reasoningModels.isEmpty() || reasoningModels.contains(model)
         }
     }
@@ -395,19 +404,32 @@ enum class LlmVendor(
          * Ordered by: Free tier -> Domestic (China) -> International -> Custom
          */
         fun allVendors(): List<LlmVendor> = listOf(
-            SF_FREE,      // 1. Free service
-            DEEPSEEK,     // 2. Domestic - popular
-            ZHIPU,        // 3. Domestic
-            MOONSHOT,     // 4. Domestic
-            VOLCENGINE,   // 5. Domestic
-            DASHSCOPE,    // 6. Domestic - Alibaba
-            OPENAI,       // 7. International
-            GEMINI,       // 8. International
-            GROQ,         // 9. International - free tier
-            CEREBRAS,     // 10. International - free tier
-            FIREWORKS,    // 11. International - fast inference
-            OHMYGPT,      // 12. Relay platform
-            CUSTOM        // 13. Custom
+            // 1. Free service
+            SF_FREE,
+            // 2. Domestic - popular
+            DEEPSEEK,
+            // 3. Domestic
+            ZHIPU,
+            // 4. Domestic
+            MOONSHOT,
+            // 5. Domestic
+            VOLCENGINE,
+            // 6. Domestic - Alibaba
+            DASHSCOPE,
+            // 7. International
+            OPENAI,
+            // 8. International
+            GEMINI,
+            // 9. International - free tier
+            GROQ,
+            // 10. International - free tier
+            CEREBRAS,
+            // 11. International - fast inference
+            FIREWORKS,
+            // 12. Relay platform
+            OHMYGPT,
+            // 13. Custom
+            CUSTOM,
         )
 
         /** Get built-in vendors (excluding custom) */

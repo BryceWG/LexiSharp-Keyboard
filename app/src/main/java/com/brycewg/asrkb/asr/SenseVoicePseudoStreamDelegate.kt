@@ -22,7 +22,7 @@ internal class SenseVoicePseudoStreamDelegate(
     private val listener: StreamingAsrEngine.Listener,
     private val sampleRate: Int,
     private val onRequestDuration: ((Long) -> Unit)?,
-    private val tag: String
+    private val tag: String,
 ) {
     private val previewMutex = Mutex()
 
@@ -140,8 +140,8 @@ internal class SenseVoicePseudoStreamDelegate(
                 listener.onError(
                     context.getString(
                         R.string.error_recognize_failed_with_reason,
-                        t.message ?: ""
-                    )
+                        t.message ?: "",
+                    ),
                 )
             } catch (e: Throwable) {
                 Log.e(tag, "Failed to notify final recognition error", e)
@@ -174,7 +174,7 @@ internal class SenseVoicePseudoStreamDelegate(
                         Toast.makeText(
                             context,
                             context.getString(R.string.sv_loading_model),
-                            Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT,
                         ).show()
                     } catch (t: Throwable) {
                         Log.e(tag, "Failed to show toast", t)
@@ -199,7 +199,7 @@ internal class SenseVoicePseudoStreamDelegate(
 
     private suspend fun decodeOnce(
         pcm: ByteArray,
-        reportErrorToUser: Boolean
+        reportErrorToUser: Boolean,
     ): String? {
         val manager = SenseVoiceOnnxManager.getInstance()
         if (!manager.isOnnxAvailable()) {
@@ -314,7 +314,7 @@ internal class SenseVoicePseudoStreamDelegate(
             keepAliveMs = keepMs,
             alwaysKeep = alwaysKeep,
             onLoadStart = { notifyLoadStart() },
-            onLoadDone = { notifyLoadDone() }
+            onLoadDone = { notifyLoadDone() },
         )
 
         if (text.isNullOrBlank()) {

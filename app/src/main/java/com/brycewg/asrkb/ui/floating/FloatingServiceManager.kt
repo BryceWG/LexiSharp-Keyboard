@@ -3,7 +3,6 @@ package com.brycewg.asrkb.ui.floating
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.brycewg.asrkb.ui.floating.FloatingAsrService
 
 /**
  * 悬浮服务管理器

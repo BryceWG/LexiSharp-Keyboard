@@ -8,4 +8,3 @@ object FloatingImeHints {
     const val ACTION_HINT_IME_VISIBLE = "com.brycewg.asrkb.action.IME_VISIBLE"
     const val ACTION_HINT_IME_HIDDEN = "com.brycewg.asrkb.action.IME_HIDDEN"
 }
-

@@ -21,7 +21,7 @@ internal class AiEditUseCase(
     private val updateSessionContext: ((KeyboardSessionContext) -> KeyboardSessionContext) -> Unit,
     private val transitionToState: (KeyboardState) -> Unit,
     private val transitionToIdle: (keepMessage: Boolean) -> Unit,
-    private val transitionToIdleWithTiming: (showBackupUsedHint: Boolean) -> Unit
+    private val transitionToIdleWithTiming: (showBackupUsedHint: Boolean) -> Unit,
 ) {
     fun handleClick(ic: InputConnection?) {
         if (ic == null) {
@@ -156,4 +156,3 @@ internal class AiEditUseCase(
         private const val TAG = "AiEditUseCase"
     }
 }
-

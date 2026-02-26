@@ -61,7 +61,7 @@ internal class FunAsrNanoSettingsSection : AsrSettingsSection {
 
     private fun bindModelVariantSelection(binding: AsrSettingsBinding) {
         val variantLabels = listOf(
-            binding.activity.getString(R.string.fn_model_nano_int8)
+            binding.activity.getString(R.string.fn_model_nano_int8),
         )
         val variantCodes = listOf("nano-int8")
         val tvFnModelVariant = binding.view<TextView>(R.id.tvFnModelVariantValue)
@@ -123,7 +123,7 @@ internal class FunAsrNanoSettingsSection : AsrSettingsSection {
                 preferenceKey = "fn_use_itn_explained",
                 readPref = { binding.prefs.fnUseItn },
                 writePref = { v -> binding.viewModel.updateFnUseItn(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -137,7 +137,7 @@ internal class FunAsrNanoSettingsSection : AsrSettingsSection {
                 preferenceKey = "fn_preload_explained",
                 readPref = { binding.prefs.fnPreloadEnabled },
                 writePref = { v -> binding.viewModel.updateFnPreload(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
     }
@@ -148,7 +148,7 @@ internal class FunAsrNanoSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.sv_keep_alive_5m),
             binding.activity.getString(R.string.sv_keep_alive_15m),
             binding.activity.getString(R.string.sv_keep_alive_30m),
-            binding.activity.getString(R.string.sv_keep_alive_always)
+            binding.activity.getString(R.string.sv_keep_alive_always),
         )
         val values = listOf(0, 5, 15, 30, -1)
         val tvFnKeepAlive = binding.view<TextView>(R.id.tvFnKeepAliveValue)
@@ -190,7 +190,7 @@ internal class FunAsrNanoSettingsSection : AsrSettingsSection {
                 startedTextResId = R.string.fn_download_started_in_bg,
                 failedTextResId = R.string.fn_download_status_failed,
                 logTag = TAG,
-                logMessage = "Failed to start FunASR Nano model download"
+                logMessage = "Failed to start FunASR Nano model download",
             )
         }
 
@@ -208,7 +208,7 @@ internal class FunAsrNanoSettingsSection : AsrSettingsSection {
                             val targets = listOf(
                                 File(base, "funasr_nano"),
                                 File(legacySenseVoice, "nano-int8"),
-                                File(legacySenseVoice, "nano-full")
+                                File(legacySenseVoice, "nano-full"),
                             )
                             targets.forEach { dir ->
                                 if (dir.exists()) {
@@ -261,4 +261,3 @@ internal class FunAsrNanoSettingsSection : AsrSettingsSection {
         private const val TAG = "FunAsrNanoSettingsSection"
     }
 }
-

@@ -8,11 +8,16 @@ import android.os.Parcelable
  * 为保持向后兼容，新增字段请保持可空并提供合理默认。
  */
 data class SpeechConfig(
-    val vendorId: String? = null,          // 供应商ID（如 "volc"、"soniox"）；为空则按应用内设置
-    val streamingPreferred: Boolean = true,// 调用方偏好流式（若供应商/设置不支持则回落）
-    val punctuationEnabled: Boolean? = null,// 标点开关（部分供应商有效）；null=按应用设置
-    val autoStopOnSilence: Boolean? = null,// 静音自动判停（null=按应用设置）
-    val sessionTag: String? = null         // 调用方自定义标记，用于打点/排障
+    // 供应商ID（如 "volc"、"soniox"）；为空则按应用内设置
+    val vendorId: String? = null,
+    // 调用方偏好流式（若供应商/设置不支持则回落）
+    val streamingPreferred: Boolean = true,
+    // 标点开关（部分供应商有效）；null=按应用设置
+    val punctuationEnabled: Boolean? = null,
+    // 静音自动判停（null=按应用设置）
+    val autoStopOnSilence: Boolean? = null,
+    // 调用方自定义标记，用于打点/排障
+    val sessionTag: String? = null,
 ) : Parcelable {
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeString(vendorId)
@@ -51,4 +56,3 @@ data class SpeechConfig(
         }
     }
 }
-

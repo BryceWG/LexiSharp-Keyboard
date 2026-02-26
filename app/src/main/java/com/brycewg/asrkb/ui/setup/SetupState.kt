@@ -30,7 +30,7 @@ sealed class SetupState {
      */
     data class SelectingIme(
         val askedOnce: Boolean = false,
-        val waitingSince: Long = 0L
+        val waitingSince: Long = 0L,
     ) : SetupState()
 
     /**
@@ -44,7 +44,7 @@ sealed class SetupState {
         val askedMic: Boolean = false,
         val askedOverlay: Boolean = false,
         val askedNotif: Boolean = false,
-        val askedA11y: Boolean = false
+        val askedA11y: Boolean = false,
     ) : SetupState()
 
     /**

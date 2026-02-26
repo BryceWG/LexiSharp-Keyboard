@@ -30,6 +30,7 @@ internal class ImeClipboardCoordinator(
 ) {
     private var clipboardManager: ClipboardManager? = null
     private var clipboardChangeListener: ClipboardManager.OnPrimaryClipChangedListener? = null
+
     @Volatile private var lastShownClipboardHash: String? = null
 
     private var syncClipboardManager: SyncClipboardManager? = null
@@ -79,7 +80,7 @@ internal class ImeClipboardCoordinator(
                             }
                         }
                     },
-                    clipStoreProvider()
+                    clipStoreProvider(),
                 )
             }
             syncClipboardManager?.start()
@@ -109,7 +110,7 @@ internal class ImeClipboardCoordinator(
                         Toast.makeText(
                             context,
                             context.getString(R.string.clip_file_download_success),
-                            Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT,
                         ).show()
                         // 刷新列表显示下载完成状态
                         if (isClipboardPanelVisible()) {
@@ -119,7 +120,7 @@ internal class ImeClipboardCoordinator(
                         Toast.makeText(
                             context,
                             context.getString(R.string.clip_file_download_failed),
-                            Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT,
                         ).show()
                         // 刷新列表显示失败状态
                         if (isClipboardPanelVisible()) {
@@ -133,7 +134,7 @@ internal class ImeClipboardCoordinator(
                     Toast.makeText(
                         context,
                         context.getString(R.string.clip_file_download_error, e.message ?: ""),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
@@ -153,7 +154,7 @@ internal class ImeClipboardCoordinator(
                 Toast.makeText(
                     context,
                     context.getString(R.string.clip_file_not_found),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
                 return
             }
@@ -161,7 +162,7 @@ internal class ImeClipboardCoordinator(
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
-                file
+                file,
             )
 
             val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -183,7 +184,7 @@ internal class ImeClipboardCoordinator(
                 context.startActivity(
                     Intent.createChooser(shareIntent, context.getString(R.string.clip_file_open_chooser_title)).apply {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
+                    },
                 )
             }
         } catch (e: Exception) {
@@ -191,7 +192,7 @@ internal class ImeClipboardCoordinator(
             Toast.makeText(
                 context,
                 context.getString(R.string.clip_file_open_failed, e.message ?: ""),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
         }
     }

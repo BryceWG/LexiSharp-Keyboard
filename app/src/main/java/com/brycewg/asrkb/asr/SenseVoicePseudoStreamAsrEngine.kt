@@ -14,7 +14,7 @@ class SenseVoicePseudoStreamAsrEngine(
     scope: CoroutineScope,
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
-    onRequestDuration: ((Long) -> Unit)? = null
+    onRequestDuration: ((Long) -> Unit)? = null,
 ) : LocalModelPseudoStreamAsrEngine(context, scope, prefs, listener, onRequestDuration) {
 
     companion object {
@@ -28,7 +28,7 @@ class SenseVoicePseudoStreamAsrEngine(
         listener = listener,
         sampleRate = sampleRate,
         onRequestDuration = onRequestDuration,
-        tag = TAG
+        tag = TAG,
     )
 
     override fun ensureReady(): Boolean {

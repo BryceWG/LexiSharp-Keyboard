@@ -22,8 +22,16 @@ internal class FloatingVisibilityCoordinator(
     private var lastShowAttemptSig: String? = null
 
     fun applyVisibility(src: String) {
-        val enabledPref = try { prefs.floatingAsrEnabled } catch (_: Throwable) { false }
-        val onlyWhenImeVisible = try { prefs.floatingSwitcherOnlyWhenImeVisible } catch (_: Throwable) { false }
+        val enabledPref = try {
+            prefs.floatingAsrEnabled
+        } catch (_: Throwable) {
+            false
+        }
+        val onlyWhenImeVisible = try {
+            prefs.floatingSwitcherOnlyWhenImeVisible
+        } catch (_: Throwable) {
+            false
+        }
         val imeVisible = isImeVisible()
         val overlayGranted = hasOverlayPermission()
 
@@ -41,7 +49,11 @@ internal class FloatingVisibilityCoordinator(
             return
         }
 
-        val completionActive = try { viewManager.isCompletionTickActive() } catch (_: Throwable) { false }
+        val completionActive = try {
+            viewManager.isCompletionTickActive()
+        } catch (_: Throwable) {
+            false
+        }
         val forceVisible = isForceVisibleActive()
         if (onlyWhenImeVisible && !imeVisible &&
             !stateMachine.isRecording && !stateMachine.isProcessing && !completionActive && !forceVisible
@@ -84,7 +96,7 @@ internal class FloatingVisibilityCoordinator(
         imeVisible: Boolean,
         onlyWhenImeVisible: Boolean,
     ) {
-        val sig = "${src}|${enabled}|${overlayGranted}|${imeVisible}|${onlyWhenImeVisible}"
+        val sig = "$src|$enabled|$overlayGranted|$imeVisible|$onlyWhenImeVisible"
         val now = System.currentTimeMillis()
         if (now - lastShowAttemptAt < 300L && lastShowAttemptSig == sig) return
 

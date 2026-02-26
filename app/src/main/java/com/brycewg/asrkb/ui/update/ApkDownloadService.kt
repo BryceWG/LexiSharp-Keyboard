@@ -12,10 +12,11 @@ import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.FileProvider
-import com.brycewg.asrkb.R
 import com.brycewg.asrkb.LocaleHelper
-import kotlinx.coroutines.CoroutineScope
+import com.brycewg.asrkb.R
+import com.brycewg.asrkb.store.Prefs
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -28,7 +29,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.util.concurrent.TimeUnit
-import com.brycewg.asrkb.store.Prefs
 
 /**
  * APK 下载与安装服务
@@ -107,7 +107,9 @@ class ApkDownloadService : Service() {
     private lateinit var notificationManager: NotificationManager
     private var isDownloading = false
     private var downloadJob: Job? = null
+
     @Volatile private var activeDownloadCall: Call? = null
+
     @Volatile private var downloadingApkFile: File? = null
     private var downloadedApkFile: File? = null
 
@@ -377,7 +379,7 @@ class ApkDownloadService : Service() {
             Intent(this, ApkDownloadService::class.java).apply {
                 action = ACTION_CANCEL
             },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -402,7 +404,7 @@ class ApkDownloadService : Service() {
             this,
             0,
             installIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -428,8 +430,8 @@ class ApkDownloadService : Service() {
             // 使用 FileProvider
             val uri = FileProvider.getUriForFile(
                 this@ApkDownloadService,
-                "${packageName}.fileprovider",
-                apkFile
+                "$packageName.fileprovider",
+                apkFile,
             )
             setDataAndType(uri, "application/vnd.android.package-archive")
         }
@@ -528,7 +530,7 @@ class ApkDownloadService : Service() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.apk_download_notification_channel_name),
-            NotificationManager.IMPORTANCE_LOW
+            NotificationManager.IMPORTANCE_LOW,
         ).apply {
             description = getString(R.string.apk_download_notification_channel_desc)
         }

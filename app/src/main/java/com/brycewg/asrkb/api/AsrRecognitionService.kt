@@ -13,7 +13,33 @@ import android.speech.SpeechRecognizer
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import com.brycewg.asrkb.asr.*
+import com.brycewg.asrkb.asr.AsrTimeoutCalculator
+import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.DashscopeFileAsrEngine
+import com.brycewg.asrkb.asr.DashscopeStreamAsrEngine
+import com.brycewg.asrkb.asr.ElevenLabsFileAsrEngine
+import com.brycewg.asrkb.asr.ElevenLabsStreamAsrEngine
+import com.brycewg.asrkb.asr.FunAsrNanoFileAsrEngine
+import com.brycewg.asrkb.asr.GeminiFileAsrEngine
+import com.brycewg.asrkb.asr.LOCAL_MODEL_READY_WAIT_MAX_MS
+import com.brycewg.asrkb.asr.OpenAiFileAsrEngine
+import com.brycewg.asrkb.asr.ParaformerStreamAsrEngine
+import com.brycewg.asrkb.asr.ParallelAsrEngine
+import com.brycewg.asrkb.asr.SenseVoiceFileAsrEngine
+import com.brycewg.asrkb.asr.SenseVoicePseudoStreamAsrEngine
+import com.brycewg.asrkb.asr.SiliconFlowFileAsrEngine
+import com.brycewg.asrkb.asr.SonioxFileAsrEngine
+import com.brycewg.asrkb.asr.SonioxStreamAsrEngine
+import com.brycewg.asrkb.asr.StreamingAsrEngine
+import com.brycewg.asrkb.asr.TelespeechFileAsrEngine
+import com.brycewg.asrkb.asr.TelespeechPseudoStreamAsrEngine
+import com.brycewg.asrkb.asr.VadAutoStopGuard
+import com.brycewg.asrkb.asr.VolcFileAsrEngine
+import com.brycewg.asrkb.asr.VolcStandardFileAsrEngine
+import com.brycewg.asrkb.asr.VolcStreamAsrEngine
+import com.brycewg.asrkb.asr.ZhipuFileAsrEngine
+import com.brycewg.asrkb.asr.awaitLocalAsrReady
+import com.brycewg.asrkb.asr.isLocalAsrVendor
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.util.TypewriterTextAnimator
 import kotlinx.coroutines.CoroutineScope
@@ -57,7 +83,7 @@ class AsrRecognitionService : RecognitionService() {
         // 检查录音权限
         val hasPermission = ContextCompat.checkSelfPermission(
             this,
-            android.Manifest.permission.RECORD_AUDIO
+            android.Manifest.permission.RECORD_AUDIO,
         ) == PackageManager.PERMISSION_GRANTED
 
         if (!hasPermission) {
@@ -68,7 +94,7 @@ class AsrRecognitionService : RecognitionService() {
 
         // 校验调用方录音权限（系统通常已做校验，但此处显式防御，避免成为权限代理录音入口）
         val callingHasPermission = checkCallingOrSelfPermission(
-            android.Manifest.permission.RECORD_AUDIO
+            android.Manifest.permission.RECORD_AUDIO,
         ) == PackageManager.PERMISSION_GRANTED
         if (!callingHasPermission) {
             Log.w(TAG, "Calling app missing RECORD_AUDIO permission")
@@ -89,7 +115,7 @@ class AsrRecognitionService : RecognitionService() {
         val config = parseRecognizerIntent(intent)
         Log.d(
             TAG,
-            "Parsed external config: language=${config.language}, partialResults=${config.partialResults}"
+            "Parsed external config: language=${config.language}, partialResults=${config.partialResults}",
         )
         // language 等参数仅用于日志/回调控制（如是否返回 partialResults），
         // 不会影响内部供应商选择、本地/云端模型或具体识别配置，相关行为完全由 Prefs 决定。
@@ -97,7 +123,7 @@ class AsrRecognitionService : RecognitionService() {
         // 创建会话（先创建以便作为 listener 传递给引擎）
         val session = RecognitionSession(
             callback = callback,
-            config = config
+            config = config,
         )
 
         // 构建引擎
@@ -147,7 +173,7 @@ class AsrRecognitionService : RecognitionService() {
         return RecognitionConfig(
             language = language,
             partialResults = partialResults,
-            maxResults = maxResults
+            maxResults = maxResults,
         )
     }
 
@@ -185,7 +211,7 @@ class AsrRecognitionService : RecognitionService() {
                 prefs = prefs,
                 listener = listener,
                 primaryVendor = vendor,
-                backupVendor = backupVendor
+                backupVendor = backupVendor,
             )
         }
 
@@ -244,7 +270,11 @@ class AsrRecognitionService : RecognitionService() {
     }
 
     private fun shouldUseBackupAsr(primaryVendor: AsrVendor, backupVendor: AsrVendor): Boolean {
-        val enabled = try { prefs.backupAsrEnabled } catch (_: Throwable) { false }
+        val enabled = try {
+            prefs.backupAsrEnabled
+        } catch (_: Throwable) {
+            false
+        }
         if (!enabled) return false
         if (backupVendor == primaryVendor) return false
         return try {
@@ -281,21 +311,21 @@ class AsrRecognitionService : RecognitionService() {
             message.contains("permission", ignoreCase = true) ->
                 SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS
             message.contains("network", ignoreCase = true) ||
-            message.contains("timeout", ignoreCase = true) ||
-            message.contains("connect", ignoreCase = true) ->
+                message.contains("timeout", ignoreCase = true) ||
+                message.contains("connect", ignoreCase = true) ->
                 SpeechRecognizer.ERROR_NETWORK
             message.contains("audio", ignoreCase = true) ||
-            message.contains("microphone", ignoreCase = true) ||
-            message.contains("record", ignoreCase = true) ->
+                message.contains("microphone", ignoreCase = true) ||
+                message.contains("record", ignoreCase = true) ->
                 SpeechRecognizer.ERROR_AUDIO
             message.contains("busy", ignoreCase = true) ->
                 SpeechRecognizer.ERROR_RECOGNIZER_BUSY
             message.contains("empty", ignoreCase = true) ||
-            message.contains("no speech", ignoreCase = true) ||
-            message.contains("no match", ignoreCase = true) ->
+                message.contains("no speech", ignoreCase = true) ||
+                message.contains("no match", ignoreCase = true) ->
                 SpeechRecognizer.ERROR_NO_MATCH
             message.contains("server", ignoreCase = true) ||
-            message.contains("api", ignoreCase = true) ->
+                message.contains("api", ignoreCase = true) ->
                 SpeechRecognizer.ERROR_SERVER
             else -> SpeechRecognizer.ERROR_CLIENT
         }
@@ -307,7 +337,7 @@ class AsrRecognitionService : RecognitionService() {
     private data class RecognitionConfig(
         val language: String?,
         val partialResults: Boolean,
-        val maxResults: Int
+        val maxResults: Int,
     )
 
     /**
@@ -315,7 +345,7 @@ class AsrRecognitionService : RecognitionService() {
      */
     private inner class RecognitionSession(
         private val callback: Callback,
-        private val config: RecognitionConfig
+        private val config: RecognitionConfig,
     ) : StreamingAsrEngine.Listener {
 
         private var engine: StreamingAsrEngine? = null
@@ -409,13 +439,23 @@ class AsrRecognitionService : RecognitionService() {
 
             val usedBackupResult = (engine as? ParallelAsrEngine)?.wasLastResultFromBackup() == true
 
-            val doAi = try { prefs.postProcessEnabled && prefs.hasLlmKeys() } catch (_: Throwable) { false }
+            val doAi = try {
+                prefs.postProcessEnabled && prefs.hasLlmKeys()
+            } catch (_: Throwable) {
+                false
+            }
 
             serviceScope.launch {
                 if (canceled || finished) return@launch
                 val processedText = if (doAi) {
                     val allowPartial = config.partialResults
-                    val typewriterEnabled = allowPartial && (try { prefs.postprocTypewriterEnabled } catch (_: Throwable) { true })
+                    val typewriterEnabled = allowPartial && (
+                        try {
+                            prefs.postprocTypewriterEnabled
+                        } catch (_: Throwable) {
+                            true
+                        }
+                        )
                     var postprocCommitted = false
                     var lastPostprocTarget: String? = null
                     val typewriter = if (typewriterEnabled) {
@@ -428,7 +468,7 @@ class AsrRecognitionService : RecognitionService() {
                                 deliverPartialResults(typed)
                             },
                             frameDelayMs = 20L,
-                            idleStopDelayMs = 1200L
+                            idleStopDelayMs = 1200L,
                         )
                     } else {
                         null
@@ -446,32 +486,34 @@ class AsrRecognitionService : RecognitionService() {
                                 deliverPartialResults(streamed)
                             }
                         }
-                    } else null
-	                    try {
-	                        val res = com.brycewg.asrkb.util.AsrFinalFilters.applyWithAi(
-	                            this@AsrRecognitionService,
-	                            prefs,
-	                            text,
-	                            onStreamingUpdate = onStreamingUpdate
-	                        )
-	                        val aiUsed = (res.usedAi && res.ok)
-	                        val finalOut = res.text.ifBlank {
-	                            try {
-	                                com.brycewg.asrkb.util.AsrFinalFilters.applySimple(
-	                                    this@AsrRecognitionService,
-	                                    prefs,
-	                                    text
-	                                )
-	                            } catch (_: Throwable) {
-	                                text
-	                            }
-	                        }
-	                        if (typewriter != null && aiUsed && finalOut.isNotEmpty()) {
-	                            typewriter?.submit(finalOut, rush = true)
-	                            val finalLen = finalOut.length
-	                            val t0 = SystemClock.uptimeMillis()
-	                            while (!canceled && !finished && (SystemClock.uptimeMillis() - t0) < 2_000L &&
-	                                typewriter?.currentText()?.length != finalLen
+                    } else {
+                        null
+                    }
+                    try {
+                        val res = com.brycewg.asrkb.util.AsrFinalFilters.applyWithAi(
+                            this@AsrRecognitionService,
+                            prefs,
+                            text,
+                            onStreamingUpdate = onStreamingUpdate,
+                        )
+                        val aiUsed = (res.usedAi && res.ok)
+                        val finalOut = res.text.ifBlank {
+                            try {
+                                com.brycewg.asrkb.util.AsrFinalFilters.applySimple(
+                                    this@AsrRecognitionService,
+                                    prefs,
+                                    text,
+                                )
+                            } catch (_: Throwable) {
+                                text
+                            }
+                        }
+                        if (typewriter != null && aiUsed && finalOut.isNotEmpty()) {
+                            typewriter?.submit(finalOut, rush = true)
+                            val finalLen = finalOut.length
+                            val t0 = SystemClock.uptimeMillis()
+                            while (!canceled && !finished && (SystemClock.uptimeMillis() - t0) < 2_000L &&
+                                typewriter?.currentText()?.length != finalLen
                             ) {
                                 delay(20)
                             }
@@ -483,7 +525,7 @@ class AsrRecognitionService : RecognitionService() {
                             com.brycewg.asrkb.util.AsrFinalFilters.applySimple(
                                 this@AsrRecognitionService,
                                 prefs,
-                                text
+                                text,
                             )
                         } catch (_: Throwable) {
                             text
@@ -497,7 +539,7 @@ class AsrRecognitionService : RecognitionService() {
                         com.brycewg.asrkb.util.AsrFinalFilters.applySimple(
                             this@AsrRecognitionService,
                             prefs,
-                            text
+                            text,
                         )
                     } catch (t: Throwable) {
                         Log.w(TAG, "Post-processing failed", t)
@@ -511,12 +553,13 @@ class AsrRecognitionService : RecognitionService() {
                 val results = Bundle().apply {
                     putStringArrayList(
                         SpeechRecognizer.RESULTS_RECOGNITION,
-                        arrayListOf(processedText)
+                        arrayListOf(processedText),
                     )
                     // 可选：添加置信度分数
                     putFloatArray(
                         SpeechRecognizer.CONFIDENCE_SCORES,
-                        floatArrayOf(1.0f) // 单结果，置信度设为 1.0
+                        // 单结果，置信度设为 1.0
+                        floatArrayOf(1.0f),
                     )
                     putBoolean(EXTRA_USED_BACKUP_ASR, usedBackupResult)
                 }
@@ -673,7 +716,7 @@ class AsrRecognitionService : RecognitionService() {
             val partialBundle = Bundle().apply {
                 putStringArrayList(
                     SpeechRecognizer.RESULTS_RECOGNITION,
-                    arrayListOf(text)
+                    arrayListOf(text),
                 )
             }
             try {

@@ -1,13 +1,11 @@
 package com.brycewg.asrkb.asr
 
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
-import android.util.Log
 import android.os.SystemClock
+import android.util.Log
 import androidx.annotation.RequiresApi
 import com.brycewg.asrkb.store.Prefs
 import kotlinx.coroutines.CoroutineScope
@@ -33,16 +31,24 @@ object BluetoothRouteManager {
 
     // 状态
     @Volatile private var imeSceneActive: Boolean = false
+
     @Volatile private var recordingCount: Int = 0
 
     // 当前路由句柄
     @Volatile private var commDeviceSet: Boolean = false
+
     @Volatile private var commListener: Any? = null
+
     @Volatile private var selectedDevice: AudioDeviceInfo? = null
+
     @Volatile private var scoStarted: Boolean = false
+
     @Volatile private var audioModeChanged: Boolean = false
+
     @Volatile private var previousAudioMode: Int? = null
+
     @Volatile private var pendingConnectStartAtMs: Long = 0L
+
     @Volatile private var lastAutoReconnectAtMs: Long = 0L
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -73,9 +79,17 @@ object BluetoothRouteManager {
     }
 
     fun cleanup() {
-        try { scope.cancel() } catch (t: Throwable) { Log.w(TAG, "cleanup cancel scope", t) }
+        try {
+            scope.cancel()
+        } catch (t: Throwable) {
+            Log.w(TAG, "cleanup cancel scope", t)
+        }
         // 尝试断开路由
-        try { disconnectInternal("cleanup") } catch (t: Throwable) { Log.w(TAG, "cleanup disconnect", t) }
+        try {
+            disconnectInternal("cleanup")
+        } catch (t: Throwable) {
+            Log.w(TAG, "cleanup disconnect", t)
+        }
     }
 
     private fun shouldRoute(): Boolean {
@@ -123,18 +137,30 @@ object BluetoothRouteManager {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (commDeviceSet) {
-                try { clearCommunicationDeviceSafely(am, commListener) } catch (t: Throwable) { Log.w(TAG, "clearCommunicationDeviceSafely", t) }
+                try {
+                    clearCommunicationDeviceSafely(am, commListener)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "clearCommunicationDeviceSafely", t)
+                }
                 commDeviceSet = false
                 selectedDevice = null
                 commListener = null
             }
         }
         if (scoStarted) {
-            try { am.stopBluetoothSco() } catch (t: Throwable) { Log.w(TAG, "stopBluetoothSco", t) }
+            try {
+                am.stopBluetoothSco()
+            } catch (t: Throwable) {
+                Log.w(TAG, "stopBluetoothSco", t)
+            }
             scoStarted = false
         }
         if (audioModeChanged) {
-            try { if (previousAudioMode != null) am.mode = previousAudioMode!! } catch (t: Throwable) { Log.w(TAG, "restore audio mode", t) }
+            try {
+                if (previousAudioMode != null) am.mode = previousAudioMode!!
+            } catch (t: Throwable) {
+                Log.w(TAG, "restore audio mode", t)
+            }
             previousAudioMode = null
             audioModeChanged = false
         }
@@ -159,7 +185,9 @@ object BluetoothRouteManager {
         if (target == null) return
 
         pendingConnectStartAtMs = SystemClock.elapsedRealtime()
-        val ok = try { am.setCommunicationDevice(target) } catch (t: Throwable) {
+        val ok = try {
+            am.setCommunicationDevice(target)
+        } catch (t: Throwable) {
             Log.w(TAG, "setCommunicationDevice failed", t)
             false
         }
@@ -168,7 +196,13 @@ object BluetoothRouteManager {
         selectedDevice = target
         commDeviceSet = true
         // 轻量监听：遇到系统切走时可感知（不强制等待）
-        val exec = java.util.concurrent.Executor { r -> try { r.run() } catch (t: Throwable) { Log.w(TAG, "CommDeviceChanged runnable error", t) } }
+        val exec = java.util.concurrent.Executor { r ->
+            try {
+                r.run()
+            } catch (t: Throwable) {
+                Log.w(TAG, "CommDeviceChanged runnable error", t)
+            }
+        }
         val l = AudioManager.OnCommunicationDeviceChangedListener { dev ->
             val sel = selectedDevice
             if (dev == null) return@OnCommunicationDeviceChangedListener
@@ -186,13 +220,19 @@ object BluetoothRouteManager {
                     lastAutoReconnectAtMs = now
                     try {
                         // 重新选择目标并设置
-                        val devices = try { am.getAvailableCommunicationDevices() } catch (_: Throwable) { emptyList() }
+                        val devices = try {
+                            am.getAvailableCommunicationDevices()
+                        } catch (_: Throwable) {
+                            emptyList()
+                        }
                         val desired = devices.firstOrNull { it.type == AudioDeviceInfo.TYPE_BLE_HEADSET }
                             ?: devices.firstOrNull { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO }
                             ?: devices.firstOrNull { it.type == AudioDeviceInfo.TYPE_WIRED_HEADSET }
                         if (desired != null && desired.id != dev.id) {
                             pendingConnectStartAtMs = SystemClock.elapsedRealtime()
-                            val ok2 = try { am.setCommunicationDevice(desired) } catch (t: Throwable) {
+                            val ok2 = try {
+                                am.setCommunicationDevice(desired)
+                            } catch (t: Throwable) {
                                 Log.w(TAG, "auto-reconnect setCommunicationDevice failed", t)
                                 false
                             }
@@ -209,7 +249,11 @@ object BluetoothRouteManager {
             }
         }
         commListener = l
-        try { am.addOnCommunicationDeviceChangedListener(exec, l) } catch (t: Throwable) { Log.w(TAG, "addOnCommunicationDeviceChangedListener", t) }
+        try {
+            am.addOnCommunicationDeviceChangedListener(exec, l)
+        } catch (t: Throwable) {
+            Log.w(TAG, "addOnCommunicationDeviceChangedListener", t)
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -218,7 +262,12 @@ object BluetoothRouteManager {
         if (!am.isBluetoothScoAvailableOffCall) return
         // 切到通信模式可提升部分机型的稳定性
         previousAudioMode = am.mode
-        try { am.mode = AudioManager.MODE_IN_COMMUNICATION; audioModeChanged = true } catch (t: Throwable) { Log.w(TAG, "set MODE_IN_COMMUNICATION", t) }
+        try {
+            am.mode = AudioManager.MODE_IN_COMMUNICATION
+            audioModeChanged = true
+        } catch (t: Throwable) {
+            Log.w(TAG, "set MODE_IN_COMMUNICATION", t)
+        }
 
         try {
             if (!am.isBluetoothScoOn) am.startBluetoothSco()
@@ -231,9 +280,17 @@ object BluetoothRouteManager {
     @RequiresApi(Build.VERSION_CODES.S)
     private fun clearCommunicationDeviceSafely(audioManager: AudioManager, listenerToken: Any?) {
         if (listenerToken is AudioManager.OnCommunicationDeviceChangedListener) {
-            try { audioManager.removeOnCommunicationDeviceChangedListener(listenerToken) } catch (t: Throwable) { Log.w(TAG, "removeOnCommunicationDeviceChangedListener", t) }
+            try {
+                audioManager.removeOnCommunicationDeviceChangedListener(listenerToken)
+            } catch (t: Throwable) {
+                Log.w(TAG, "removeOnCommunicationDeviceChangedListener", t)
+            }
         }
-        try { audioManager.clearCommunicationDevice() } catch (t: Throwable) { Log.w(TAG, "clearCommunicationDevice", t) }
+        try {
+            audioManager.clearCommunicationDevice()
+        } catch (t: Throwable) {
+            Log.w(TAG, "clearCommunicationDevice", t)
+        }
     }
 
     private fun requireNotNullContext(): Context {

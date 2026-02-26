@@ -52,4 +52,3 @@ internal class UserNotifier(
         }
     }
 }
-

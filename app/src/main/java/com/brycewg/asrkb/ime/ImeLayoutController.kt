@@ -205,7 +205,7 @@ internal class ImeLayoutController(
             R.id.btnAiPanelMoveEnd,
             // 剪贴板面板按钮
             R.id.clip_btnBack,
-            R.id.clip_btnDelete
+            R.id.clip_btnDelete,
         )
         ids40.forEach { scaleSquareButton(it) }
         scaleGestureButton(refs?.btnGestureCancel)
@@ -417,8 +417,8 @@ internal class ImeLayoutController(
                 "needsColdStartFix" to needsColdStartFix,
                 "needsOverlapFix" to needsOverlapFix,
                 "correctionThresholdPx" to correctionThresholdPx,
-                "afterTop" to top
-            )
+                "afterTop" to top,
+            ),
         )
     }
 }

@@ -32,7 +32,7 @@ class OtherSettingsViewModel(private val prefs: Prefs) : ViewModel() {
         val presets: List<SpeechPreset> = emptyList(),
         val activePresetId: String = "",
         val currentPreset: SpeechPreset? = null,
-        val isEnabled: Boolean = false
+        val isEnabled: Boolean = false,
     )
 
     data class SyncClipboardState(
@@ -41,7 +41,7 @@ class OtherSettingsViewModel(private val prefs: Prefs) : ViewModel() {
         val username: String = "",
         val password: String = "",
         val autoPullEnabled: Boolean = false,
-        val pullIntervalSec: Int = 15
+        val pullIntervalSec: Int = 15,
     )
 
     init {
@@ -71,7 +71,7 @@ class OtherSettingsViewModel(private val prefs: Prefs) : ViewModel() {
                     presets = presets,
                     activePresetId = current?.id ?: "",
                     currentPreset = current,
-                    isEnabled = presets.isNotEmpty()
+                    isEnabled = presets.isNotEmpty(),
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load speech presets", e)
@@ -133,7 +133,7 @@ class OtherSettingsViewModel(private val prefs: Prefs) : ViewModel() {
                         presets = uiList,
                         activePresetId = prefs.activeSpeechPresetId,
                         currentPreset = mutated,
-                        isEnabled = uiList.isNotEmpty()
+                        isEnabled = uiList.isNotEmpty(),
                     )
                     return@launch
                 }
@@ -196,7 +196,7 @@ class OtherSettingsViewModel(private val prefs: Prefs) : ViewModel() {
                     username = prefs.syncClipboardUsername,
                     password = prefs.syncClipboardPassword,
                     autoPullEnabled = prefs.syncClipboardAutoPullEnabled,
-                    pullIntervalSec = prefs.syncClipboardPullIntervalSec
+                    pullIntervalSec = prefs.syncClipboardPullIntervalSec,
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load sync clipboard settings", e)

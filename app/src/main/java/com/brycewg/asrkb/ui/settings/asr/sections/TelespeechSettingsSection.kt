@@ -37,7 +37,7 @@ internal class TelespeechSettingsSection : AsrSettingsSection {
         val tvVariant = binding.view<TextView>(R.id.tvTsModelVariantValue)
         val variantLabels = arrayOf(
             binding.activity.getString(R.string.ts_model_int8),
-            binding.activity.getString(R.string.ts_model_full)
+            binding.activity.getString(R.string.ts_model_full),
         )
         val variantCodes = arrayOf("int8", "full")
 
@@ -69,7 +69,7 @@ internal class TelespeechSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.sv_keep_alive_5m),
             binding.activity.getString(R.string.sv_keep_alive_15m),
             binding.activity.getString(R.string.sv_keep_alive_30m),
-            binding.activity.getString(R.string.sv_keep_alive_always)
+            binding.activity.getString(R.string.sv_keep_alive_always),
         )
 
         fun updateKeepAliveSummary() {
@@ -120,7 +120,7 @@ internal class TelespeechSettingsSection : AsrSettingsSection {
                 preferenceKey = "ts_preload_explained",
                 readPref = { binding.prefs.tsPreloadEnabled },
                 writePref = { v -> binding.viewModel.updateTsPreload(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -134,7 +134,7 @@ internal class TelespeechSettingsSection : AsrSettingsSection {
                 preferenceKey = "ts_use_itn_explained",
                 readPref = { binding.prefs.tsUseItn },
                 writePref = { v -> binding.viewModel.updateTsUseItn(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -148,7 +148,7 @@ internal class TelespeechSettingsSection : AsrSettingsSection {
                 preferenceKey = "ts_pseudo_stream_explained",
                 readPref = { binding.prefs.tsPseudoStreamEnabled },
                 writePref = { v -> binding.viewModel.updateTsPseudoStream(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
     }
@@ -179,7 +179,7 @@ internal class TelespeechSettingsSection : AsrSettingsSection {
                 startedTextResId = R.string.ts_download_started_in_bg,
                 failedTextResId = R.string.ts_download_status_failed,
                 logTag = TAG,
-                logMessage = "Failed to start telespeech model download"
+                logMessage = "Failed to start telespeech model download",
             )
         }
 
@@ -244,4 +244,3 @@ internal class TelespeechSettingsSection : AsrSettingsSection {
         private const val TAG = "TelespeechSettingsSection"
     }
 }
-

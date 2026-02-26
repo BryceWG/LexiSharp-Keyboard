@@ -10,7 +10,7 @@ import androidx.annotation.StringRes
 import com.brycewg.asrkb.R
 
 internal class ModelImportUiController(
-    context: Context
+    context: Context,
 ) {
 
     private val uiContext = context
@@ -25,7 +25,7 @@ internal class ModelImportUiController(
         variant: String,
         modelType: String? = null,
         logTag: String,
-        logMessage: String
+        logMessage: String,
     ) {
         statusTextViews.forEach { it.text = "" }
 
@@ -33,7 +33,7 @@ internal class ModelImportUiController(
             if (!isZipUri(uri)) {
                 val msg = uiContext.getString(
                     failedTextTemplateResId,
-                    uiContext.getString(R.string.error_only_zip_supported)
+                    uiContext.getString(R.string.error_only_zip_supported),
                 )
                 statusTextViews.forEach { it.text = msg }
                 return
@@ -51,7 +51,7 @@ internal class ModelImportUiController(
             Log.e(logTag, logMessage, t)
             val msg = uiContext.getString(
                 failedTextTemplateResId,
-                t.message ?: "Unknown error"
+                t.message ?: "Unknown error",
             )
             statusTextViews.forEach { it.text = msg }
         }

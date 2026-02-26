@@ -21,7 +21,6 @@ import com.brycewg.asrkb.store.Prefs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.io.File
 import java.io.FileOutputStream
-import java.io.OutputStream
 
 /**
  * Pro 版本宣传弹窗工具类

@@ -3,7 +3,6 @@ package com.brycewg.asrkb.asr
 import android.content.Context
 import android.util.Log
 import com.brycewg.asrkb.store.Prefs
-import com.brycewg.asrkb.ui.floating.FloatingAsrService
 import com.k2fsa.sherpa.onnx.TenVadModelConfig
 import com.k2fsa.sherpa.onnx.Vad
 import com.k2fsa.sherpa.onnx.VadModelConfig
@@ -31,7 +30,7 @@ class VadDetector(
     private val context: Context,
     private val sampleRate: Int,
     private val windowMs: Int,
-    sensitivityLevel: Int
+    sensitivityLevel: Int,
 ) {
     /**
      * 单帧分析结果：
@@ -40,7 +39,7 @@ class VadDetector(
      */
     data class FrameResult(
         val isSpeech: Boolean,
-        val silenceStop: Boolean
+        val silenceStop: Boolean,
     )
 
     companion object {
@@ -53,26 +52,37 @@ class VadDetector(
         // 调整为更宽松的分段：低档位给更长的静音要求，减少“提前中断”。
         // 规则：sensitivityLevel 越高，minSilenceDuration 越小（更敏感）。
         private val MIN_SILENCE_DURATION_MAP: FloatArray = floatArrayOf(
-            0.55f, // 1  非常不敏感：至少 0.60s 静音才算非语音
-            0.50f, // 2
-            0.42f, // 3
-            0.35f, // 4
-            0.30f, // 5
-            0.25f, // 6
-            0.20f, // 7（默认附近）
-            0.16f, // 8
-            0.12f, // 9
-            0.08f  // 10 更敏感
+            // 1  非常不敏感：至少 0.60s 静音才算非语音
+            0.55f,
+            // 2
+            0.50f,
+            // 3
+            0.42f,
+            // 4
+            0.35f,
+            // 5
+            0.30f,
+            // 6
+            0.25f,
+            // 7（默认附近）
+            0.20f,
+            // 8
+            0.16f,
+            // 9
+            0.12f,
+            // 10 更敏感
+            0.08f,
         )
 
         private const val MAX_POOL_SIZE = 2
 
         private data class VadPoolKey(
             val sampleRate: Int,
-            val sensitivityLevel: Int
+            val sensitivityLevel: Int,
         )
 
         private val poolLock = Any()
+
         @Volatile
         private var poolKey: VadPoolKey? = null
         private val vadPool: ArrayDeque<Vad> = ArrayDeque()
@@ -91,28 +101,28 @@ class VadDetector(
                 threshold = threshold,
                 minSilenceDuration = minSilenceDuration,
                 minSpeechDuration = 0.25f,
-                windowSize = 256
+                windowSize = 256,
             )
             return VadModelConfig(
                 tenVadModelConfig = tenConfig,
                 sampleRate = sampleRate,
                 numThreads = 1,
                 provider = "cpu",
-                debug = false
+                debug = false,
             )
         }
 
         private fun createVad(context: Context, sampleRate: Int, sensitivityLevel: Int): Vad {
             return Vad(
                 assetManager = context.assets,
-                config = buildVadModelConfig(sampleRate, sensitivityLevel)
+                config = buildVadModelConfig(sampleRate, sensitivityLevel),
             )
         }
 
         private fun acquireFromPool(
             context: Context,
             sampleRate: Int,
-            sensitivityLevel: Int
+            sensitivityLevel: Int,
         ): Vad {
             val lvl = sensitivityLevel.coerceIn(1, LEVELS)
             val key = VadPoolKey(sampleRate = sampleRate, sensitivityLevel = lvl)
@@ -151,7 +161,7 @@ class VadDetector(
 
         private fun recycleToPool(
             key: VadPoolKey,
-            vad: Vad
+            vad: Vad,
         ) {
             val shouldPool = synchronized(poolLock) {
                 (poolKey == key) && (vadPool.size < MAX_POOL_SIZE)
@@ -249,6 +259,7 @@ class VadDetector(
     private val threshold: Float
     private val speechHangoverMs: Int
     private var speechHangoverRemainingMs: Int = 0
+
     // 录音开始阶段的初期防抖（仅在首次检测到语音之前生效）
     private val initialDebounceMs: Int
     private var initialDebounceRemainingMs: Int = 0
@@ -289,7 +300,7 @@ class VadDetector(
             initVad()
             Log.i(
                 TAG,
-                "VadDetector initialized: windowMs=$windowMs, sensitivity=$lvl, minSilenceDuration=$minSilenceDuration, threshold=$threshold, hangoverMs=$speechHangoverMs, initialDebounceMs=$initialDebounceMs"
+                "VadDetector initialized: windowMs=$windowMs, sensitivity=$lvl, minSilenceDuration=$minSilenceDuration, threshold=$threshold, hangoverMs=$speechHangoverMs, initialDebounceMs=$initialDebounceMs",
             )
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to initialize VAD, will fallback to no detection", t)
@@ -438,7 +449,7 @@ class VadDetector(
             // Little Endian: 低字节在前
             val lo = pcm[i].toInt() and 0xFF
             val hi = pcm[i + 1].toInt() and 0xFF
-            val pcmValue = (hi shl 8) or lo  // 0..65535
+            val pcmValue = (hi shl 8) or lo // 0..65535
 
             // 转为有符号 -32768..32767
             val signed = if (pcmValue < 0x8000) pcmValue else pcmValue - 0x10000
@@ -446,8 +457,9 @@ class VadDetector(
             // 归一化到 -1.0 ~ 1.0
             // 使用 32768.0f 避免 -32768 除法溢出，并限制范围
             var normalized = signed / 32768.0f
-            if (normalized > 1.0f) normalized = 1.0f
-            else if (normalized < -1.0f) normalized = -1.0f
+            if (normalized > 1.0f) {
+                normalized = 1.0f
+            } else if (normalized < -1.0f) normalized = -1.0f
 
             samples[sampleIdx] = normalized
 

@@ -24,7 +24,7 @@ class ElevenLabsFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null,
-    httpClient: OkHttpClient? = null
+    httpClient: OkHttpClient? = null,
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration), PcmBatchRecognizer {
 
     companion object {
@@ -59,7 +59,7 @@ class ElevenLabsFileAsrEngine(
                 .addFormDataPart(
                     "file",
                     "audio.wav",
-                    tmp.asRequestBody("audio/wav".toMediaType())
+                    tmp.asRequestBody("audio/wav".toMediaType()),
                 )
                 .addFormDataPart("model_id", MODEL_ID)
                 .addFormDataPart("tag_audio_events", "false")
@@ -83,14 +83,16 @@ class ElevenLabsFileAsrEngine(
                     val extra = extractErrorHint(bodyStr)
                     val detail = formatHttpDetail(r.message, extra)
                     listener.onError(
-                        context.getString(R.string.error_request_failed_http, r.code, detail)
+                        context.getString(R.string.error_request_failed_http, r.code, detail),
                     )
                     return
                 }
                 val text = parseTextFromResponse(bodyStr)
                 if (text.isNotBlank()) {
                     val dt = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0)
-                    try { onRequestDuration?.invoke(dt) } catch (_: Throwable) {}
+                    try {
+                        onRequestDuration?.invoke(dt)
+                    } catch (_: Throwable) {}
                     listener.onFinal(text)
                 } else {
                     listener.onError(context.getString(R.string.error_asr_empty_result))
@@ -98,12 +100,14 @@ class ElevenLabsFileAsrEngine(
             }
         } catch (t: Throwable) {
             listener.onError(
-                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
+                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""),
             )
         }
     }
 
-    override suspend fun recognizeFromPcm(pcm: ByteArray) { recognize(pcm) }
+    override suspend fun recognizeFromPcm(pcm: ByteArray) {
+        recognize(pcm)
+    }
 
     /**
      * 从响应体中提取错误提示信息
@@ -163,7 +167,9 @@ class ElevenLabsFileAsrEngine(
                             if (t.isNotEmpty()) list.add(t)
                         }
                         list.joinToString("\n").trim()
-                    } else ""
+                    } else {
+                        ""
+                    }
                 }
                 else -> ""
             }

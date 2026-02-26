@@ -11,12 +11,12 @@ import com.brycewg.asrkb.store.Prefs
 
 internal data class LlmVendorPartition(
     val configured: List<LlmVendor>,
-    val unconfigured: List<LlmVendor>
+    val unconfigured: List<LlmVendor>,
 )
 
 internal fun partitionLlmVendorsByConfigured(
     prefs: Prefs,
-    vendors: List<LlmVendor>
+    vendors: List<LlmVendor>,
 ): LlmVendorPartition {
     val configured = mutableListOf<LlmVendor>()
     val unconfigured = mutableListOf<LlmVendor>()
@@ -29,7 +29,7 @@ internal fun partitionLlmVendorsByConfigured(
     }
     return LlmVendorPartition(
         configured = configured,
-        unconfigured = unconfigured
+        unconfigured = unconfigured,
     )
 }
 
@@ -60,4 +60,3 @@ internal fun isLlmVendorConfigured(prefs: Prefs, vendor: LlmVendor): Boolean {
 }
 
 private const val TAG = "LlmVendorAvailability"
-

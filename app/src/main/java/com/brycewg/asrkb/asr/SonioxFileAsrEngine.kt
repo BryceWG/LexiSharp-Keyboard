@@ -27,7 +27,7 @@ class SonioxFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null,
-    httpClient: OkHttpClient? = null
+    httpClient: OkHttpClient? = null,
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration), PcmBatchRecognizer {
 
     companion object {
@@ -65,26 +65,30 @@ class SonioxFileAsrEngine(
 
             if (text.isNotBlank()) {
                 val dt = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0)
-                try { onRequestDuration?.invoke(dt) } catch (_: Throwable) {}
+                try {
+                    onRequestDuration?.invoke(dt)
+                } catch (_: Throwable) {}
                 listener.onFinal(text)
             } else {
                 listener.onError(context.getString(R.string.error_asr_empty_result))
             }
         } catch (t: Throwable) {
             listener.onError(
-                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
+                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""),
             )
         }
     }
 
-    override suspend fun recognizeFromPcm(pcm: ByteArray) { recognize(pcm) }
+    override suspend fun recognizeFromPcm(pcm: ByteArray) {
+        recognize(pcm)
+    }
 
     private fun uploadAudioFile(apiKey: String, file: File): String {
         val multipart = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart(
                 "file",
                 file.name,
-                file.asRequestBody("audio/wav".toMediaType())
+                file.asRequestBody("audio/wav".toMediaType()),
             )
             .build()
         val req = Request.Builder()
@@ -99,7 +103,11 @@ class SonioxFileAsrEngine(
                 val detail = formatHttpDetail(r.message, extractErrorHint(body))
                 throw RuntimeException(context.getString(R.string.error_request_failed_http, r.code, detail))
             }
-            val id = try { JSONObject(body).optString("id").trim() } catch (_: Throwable) { "" }
+            val id = try {
+                JSONObject(body).optString("id").trim()
+            } catch (_: Throwable) {
+                ""
+            }
             if (id.isBlank()) throw RuntimeException("uploadAudio: empty file id")
             return id
         }
@@ -134,7 +142,11 @@ class SonioxFileAsrEngine(
                 val detail = formatHttpDetail(r.message, extractErrorHint(body))
                 throw RuntimeException(context.getString(R.string.error_request_failed_http, r.code, detail))
             }
-            val id = try { JSONObject(body).optString("id").trim() } catch (_: Throwable) { "" }
+            val id = try {
+                JSONObject(body).optString("id").trim()
+            } catch (_: Throwable) {
+                ""
+            }
             if (id.isBlank()) throw RuntimeException("createTranscription: empty id")
             return id
         }
@@ -154,11 +166,19 @@ class SonioxFileAsrEngine(
                     val detail = formatHttpDetail(r.message, extractErrorHint(body))
                     throw RuntimeException(context.getString(R.string.error_request_failed_http, r.code, detail))
                 }
-                val status = try { JSONObject(body).optString("status").lowercase() } catch (_: Throwable) { "" }
+                val status = try {
+                    JSONObject(body).optString("status").lowercase()
+                } catch (_: Throwable) {
+                    ""
+                }
                 when (status) {
                     "completed" -> return
                     "error" -> {
-                        val err = try { JSONObject(body).optString("error_message") } catch (_: Throwable) { "" }
+                        val err = try {
+                            JSONObject(body).optString("error_message")
+                        } catch (_: Throwable) {
+                            ""
+                        }
                         throw RuntimeException("Soniox error: $err")
                     }
                 }

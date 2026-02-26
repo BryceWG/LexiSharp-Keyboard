@@ -11,7 +11,7 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
 
 class ClipboardPanelAdapter(
-    private val onItemClick: (ClipboardHistoryStore.Entry) -> Unit
+    private val onItemClick: (ClipboardHistoryStore.Entry) -> Unit,
 ) : ListAdapter<ClipboardHistoryStore.Entry, ClipboardPanelAdapter.VH>(DIFF) {
 
     companion object {
@@ -40,7 +40,7 @@ class ClipboardPanelAdapter(
 
         fun bind(
             e: ClipboardHistoryStore.Entry,
-            onClick: (ClipboardHistoryStore.Entry) -> Unit
+            onClick: (ClipboardHistoryStore.Entry) -> Unit,
         ) {
             // 文本与文件统一使用 Entry 自带的展示文案，文件为「EXT-名称」形式
             tv.text = e.getDisplayLabel()
@@ -49,4 +49,3 @@ class ClipboardPanelAdapter(
         }
     }
 }
-

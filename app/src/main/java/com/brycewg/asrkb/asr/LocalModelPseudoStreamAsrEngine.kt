@@ -24,7 +24,7 @@ abstract class LocalModelPseudoStreamAsrEngine(
     protected val scope: CoroutineScope,
     protected val prefs: Prefs,
     protected val listener: StreamingAsrEngine.Listener,
-    protected val onRequestDuration: ((Long) -> Unit)? = null
+    protected val onRequestDuration: ((Long) -> Unit)? = null,
 ) : StreamingAsrEngine {
 
     companion object {
@@ -121,7 +121,7 @@ abstract class LocalModelPseudoStreamAsrEngine(
                     sampleRate = sampleRate,
                     channelConfig = channelConfig,
                     audioFormat = audioFormat,
-                    chunkMillis = chunkMillis
+                    chunkMillis = chunkMillis,
                 )
 
                 if (!audioManager.hasPermission()) {
@@ -149,7 +149,7 @@ abstract class LocalModelPseudoStreamAsrEngine(
                             context = context,
                             sampleRate = sampleRate,
                             windowMs = stopWindowMs,
-                            sensitivityLevel = prefs.autoStopSilenceSensitivity
+                            sensitivityLevel = prefs.autoStopSilenceSensitivity,
                         )
                     } catch (t: Throwable) {
                         Log.e(TAG, "Failed to create stop VAD for pseudo stream", t)
@@ -280,7 +280,7 @@ abstract class LocalModelPseudoStreamAsrEngine(
                         context = context,
                         prefs = prefs,
                         pcm = fullPcm,
-                        sampleRate = sampleRate
+                        sampleRate = sampleRate,
                     )
                     // stop() 会 cancel 录音协程。若直接在 finally 内调用 suspend 的 onSessionFinished，
                     // 其内部若使用可取消的 suspend API（mutex.withLock / ensureActive 等）会被 CancellationException 中断，
@@ -296,8 +296,8 @@ abstract class LocalModelPseudoStreamAsrEngine(
                                 listener.onError(
                                     context.getString(
                                         R.string.error_recognize_failed_with_reason,
-                                        t.message ?: ""
-                                    )
+                                        t.message ?: "",
+                                    ),
                                 )
                             } catch (e: Throwable) {
                                 Log.e(TAG, "Failed to notify final recognition error", e)

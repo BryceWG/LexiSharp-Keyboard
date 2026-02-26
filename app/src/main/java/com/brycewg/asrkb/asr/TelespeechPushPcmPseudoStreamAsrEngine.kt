@@ -12,59 +12,59 @@ import java.util.concurrent.atomic.AtomicLong
  * - finishPcm/stop 时对整段音频做一次离线识别（onFinal）。
  */
 class TelespeechPushPcmPseudoStreamAsrEngine(
-  context: Context,
-  scope: CoroutineScope,
-  prefs: Prefs,
-  listener: StreamingAsrEngine.Listener,
-  onRequestDuration: ((Long) -> Unit)? = null
+    context: Context,
+    scope: CoroutineScope,
+    prefs: Prefs,
+    listener: StreamingAsrEngine.Listener,
+    onRequestDuration: ((Long) -> Unit)? = null,
 ) : PushPcmPseudoStreamAsrEngine(context, scope, prefs, listener, onRequestDuration) {
 
-  companion object {
-    private const val TAG = "TsPushPcmPseudo"
-  }
+    companion object {
+        private const val TAG = "TsPushPcmPseudo"
+    }
 
-  private val delegate = TelespeechPseudoStreamDelegate(
-    context = context,
-    scope = scope,
-    prefs = prefs,
-    listener = listener,
-    sampleRate = sampleRate,
-    onRequestDuration = onRequestDuration,
-    tag = TAG
-  )
+    private val delegate = TelespeechPseudoStreamDelegate(
+        context = context,
+        scope = scope,
+        prefs = prefs,
+        listener = listener,
+        sampleRate = sampleRate,
+        onRequestDuration = onRequestDuration,
+        tag = TAG,
+    )
 
-  private val sessionIdGenerator = AtomicLong(0L)
+    private val sessionIdGenerator = AtomicLong(0L)
 
-  @Volatile
-  private var activeSessionId: Long = 0L
+    @Volatile
+    private var activeSessionId: Long = 0L
 
-  @Volatile
-  private var finishingSessionId: Long = 0L
+    @Volatile
+    private var finishingSessionId: Long = 0L
 
-  override fun start() {
-    val wasRunning = isRunning
-    super.start()
-    if (wasRunning || !isRunning) return
-    val sessionId = sessionIdGenerator.incrementAndGet()
-    activeSessionId = sessionId
-    finishingSessionId = sessionId
-    delegate.onSessionStart(sessionId)
-  }
+    override fun start() {
+        val wasRunning = isRunning
+        super.start()
+        if (wasRunning || !isRunning) return
+        val sessionId = sessionIdGenerator.incrementAndGet()
+        activeSessionId = sessionId
+        finishingSessionId = sessionId
+        delegate.onSessionStart(sessionId)
+    }
 
-  override fun stop() {
-    finishingSessionId = activeSessionId
-    super.stop()
-  }
+    override fun stop() {
+        finishingSessionId = activeSessionId
+        super.stop()
+    }
 
-  override fun ensureReady(): Boolean {
-    return delegate.ensureReady()
-  }
+    override fun ensureReady(): Boolean {
+        return delegate.ensureReady()
+    }
 
-  override fun onSegmentBoundary(pcmSegment: ByteArray) {
-    delegate.onSegmentBoundary(activeSessionId, pcmSegment)
-  }
+    override fun onSegmentBoundary(pcmSegment: ByteArray) {
+        delegate.onSegmentBoundary(activeSessionId, pcmSegment)
+    }
 
-  override suspend fun onSessionFinished(fullPcm: ByteArray) {
-    delegate.onSessionFinished(finishingSessionId, fullPcm)
-  }
+    override suspend fun onSessionFinished(fullPcm: ByteArray) {
+        delegate.onSessionFinished(finishingSessionId, fullPcm)
+    }
 }

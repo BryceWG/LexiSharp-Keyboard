@@ -21,7 +21,7 @@ class PermissionActivity : ComponentActivity() {
     private fun maybeRequest() {
         val granted = ContextCompat.checkSelfPermission(
             this,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         ) == PackageManager.PERMISSION_GRANTED
         if (granted) {
             finish()

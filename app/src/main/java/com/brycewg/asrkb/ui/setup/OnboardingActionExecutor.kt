@@ -78,7 +78,7 @@ internal class OnboardingActionExecutor(private val activity: AppCompatActivity)
                     Toast.makeText(
                         activity,
                         activity.getString(R.string.external_aidl_guide_open_failed),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
@@ -95,25 +95,25 @@ internal class OnboardingActionExecutor(private val activity: AppCompatActivity)
             context = activity,
             titleRes = R.string.download_source_title,
             options = downloadOptions,
-            onDismiss = onFinished
+            onDismiss = onFinished,
         ) { option ->
             try {
                 ModelDownloadService.startDownload(
                     activity,
                     option.url,
-                    SENSEVOICE_VARIANT
+                    SENSEVOICE_VARIANT,
                 )
                 Toast.makeText(
                     activity,
                     activity.getString(R.string.model_guide_downloading),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start model download", e)
                 Toast.makeText(
                     activity,
                     activity.getString(R.string.sv_download_status_failed),
-                    Toast.LENGTH_LONG
+                    Toast.LENGTH_LONG,
                 ).show()
             }
         }

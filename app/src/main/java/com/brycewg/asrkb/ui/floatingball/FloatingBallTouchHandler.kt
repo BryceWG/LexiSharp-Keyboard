@@ -1,15 +1,15 @@
 package com.brycewg.asrkb.ui.floatingball
 
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import android.view.WindowManager
 import android.view.WindowInsets
-import android.os.Build
+import android.view.WindowManager
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.util.HapticFeedbackHelper
 
@@ -22,7 +22,7 @@ class FloatingBallTouchHandler(
     private val prefs: Prefs,
     private val viewManager: FloatingBallViewManager,
     private val windowManager: WindowManager,
-    private val listener: TouchEventListener
+    private val listener: TouchEventListener,
 ) {
     companion object {
         private const val TAG = "FloatingBallTouchHandler"
@@ -129,7 +129,7 @@ class FloatingBallTouchHandler(
     private fun handleActionDown(
         lp: WindowManager.LayoutParams,
         e: MotionEvent,
-        isMoveMode: Boolean
+        isMoveMode: Boolean,
     ) {
         moved = false
         isDragging = isMoveMode
@@ -161,7 +161,7 @@ class FloatingBallTouchHandler(
     private fun handleActionMove(
         v: View,
         lp: WindowManager.LayoutParams,
-        e: MotionEvent
+        e: MotionEvent,
     ): Boolean {
         val dx = (e.rawX - downX).toInt()
         val dy = (e.rawY - downY).toInt()
@@ -298,7 +298,7 @@ class FloatingBallTouchHandler(
                 val metrics = windowManager.currentWindowMetrics
                 val bounds = metrics.bounds
                 val insets = metrics.windowInsets.getInsetsIgnoringVisibility(
-                    WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
+                    WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout(),
                 )
                 val w = (bounds.width() - insets.left - insets.right).coerceAtLeast(0)
                 val h = (bounds.height() - insets.top - insets.bottom).coerceAtLeast(0)

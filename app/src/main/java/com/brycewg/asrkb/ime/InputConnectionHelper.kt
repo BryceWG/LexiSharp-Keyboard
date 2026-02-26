@@ -12,7 +12,7 @@ import android.view.inputmethod.InputConnection
  * 为所有操作添加详细日志，以便在特定应用中功能静默失败时能够快速定位问题。
  */
 class InputConnectionHelper(
-    private val tag: String = "InputConnectionHelper"
+    private val tag: String = "InputConnectionHelper",
 ) {
     /**
      * 提交文本到输入框
@@ -248,7 +248,7 @@ class InputConnectionHelper(
             val imeOptions = editorInfo?.imeOptions ?: 0
             val action = imeOptions and EditorInfo.IME_MASK_ACTION
             val isMultiLine = (editorInfo?.inputType ?: 0) and
-                    android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE != 0
+                android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE != 0
             val flagNoEnterAction = (imeOptions and EditorInfo.IME_FLAG_NO_ENTER_ACTION) != 0
 
             // 根据 action 类型和输入框特性决定行为
@@ -257,11 +257,11 @@ class InputConnectionHelper(
                 isMultiLine && flagNoEnterAction -> false
                 // 特定的 action 类型需要执行 performEditorAction
                 action == EditorInfo.IME_ACTION_SEND ||
-                action == EditorInfo.IME_ACTION_GO ||
-                action == EditorInfo.IME_ACTION_SEARCH ||
-                action == EditorInfo.IME_ACTION_DONE ||
-                action == EditorInfo.IME_ACTION_NEXT ||
-                action == EditorInfo.IME_ACTION_PREVIOUS -> true
+                    action == EditorInfo.IME_ACTION_GO ||
+                    action == EditorInfo.IME_ACTION_SEARCH ||
+                    action == EditorInfo.IME_ACTION_DONE ||
+                    action == EditorInfo.IME_ACTION_NEXT ||
+                    action == EditorInfo.IME_ACTION_PREVIOUS -> true
                 // 其他情况发送普通回车
                 else -> false
             }
@@ -379,20 +379,18 @@ class InputConnectionHelper(
             ic.beginBatchEdit()
             var replaced = false
 
-            // 尝试在光标前查找并替换
             if (!before.isNullOrEmpty() && before.endsWith(oldText)) {
+                // 尝试在光标前查找并替换
                 ic.deleteSurroundingText(oldText.length, 0)
                 ic.commitText(newText, 1)
                 replaced = true
-            }
-            // 尝试在光标后查找并替换
-            else if (!after.isNullOrEmpty() && after.startsWith(oldText)) {
+            } else if (!after.isNullOrEmpty() && after.startsWith(oldText)) {
+                // 尝试在光标后查找并替换
                 ic.deleteSurroundingText(0, oldText.length)
                 ic.commitText(newText, 1)
                 replaced = true
-            }
-            // 尝试在整个上下文中查找
-            else if (before != null && after != null) {
+            } else if (before != null && after != null) {
+                // 尝试在整个上下文中查找并替换
                 val combined = before + after
                 val pos = combined.lastIndexOf(oldText)
                 if (pos >= 0) {

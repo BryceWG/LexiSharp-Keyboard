@@ -25,7 +25,7 @@ class VolcStandardFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null,
-    httpClient: OkHttpClient? = null
+    httpClient: OkHttpClient? = null,
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration), PcmBatchRecognizer {
 
     companion object {
@@ -77,7 +77,7 @@ class VolcStandardFileAsrEngine(
                     val msg = resp.header("X-Api-Message") ?: resp.message
                     val detail = formatHttpDetail(msg, "status=${status ?: "unknown"}")
                     listener.onError(
-                        context.getString(R.string.error_request_failed_http, resp.code, detail)
+                        context.getString(R.string.error_request_failed_http, resp.code, detail),
                     )
                     return
                 }
@@ -85,7 +85,7 @@ class VolcStandardFileAsrEngine(
                     val msg = resp.header("X-Api-Message") ?: resp.message
                     val detail = formatHttpDetail(msg, "status=${status ?: "unknown"}")
                     listener.onError(
-                        context.getString(R.string.error_request_failed_http, resp.code, detail)
+                        context.getString(R.string.error_request_failed_http, resp.code, detail),
                     )
                     return
                 }
@@ -114,7 +114,7 @@ class VolcStandardFileAsrEngine(
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to recognize with Volc standard file API", t)
             listener.onError(
-                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
+                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""),
             )
         }
     }
@@ -164,7 +164,7 @@ class VolcStandardFileAsrEngine(
                     val msg = resp.header("X-Api-Message") ?: resp.message
                     val detail = formatHttpDetail(msg, "status=${status ?: "unknown"}")
                     return QueryResult.Failed(
-                        context.getString(R.string.error_request_failed_http, resp.code, detail)
+                        context.getString(R.string.error_request_failed_http, resp.code, detail),
                     )
                 }
                 val message = resp.header("X-Api-Message") ?: resp.message
@@ -185,7 +185,7 @@ class VolcStandardFileAsrEngine(
                     else -> {
                         val detail = formatHttpDetail(message, "status=${status ?: "unknown"}")
                         return QueryResult.Failed(
-                            context.getString(R.string.error_request_failed_http, resp.code, detail)
+                            context.getString(R.string.error_request_failed_http, resp.code, detail),
                         )
                     }
                 }

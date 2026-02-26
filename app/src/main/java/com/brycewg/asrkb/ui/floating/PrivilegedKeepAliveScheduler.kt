@@ -29,8 +29,8 @@ internal object PrivilegedKeepAliveScheduler {
             mapOf(
                 "enabled" to enabled,
                 "keepAlive" to prefs.floatingKeepAliveEnabled,
-                "privileged" to prefs.floatingKeepAlivePrivilegedEnabled
-            )
+                "privileged" to prefs.floatingKeepAlivePrivilegedEnabled,
+            ),
         )
         if (enabled) {
             schedule(context)

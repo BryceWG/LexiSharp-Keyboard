@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class PromptPreset(
     val id: String,
     val title: String,
-    val content: String
+    val content: String,
 )

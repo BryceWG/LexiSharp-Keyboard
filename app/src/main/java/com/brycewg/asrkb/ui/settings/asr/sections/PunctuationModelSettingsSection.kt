@@ -19,14 +19,14 @@ internal class PunctuationModelSettingsSection : AsrSettingsSection {
             btnDownloadId = R.id.btnTsDownloadPunct,
             btnImportId = R.id.btnTsImportPunct,
             btnClearId = R.id.btnTsClearPunct,
-            statusTextId = R.id.tvTsPunctStatus
+            statusTextId = R.id.tvTsPunctStatus,
         )
         bindPunctButtons(
             binding = binding,
             btnDownloadId = R.id.btnPfDownloadPunct,
             btnImportId = R.id.btnPfImportPunct,
             btnClearId = R.id.btnPfClearPunct,
-            statusTextId = R.id.tvPfPunctStatus
+            statusTextId = R.id.tvPfPunctStatus,
         )
     }
 
@@ -39,7 +39,7 @@ internal class PunctuationModelSettingsSection : AsrSettingsSection {
         btnDownloadId: Int,
         btnImportId: Int,
         btnClearId: Int,
-        statusTextId: Int
+        statusTextId: Int,
     ) {
         val btnDl = binding.viewOrNull<MaterialButton>(btnDownloadId) ?: return
         val btnImport = binding.viewOrNull<MaterialButton>(btnImportId) ?: return
@@ -65,7 +65,7 @@ internal class PunctuationModelSettingsSection : AsrSettingsSection {
                 startedTextResId = R.string.punct_download_started_in_bg,
                 failedTextResId = R.string.punct_download_status_failed,
                 logTag = TAG,
-                logMessage = "Failed to start punctuation model download"
+                logMessage = "Failed to start punctuation model download",
             )
         }
 

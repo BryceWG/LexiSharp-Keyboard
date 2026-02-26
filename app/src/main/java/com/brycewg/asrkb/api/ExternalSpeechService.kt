@@ -6,14 +6,39 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Binder
 import android.os.IBinder
-import android.os.SystemClock
 import android.os.Parcel
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.aidl.SpeechConfig
-import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.analytics.AnalyticsManager
+import com.brycewg.asrkb.asr.AsrTimeoutCalculator
+import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.DashscopeFileAsrEngine
+import com.brycewg.asrkb.asr.DashscopeStreamAsrEngine
+import com.brycewg.asrkb.asr.ElevenLabsFileAsrEngine
+import com.brycewg.asrkb.asr.ElevenLabsStreamAsrEngine
+import com.brycewg.asrkb.asr.FunAsrNanoFileAsrEngine
+import com.brycewg.asrkb.asr.GeminiFileAsrEngine
+import com.brycewg.asrkb.asr.GenericPushFileAsrAdapter
+import com.brycewg.asrkb.asr.OpenAiFileAsrEngine
+import com.brycewg.asrkb.asr.ParaformerStreamAsrEngine
+import com.brycewg.asrkb.asr.ParallelAsrEngine
+import com.brycewg.asrkb.asr.SenseVoiceFileAsrEngine
+import com.brycewg.asrkb.asr.SiliconFlowFileAsrEngine
+import com.brycewg.asrkb.asr.SonioxFileAsrEngine
+import com.brycewg.asrkb.asr.SonioxStreamAsrEngine
+import com.brycewg.asrkb.asr.StreamingAsrEngine
+import com.brycewg.asrkb.asr.TelespeechFileAsrEngine
+import com.brycewg.asrkb.asr.VadAutoStopGuard
+import com.brycewg.asrkb.asr.VolcFileAsrEngine
+import com.brycewg.asrkb.asr.VolcStandardFileAsrEngine
+import com.brycewg.asrkb.asr.VolcStreamAsrEngine
+import com.brycewg.asrkb.asr.ZhipuFileAsrEngine
+import com.brycewg.asrkb.asr.awaitLocalAsrReady
+import com.brycewg.asrkb.asr.isLocalAsrReady
+import com.brycewg.asrkb.asr.isLocalAsrVendor
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.util.TypewriterTextAnimator
 import kotlinx.coroutines.CoroutineScope
@@ -34,6 +59,7 @@ class ExternalSpeechService : Service() {
 
     private val prefs by lazy { Prefs(this) }
     private val sessions = ConcurrentHashMap<Int, Session>()
+
     @Volatile private var nextId: Int = 1
 
     override fun onBind(intent: Intent?): IBinder? = object : Binder() {
@@ -43,7 +69,7 @@ class ExternalSpeechService : Service() {
                     reply?.writeString(DESCRIPTOR_SVC)
                     return true
                 }
-                TRANSACTION_startSession -> {
+                TRANSACTION_START_SESSION -> {
                     data.enforceInterface(DESCRIPTOR_SVC)
                     val cfg = if (data.readInt() != 0) SpeechConfig.CREATOR.createFromParcel(data) else null
                     val cbBinder = data.readStrongBinder()
@@ -52,7 +78,10 @@ class ExternalSpeechService : Service() {
                     // 开关与权限检查：仅要求开启外部联动
                     if (!prefs.externalAidlEnabled) {
                         safe { cb.onError(-1, 403, "feature disabled") }
-                        reply?.apply { writeNoException(); writeInt(-3) }
+                        reply?.apply {
+                            writeNoException()
+                            writeInt(-3)
+                        }
                         return true
                     }
                     // 联通测试：当 vendorId == "mock" 时，无需录音权限，直接回调固定内容并结束
@@ -62,43 +91,58 @@ class ExternalSpeechService : Service() {
                         safe { cb.onPartial(sid, "【联通测试中】……") }
                         safe { cb.onFinal(sid, "说点啥外部AIDL联通成功（mock）") }
                         safe { cb.onState(sid, STATE_IDLE, "final") }
-                        reply?.apply { writeNoException(); writeInt(sid) }
+                        reply?.apply {
+                            writeNoException()
+                            writeInt(sid)
+                        }
                         return true
                     }
 
                     val permOk = ContextCompat.checkSelfPermission(
                         this@ExternalSpeechService,
-                        android.Manifest.permission.RECORD_AUDIO
+                        android.Manifest.permission.RECORD_AUDIO,
                     ) == PackageManager.PERMISSION_GRANTED
                     if (!permOk) {
                         safe { cb.onError(-1, 401, "record permission denied") }
-                        reply?.apply { writeNoException(); writeInt(-4) }
+                        reply?.apply {
+                            writeNoException()
+                            writeInt(-4)
+                        }
                         return true
                     }
                     if (sessions.values.any { it.engine?.isRunning == true }) {
-                        reply?.apply { writeNoException(); writeInt(-2) }
+                        reply?.apply {
+                            writeNoException()
+                            writeInt(-2)
+                        }
                         return true
                     }
 
                     val sid = synchronized(this@ExternalSpeechService) { nextId++ }
                     val s = Session(sid, this@ExternalSpeechService, prefs, cb)
                     if (!s.prepare()) {
-                        reply?.apply { writeNoException(); writeInt(-3) }
+                        reply?.apply {
+                            writeNoException()
+                            writeInt(-3)
+                        }
                         return true
                     }
                     sessions[sid] = s
                     s.start()
-                    reply?.apply { writeNoException(); writeInt(sid) }
+                    reply?.apply {
+                        writeNoException()
+                        writeInt(sid)
+                    }
                     return true
                 }
-                TRANSACTION_stopSession -> {
+                TRANSACTION_STOP_SESSION -> {
                     data.enforceInterface(DESCRIPTOR_SVC)
                     val sid = data.readInt()
                     sessions[sid]?.stop()
                     reply?.writeNoException()
                     return true
                 }
-                TRANSACTION_cancelSession -> {
+                TRANSACTION_CANCEL_SESSION -> {
                     data.enforceInterface(DESCRIPTOR_SVC)
                     val sid = data.readInt()
                     sessions[sid]?.cancel()
@@ -106,26 +150,35 @@ class ExternalSpeechService : Service() {
                     reply?.writeNoException()
                     return true
                 }
-                TRANSACTION_isRecording -> {
+                TRANSACTION_IS_RECORDING -> {
                     data.enforceInterface(DESCRIPTOR_SVC)
                     val sid = data.readInt()
                     val r = sessions[sid]?.engine?.isRunning == true
-                    reply?.apply { writeNoException(); writeInt(if (r) 1 else 0) }
+                    reply?.apply {
+                        writeNoException()
+                        writeInt(if (r) 1 else 0)
+                    }
                     return true
                 }
-                TRANSACTION_isAnyRecording -> {
+                TRANSACTION_IS_ANY_RECORDING -> {
                     data.enforceInterface(DESCRIPTOR_SVC)
                     val r = sessions.values.any { it.engine?.isRunning == true }
-                    reply?.apply { writeNoException(); writeInt(if (r) 1 else 0) }
+                    reply?.apply {
+                        writeNoException()
+                        writeInt(if (r) 1 else 0)
+                    }
                     return true
                 }
-                TRANSACTION_getVersion -> {
+                TRANSACTION_GET_VERSION -> {
                     data.enforceInterface(DESCRIPTOR_SVC)
-                    reply?.apply { writeNoException(); writeString(com.brycewg.asrkb.BuildConfig.VERSION_NAME) }
+                    reply?.apply {
+                        writeNoException()
+                        writeString(com.brycewg.asrkb.BuildConfig.VERSION_NAME)
+                    }
                     return true
                 }
                 // ================= 推送 PCM 模式 =================
-                TRANSACTION_startPcmSession -> {
+                TRANSACTION_START_PCM_SESSION -> {
                     data.enforceInterface(DESCRIPTOR_SVC)
                     if (data.readInt() != 0) SpeechConfig.CREATOR.createFromParcel(data) else null
                     val cbBinder = data.readStrongBinder()
@@ -133,26 +186,38 @@ class ExternalSpeechService : Service() {
 
                     if (!prefs.externalAidlEnabled) {
                         safe { cb.onError(-1, 403, "feature disabled") }
-                        reply?.apply { writeNoException(); writeInt(-3) }
+                        reply?.apply {
+                            writeNoException()
+                            writeInt(-3)
+                        }
                         return true
                     }
                     if (sessions.values.any { it.engine?.isRunning == true }) {
-                        reply?.apply { writeNoException(); writeInt(-2) }
+                        reply?.apply {
+                            writeNoException()
+                            writeInt(-2)
+                        }
                         return true
                     }
 
                     val sid = synchronized(this@ExternalSpeechService) { nextId++ }
                     val s = Session(sid, this@ExternalSpeechService, prefs, cb)
                     if (!s.preparePushPcm()) {
-                        reply?.apply { writeNoException(); writeInt(-5) }
+                        reply?.apply {
+                            writeNoException()
+                            writeInt(-5)
+                        }
                         return true
                     }
                     sessions[sid] = s
                     s.start()
-                    reply?.apply { writeNoException(); writeInt(sid) }
+                    reply?.apply {
+                        writeNoException()
+                        writeInt(sid)
+                    }
                     return true
                 }
-                TRANSACTION_writePcm -> {
+                TRANSACTION_WRITE_PCM -> {
                     data.enforceInterface(DESCRIPTOR_SVC)
                     val sid = data.readInt()
                     val bytes = data.createByteArray() ?: ByteArray(0)
@@ -162,7 +227,7 @@ class ExternalSpeechService : Service() {
                     reply?.writeNoException()
                     return true
                 }
-                TRANSACTION_finishPcm -> {
+                TRANSACTION_FINISH_PCM -> {
                     data.enforceInterface(DESCRIPTOR_SVC)
                     val sid = data.readInt()
                     sessions[sid]?.stop()
@@ -178,14 +243,15 @@ class ExternalSpeechService : Service() {
         private val id: Int,
         private val context: Context,
         private val prefs: Prefs,
-        private val cb: CallbackProxy
+        private val cb: CallbackProxy,
     ) : StreamingAsrEngine.Listener {
         var engine: StreamingAsrEngine? = null
         private var autoStopSuppression: AutoCloseable? = null
+
         // 统计：录音起止与耗时（用于历史记录展示）
-	        private var sessionStartUptimeMs: Long = 0L
-	        private var sessionStartTotalUptimeMs: Long = 0L
-	        private var lastAudioMsForStats: Long = 0L
+        private var sessionStartUptimeMs: Long = 0L
+        private var sessionStartTotalUptimeMs: Long = 0L
+        private var lastAudioMsForStats: Long = 0L
         private var lastRequestDurationMs: Long? = null
         private var lastPostprocPreview: String? = null
         private var vendor: AsrVendor? = null
@@ -198,9 +264,13 @@ class ExternalSpeechService : Service() {
         private val sessionJob = SupervisorJob()
         private val sessionScope = CoroutineScope(sessionJob + Dispatchers.Default)
         private val processingTimeoutLock = Any()
+
         @Volatile private var processingTimeoutJob: Job? = null
+
         @Volatile private var finished: Boolean = false
+
         @Volatile private var canceled: Boolean = false
+
         @Volatile private var hasAsrPartial: Boolean = false
 
         private fun ensureAutoStopSuppressed() {
@@ -275,7 +345,7 @@ class ExternalSpeechService : Service() {
             cancelLocalModelReadyWait()
         }
 
-	        private fun computeProcMsForStats(): Long {
+        private fun computeProcMsForStats(): Long {
             val fromEngine = lastRequestDurationMs
             if (fromEngine != null) return fromEngine
             val start = processingStartUptimeMs
@@ -284,28 +354,32 @@ class ExternalSpeechService : Service() {
             val total = (end - start).coerceAtLeast(0L)
             val wait = localModelReadyWaitMs.get().coerceAtLeast(0L)
             return (total - wait).coerceAtLeast(0L)
-	        }
+        }
 
-	        private fun popTotalElapsedMsForStats(): Long {
-	            val start = sessionStartTotalUptimeMs
-	            if (start <= 0L) return 0L
-	            val now = try {
-	                SystemClock.uptimeMillis()
-	            } catch (t: Throwable) {
-	                Log.w(TAG, "Failed to read uptime for total elapsed ms", t)
-	                sessionStartTotalUptimeMs = 0L
-	                return 0L
-	            }
-	            val elapsed = if (now >= start) (now - start).coerceAtLeast(0L) else 0L
-	            sessionStartTotalUptimeMs = if (engine?.isRunning == true) now else 0L
-	            return elapsed
-	        }
+        private fun popTotalElapsedMsForStats(): Long {
+            val start = sessionStartTotalUptimeMs
+            if (start <= 0L) return 0L
+            val now = try {
+                SystemClock.uptimeMillis()
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to read uptime for total elapsed ms", t)
+                sessionStartTotalUptimeMs = 0L
+                return 0L
+            }
+            val elapsed = if (now >= start) (now - start).coerceAtLeast(0L) else 0L
+            sessionStartTotalUptimeMs = if (engine?.isRunning == true) now else 0L
+            return elapsed
+        }
 
         private fun resolveFinalVendorForRecord(): AsrVendor {
             val e = engine
             return when (e) {
                 is ParallelAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
-                else -> vendor ?: try { prefs.asrVendor } catch (_: Throwable) { AsrVendor.Volc }
+                else -> vendor ?: try {
+                    prefs.asrVendor
+                } catch (_: Throwable) {
+                    AsrVendor.Volc
+                }
             }
         }
 
@@ -376,7 +450,7 @@ class ExternalSpeechService : Service() {
                     listener = this,
                     primaryVendor = primaryVendor,
                     backupVendor = backupVendor,
-                    onPrimaryRequestDuration = ::onRequestDuration
+                    onPrimaryRequestDuration = ::onRequestDuration,
                 )
             } else {
                 buildEngine(primaryVendor, streamingPref)
@@ -399,7 +473,7 @@ class ExternalSpeechService : Service() {
                     primaryVendor = primaryVendor,
                     backupVendor = backupVendor,
                     onPrimaryRequestDuration = ::onRequestDuration,
-                    externalPcmInput = true
+                    externalPcmInput = true,
                 )
             } else {
                 buildPushPcmEngine(primaryVendor, streamingPref)
@@ -407,15 +481,15 @@ class ExternalSpeechService : Service() {
             return engine != null
         }
 
-	        fun start() {
-	            safe { cb.onState(id, STATE_RECORDING, "recording") }
-	            try {
-	                sessionStartUptimeMs = SystemClock.uptimeMillis()
-	                sessionStartTotalUptimeMs = sessionStartUptimeMs
-	                // 新会话开始时重置上次请求耗时，避免串台（流式模式不会更新此值）
-	                lastRequestDurationMs = null
-	                lastAudioMsForStats = 0L
-	                lastPostprocPreview = null
+        fun start() {
+            safe { cb.onState(id, STATE_RECORDING, "recording") }
+            try {
+                sessionStartUptimeMs = SystemClock.uptimeMillis()
+                sessionStartTotalUptimeMs = sessionStartUptimeMs
+                // 新会话开始时重置上次请求耗时，避免串台（流式模式不会更新此值）
+                lastRequestDurationMs = null
+                lastAudioMsForStats = 0L
+                lastPostprocPreview = null
                 processingStartUptimeMs = 0L
                 processingEndUptimeMs = 0L
                 localModelWaitStartUptimeMs = 0L
@@ -426,18 +500,18 @@ class ExternalSpeechService : Service() {
                 hasAsrPartial = false
                 finished = false
                 cancelProcessingTimeout()
-	            } catch (t: Throwable) {
-	                Log.w(TAG, "Failed to mark session start", t)
-	            }
-                ensureAutoStopSuppressed()
-	            engine?.start()
-	        }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to mark session start", t)
+            }
+            ensureAutoStopSuppressed()
+            engine?.start()
+        }
 
         fun stop() {
             if (canceled || finished) return
             releaseAutoStopSuppression()
             // 记录一次会话录音时长（用于超时与统计）；部分引擎 stop() 不会回调 onStopped（如外部推流的本地流式），因此这里也做一次兜底快照。
-	            if (sessionStartUptimeMs > 0L) {
+            if (sessionStartUptimeMs > 0L) {
                 try {
                     if (lastAudioMsForStats == 0L) {
                         val dur = (SystemClock.uptimeMillis() - sessionStartUptimeMs).coerceAtLeast(0)
@@ -449,14 +523,14 @@ class ExternalSpeechService : Service() {
                     sessionStartUptimeMs = 0L
                 }
             }
-	            if (processingStartUptimeMs == 0L) {
-	                processingStartUptimeMs = SystemClock.uptimeMillis()
-	            }
+            if (processingStartUptimeMs == 0L) {
+                processingStartUptimeMs = SystemClock.uptimeMillis()
+            }
             markLocalModelProcessingStartIfNeeded()
             scheduleProcessingTimeoutIfNeeded()
-	            engine?.stop()
-	            safe { cb.onState(id, STATE_PROCESSING, "processing") }
-	        }
+            engine?.stop()
+            safe { cb.onState(id, STATE_PROCESSING, "processing") }
+        }
 
         fun cancel() {
             canceled = true
@@ -496,7 +570,11 @@ class ExternalSpeechService : Service() {
         }
 
         private fun shouldUseBackupAsr(primaryVendor: AsrVendor, backupVendor: AsrVendor): Boolean {
-            val enabled = try { prefs.backupAsrEnabled } catch (_: Throwable) { false }
+            val enabled = try {
+                prefs.backupAsrEnabled
+            } catch (_: Throwable) {
+                false
+            }
             if (!enabled) return false
             if (backupVendor == primaryVendor) return false
             return try {
@@ -535,60 +613,90 @@ class ExternalSpeechService : Service() {
                         scope,
                         prefs,
                         this,
-                        onRequestDuration = ::onRequestDuration
+                        onRequestDuration = ::onRequestDuration,
                     )
                 }
                 AsrVendor.SiliconFlow -> SiliconFlowFileAsrEngine(
-                    context, scope, prefs, this,
-                    onRequestDuration = ::onRequestDuration
+                    context,
+                    scope,
+                    prefs,
+                    this,
+                    onRequestDuration = ::onRequestDuration,
                 )
                 AsrVendor.ElevenLabs -> if (streamingPreferred) {
                     ElevenLabsStreamAsrEngine(context, scope, prefs, this)
                 } else {
                     ElevenLabsFileAsrEngine(
-                        context, scope, prefs, this,
-                        onRequestDuration = ::onRequestDuration
+                        context,
+                        scope,
+                        prefs,
+                        this,
+                        onRequestDuration = ::onRequestDuration,
                     )
                 }
                 AsrVendor.OpenAI -> OpenAiFileAsrEngine(
-                    context, scope, prefs, this,
-                    onRequestDuration = ::onRequestDuration
+                    context,
+                    scope,
+                    prefs,
+                    this,
+                    onRequestDuration = ::onRequestDuration,
                 )
                 AsrVendor.DashScope -> if (streamingPreferred) {
                     DashscopeStreamAsrEngine(context, scope, prefs, this)
                 } else {
                     DashscopeFileAsrEngine(
-                        context, scope, prefs, this,
-                        onRequestDuration = ::onRequestDuration
+                        context,
+                        scope,
+                        prefs,
+                        this,
+                        onRequestDuration = ::onRequestDuration,
                     )
                 }
                 AsrVendor.Gemini -> GeminiFileAsrEngine(
-                    context, scope, prefs, this,
-                    onRequestDuration = ::onRequestDuration
+                    context,
+                    scope,
+                    prefs,
+                    this,
+                    onRequestDuration = ::onRequestDuration,
                 )
                 AsrVendor.Soniox -> if (streamingPreferred) {
                     SonioxStreamAsrEngine(context, scope, prefs, this)
                 } else {
                     SonioxFileAsrEngine(
-                        context, scope, prefs, this,
-                        onRequestDuration = ::onRequestDuration
+                        context,
+                        scope,
+                        prefs,
+                        this,
+                        onRequestDuration = ::onRequestDuration,
                     )
                 }
                 AsrVendor.Zhipu -> ZhipuFileAsrEngine(
-                    context, scope, prefs, this,
-                    onRequestDuration = ::onRequestDuration
+                    context,
+                    scope,
+                    prefs,
+                    this,
+                    onRequestDuration = ::onRequestDuration,
                 )
                 AsrVendor.SenseVoice -> SenseVoiceFileAsrEngine(
-                    context, scope, prefs, this,
-                    onRequestDuration = ::onRequestDuration
+                    context,
+                    scope,
+                    prefs,
+                    this,
+                    onRequestDuration = ::onRequestDuration,
                 )
                 AsrVendor.FunAsrNano -> FunAsrNanoFileAsrEngine(
-                    context, scope, prefs, this,
-                    onRequestDuration = ::onRequestDuration
+                    context,
+                    scope,
+                    prefs,
+                    this,
+                    onRequestDuration = ::onRequestDuration,
                 )
                 AsrVendor.Telespeech -> TelespeechFileAsrEngine(
-                    context, scope, prefs, this,
-                    onRequestDuration = ::onRequestDuration
+                    context,
+                    scope,
+                    prefs,
+                    this,
+                    onRequestDuration = ::onRequestDuration,
                 )
                 AsrVendor.Paraformer -> ParaformerStreamAsrEngine(context, scope, prefs, this)
             }
@@ -602,19 +710,31 @@ class ExternalSpeechService : Service() {
                 } else {
                     if (prefs.volcFileStandardEnabled) {
                         com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                            context, scope, prefs, this,
+                            context,
+                            scope,
+                            prefs,
+                            this,
                             com.brycewg.asrkb.asr.VolcStandardFileAsrEngine(
-                                context, scope, prefs, this,
-                                onRequestDuration = ::onRequestDuration
-                            )
+                                context,
+                                scope,
+                                prefs,
+                                this,
+                                onRequestDuration = ::onRequestDuration,
+                            ),
                         )
                     } else {
                         com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                            context, scope, prefs, this,
+                            context,
+                            scope,
+                            prefs,
+                            this,
                             com.brycewg.asrkb.asr.VolcFileAsrEngine(
-                                context, scope, prefs, this,
-                                onRequestDuration = ::onRequestDuration
-                            )
+                                context,
+                                scope,
+                                prefs,
+                                this,
+                                onRequestDuration = ::onRequestDuration,
+                            ),
                         )
                     }
                 }
@@ -623,11 +743,17 @@ class ExternalSpeechService : Service() {
                     com.brycewg.asrkb.asr.DashscopeStreamAsrEngine(context, scope, prefs, this, externalPcmMode = true)
                 } else {
                     com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                        context, scope, prefs, this,
+                        context,
+                        scope,
+                        prefs,
+                        this,
                         com.brycewg.asrkb.asr.DashscopeFileAsrEngine(
-                            context, scope, prefs, this,
-                            onRequestDuration = ::onRequestDuration
-                        )
+                            context,
+                            scope,
+                            prefs,
+                            this,
+                            onRequestDuration = ::onRequestDuration,
+                        ),
                     )
                 }
                 // Soniox：依据设置走流式或非流式
@@ -635,11 +761,17 @@ class ExternalSpeechService : Service() {
                     com.brycewg.asrkb.asr.SonioxStreamAsrEngine(context, scope, prefs, this, externalPcmMode = true)
                 } else {
                     com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                        context, scope, prefs, this,
+                        context,
+                        scope,
+                        prefs,
+                        this,
                         com.brycewg.asrkb.asr.SonioxFileAsrEngine(
-                            context, scope, prefs, this,
-                            onRequestDuration = ::onRequestDuration
-                        )
+                            context,
+                            scope,
+                            prefs,
+                            this,
+                            onRequestDuration = ::onRequestDuration,
+                        ),
                     )
                 }
                 // 其他云厂商：仅非流式（若供应商另行支持流式则走对应分支）
@@ -647,40 +779,70 @@ class ExternalSpeechService : Service() {
                     com.brycewg.asrkb.asr.ElevenLabsStreamAsrEngine(context, scope, prefs, this, externalPcmMode = true)
                 } else {
                     com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                        context, scope, prefs, this,
+                        context,
+                        scope,
+                        prefs,
+                        this,
                         com.brycewg.asrkb.asr.ElevenLabsFileAsrEngine(
-                            context, scope, prefs, this,
-                            onRequestDuration = ::onRequestDuration
-                        )
+                            context,
+                            scope,
+                            prefs,
+                            this,
+                            onRequestDuration = ::onRequestDuration,
+                        ),
                     )
                 }
                 AsrVendor.OpenAI -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context, scope, prefs, this,
+                    context,
+                    scope,
+                    prefs,
+                    this,
                     com.brycewg.asrkb.asr.OpenAiFileAsrEngine(
-                        context, scope, prefs, this,
-                        onRequestDuration = ::onRequestDuration
-                    )
+                        context,
+                        scope,
+                        prefs,
+                        this,
+                        onRequestDuration = ::onRequestDuration,
+                    ),
                 )
                 AsrVendor.Gemini -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context, scope, prefs, this,
+                    context,
+                    scope,
+                    prefs,
+                    this,
                     com.brycewg.asrkb.asr.GeminiFileAsrEngine(
-                        context, scope, prefs, this,
-                        onRequestDuration = ::onRequestDuration
-                    )
+                        context,
+                        scope,
+                        prefs,
+                        this,
+                        onRequestDuration = ::onRequestDuration,
+                    ),
                 )
                 AsrVendor.SiliconFlow -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context, scope, prefs, this,
+                    context,
+                    scope,
+                    prefs,
+                    this,
                     com.brycewg.asrkb.asr.SiliconFlowFileAsrEngine(
-                        context, scope, prefs, this,
-                        onRequestDuration = ::onRequestDuration
-                    )
+                        context,
+                        scope,
+                        prefs,
+                        this,
+                        onRequestDuration = ::onRequestDuration,
+                    ),
                 )
                 AsrVendor.Zhipu -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context, scope, prefs, this,
+                    context,
+                    scope,
+                    prefs,
+                    this,
                     com.brycewg.asrkb.asr.ZhipuFileAsrEngine(
-                        context, scope, prefs, this,
-                        onRequestDuration = ::onRequestDuration
-                    )
+                        context,
+                        scope,
+                        prefs,
+                        this,
+                        onRequestDuration = ::onRequestDuration,
+                    ),
                 )
                 // 本地：Paraformer 固定流式
                 AsrVendor.Paraformer -> com.brycewg.asrkb.asr.ParaformerStreamAsrEngine(context, scope, prefs, this, externalPcmMode = true)
@@ -688,16 +850,25 @@ class ExternalSpeechService : Service() {
                 AsrVendor.SenseVoice -> {
                     if (prefs.svPseudoStreamEnabled) {
                         com.brycewg.asrkb.asr.SenseVoicePushPcmPseudoStreamAsrEngine(
-                            context, scope, prefs, this,
-                            onRequestDuration = ::onRequestDuration
+                            context,
+                            scope,
+                            prefs,
+                            this,
+                            onRequestDuration = ::onRequestDuration,
                         )
                     } else {
                         com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                            context, scope, prefs, this,
+                            context,
+                            scope,
+                            prefs,
+                            this,
                             com.brycewg.asrkb.asr.SenseVoiceFileAsrEngine(
-                                context, scope, prefs, this,
-                                onRequestDuration = ::onRequestDuration
-                            )
+                                context,
+                                scope,
+                                prefs,
+                                this,
+                                onRequestDuration = ::onRequestDuration,
+                            ),
                         )
                     }
                 }
@@ -705,27 +876,42 @@ class ExternalSpeechService : Service() {
                 AsrVendor.FunAsrNano -> {
                     // FunASR Nano 算力开销高：不支持伪流式预览，仅保留整段离线识别
                     com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                        context, scope, prefs, this,
+                        context,
+                        scope,
+                        prefs,
+                        this,
                         com.brycewg.asrkb.asr.FunAsrNanoFileAsrEngine(
-                            context, scope, prefs, this,
-                            onRequestDuration = ::onRequestDuration
-                        )
+                            context,
+                            scope,
+                            prefs,
+                            this,
+                            onRequestDuration = ::onRequestDuration,
+                        ),
                     )
                 }
                 // TeleSpeech：支持伪流式（VAD 分片预览 + 整段离线识别）
                 AsrVendor.Telespeech -> {
                     if (prefs.tsPseudoStreamEnabled) {
                         com.brycewg.asrkb.asr.TelespeechPushPcmPseudoStreamAsrEngine(
-                            context, scope, prefs, this,
-                            onRequestDuration = ::onRequestDuration
+                            context,
+                            scope,
+                            prefs,
+                            this,
+                            onRequestDuration = ::onRequestDuration,
                         )
                     } else {
                         com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                            context, scope, prefs, this,
+                            context,
+                            scope,
+                            prefs,
+                            this,
                             com.brycewg.asrkb.asr.TelespeechFileAsrEngine(
-                                context, scope, prefs, this,
-                                onRequestDuration = ::onRequestDuration
-                            )
+                                context,
+                                scope,
+                                prefs,
+                                this,
+                                onRequestDuration = ::onRequestDuration,
+                            ),
                         )
                     }
                 }
@@ -748,7 +934,11 @@ class ExternalSpeechService : Service() {
                     Log.w(TAG, "Failed to compute audio duration on final", t)
                 }
             }
-            val doAi = try { prefs.postProcessEnabled && prefs.hasLlmKeys() } catch (_: Throwable) { false }
+            val doAi = try {
+                prefs.postProcessEnabled && prefs.hasLlmKeys()
+            } catch (_: Throwable) {
+                false
+            }
             if (doAi) {
                 if (!hasAsrPartial && text.isNotEmpty()) {
                     hasAsrPartial = true
@@ -757,7 +947,11 @@ class ExternalSpeechService : Service() {
                 // 执行带 AI 的完整后处理链（IO 在线程内切换）
                 CoroutineScope(Dispatchers.Main).launch {
                     if (canceled) return@launch
-                    val typewriterEnabled = try { prefs.postprocTypewriterEnabled } catch (_: Throwable) { true }
+                    val typewriterEnabled = try {
+                        prefs.postprocTypewriterEnabled
+                    } catch (_: Throwable) {
+                        true
+                    }
                     var postprocCommitted = false
                     var lastPostprocTarget: String? = null
                     val typewriter = if (typewriterEnabled) {
@@ -774,7 +968,7 @@ class ExternalSpeechService : Service() {
                             normalTargetFrames = 18,
                             normalMaxStep = 6,
                             rushTargetFrames = 8,
-                            rushMaxStep = 24
+                            rushMaxStep = 24,
                         )
                     } else {
                         null
@@ -795,103 +989,111 @@ class ExternalSpeechService : Service() {
                     var aiPostMs = 0L
                     var aiPostStatus = com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
                     val out = try {
-                      val res = com.brycewg.asrkb.util.AsrFinalFilters.applyWithAi(
-                        context,
-                        prefs,
-                        text,
-                        onStreamingUpdate = onStreamingUpdate
-                      )
-                      aiUsed = (res.usedAi && res.ok)
-                      aiPostMs = if (res.attempted) res.llmMs else 0L
-                      aiPostStatus = when {
-                        res.attempted && aiUsed -> com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.SUCCESS
-                        res.attempted -> com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.FAILED
-                        else -> com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
-                      }
-
-                      val processed = res.text
-                      val finalOut = processed.ifBlank {
-                        // AI 返回空：回退到简单后处理（包含正则/繁体）
-                        try {
-                          com.brycewg.asrkb.util.AsrFinalFilters.applySimple(
+                        val res = com.brycewg.asrkb.util.AsrFinalFilters.applyWithAi(
                             context,
                             prefs,
-                            text
-                          )
-                        } catch (_: Throwable) {
-                          text
+                            text,
+                            onStreamingUpdate = onStreamingUpdate,
+                        )
+                        aiUsed = (res.usedAi && res.ok)
+                        aiPostMs = if (res.attempted) res.llmMs else 0L
+                        aiPostStatus = when {
+                            res.attempted && aiUsed -> com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.SUCCESS
+                            res.attempted -> com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.FAILED
+                            else -> com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
                         }
-                      }
-                      if (typewriter != null && aiUsed && finalOut.isNotEmpty()) {
-                        typewriter.submit(finalOut, rush = true)
-                        val finalLen = finalOut.length
-                        val t0 = SystemClock.uptimeMillis()
-                        while (!canceled && (SystemClock.uptimeMillis() - t0) < 2_000L &&
-                          typewriter.currentText().length != finalLen
-                        ) {
-                          delay(20)
+
+                        val processed = res.text
+                        val finalOut = processed.ifBlank {
+                            // AI 返回空：回退到简单后处理（包含正则/繁体）
+                            try {
+                                com.brycewg.asrkb.util.AsrFinalFilters.applySimple(
+                                    context,
+                                    prefs,
+                                    text,
+                                )
+                            } catch (_: Throwable) {
+                                text
+                            }
                         }
-                      }
-                      finalOut
+                        if (typewriter != null && aiUsed && finalOut.isNotEmpty()) {
+                            typewriter.submit(finalOut, rush = true)
+                            val finalLen = finalOut.length
+                            val t0 = SystemClock.uptimeMillis()
+                            while (!canceled && (SystemClock.uptimeMillis() - t0) < 2_000L &&
+                                typewriter.currentText().length != finalLen
+                            ) {
+                                delay(20)
+                            }
+                        }
+                        finalOut
                     } catch (t: Throwable) {
-                      Log.w(TAG, "applyWithAi failed, fallback to simple", t)
-                      aiUsed = false
-                      aiPostMs = 0L
-                      aiPostStatus = com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.FAILED
-                      try {
-                        com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, text)
-                      } catch (_: Throwable) {
-                        text
-                      }
+                        Log.w(TAG, "applyWithAi failed, fallback to simple", t)
+                        aiUsed = false
+                        aiPostMs = 0L
+                        aiPostStatus = com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.FAILED
+                        try {
+                            com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, text)
+                        } catch (_: Throwable) {
+                            text
+                        }
                     } finally {
-                      postprocCommitted = true
-                      typewriter?.cancel()
+                        postprocCommitted = true
+                        typewriter?.cancel()
                     }
                     if (canceled) return@launch
-                        // 记录使用统计与识别历史（来源标记为 external；尊重开关）
-                        try {
-                            val audioMs = lastAudioMsForStats
-                            val totalElapsedMs = popTotalElapsedMsForStats()
-                            val procMs = computeProcMsForStats()
-                            val chars = try { com.brycewg.asrkb.util.TextSanitizer.countEffectiveChars(out) } catch (_: Throwable) { out.length }
-                            val vendorForRecord = resolveFinalVendorForRecord()
-                            AnalyticsManager.recordAsrEvent(
-                                context = context,
-                                vendorId = vendorForRecord.id,
-                                audioMs = audioMs,
-                                procMs = procMs,
-                                source = "external",
-                                aiProcessed = aiUsed,
-                                charCount = chars
-                            )
+                    // 记录使用统计与识别历史（来源标记为 external；尊重开关）
+                    try {
+                        val audioMs = lastAudioMsForStats
+                        val totalElapsedMs = popTotalElapsedMsForStats()
+                        val procMs = computeProcMsForStats()
+                        val chars = try {
+                            com.brycewg.asrkb.util.TextSanitizer.countEffectiveChars(out)
+                        } catch (_: Throwable) {
+                            out.length
+                        }
+                        val vendorForRecord = resolveFinalVendorForRecord()
+                        AnalyticsManager.recordAsrEvent(
+                            context = context,
+                            vendorId = vendorForRecord.id,
+                            audioMs = audioMs,
+                            procMs = procMs,
+                            source = "external",
+                            aiProcessed = aiUsed,
+                            charCount = chars,
+                        )
                         if (!prefs.disableUsageStats) {
                             prefs.recordUsageCommit("external", vendorForRecord, audioMs, chars, procMs)
                         }
                         if (!prefs.disableAsrHistory) {
                             val store = com.brycewg.asrkb.store.AsrHistoryStore(context)
-                                store.add(
-                                    com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
-                                        timestamp = System.currentTimeMillis(),
-                                        text = out,
-                                        vendorId = vendorForRecord.id,
-                                        audioMs = audioMs,
-                                        totalElapsedMs = totalElapsedMs,
-                                        procMs = procMs,
-                                        source = "external",
-                                        aiProcessed = aiUsed,
-                                        aiPostMs = aiPostMs,
-                                        aiPostStatus = aiPostStatus,
-                                        charCount = chars
-                                    )
-                                )
-                            }
+                            store.add(
+                                com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
+                                    timestamp = System.currentTimeMillis(),
+                                    text = out,
+                                    vendorId = vendorForRecord.id,
+                                    audioMs = audioMs,
+                                    totalElapsedMs = totalElapsedMs,
+                                    procMs = procMs,
+                                    source = "external",
+                                    aiProcessed = aiUsed,
+                                    aiPostMs = aiPostMs,
+                                    aiPostStatus = aiPostStatus,
+                                    charCount = chars,
+                                ),
+                            )
+                        }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to add ASR history (external, ai)", e)
                     }
                     if (canceled) return@launch
                     safe { cb.onFinal(id, out) }
                     safe { cb.onState(id, STATE_IDLE, "final") }
-                    try { (context as? ExternalSpeechService)?.onSessionDone(id) } catch (t: Throwable) { Log.w(TAG, "remove session on final failed", t) }
+                    try {
+                        (context as? ExternalSpeechService)?.onSessionDone(id)
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "remove session on final failed", t)
+                    }
                 }
             } else {
                 if (canceled) return
@@ -902,13 +1104,17 @@ class ExternalSpeechService : Service() {
                     Log.w(TAG, "applySimple failed, fallback to raw text", t)
                     text
                 }
-                    // 记录使用统计与识别历史（来源标记为 external；尊重开关）
-                    try {
-                        val audioMs = lastAudioMsForStats
-                        val totalElapsedMs = popTotalElapsedMsForStats()
-                        val procMs = computeProcMsForStats()
-                        val chars = try { com.brycewg.asrkb.util.TextSanitizer.countEffectiveChars(out) } catch (_: Throwable) { out.length }
-                        val vendorForRecord = resolveFinalVendorForRecord()
+                // 记录使用统计与识别历史（来源标记为 external；尊重开关）
+                try {
+                    val audioMs = lastAudioMsForStats
+                    val totalElapsedMs = popTotalElapsedMsForStats()
+                    val procMs = computeProcMsForStats()
+                    val chars = try {
+                        com.brycewg.asrkb.util.TextSanitizer.countEffectiveChars(out)
+                    } catch (_: Throwable) {
+                        out.length
+                    }
+                    val vendorForRecord = resolveFinalVendorForRecord()
                     AnalyticsManager.recordAsrEvent(
                         context = context,
                         vendorId = vendorForRecord.id,
@@ -916,33 +1122,37 @@ class ExternalSpeechService : Service() {
                         procMs = procMs,
                         source = "external",
                         aiProcessed = false,
-                        charCount = chars
+                        charCount = chars,
                     )
                     if (!prefs.disableUsageStats) {
                         prefs.recordUsageCommit("external", vendorForRecord, audioMs, chars, procMs)
                     }
                     if (!prefs.disableAsrHistory) {
                         val store = com.brycewg.asrkb.store.AsrHistoryStore(context)
-                            store.add(
-                                com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
-                                    timestamp = System.currentTimeMillis(),
-                                    text = out,
-                                    vendorId = vendorForRecord.id,
-                                    audioMs = audioMs,
-                                    totalElapsedMs = totalElapsedMs,
-                                    procMs = procMs,
-                                    source = "external",
-                                    aiProcessed = false,
-                                    charCount = chars
-                                )
-                            )
-                        }
+                        store.add(
+                            com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
+                                timestamp = System.currentTimeMillis(),
+                                text = out,
+                                vendorId = vendorForRecord.id,
+                                audioMs = audioMs,
+                                totalElapsedMs = totalElapsedMs,
+                                procMs = procMs,
+                                source = "external",
+                                aiProcessed = false,
+                                charCount = chars,
+                            ),
+                        )
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to add ASR history (external, simple)", e)
                 }
                 safe { cb.onFinal(id, out) }
                 safe { cb.onState(id, STATE_IDLE, "final") }
-                try { (context as? ExternalSpeechService)?.onSessionDone(id) } catch (t: Throwable) { Log.w(TAG, "remove session on final failed", t) }
+                try {
+                    (context as? ExternalSpeechService)?.onSessionDone(id)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "remove session on final failed", t)
+                }
             }
         }
 
@@ -957,7 +1167,11 @@ class ExternalSpeechService : Service() {
                 cb.onError(id, 500, message)
                 cb.onState(id, STATE_ERROR, message)
             }
-            try { (context as? ExternalSpeechService)?.onSessionDone(id) } catch (t: Throwable) { Log.w(TAG, "remove session on error failed", t) }
+            try {
+                (context as? ExternalSpeechService)?.onSessionDone(id)
+            } catch (t: Throwable) {
+                Log.w(TAG, "remove session on error failed", t)
+            }
         }
 
         override fun onPartial(text: String) {
@@ -997,7 +1211,7 @@ class ExternalSpeechService : Service() {
 
     private class CallbackProxy(private val remote: IBinder?) {
         fun onState(sessionId: Int, state: Int, msg: String) {
-            transact(CB_onState) { data ->
+            transact(CB_ON_STATE) { data ->
                 data.writeInterfaceToken(DESCRIPTOR_CB)
                 data.writeInt(sessionId)
                 data.writeInt(state)
@@ -1005,21 +1219,21 @@ class ExternalSpeechService : Service() {
             }
         }
         fun onPartial(sessionId: Int, text: String) {
-            transact(CB_onPartial) { data ->
+            transact(CB_ON_PARTIAL) { data ->
                 data.writeInterfaceToken(DESCRIPTOR_CB)
                 data.writeInt(sessionId)
                 data.writeString(text)
             }
         }
         fun onFinal(sessionId: Int, text: String) {
-            transact(CB_onFinal) { data ->
+            transact(CB_ON_FINAL) { data ->
                 data.writeInterfaceToken(DESCRIPTOR_CB)
                 data.writeInt(sessionId)
                 data.writeString(text)
             }
         }
         fun onError(sessionId: Int, code: Int, message: String) {
-            transact(CB_onError) { data ->
+            transact(CB_ON_ERROR) { data ->
                 data.writeInterfaceToken(DESCRIPTOR_CB)
                 data.writeInt(sessionId)
                 data.writeInt(code)
@@ -1027,7 +1241,7 @@ class ExternalSpeechService : Service() {
             }
         }
         fun onAmplitude(sessionId: Int, amp: Float) {
-            transact(CB_onAmplitude) { data ->
+            transact(CB_ON_AMPLITUDE) { data ->
                 data.writeInterfaceToken(DESCRIPTOR_CB)
                 data.writeInt(sessionId)
                 data.writeFloat(amp)
@@ -1064,22 +1278,22 @@ class ExternalSpeechService : Service() {
 
         // 与 AIDL 生成的 Stub 保持一致的描述符与事务号
         private const val DESCRIPTOR_SVC = "com.brycewg.asrkb.aidl.IExternalSpeechService"
-        private const val TRANSACTION_startSession = IBinder.FIRST_CALL_TRANSACTION + 0
-        private const val TRANSACTION_stopSession = IBinder.FIRST_CALL_TRANSACTION + 1
-        private const val TRANSACTION_cancelSession = IBinder.FIRST_CALL_TRANSACTION + 2
-        private const val TRANSACTION_isRecording = IBinder.FIRST_CALL_TRANSACTION + 3
-        private const val TRANSACTION_isAnyRecording = IBinder.FIRST_CALL_TRANSACTION + 4
-        private const val TRANSACTION_getVersion = IBinder.FIRST_CALL_TRANSACTION + 5
-        private const val TRANSACTION_startPcmSession = IBinder.FIRST_CALL_TRANSACTION + 6
-        private const val TRANSACTION_writePcm = IBinder.FIRST_CALL_TRANSACTION + 7
-        private const val TRANSACTION_finishPcm = IBinder.FIRST_CALL_TRANSACTION + 8
+        private const val TRANSACTION_START_SESSION = IBinder.FIRST_CALL_TRANSACTION + 0
+        private const val TRANSACTION_STOP_SESSION = IBinder.FIRST_CALL_TRANSACTION + 1
+        private const val TRANSACTION_CANCEL_SESSION = IBinder.FIRST_CALL_TRANSACTION + 2
+        private const val TRANSACTION_IS_RECORDING = IBinder.FIRST_CALL_TRANSACTION + 3
+        private const val TRANSACTION_IS_ANY_RECORDING = IBinder.FIRST_CALL_TRANSACTION + 4
+        private const val TRANSACTION_GET_VERSION = IBinder.FIRST_CALL_TRANSACTION + 5
+        private const val TRANSACTION_START_PCM_SESSION = IBinder.FIRST_CALL_TRANSACTION + 6
+        private const val TRANSACTION_WRITE_PCM = IBinder.FIRST_CALL_TRANSACTION + 7
+        private const val TRANSACTION_FINISH_PCM = IBinder.FIRST_CALL_TRANSACTION + 8
 
         private const val DESCRIPTOR_CB = "com.brycewg.asrkb.aidl.ISpeechCallback"
-        private const val CB_onState = IBinder.FIRST_CALL_TRANSACTION + 0
-        private const val CB_onPartial = IBinder.FIRST_CALL_TRANSACTION + 1
-        private const val CB_onFinal = IBinder.FIRST_CALL_TRANSACTION + 2
-        private const val CB_onError = IBinder.FIRST_CALL_TRANSACTION + 3
-        private const val CB_onAmplitude = IBinder.FIRST_CALL_TRANSACTION + 4
+        private const val CB_ON_STATE = IBinder.FIRST_CALL_TRANSACTION + 0
+        private const val CB_ON_PARTIAL = IBinder.FIRST_CALL_TRANSACTION + 1
+        private const val CB_ON_FINAL = IBinder.FIRST_CALL_TRANSACTION + 2
+        private const val CB_ON_ERROR = IBinder.FIRST_CALL_TRANSACTION + 3
+        private const val CB_ON_AMPLITUDE = IBinder.FIRST_CALL_TRANSACTION + 4
 
         private const val STATE_IDLE = 0
         private const val STATE_RECORDING = 1
@@ -1089,7 +1303,13 @@ class ExternalSpeechService : Service() {
         private const val LOCAL_MODEL_READY_WAIT_MAX_MS = 60_000L
         private const val LOCAL_MODEL_READY_WAIT_CONSUMED = -1L
 
-        private inline fun safe(block: () -> Unit) { try { block() } catch (t: Throwable) { Log.w(TAG, "callback failed", t) } }
+        private inline fun safe(block: () -> Unit) {
+            try {
+                block()
+            } catch (t: Throwable) {
+                Log.w(TAG, "callback failed", t)
+            }
+        }
     }
 
     // 统一的会话清理入口：在 onFinal/onError 触发后移除，避免内存泄漏

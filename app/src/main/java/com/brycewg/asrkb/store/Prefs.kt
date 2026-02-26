@@ -99,7 +99,6 @@ class Prefs(context: Context) {
 
     // 移除：键盘内“切换输入法”按钮显示开关（按钮始终显示）
 
-
     // 输入/点击触觉反馈强度
     var hapticFeedbackLevel: Int
         get() {
@@ -117,7 +116,7 @@ class Prefs(context: Context) {
         set(value) = sp.edit {
             putInt(
                 KEY_HAPTIC_FEEDBACK_LEVEL,
-                value.coerceIn(HAPTIC_FEEDBACK_LEVEL_OFF, HAPTIC_FEEDBACK_LEVEL_HEAVY)
+                value.coerceIn(HAPTIC_FEEDBACK_LEVEL_OFF, HAPTIC_FEEDBACK_LEVEL_HEAVY),
             )
         }
 
@@ -227,7 +226,6 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_HIDE_RECENT_TASK_CARD, false)
         set(value) = sp.edit { putBoolean(KEY_HIDE_RECENT_TASK_CARD, value) }
 
-
     // 应用内语言（空字符串表示跟随系统；如："zh-Hans"、"en"）
     var appLanguageTag: String
         get() = sp.getString(KEY_APP_LANGUAGE_TAG, "") ?: ""
@@ -285,7 +283,7 @@ class Prefs(context: Context) {
         set(value) = sp.edit {
             putFloat(
                 KEY_FLOATING_DOCK_FRACTION,
-                if (value < 0f) -1f else value.coerceIn(0f, 1f)
+                if (value < 0f) -1f else value.coerceIn(0f, 1f),
             )
         }
 
@@ -384,7 +382,7 @@ class Prefs(context: Context) {
         val models: List<String> = emptyList(),
         val enableReasoning: Boolean = false,
         val reasoningParamsOnJson: String = "",
-        val reasoningParamsOffJson: String = ""
+        val reasoningParamsOffJson: String = "",
     )
 
     fun getLlmProviders(): List<LlmProvider> = PrefsLlmProviderStore.getLlmProviders(this, json)
@@ -424,7 +422,7 @@ class Prefs(context: Context) {
                 localizedDefaults = defaults,
                 knownDefaultVariants = knownDefaultVariants,
                 legacyPrompt = legacyPrompt,
-                initializedFromDefaults = initializedFromDefaults
+                initializedFromDefaults = initializedFromDefaults,
             )
         }
         val parsed = try {
@@ -438,7 +436,7 @@ class Prefs(context: Context) {
             prefs = this,
             current = parsed,
             localizedDefaults = defaults,
-            knownDefaultVariants = knownDefaultVariants
+            knownDefaultVariants = knownDefaultVariants,
         )
         val migrated = PromptPresetMigrations.migrateLegacyPromptIfNeeded(
             prefs = this,
@@ -446,13 +444,13 @@ class Prefs(context: Context) {
             localizedDefaults = defaults,
             knownDefaultVariants = knownDefaultVariants,
             legacyPrompt = legacyPrompt,
-            initializedFromDefaults = initializedFromDefaults
+            initializedFromDefaults = initializedFromDefaults,
         )
         val synced = PromptPresetMigrations.syncDefaultsForLanguageIfNeeded(
             prefs = this,
             current = migrated,
             localizedDefaults = defaults,
-            knownDefaultVariants = knownDefaultVariants
+            knownDefaultVariants = knownDefaultVariants,
         )
         if (synced != parsed) {
             setPromptPresets(synced)
@@ -631,12 +629,11 @@ class Prefs(context: Context) {
         val enableReasoning: Boolean,
         val useCustomReasoningParams: Boolean,
         val reasoningParamsOnJson: String,
-        val reasoningParamsOffJson: String
+        val reasoningParamsOffJson: String,
     )
 
     // 阿里云百炼（DashScope）凭证
     var dashApiKey: String by stringPref(KEY_DASH_API_KEY, "")
-
 
     // DashScope：自定义识别上下文（提示词）
     var dashPrompt: String by stringPref(KEY_DASH_PROMPT, "")
@@ -988,6 +985,7 @@ class Prefs(context: Context) {
     var zipformerCleanupDone: Boolean
         get() = sp.getBoolean(KEY_ZIPFORMER_CLEANUP_DONE, false)
         set(value) = sp.edit { putBoolean(KEY_ZIPFORMER_CLEANUP_DONE, value) }
+
     // --- 供应商配置通用化 ---
     internal val vendorFields: Map<AsrVendor, List<VendorField>> = PrefsAsrVendorFields.vendorFields
 
@@ -1020,7 +1018,7 @@ class Prefs(context: Context) {
     }
 
     fun hasVolcKeys(): Boolean = hasVendorKeys(AsrVendor.Volc)
-    fun hasSfKeys(): Boolean = sfFreeAsrEnabled || sfApiKey.isNotBlank()  // 免费服务启用或有 API Key
+    fun hasSfKeys(): Boolean = sfFreeAsrEnabled || sfApiKey.isNotBlank() // 免费服务启用或有 API Key
     fun hasDashKeys(): Boolean = hasVendorKeys(AsrVendor.DashScope)
     fun hasElevenKeys(): Boolean = hasVendorKeys(AsrVendor.ElevenLabs)
     fun hasOpenAiKeys(): Boolean = hasVendorKeys(AsrVendor.OpenAI)
@@ -1269,11 +1267,14 @@ class Prefs(context: Context) {
         const val SF_CHAT_COMPLETIONS_ENDPOINT = "https://api.siliconflow.cn/v1/chat/completions"
         const val DEFAULT_SF_MODEL = "FunAudioLLM/SenseVoiceSmall"
         const val DEFAULT_SF_OMNI_MODEL = "Qwen/Qwen3-Omni-30B-A3B-Instruct"
+
         // SiliconFlow 免费服务模型配置
-        const val DEFAULT_SF_FREE_ASR_MODEL = "FunAudioLLM/SenseVoiceSmall"  // 免费 ASR 默认模型
-        const val DEFAULT_SF_FREE_LLM_MODEL = "Qwen/Qwen3-8B"  // 免费 LLM 默认模型
+        const val DEFAULT_SF_FREE_ASR_MODEL = "FunAudioLLM/SenseVoiceSmall" // 免费 ASR 默认模型
+        const val DEFAULT_SF_FREE_LLM_MODEL = "Qwen/Qwen3-8B" // 免费 LLM 默认模型
+
         // 免费 ASR 可选模型列表
         val SF_FREE_ASR_MODELS: List<String> = PrefsOptionLists.SF_FREE_ASR_MODELS
+
         // 免费 LLM 可选模型列表
         val SF_FREE_LLM_MODELS: List<String> = PrefsOptionLists.SF_FREE_LLM_MODELS
 
@@ -1285,9 +1286,11 @@ class Prefs(context: Context) {
         const val DEFAULT_DASH_MODEL = "qwen3-asr-flash"
         const val DASH_MODEL_QWEN3_REALTIME = "qwen3-asr-flash-realtime-2026-02-10"
         const val DASH_MODEL_FUN_ASR_REALTIME = "fun-asr-realtime"
+
         // Gemini 默认
         const val DEFAULT_GEM_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta"
         const val DEFAULT_GEM_MODEL = "gemini-2.5-flash"
+
         // Zhipu GLM ASR 默认
         const val DEFAULT_ZHIPU_TEMPERATURE = 0.95f
 
@@ -1310,16 +1313,15 @@ class Prefs(context: Context) {
 
         // 悬浮球默认大小（dp）
         const val DEFAULT_FLOATING_BALL_SIZE_DP = 44
+
         // 悬浮写入兼容：默认目标包名（每行一个；支持前缀匹配）
         const val DEFAULT_FLOATING_WRITE_COMPAT_PACKAGES = "org.telegram.messenger\nnu.gpu.nagram"
-        
 
         // Soniox 默认端点
         const val SONIOX_API_BASE_URL = "https://api.soniox.com"
         const val SONIOX_FILES_ENDPOINT = "$SONIOX_API_BASE_URL/v1/files"
         const val SONIOX_TRANSCRIPTIONS_ENDPOINT = "$SONIOX_API_BASE_URL/v1/transcriptions"
         const val SONIOX_WS_URL = "wss://stt-rt.soniox.com/transcribe-websocket"
-
     }
 
     // 导出全部设置为 JSON 字符串（包含密钥，仅用于本地备份/迁移）
@@ -1333,5 +1335,4 @@ class Prefs(context: Context) {
         Log.i(TAG, "Successfully imported settings from JSON")
         return true
     }
-
 }

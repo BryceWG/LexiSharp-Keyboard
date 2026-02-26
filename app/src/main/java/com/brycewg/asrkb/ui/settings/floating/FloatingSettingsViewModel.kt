@@ -67,7 +67,7 @@ class FloatingSettingsViewModel : ViewModel() {
     fun handleAsrToggle(
         context: Context,
         enabled: Boolean,
-        serviceManager: FloatingServiceManager
+        serviceManager: FloatingServiceManager,
     ): PermissionRequest? {
         try {
             val prefs = Prefs(context)
@@ -111,7 +111,7 @@ class FloatingSettingsViewModel : ViewModel() {
     fun handleOnlyWhenImeVisibleToggle(
         context: Context,
         enabled: Boolean,
-        serviceManager: FloatingServiceManager
+        serviceManager: FloatingServiceManager,
     ): PermissionRequest? {
         try {
             val prefs = Prefs(context)
@@ -149,14 +149,13 @@ class FloatingSettingsViewModel : ViewModel() {
         }
     }
 
-
     /**
      * 更新悬浮球透明度
      */
     fun updateAlpha(
         context: Context,
         alphaPercent: Float,
-        serviceManager: FloatingServiceManager
+        serviceManager: FloatingServiceManager,
     ) {
         try {
             val prefs = Prefs(context)
@@ -178,7 +177,7 @@ class FloatingSettingsViewModel : ViewModel() {
     fun updateSize(
         context: Context,
         sizeDp: Int,
-        serviceManager: FloatingServiceManager
+        serviceManager: FloatingServiceManager,
     ) {
         try {
             val prefs = Prefs(context)
@@ -273,7 +272,6 @@ class FloatingSettingsViewModel : ViewModel() {
         }
     }
 
-
     /**
      * 检查无障碍服务是否已启用
      */
@@ -293,6 +291,6 @@ class FloatingSettingsViewModel : ViewModel() {
      */
     enum class PermissionRequest {
         OVERLAY,
-        ACCESSIBILITY
+        ACCESSIBILITY,
     }
 }

@@ -53,7 +53,7 @@ class PrivilegedKeepAliveJobService : JobService() {
                     this@PrivilegedKeepAliveJobService,
                     "keepalive",
                     "job_result",
-                    mapOf("method" to result.method.name.lowercase(), "ok" to result.ok, "exit" to result.exitCode)
+                    mapOf("method" to result.method.name.lowercase(), "ok" to result.ok, "exit" to result.exitCode),
                 )
             } catch (t: Throwable) {
                 Log.w(TAG, "privileged keep-alive job failed", t)

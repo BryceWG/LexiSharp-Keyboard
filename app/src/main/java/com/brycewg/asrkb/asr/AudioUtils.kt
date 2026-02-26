@@ -26,7 +26,7 @@ data class FrameStats(
     val maxAbs: Int,
     val sumSquares: Long,
     val countAboveThreshold: Int,
-    val sampleCount: Int
+    val sampleCount: Int,
 )
 
 /**

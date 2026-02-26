@@ -16,7 +16,10 @@ internal class MicGestureController(
     private val onLockedBySwipeChanged: () -> Unit,
 ) {
     private enum class GestureState {
-        None, PendingCancel, PendingSend, PendingLock
+        None,
+        PendingCancel,
+        PendingSend,
+        PendingLock,
     }
 
     private var state: GestureState = GestureState.None
@@ -31,8 +34,8 @@ internal class MicGestureController(
                     event = "mic_click_locked",
                     data = mapOf(
                         "state" to actionHandler.getCurrentState()::class.java.simpleName,
-                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
-                    )
+                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening),
+                    ),
                 )
                 actionHandler.handleLockedMicTap()
                 return@setOnClickListener
@@ -44,8 +47,8 @@ internal class MicGestureController(
                     "tapToggle" to true,
                     "state" to actionHandler.getCurrentState()::class.java.simpleName,
                     "running" to (actionHandler.getCurrentState() is KeyboardState.Listening),
-                    "aiPanel" to isAiEditPanelVisible()
-                )
+                    "aiPanel" to isAiEditPanelVisible(),
+                ),
             )
             if (isAiEditPanelVisible()) {
                 actionHandler.handleAiEditClick(inputConnectionProvider())
@@ -90,8 +93,8 @@ internal class MicGestureController(
                         data = mapOf(
                             "tapToggle" to false,
                             "aiPanel" to true,
-                            "state" to actionHandler.getCurrentState()::class.java.simpleName
-                        )
+                            "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                        ),
                     )
                     v.performClick()
                     return true
@@ -101,8 +104,8 @@ internal class MicGestureController(
                     data = mapOf(
                         "tapToggle" to false,
                         "state" to actionHandler.getCurrentState()::class.java.simpleName,
-                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
-                    )
+                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening),
+                    ),
                 )
                 actionHandler.handleAiEditClick(inputConnectionProvider())
                 return true
@@ -113,8 +116,8 @@ internal class MicGestureController(
                     data = mapOf(
                         "tapToggle" to false,
                         "state" to actionHandler.getCurrentState()::class.java.simpleName,
-                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
-                    )
+                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening),
+                    ),
                 )
                 if (actionHandler.getCurrentState() is KeyboardState.AiEditListening) {
                     actionHandler.handleAiEditClick(inputConnectionProvider())
@@ -127,8 +130,8 @@ internal class MicGestureController(
                     event = "ai_mic_cancel",
                     data = mapOf(
                         "tapToggle" to false,
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName
-                    )
+                        "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                    ),
                 )
                 if (actionHandler.getCurrentState() is KeyboardState.AiEditListening) {
                     actionHandler.handleAiEditClick(inputConnectionProvider())
@@ -149,8 +152,8 @@ internal class MicGestureController(
                         event = "mic_down_blocked",
                         data = mapOf(
                             "tapToggle" to false,
-                            "state" to actionHandler.getCurrentState()::class.java.simpleName
-                        )
+                            "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                        ),
                     )
                     v.performClick()
                     return true
@@ -161,8 +164,8 @@ internal class MicGestureController(
                     data = mapOf(
                         "tapToggle" to false,
                         "state" to actionHandler.getCurrentState()::class.java.simpleName,
-                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
-                    )
+                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening),
+                    ),
                 )
                 actionHandler.handleMicPressDown()
                 return true
@@ -209,8 +212,8 @@ internal class MicGestureController(
                             data = mapOf(
                                 "tapToggle" to false,
                                 "state" to actionHandler.getCurrentState()::class.java.simpleName,
-                                "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
-                            )
+                                "running" to (actionHandler.getCurrentState() is KeyboardState.Listening),
+                            ),
                         )
                         actionHandler.handleMicPressUp(false)
                         v.performClick()
@@ -224,8 +227,8 @@ internal class MicGestureController(
                     data = mapOf(
                         "tapToggle" to false,
                         "state" to actionHandler.getCurrentState()::class.java.simpleName,
-                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
-                    )
+                        "running" to (actionHandler.getCurrentState() is KeyboardState.Listening),
+                    ),
                 )
                 state = GestureState.None
                 updatePressedState(GestureState.None)
@@ -262,4 +265,3 @@ internal class MicGestureController(
         }
     }
 }
-

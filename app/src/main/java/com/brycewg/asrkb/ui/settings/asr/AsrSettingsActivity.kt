@@ -7,15 +7,15 @@ package com.brycewg.asrkb.ui.settings.asr
 
 import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
-import com.brycewg.asrkb.ui.WindowInsetsHelper
 import com.brycewg.asrkb.ui.BaseActivity
+import com.brycewg.asrkb.ui.WindowInsetsHelper
 import com.brycewg.asrkb.ui.settings.asr.sections.AsrSettingsToolbarSection
 import com.brycewg.asrkb.ui.settings.asr.sections.AsrSettingsUiRendererSection
 import com.brycewg.asrkb.ui.settings.asr.sections.AsrSilenceDetectionSection
@@ -95,7 +95,7 @@ class AsrSettingsActivity : BaseActivity() {
             funAsrNanoModelPicker = funAsrNanoModelPicker,
             telespeechModelPicker = telespeechModelPicker,
             paraformerModelPicker = paraformerModelPicker,
-            punctuationModelPicker = punctuationModelPicker
+            punctuationModelPicker = punctuationModelPicker,
         )
 
         sections = listOf(
@@ -116,7 +116,7 @@ class AsrSettingsActivity : BaseActivity() {
             ParaformerSettingsSection(),
             PunctuationModelSettingsSection(),
             BackupAsrSection(),
-            AsrSettingsUiRendererSection()
+            AsrSettingsUiRendererSection(),
         )
 
         sections.forEach { it.bind(binding) }
@@ -147,7 +147,7 @@ class AsrSettingsActivity : BaseActivity() {
             failedTextTemplateResId = R.string.sv_import_failed,
             variant = prefs.svModelVariant,
             logTag = TAG,
-            logMessage = "Failed to start model import"
+            logMessage = "Failed to start model import",
         )
     }
 
@@ -160,7 +160,7 @@ class AsrSettingsActivity : BaseActivity() {
             failedTextTemplateResId = R.string.ts_import_failed,
             variant = prefs.tsModelVariant,
             logTag = TAG,
-            logMessage = "Failed to start telespeech model import"
+            logMessage = "Failed to start telespeech model import",
         )
     }
 
@@ -173,7 +173,7 @@ class AsrSettingsActivity : BaseActivity() {
             failedTextTemplateResId = R.string.pf_import_failed,
             variant = prefs.pfModelVariant,
             logTag = TAG,
-            logMessage = "Failed to start paraformer model import"
+            logMessage = "Failed to start paraformer model import",
         )
     }
 
@@ -187,14 +187,14 @@ class AsrSettingsActivity : BaseActivity() {
             variant = prefs.fnModelVariant,
             modelType = "funasr_nano",
             logTag = TAG,
-            logMessage = "Failed to start FunASR Nano model import"
+            logMessage = "Failed to start FunASR Nano model import",
         )
     }
 
     private fun handlePunctuationModelImport(uri: Uri) {
         val statusTextViews = listOf(
             findViewById<TextView?>(R.id.tvTsPunctStatus),
-            findViewById<TextView?>(R.id.tvPfPunctStatus)
+            findViewById<TextView?>(R.id.tvPfPunctStatus),
         ).filterNotNull()
         modelImportUiController.startZipImport(
             uri = uri,
@@ -204,7 +204,7 @@ class AsrSettingsActivity : BaseActivity() {
             variant = "ct-zh-en-int8",
             modelType = "punctuation",
             logTag = TAG,
-            logMessage = "Failed to start punctuation model import"
+            logMessage = "Failed to start punctuation model import",
         )
     }
 
@@ -226,7 +226,7 @@ class AsrSettingsActivity : BaseActivity() {
             Toast.makeText(
                 this,
                 getString(R.string.toast_search_changed_asr_vendor, getAsrVendorLabel(vendor)),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
         }
         intent?.removeExtra(SettingsSearchNavigator.EXTRA_FORCE_ASR_VENDOR_ID)

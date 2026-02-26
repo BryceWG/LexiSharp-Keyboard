@@ -4,8 +4,8 @@ import android.content.Context
 import android.view.View
 import android.view.Window
 import androidx.core.graphics.ColorUtils
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.brycewg.asrkb.UiColorTokens
 import com.brycewg.asrkb.UiColors
 
@@ -34,7 +34,7 @@ internal class ImeThemeStyler {
 
     fun installKeyboardInsetsListener(
         rootView: View,
-        onSystemBarsBottomInsetChanged: (bottom: Int) -> Unit
+        onSystemBarsBottomInsetChanged: (bottom: Int) -> Unit,
     ) {
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, windowInsets ->
             val bottom = ImeInsetsResolver.resolveBottomInset(windowInsets, rootView.resources)

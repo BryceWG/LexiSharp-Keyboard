@@ -81,7 +81,7 @@ internal object UsageStatsStore {
         vendor: AsrVendor,
         audioMs: Long,
         chars: Int,
-        procMs: Long = 0L
+        procMs: Long = 0L,
     ) {
         if (chars <= 0 && audioMs <= 0) return
         val today = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
@@ -151,7 +151,7 @@ data class VendorAgg(
     var chars: Long = 0,
     var audioMs: Long = 0,
     // 非流式请求的供应商处理耗时聚合（毫秒）
-    var procMs: Long = 0
+    var procMs: Long = 0,
 )
 
 @Serializable
@@ -159,7 +159,7 @@ data class DayAgg(
     var sessions: Long = 0,
     var chars: Long = 0,
     var audioMs: Long = 0,
-    var procMs: Long = 0
+    var procMs: Long = 0,
 )
 
 @Serializable
@@ -170,6 +170,5 @@ data class UsageStats(
     var totalProcMs: Long = 0,
     var perVendor: MutableMap<String, VendorAgg> = mutableMapOf(),
     var daily: MutableMap<String, DayAgg> = mutableMapOf(),
-    var firstUseDate: String = ""
+    var firstUseDate: String = "",
 )
-

@@ -3,10 +3,10 @@ package com.brycewg.asrkb.ui.settings.asr.sections
 import android.widget.EditText
 import android.widget.TextView
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.brycewg.asrkb.ui.installExplainedSwitch
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsBinding
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsSection
+import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 
@@ -31,7 +31,7 @@ internal class VolcengineSettingsSection : AsrSettingsSection {
                 preferenceKey = "volc_streaming_explained",
                 readPref = { binding.prefs.volcStreamingEnabled },
                 writePref = { v -> binding.viewModel.updateVolcStreaming(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -45,7 +45,7 @@ internal class VolcengineSettingsSection : AsrSettingsSection {
                 preferenceKey = "volc_file_standard_explained",
                 readPref = { binding.prefs.volcFileStandardEnabled },
                 writePref = { v -> binding.viewModel.updateVolcFileStandard(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -59,7 +59,7 @@ internal class VolcengineSettingsSection : AsrSettingsSection {
                 preferenceKey = "volc_model_v2_explained",
                 readPref = { binding.prefs.volcModelV2Enabled },
                 writePref = { v -> binding.viewModel.updateVolcModelV2(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -73,7 +73,7 @@ internal class VolcengineSettingsSection : AsrSettingsSection {
                 preferenceKey = "volc_ddc_explained",
                 readPref = { binding.prefs.volcDdcEnabled },
                 writePref = { v -> binding.viewModel.updateVolcDdc(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -87,7 +87,7 @@ internal class VolcengineSettingsSection : AsrSettingsSection {
                 preferenceKey = "volc_vad_explained",
                 readPref = { binding.prefs.volcVadEnabled },
                 writePref = { v -> binding.viewModel.updateVolcVad(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -101,7 +101,7 @@ internal class VolcengineSettingsSection : AsrSettingsSection {
                 preferenceKey = "volc_nonstream_explained",
                 readPref = { binding.prefs.volcNonstreamEnabled },
                 writePref = { v -> binding.viewModel.updateVolcNonstream(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -127,7 +127,7 @@ internal class VolcengineSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.volc_lang_fil_ph),
             binding.activity.getString(R.string.volc_lang_ms_my),
             binding.activity.getString(R.string.volc_lang_th_th),
-            binding.activity.getString(R.string.volc_lang_ar_sa)
+            binding.activity.getString(R.string.volc_lang_ar_sa),
         )
         val langCodes = listOf(
             "",
@@ -142,7 +142,7 @@ internal class VolcengineSettingsSection : AsrSettingsSection {
             "fil-PH",
             "ms-MY",
             "th-TH",
-            "ar-SA"
+            "ar-SA",
         )
         val tvVolcLanguage = binding.view<TextView>(R.id.tvVolcLanguageValue)
 

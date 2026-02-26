@@ -3,10 +3,10 @@ package com.brycewg.asrkb.ui.settings.asr.sections
 import android.widget.EditText
 import android.widget.TextView
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.brycewg.asrkb.ui.installExplainedSwitch
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsBinding
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsSection
+import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 
@@ -29,7 +29,7 @@ internal class ElevenLabsSettingsSection : AsrSettingsSection {
                 preferenceKey = "eleven_streaming_explained",
                 readPref = { binding.prefs.elevenStreamingEnabled },
                 writePref = { v -> binding.viewModel.updateElevenStreaming(v) },
-                hapticFeedback = { binding.hapticTapIfEnabled(it) }
+                hapticFeedback = { binding.hapticTapIfEnabled(it) },
             )
         }
 
@@ -51,7 +51,7 @@ internal class ElevenLabsSettingsSection : AsrSettingsSection {
             binding.activity.getString(R.string.eleven_lang_es),
             binding.activity.getString(R.string.eleven_lang_pt),
             binding.activity.getString(R.string.eleven_lang_ru),
-            binding.activity.getString(R.string.eleven_lang_it)
+            binding.activity.getString(R.string.eleven_lang_it),
         )
         val elCodes = listOf("", "zh", "en", "ja", "ko", "de", "fr", "es", "pt", "ru", "it")
         val tvElevenLanguage = binding.view<TextView>(R.id.tvElevenLanguageValue)

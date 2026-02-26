@@ -20,7 +20,7 @@ internal class ProcessingTimeoutController(
     private val opSeqProvider: () -> Long,
     private val audioMsProvider: () -> Long,
     private val usingBackupEngineProvider: () -> Boolean,
-    private val onTimeout: () -> Unit
+    private val onTimeout: () -> Unit,
 ) {
     private var job: Job? = null
 
@@ -51,7 +51,7 @@ internal class ProcessingTimeoutController(
                     // 读取配置失败等异常场景：回退为原有策略（不阻塞、继续计时）
                     Log.w(
                         logTag,
-                        "awaitLocalAsrReady returned false, fallback to immediate timeout countdown"
+                        "awaitLocalAsrReady returned false, fallback to immediate timeout countdown",
                     )
                 }
                 // 若等待期间状态已变化，则不再继续计时
@@ -62,14 +62,14 @@ internal class ProcessingTimeoutController(
             if (currentStateProvider() is KeyboardState.Processing) {
                 debugLog(
                     "processing_timeout_fired",
-                    mapOf("opSeq" to opSeqProvider(), "audioMs" to audioMs, "timeoutMs" to timeoutMs)
+                    mapOf("opSeq" to opSeqProvider(), "audioMs" to audioMs, "timeoutMs" to timeoutMs),
                 )
                 onTimeout()
             }
         }
         debugLog(
             "processing_timeout_scheduled",
-            mapOf("opSeq" to opSeqProvider(), "audioMs" to audioMs, "timeoutMs" to timeoutMs)
+            mapOf("opSeq" to opSeqProvider(), "audioMs" to audioMs, "timeoutMs" to timeoutMs),
         )
     }
 
@@ -101,4 +101,3 @@ internal class ProcessingTimeoutController(
         }
     }
 }
-

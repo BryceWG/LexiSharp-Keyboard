@@ -62,7 +62,7 @@ internal object PrefsLlmVendorStore {
         sp: SharedPreferences,
         json: Json,
         vendor: LlmVendor,
-        sfFreeLlmUsePaidKey: Boolean
+        sfFreeLlmUsePaidKey: Boolean,
     ): List<String> {
         val key = "llm_vendor_${vendor.id}_models_json"
         if (vendor == LlmVendor.SF_FREE && !sfFreeLlmUsePaidKey) {
@@ -142,7 +142,7 @@ internal object PrefsLlmVendorStore {
                             enableReasoning = getLlmVendorReasoningEnabled(sp, vendor),
                             useCustomReasoningParams = !isBuiltinLlmPresetModel(vendor, model, prefs.sfFreeLlmUsePaidKey),
                             reasoningParamsOnJson = getLlmVendorReasoningParamsOnJson(sp, vendor),
-                            reasoningParamsOffJson = getLlmVendorReasoningParamsOffJson(sp, vendor)
+                            reasoningParamsOffJson = getLlmVendorReasoningParamsOffJson(sp, vendor),
                         )
                     }
                 } else {
@@ -150,14 +150,15 @@ internal object PrefsLlmVendorStore {
                     // 实际 API Key 在 LlmPostProcessor 中注入
                     Prefs.EffectiveLlmConfig(
                         endpoint = vendor.endpoint,
-                        apiKey = "", // 免费服务在调用层注入内置 Key
+                        // 免费服务在调用层注入内置 Key
+                        apiKey = "",
                         model = model,
                         temperature = Prefs.DEFAULT_LLM_TEMPERATURE,
                         vendor = vendor,
                         enableReasoning = getLlmVendorReasoningEnabled(sp, vendor),
                         useCustomReasoningParams = !isBuiltinLlmPresetModel(vendor, model, prefs.sfFreeLlmUsePaidKey),
                         reasoningParamsOnJson = getLlmVendorReasoningParamsOnJson(sp, vendor),
-                        reasoningParamsOffJson = getLlmVendorReasoningParamsOffJson(sp, vendor)
+                        reasoningParamsOffJson = getLlmVendorReasoningParamsOffJson(sp, vendor),
                     )
                 }
             }
@@ -174,9 +175,11 @@ internal object PrefsLlmVendorStore {
                         enableReasoning = provider.enableReasoning,
                         useCustomReasoningParams = true,
                         reasoningParamsOnJson = provider.reasoningParamsOnJson,
-                        reasoningParamsOffJson = provider.reasoningParamsOffJson
+                        reasoningParamsOffJson = provider.reasoningParamsOffJson,
                     )
-                } else null
+                } else {
+                    null
+                }
             }
             else -> {
                 // 内置供应商：使用预设端点 + 用户 API Key + 用户选择的模型
@@ -194,7 +197,7 @@ internal object PrefsLlmVendorStore {
                         enableReasoning = getLlmVendorReasoningEnabled(sp, vendor),
                         useCustomReasoningParams = !isBuiltinLlmPresetModel(vendor, model, prefs.sfFreeLlmUsePaidKey),
                         reasoningParamsOnJson = getLlmVendorReasoningParamsOnJson(sp, vendor),
-                        reasoningParamsOffJson = getLlmVendorReasoningParamsOffJson(sp, vendor)
+                        reasoningParamsOffJson = getLlmVendorReasoningParamsOffJson(sp, vendor),
                     )
                 }
             }
@@ -207,7 +210,8 @@ internal object PrefsLlmVendorStore {
             ReasoningMode.THINKING_TYPE -> """{"thinking":{"type":"enabled"}}"""
             ReasoningMode.REASONING_EFFORT -> """{"reasoning_effort":"medium"}"""
             ReasoningMode.MODEL_SELECTION,
-            ReasoningMode.NONE -> Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_ON_JSON
+            ReasoningMode.NONE,
+            -> Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_ON_JSON
         }
     }
 
@@ -219,7 +223,8 @@ internal object PrefsLlmVendorStore {
                 ReasoningMode.THINKING_TYPE -> """{"thinking":{"type":"disabled"}}"""
                 ReasoningMode.REASONING_EFFORT -> """{"reasoning_effort":"none"}"""
                 ReasoningMode.MODEL_SELECTION,
-                ReasoningMode.NONE -> Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_OFF_JSON
+                ReasoningMode.NONE,
+                -> Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_OFF_JSON
             }
         }
     }

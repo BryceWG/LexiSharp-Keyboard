@@ -15,8 +15,8 @@ import android.view.ViewGroup
 import android.widget.ScrollView
 import androidx.core.graphics.ColorUtils
 import androidx.core.widget.NestedScrollView
-import com.brycewg.asrkb.UiColors
 import com.brycewg.asrkb.UiColorTokens
+import com.brycewg.asrkb.UiColors
 
 object SettingsSearchNavigator {
     const val EXTRA_TARGET_VIEW_ID = "extra_target_view_id"
@@ -30,7 +30,7 @@ object SettingsSearchNavigator {
         targetViewId: Int,
         highlight: Boolean = true,
         forceAsrVendorId: String? = null,
-        forceLlmVendorId: String? = null
+        forceLlmVendorId: String? = null,
     ) {
         val intent = Intent(source, activityClass).apply {
             putExtra(EXTRA_TARGET_VIEW_ID, targetViewId)
@@ -122,7 +122,7 @@ object SettingsSearchNavigator {
         return TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             dp,
-            view.resources.displayMetrics
+            view.resources.displayMetrics,
         ).toInt()
     }
 

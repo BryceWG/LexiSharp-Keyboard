@@ -10,7 +10,7 @@ import com.brycewg.asrkb.ui.DownloadSourceConfig
 import com.brycewg.asrkb.ui.DownloadSourceDialog
 
 internal class ModelDownloadUiController(
-    context: Context
+    context: Context,
 ) {
 
     private val uiContext = context
@@ -25,7 +25,7 @@ internal class ModelDownloadUiController(
         @StringRes startedTextResId: Int,
         @StringRes failedTextResId: Int,
         logTag: String,
-        logMessage: String
+        logMessage: String,
     ) {
         downloadButton.isEnabled = false
         statusTextViews.forEach { it.text = "" }
@@ -37,7 +37,7 @@ internal class ModelDownloadUiController(
                 titleRes = R.string.download_source_title,
                 options = options,
                 showCancelButton = false,
-                onDismiss = { downloadButton.isEnabled = true }
+                onDismiss = { downloadButton.isEnabled = true },
             ) { option ->
                 try {
                     if (modelType.isNullOrBlank()) {
@@ -63,4 +63,3 @@ internal class ModelDownloadUiController(
         }
     }
 }
-

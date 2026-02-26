@@ -6,9 +6,9 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
-import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsBinding
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsSection
+import com.brycewg.asrkb.ui.settings.asr.bindString
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 
@@ -23,7 +23,7 @@ internal class SiliconFlowSettingsSection : AsrSettingsSection {
         val isDarkMode =
             (binding.activity.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         imgSfFreePoweredBy.setImageResource(
-            if (isDarkMode) R.drawable.powered_by_siliconflow_dark else R.drawable.powered_by_siliconflow_light
+            if (isDarkMode) R.drawable.powered_by_siliconflow_dark else R.drawable.powered_by_siliconflow_light,
         )
 
         fun updateSfFreeUi(freeEnabled: Boolean) {
@@ -51,7 +51,7 @@ internal class SiliconFlowSettingsSection : AsrSettingsSection {
             binding.showSingleChoiceDialog(
                 titleResId = R.string.label_sf_model_select,
                 items = sfFreeModels.toTypedArray(),
-                currentIndex = curIdx
+                currentIndex = curIdx,
             ) { which ->
                 val selected = sfFreeModels.getOrNull(which) ?: Prefs.DEFAULT_SF_FREE_ASR_MODEL
                 if (selected != binding.prefs.sfFreeAsrModel) {
@@ -81,7 +81,7 @@ internal class SiliconFlowSettingsSection : AsrSettingsSection {
             "Qwen/Qwen3-Omni-30B-A3B-Instruct",
             "Qwen/Qwen3-Omni-30B-A3B-Thinking",
             "TeleAI/TeleSpeechASR",
-            "FunAudioLLM/SenseVoiceSmall"
+            "FunAudioLLM/SenseVoiceSmall",
         )
 
         fun isOmni(model: String): Boolean = model.startsWith("Qwen/Qwen3-Omni-30B-A3B-")
@@ -104,7 +104,7 @@ internal class SiliconFlowSettingsSection : AsrSettingsSection {
             binding.showSingleChoiceDialog(
                 titleResId = R.string.label_sf_model_select,
                 items = sfModels.toTypedArray(),
-                currentIndex = curIdx
+                currentIndex = curIdx,
             ) { which ->
                 val selected = sfModels.getOrNull(which) ?: Prefs.DEFAULT_SF_MODEL
                 if (selected != binding.prefs.sfModel) {

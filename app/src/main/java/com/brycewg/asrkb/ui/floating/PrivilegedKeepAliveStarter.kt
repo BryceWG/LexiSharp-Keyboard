@@ -29,20 +29,20 @@ internal object PrivilegedKeepAliveStarter {
         Requested,
         WaitingForBinder,
         NotInstalled,
-        Failed
+        Failed,
     }
 
     enum class StartMethod {
         Shizuku,
         Root,
-        Normal
+        Normal,
     }
 
     data class StartResult(
         val ok: Boolean,
         val method: StartMethod,
         val exitCode: Int? = null,
-        val stderr: String? = null
+        val stderr: String? = null,
     )
 
     private val binderReadyCallback: () -> Unit = callback@{
@@ -115,7 +115,7 @@ internal object PrivilegedKeepAliveStarter {
                 context,
                 "keepalive",
                 "shizuku_ready_result",
-                mapOf("ok" to (result?.ok == true), "method" to (result?.method?.name?.lowercase() ?: "none"), "exit" to result?.exitCode)
+                mapOf("ok" to (result?.ok == true), "method" to (result?.method?.name?.lowercase() ?: "none"), "exit" to result?.exitCode),
             )
         } catch (t: Throwable) {
             if (BuildConfig.DEBUG) Log.d(TAG, "tryStartByShizukuWhenBinderReady failed", t)
@@ -163,7 +163,7 @@ internal object PrivilegedKeepAliveStarter {
                     context,
                     "keepalive",
                     "start_cooldown_skip",
-                    mapOf("source" to source, "remainMs" to (START_COOLDOWN_MS - (now - last)))
+                    mapOf("source" to source, "remainMs" to (START_COOLDOWN_MS - (now - last))),
                 )
                 return false
             }
@@ -192,8 +192,8 @@ internal object PrivilegedKeepAliveStarter {
                 "method" to "shizuku",
                 "ok" to mapped.ok,
                 "exit" to mapped.exitCode,
-                "err" to mapped.stderr.safeLogSnippet()
-            )
+                "err" to mapped.stderr.safeLogSnippet(),
+            ),
         )
         return mapped
     }
@@ -217,8 +217,8 @@ internal object PrivilegedKeepAliveStarter {
                 "method" to "root",
                 "ok" to mapped.ok,
                 "exit" to mapped.exitCode,
-                "err" to mapped.stderr.safeLogSnippet()
-            )
+                "err" to mapped.stderr.safeLogSnippet(),
+            ),
         )
         return mapped
     }
@@ -236,7 +236,7 @@ internal object PrivilegedKeepAliveStarter {
                     context,
                     "keepalive",
                     "start_result",
-                    mapOf("method" to "normal", "ok" to false, "err" to t.message.safeLogSnippet())
+                    mapOf("method" to "normal", "ok" to false, "err" to t.message.safeLogSnippet()),
                 )
             }
         }
@@ -256,7 +256,7 @@ internal object PrivilegedKeepAliveStarter {
                 StartMethod.Normal -> PrivilegedAccessManager.PrivilegedMethod.None
             },
             exitCode = exitCode,
-            stderr = stderr
+            stderr = stderr,
         )
     }
 

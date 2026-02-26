@@ -7,9 +7,6 @@ import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationP
 import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationResult
 import com.alibaba.dashscope.common.MultiModalMessage
 import com.alibaba.dashscope.common.Role
-import com.alibaba.dashscope.exception.ApiException
-import com.alibaba.dashscope.exception.NoApiKeyException
-import com.alibaba.dashscope.exception.UploadFileException
 import com.alibaba.dashscope.utils.Constants
 import com.alibaba.dashscope.utils.JsonUtils
 import com.brycewg.asrkb.R
@@ -29,7 +26,7 @@ class DashscopeFileAsrEngine(
     scope: CoroutineScope,
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
-    onRequestDuration: ((Long) -> Unit)? = null
+    onRequestDuration: ((Long) -> Unit)? = null,
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration), PcmBatchRecognizer {
 
     companion object {
@@ -58,7 +55,7 @@ class DashscopeFileAsrEngine(
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to materialize WAV file", e)
             listener.onError(
-                context.getString(R.string.error_recognize_failed_with_reason, e.message ?: "")
+                context.getString(R.string.error_recognize_failed_with_reason, e.message ?: ""),
             )
             return
         }
@@ -103,23 +100,31 @@ class DashscopeFileAsrEngine(
             val result: MultiModalConversationResult = conv.call(param)
 
             // 6) 解析结果（沿用原有 JSON 解析逻辑）
-            val json = try { JsonUtils.toJson(result) } catch (e: Throwable) { "" }
+            val json = try {
+                JsonUtils.toJson(result)
+            } catch (e: Throwable) {
+                ""
+            }
             val text = parseDashscopeText(json)
             if (text.isNotBlank()) {
                 val dt = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0)
-                try { onRequestDuration?.invoke(dt) } catch (e: Throwable) {
+                try {
+                    onRequestDuration?.invoke(dt)
+                } catch (e: Throwable) {
                     Log.w(TAG, "Failed to dispatch duration", e)
                 }
                 listener.onFinal(text)
             } else {
                 listener.onError(context.getString(R.string.error_asr_empty_result))
             }
-        }finally {
+        } finally {
             tmp.delete()
         }
     }
 
-    override suspend fun recognizeFromPcm(pcm: ByteArray) { recognize(pcm) }
+    override suspend fun recognizeFromPcm(pcm: ByteArray) {
+        recognize(pcm)
+    }
 
     /**
      * 从 DashScope 响应体中解析转写文本
@@ -152,7 +157,9 @@ class DashscopeFileAsrEngine(
      * 获取文件名的安全方法
      */
     private fun File.nameIfExists(): String {
-        return try { name } catch (t: Throwable) {
+        return try {
+            name
+        } catch (t: Throwable) {
             Log.e(TAG, "Failed to get file name", t)
             "upload.wav"
         }

@@ -3,14 +3,43 @@ package com.brycewg.asrkb.ui.floatingball
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.util.Log
-import android.os.SystemClock
-import android.media.AudioManager
-import android.media.AudioFocusRequest
 import android.media.AudioAttributes
-import com.brycewg.asrkb.asr.*
-import com.brycewg.asrkb.asr.BluetoothRouteManager
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.os.SystemClock
+import android.util.Log
 import com.brycewg.asrkb.asr.AsrTimeoutCalculator
+import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.BluetoothRouteManager
+import com.brycewg.asrkb.asr.DashscopeFileAsrEngine
+import com.brycewg.asrkb.asr.DashscopeStreamAsrEngine
+import com.brycewg.asrkb.asr.ElevenLabsFileAsrEngine
+import com.brycewg.asrkb.asr.ElevenLabsStreamAsrEngine
+import com.brycewg.asrkb.asr.FunAsrNanoFileAsrEngine
+import com.brycewg.asrkb.asr.GeminiFileAsrEngine
+import com.brycewg.asrkb.asr.LOCAL_MODEL_READY_WAIT_MAX_MS
+import com.brycewg.asrkb.asr.LlmPostProcessor
+import com.brycewg.asrkb.asr.OpenAiFileAsrEngine
+import com.brycewg.asrkb.asr.ParaformerStreamAsrEngine
+import com.brycewg.asrkb.asr.ParallelAsrEngine
+import com.brycewg.asrkb.asr.SenseVoiceFileAsrEngine
+import com.brycewg.asrkb.asr.SenseVoicePseudoStreamAsrEngine
+import com.brycewg.asrkb.asr.SiliconFlowFileAsrEngine
+import com.brycewg.asrkb.asr.SonioxFileAsrEngine
+import com.brycewg.asrkb.asr.SonioxStreamAsrEngine
+import com.brycewg.asrkb.asr.StreamingAsrEngine
+import com.brycewg.asrkb.asr.TelespeechFileAsrEngine
+import com.brycewg.asrkb.asr.TelespeechPseudoStreamAsrEngine
+import com.brycewg.asrkb.asr.VolcFileAsrEngine
+import com.brycewg.asrkb.asr.VolcStandardFileAsrEngine
+import com.brycewg.asrkb.asr.VolcStreamAsrEngine
+import com.brycewg.asrkb.asr.ZhipuFileAsrEngine
+import com.brycewg.asrkb.asr.awaitLocalAsrReady
+import com.brycewg.asrkb.asr.isFunAsrNanoPrepared
+import com.brycewg.asrkb.asr.isLocalAsrReady
+import com.brycewg.asrkb.asr.isLocalAsrVendor
+import com.brycewg.asrkb.asr.isSenseVoicePrepared
+import com.brycewg.asrkb.asr.isTelespeechPrepared
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.AsrAccessibilityService.FocusContext
@@ -30,7 +59,7 @@ class AsrSessionManager(
     private val context: Context,
     private val prefs: Prefs,
     private val serviceScope: CoroutineScope,
-    private val listener: AsrSessionListener
+    private val listener: AsrSessionListener,
 ) : StreamingAsrEngine.Listener {
 
     companion object {
@@ -60,20 +89,31 @@ class AsrSessionManager(
     // 统计：录音时长
     private var sessionStartUptimeMs: Long = 0L
     private var lastAudioMsForStats: Long = 0L
+
     // 统计/历史：端到端耗时起点（从开始录音到最终提交完成）
     private var sessionStartTotalUptimeMs: Long = 0L
+
     // 统计：非流式请求处理耗时（毫秒）
     private var lastRequestDurationMs: Long? = null
+
     // 本地模型：Processing 阶段等待“模型就绪”的耗时（用于将处理耗时统计从模型就绪开始）
     private val localModelReadyWaitMs = AtomicLong(0L)
+
     // 标记：最近一次提交是否实际使用了 AI 输出
     private var lastAiUsed: Boolean = false
+
     // 统计/历史：最近一次 AI 后处理耗时与状态
     private var lastAiPostMs: Long = 0L
     private var lastAiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+
     // 统计/历史：最近一次最终结果的实际供应商（备用引擎场景下不再固定记录 prefs.asrVendor）
-    private var sessionPrimaryVendor: AsrVendor = try { prefs.asrVendor } catch (_: Throwable) { AsrVendor.Volc }
+    private var sessionPrimaryVendor: AsrVendor = try {
+        prefs.asrVendor
+    } catch (_: Throwable) {
+        AsrVendor.Volc
+    }
     private var lastFinalVendorForStats: AsrVendor? = null
+
     // 音频焦点请求句柄
     private var audioFocusRequest: AudioFocusRequest? = null
 
@@ -99,7 +139,9 @@ class AsrSessionManager(
         } finally {
             lastFinalVendorForStats = null
         }
-        try { sessionStartUptimeMs = SystemClock.uptimeMillis() } catch (t: Throwable) {
+        try {
+            sessionStartUptimeMs = SystemClock.uptimeMillis()
+        } catch (t: Throwable) {
             Log.w(TAG, "Failed to read uptime for session start", t)
             sessionStartUptimeMs = 0L
         }
@@ -158,7 +200,11 @@ class AsrSessionManager(
         // 启动引擎
         listener.onSessionStateChanged(FloatingBallState.Recording)
         asrEngine?.start()
-        try { BluetoothRouteManager.onRecordingStarted(context) } catch (t: Throwable) { Log.w(TAG, "BluetoothRouteManager onRecordingStarted", t) }
+        try {
+            BluetoothRouteManager.onRecordingStarted(context)
+        } catch (t: Throwable) {
+            Log.w(TAG, "BluetoothRouteManager onRecordingStarted", t)
+        }
     }
 
     /** 停止录音 */
@@ -172,7 +218,11 @@ class AsrSessionManager(
         } catch (t: Throwable) {
             Log.w(TAG, "abandonAudioFocusIfNeeded failed on stopRecording", t)
         }
-        try { BluetoothRouteManager.onRecordingStopped(context) } catch (t: Throwable) { Log.w(TAG, "BluetoothRouteManager onRecordingStopped", t) }
+        try {
+            BluetoothRouteManager.onRecordingStopped(context)
+        } catch (t: Throwable) {
+            Log.w(TAG, "BluetoothRouteManager onRecordingStopped", t)
+        }
 
         // 进入处理阶段
         listener.onSessionStateChanged(FloatingBallState.Processing)
@@ -264,11 +314,11 @@ class AsrSessionManager(
                 return@launch
             }
 
-	            var finalText = text
-	            lastAiUsed = false
-	            lastAiPostMs = 0L
-	            lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
-	            val stillRecording = (asrEngine?.isRunning == true)
+            var finalText = text
+            lastAiUsed = false
+            lastAiPostMs = 0L
+            lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+            val stillRecording = (asrEngine?.isRunning == true)
             // 若未收到 onStopped，则在此近似计算录音时长
             if (lastAudioMsForStats == 0L && sessionStartUptimeMs > 0L) {
                 try {
@@ -290,7 +340,11 @@ class AsrSessionManager(
                 if (lastPartialForPreview.isNullOrEmpty()) {
                     updatePreviewText(text)
                 }
-                val typewriterEnabled = try { prefs.postprocTypewriterEnabled } catch (_: Throwable) { true }
+                val typewriterEnabled = try {
+                    prefs.postprocTypewriterEnabled
+                } catch (_: Throwable) {
+                    true
+                }
                 var postprocCommitted = false
                 val typewriter = if (typewriterEnabled) {
                     TypewriterTextAnimator(
@@ -302,7 +356,7 @@ class AsrSessionManager(
                         frameDelayMs = 60L,
                         idleStopDelayMs = 1200L,
                         normalTargetFrames = 12,
-                        normalMaxStep = 8
+                        normalMaxStep = 8,
                     )
                 } else {
                     null
@@ -324,34 +378,38 @@ class AsrSessionManager(
                         prefs,
                         text,
                         postproc,
-                        onStreamingUpdate = onStreamingUpdate
+                        onStreamingUpdate = onStreamingUpdate,
                     )
-	                } catch (t: Throwable) {
-	                    Log.e(TAG, "applyWithAi failed", t)
-	                    com.brycewg.asrkb.asr.LlmPostProcessor.LlmProcessResult(
-	                        ok = false,
-	                        text = text,
-	                        errorMessage = t.message,
-	                        httpCode = null,
-	                        usedAi = false,
-	                        attempted = true,
-	                        llmMs = 0
-	                    )
-	                }
-	                if (!res.ok) Log.w(TAG, "Post-processing failed; using processed text anyway")
-	                val aiUsed = (res.usedAi && res.ok)
-	                lastAiPostMs = if (res.attempted) res.llmMs else 0L
-	                lastAiPostStatus = when {
-	                    res.attempted && aiUsed -> AsrHistoryStore.AiPostStatus.SUCCESS
-	                    res.attempted -> AsrHistoryStore.AiPostStatus.FAILED
-	                    else -> AsrHistoryStore.AiPostStatus.NONE
-	                }
-	                finalText = res.text.ifBlank { text }
+                } catch (t: Throwable) {
+                    Log.e(TAG, "applyWithAi failed", t)
+                    com.brycewg.asrkb.asr.LlmPostProcessor.LlmProcessResult(
+                        ok = false,
+                        text = text,
+                        errorMessage = t.message,
+                        httpCode = null,
+                        usedAi = false,
+                        attempted = true,
+                        llmMs = 0,
+                    )
+                }
+                if (!res.ok) Log.w(TAG, "Post-processing failed; using processed text anyway")
+                val aiUsed = (res.usedAi && res.ok)
+                lastAiPostMs = if (res.attempted) res.llmMs else 0L
+                lastAiPostStatus = when {
+                    res.attempted && aiUsed -> AsrHistoryStore.AiPostStatus.SUCCESS
+                    res.attempted -> AsrHistoryStore.AiPostStatus.FAILED
+                    else -> AsrHistoryStore.AiPostStatus.NONE
+                }
+                finalText = res.text.ifBlank { text }
                 if (typewriter != null && aiUsed && finalText.isNotEmpty() && focusContext != null) {
                     // 最终结果到达后：让打字机以最快速度追到最终文本，再进行最终提交
                     typewriter.submit(finalText, rush = true)
                     val finalLen = finalText.length
-                    val t0 = try { SystemClock.uptimeMillis() } catch (_: Throwable) { 0L }
+                    val t0 = try {
+                        SystemClock.uptimeMillis()
+                    } catch (_: Throwable) {
+                        0L
+                    }
                     while (!postprocCommitted &&
                         (t0 <= 0L || (SystemClock.uptimeMillis() - t0) < 2_000L) &&
                         typewriter.currentText().length != finalLen
@@ -359,16 +417,16 @@ class AsrSessionManager(
                         delay(20)
                     }
                 }
-	                postprocCommitted = true
-	                typewriter?.cancel()
-	                lastAiUsed = aiUsed
-	                Log.d(TAG, "Post-processing completed: $finalText")
-	            } else {
-	                finalText = com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, text)
-	                lastAiUsed = false
-	                lastAiPostMs = 0L
-	                lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
-	            }
+                postprocCommitted = true
+                typewriter?.cancel()
+                lastAiUsed = aiUsed
+                Log.d(TAG, "Post-processing completed: $finalText")
+            } else {
+                finalText = com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, text)
+                lastAiUsed = false
+                lastAiPostMs = 0L
+                lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+            }
 
             // 更新状态
             if (asrEngine?.isRunning == true) {
@@ -385,7 +443,7 @@ class AsrSessionManager(
                     android.widget.Toast.makeText(
                         context,
                         context.getString(com.brycewg.asrkb.R.string.toast_backup_asr_used),
-                        android.widget.Toast.LENGTH_SHORT
+                        android.widget.Toast.LENGTH_SHORT,
                     ).show()
                 }
             } else {
@@ -506,7 +564,9 @@ class AsrSessionManager(
             prefs.asrVendor != AsrVendor.SenseVoice &&
             prefs.asrVendor != AsrVendor.FunAsrNano &&
             prefs.asrVendor != AsrVendor.Telespeech
-        ) return true
+        ) {
+            return true
+        }
 
         val prepared = try {
             when (prefs.asrVendor) {
@@ -581,7 +641,7 @@ class AsrSessionManager(
                 listener = this,
                 primaryVendor = primaryVendor,
                 backupVendor = backupVendor,
-                onPrimaryRequestDuration = ::onRequestDuration
+                onPrimaryRequestDuration = ::onRequestDuration,
             )
         }
 
@@ -596,40 +656,56 @@ class AsrSessionManager(
                         VolcFileAsrEngine(context, serviceScope, prefs, this, onRequestDuration = ::onRequestDuration)
                     }
                 }
-            } else null
+            } else {
+                null
+            }
             AsrVendor.SiliconFlow -> if (prefs.hasSfKeys()) {
                 SiliconFlowFileAsrEngine(context, serviceScope, prefs, this, onRequestDuration = ::onRequestDuration)
-            } else null
+            } else {
+                null
+            }
             AsrVendor.ElevenLabs -> if (prefs.hasElevenKeys()) {
                 if (prefs.elevenStreamingEnabled) {
                     ElevenLabsStreamAsrEngine(context, serviceScope, prefs, this)
                 } else {
                     ElevenLabsFileAsrEngine(context, serviceScope, prefs, this, onRequestDuration = ::onRequestDuration)
                 }
-            } else null
+            } else {
+                null
+            }
             AsrVendor.OpenAI -> if (prefs.hasOpenAiKeys()) {
                 OpenAiFileAsrEngine(context, serviceScope, prefs, this, onRequestDuration = ::onRequestDuration)
-            } else null
+            } else {
+                null
+            }
             AsrVendor.DashScope -> if (prefs.hasDashKeys()) {
                 if (prefs.isDashStreamingModelSelected()) {
                     DashscopeStreamAsrEngine(context, serviceScope, prefs, this)
                 } else {
                     DashscopeFileAsrEngine(context, serviceScope, prefs, this, onRequestDuration = ::onRequestDuration)
                 }
-            } else null
+            } else {
+                null
+            }
             AsrVendor.Gemini -> if (prefs.hasGeminiKeys()) {
                 GeminiFileAsrEngine(context, serviceScope, prefs, this, onRequestDuration = ::onRequestDuration)
-            } else null
+            } else {
+                null
+            }
             AsrVendor.Soniox -> if (prefs.hasSonioxKeys()) {
                 if (prefs.sonioxStreamingEnabled) {
                     SonioxStreamAsrEngine(context, serviceScope, prefs, this)
                 } else {
                     SonioxFileAsrEngine(context, serviceScope, prefs, this, onRequestDuration = ::onRequestDuration)
                 }
-            } else null
+            } else {
+                null
+            }
             AsrVendor.Zhipu -> if (prefs.hasZhipuKeys()) {
                 ZhipuFileAsrEngine(context, serviceScope, prefs, this, onRequestDuration = ::onRequestDuration)
-            } else null
+            } else {
+                null
+            }
             AsrVendor.SenseVoice -> {
                 if (prefs.svPseudoStreamEnabled) {
                     SenseVoicePseudoStreamAsrEngine(context, serviceScope, prefs, this, onRequestDuration = ::onRequestDuration)
@@ -655,7 +731,11 @@ class AsrSessionManager(
     }
 
     private fun shouldUseBackupAsr(primaryVendor: AsrVendor, backupVendor: AsrVendor): Boolean {
-        val enabled = try { prefs.backupAsrEnabled } catch (_: Throwable) { false }
+        val enabled = try {
+            prefs.backupAsrEnabled
+        } catch (_: Throwable) {
+            false
+        }
         if (!enabled) return false
         if (backupVendor == primaryVendor) return false
         return try {
@@ -695,14 +775,26 @@ class AsrSessionManager(
                 false
             }
             if (shouldDeferForLocalModel) {
-                val wasReady = try { isLocalAsrReady(prefs) } catch (_: Throwable) { false }
-                val t0 = try { SystemClock.uptimeMillis() } catch (_: Throwable) { 0L }
+                val wasReady = try {
+                    isLocalAsrReady(prefs)
+                } catch (_: Throwable) {
+                    false
+                }
+                val t0 = try {
+                    SystemClock.uptimeMillis()
+                } catch (_: Throwable) {
+                    0L
+                }
                 val ok = awaitLocalAsrReady(prefs, maxWaitMs = LOCAL_MODEL_READY_WAIT_MAX_MS)
                 if (!ok) {
                     Log.w(TAG, "awaitLocalAsrReady returned false, fallback to immediate timeout countdown")
                 }
                 if (ok && !wasReady && t0 > 0L) {
-                    val t1 = try { SystemClock.uptimeMillis() } catch (_: Throwable) { 0L }
+                    val t1 = try {
+                        SystemClock.uptimeMillis()
+                    } catch (_: Throwable) {
+                        0L
+                    }
                     if (t1 >= t0) {
                         localModelReadyWaitMs.compareAndSet(0L, (t1 - t0).coerceAtLeast(0L))
                     }
@@ -726,31 +818,31 @@ class AsrSessionManager(
             return
         }
 
-	        val textOut = if (prefs.postProcessEnabled && prefs.hasLlmKeys()) {
-	            try {
-	                val res = com.brycewg.asrkb.util.AsrFinalFilters.applyWithAi(context, prefs, candidate, postproc)
-	                val aiUsed = (res.usedAi && res.ok)
-	                lastAiUsed = aiUsed
-	                lastAiPostMs = if (res.attempted) res.llmMs else 0L
-	                lastAiPostStatus = when {
-	                    res.attempted && aiUsed -> AsrHistoryStore.AiPostStatus.SUCCESS
-	                    res.attempted -> AsrHistoryStore.AiPostStatus.FAILED
-	                    else -> AsrHistoryStore.AiPostStatus.NONE
-	                }
-	                res.text.ifBlank { com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, candidate) }
-	            } catch (t: Throwable) {
-	                Log.e(TAG, "applyWithAi failed in timeout fallback", t)
-	                lastAiUsed = false
-	                lastAiPostMs = 0L
-	                lastAiPostStatus = AsrHistoryStore.AiPostStatus.FAILED
-	                com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, candidate)
-	            }
-	        } else {
-	            lastAiUsed = false
-	            lastAiPostMs = 0L
-	            lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
-	            com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, candidate)
-	        }
+        val textOut = if (prefs.postProcessEnabled && prefs.hasLlmKeys()) {
+            try {
+                val res = com.brycewg.asrkb.util.AsrFinalFilters.applyWithAi(context, prefs, candidate, postproc)
+                val aiUsed = (res.usedAi && res.ok)
+                lastAiUsed = aiUsed
+                lastAiPostMs = if (res.attempted) res.llmMs else 0L
+                lastAiPostStatus = when {
+                    res.attempted && aiUsed -> AsrHistoryStore.AiPostStatus.SUCCESS
+                    res.attempted -> AsrHistoryStore.AiPostStatus.FAILED
+                    else -> AsrHistoryStore.AiPostStatus.NONE
+                }
+                res.text.ifBlank { com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, candidate) }
+            } catch (t: Throwable) {
+                Log.e(TAG, "applyWithAi failed in timeout fallback", t)
+                lastAiUsed = false
+                lastAiPostMs = 0L
+                lastAiPostStatus = AsrHistoryStore.AiPostStatus.FAILED
+                com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, candidate)
+            }
+        } else {
+            lastAiUsed = false
+            lastAiPostMs = 0L
+            lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+            com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, candidate)
+        }
 
         val success = insertTextToFocus(textOut)
         Log.d(TAG, "Fallback inserted=$success text='$textOut'")
@@ -787,7 +879,7 @@ class AsrSessionManager(
                 android.widget.Toast.makeText(
                     context,
                     context.getString(com.brycewg.asrkb.R.string.floating_asr_copied),
-                    android.widget.Toast.LENGTH_SHORT
+                    android.widget.Toast.LENGTH_SHORT,
                 ).show()
             } catch (e: Throwable) {
                 Log.e(TAG, "Failed to copy to clipboard (writePaste)", e)
@@ -875,7 +967,6 @@ class AsrSessionManager(
         }
         lastPartialForPreview = text
     }
-
 
     private fun isPackageInCompatTargets(pkg: String): Boolean {
         val raw = try {

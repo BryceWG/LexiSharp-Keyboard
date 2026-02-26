@@ -32,7 +32,7 @@ class SettingsSearchActivity : BaseActivity() {
     private data class Row(
         val entry: SettingsSearchEntry,
         val titleNormalized: String,
-        val searchNormalized: String
+        val searchNormalized: String,
     )
 
     private lateinit var prefs: Prefs
@@ -48,11 +48,11 @@ class SettingsSearchActivity : BaseActivity() {
                 targetViewId = entry.targetViewId,
                 highlight = true,
                 forceAsrVendorId = entry.forceAsrVendorId,
-                forceLlmVendorId = entry.forceLlmVendorId
+                forceLlmVendorId = entry.forceLlmVendorId,
             )
             finish()
         },
-        screenTitleProvider = { getString(it) }
+        screenTitleProvider = { getString(it) },
     )
 
     private var allRows: List<Row> = emptyList()
@@ -117,7 +117,7 @@ class SettingsSearchActivity : BaseActivity() {
             Row(
                 entry = e,
                 titleNormalized = normalizeForSearch(e.title),
-                searchNormalized = normalizeForSearch(searchText)
+                searchNormalized = normalizeForSearch(searchText),
             )
         }
     }
@@ -148,8 +148,8 @@ class SettingsSearchActivity : BaseActivity() {
                     compareBy<Pair<SettingsSearchEntry, Int>>(
                         { it.second },
                         { it.first.sectionPath.size },
-                        { it.first.title }
-                    )
+                        { it.first.title },
+                    ),
                 )
                 .map { it.first }
                 .toList()
@@ -168,7 +168,7 @@ class SettingsSearchActivity : BaseActivity() {
 
     private data class QueryParts(
         val normalizedAll: String,
-        val normalizedTerms: List<String>
+        val normalizedTerms: List<String>,
     ) {
         companion object {
             fun from(raw: String, normalizer: (String) -> String): QueryParts {
@@ -315,7 +315,7 @@ class SettingsSearchActivity : BaseActivity() {
 
     private class ResultAdapter(
         private val onClick: (View, SettingsSearchEntry) -> Unit,
-        private val screenTitleProvider: (Int) -> String
+        private val screenTitleProvider: (Int) -> String,
     ) : ListAdapter<SettingsSearchEntry, ResultAdapter.VH>(Diff) {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -331,7 +331,7 @@ class SettingsSearchActivity : BaseActivity() {
         class VH(
             itemView: View,
             private val onClick: (View, SettingsSearchEntry) -> Unit,
-            private val screenTitleProvider: (Int) -> String
+            private val screenTitleProvider: (Int) -> String,
         ) : RecyclerView.ViewHolder(itemView) {
             private val tvTitle: TextView = itemView.findViewById(R.id.tvTitle)
             private val tvSubtitle: TextView = itemView.findViewById(R.id.tvSubtitle)

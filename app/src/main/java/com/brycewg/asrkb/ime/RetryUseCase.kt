@@ -12,7 +12,7 @@ internal class RetryUseCase(
     private val transitionToState: (KeyboardState) -> Unit,
     private val transitionToIdle: () -> Unit,
     private val scheduleProcessingTimeout: () -> Unit,
-    private val logTag: String
+    private val logTag: String,
 ) {
     fun shouldOfferRetry(message: String): Boolean {
         val engine = try {
@@ -38,7 +38,7 @@ internal class RetryUseCase(
             "host",
             "unreachable",
             "rate",
-            "too many requests"
+            "too many requests",
         )
         val looksNetwork = networkKeywords.any { kw -> kw in message || kw in msgLower }
         if (!looksNetwork) return false
@@ -69,4 +69,3 @@ internal class RetryUseCase(
         }
     }
 }
-

@@ -143,10 +143,14 @@ class FloatingAsrService : Service() {
                 addAction(FloatingImeHints.ACTION_HINT_IME_HIDDEN)
             }
             ContextCompat.registerReceiver(
-                /* context = */ this,
-                /* receiver = */ hintReceiver,
-                /* filter = */ filter,
-                /* flags = */ ContextCompat.RECEIVER_NOT_EXPORTED,
+                /* context = */
+                this,
+                /* receiver = */
+                hintReceiver,
+                /* filter = */
+                filter,
+                /* flags = */
+                ContextCompat.RECEIVER_NOT_EXPORTED,
             )
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to register hint receiver", e)
@@ -164,7 +168,11 @@ class FloatingAsrService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val enabled = try { prefs.floatingAsrEnabled } catch (_: Throwable) { false }
+        val enabled = try {
+            prefs.floatingAsrEnabled
+        } catch (_: Throwable) {
+            false
+        }
         Log.d(TAG, "onStartCommand: action=${intent?.action}, floatingAsrEnabled=$enabled")
 
         when (intent?.action) {

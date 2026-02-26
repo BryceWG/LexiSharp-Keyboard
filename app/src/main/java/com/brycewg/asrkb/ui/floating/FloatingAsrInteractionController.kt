@@ -202,11 +202,22 @@ internal class FloatingAsrInteractionController(
 
     private fun scheduleEdgeHandleAutoHide() {
         cancelEdgeHandleAutoHide()
-        if (try { prefs.floatingSwitcherOnlyWhenImeVisible } catch (_: Throwable) { false }) return
+        if (try {
+                prefs.floatingSwitcherOnlyWhenImeVisible
+            } catch (_: Throwable) {
+                false
+            }
+        ) {
+            return
+        }
 
         val runnable = Runnable {
             try {
-                val completionActive = try { viewManager.isCompletionTickActive() } catch (_: Throwable) { false }
+                val completionActive = try {
+                    viewManager.isCompletionTickActive()
+                } catch (_: Throwable) {
+                    false
+                }
                 val imeVisible = isImeVisible()
                 val forceVisible = isForceVisibleActive()
                 if (!imeVisible &&
@@ -260,13 +271,24 @@ internal class FloatingAsrInteractionController(
                     val totalElapsedMs = asrSessionManager.popLastTotalElapsedMsForStats()
                     val procMs = asrSessionManager.getLastRequestDuration() ?: 0L
                     val chars = com.brycewg.asrkb.util.TextSanitizer.countEffectiveChars(text)
-                    val ai = try { asrSessionManager.wasLastAiUsed() } catch (_: Throwable) { false }
-                    val aiPostMs = try { asrSessionManager.getLastAiPostMs() } catch (_: Throwable) { 0L }
+                    val ai = try {
+                        asrSessionManager.wasLastAiUsed()
+                    } catch (_: Throwable) {
+                        false
+                    }
+                    val aiPostMs = try {
+                        asrSessionManager.getLastAiPostMs()
+                    } catch (_: Throwable) {
+                        0L
+                    }
                     val aiPostStatus = try {
                         asrSessionManager.getLastAiPostStatus()
                     } catch (_: Throwable) {
-                        if (ai) com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.SUCCESS
-                        else com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
+                        if (ai) {
+                            com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.SUCCESS
+                        } else {
+                            com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
+                        }
                     }
                     val vendorForRecord = try {
                         asrSessionManager.peekLastFinalVendorForStats()
@@ -849,7 +871,12 @@ internal class FloatingAsrInteractionController(
             )
             add(
                 FloatingMenuHelper.MenuItem(
-                    if (try { prefs.autoStopOnSilenceEnabled } catch (_: Throwable) { false }) {
+                    if (try {
+                            prefs.autoStopOnSilenceEnabled
+                        } catch (_: Throwable) {
+                            false
+                        }
+                    ) {
                         R.drawable.hand_palm_fill
                     } else {
                         R.drawable.hand_palm
@@ -860,7 +887,12 @@ internal class FloatingAsrInteractionController(
             )
             add(
                 FloatingMenuHelper.MenuItem(
-                    if (try { prefs.postProcessEnabled } catch (_: Throwable) { false }) {
+                    if (try {
+                            prefs.postProcessEnabled
+                        } catch (_: Throwable) {
+                            false
+                        }
+                    ) {
                         R.drawable.magic_wand_fill
                     } else {
                         R.drawable.magic_wand
@@ -877,7 +909,12 @@ internal class FloatingAsrInteractionController(
                 ) { showHistoryPanelFromMenu() },
             )
 
-            if (try { prefs.syncClipboardEnabled } catch (_: Throwable) { false }) {
+            if (try {
+                    prefs.syncClipboardEnabled
+                } catch (_: Throwable) {
+                    false
+                }
+            ) {
                 add(
                     FloatingMenuHelper.MenuItem(
                         R.drawable.cloud_arrow_up,
@@ -971,4 +1008,3 @@ internal class FloatingAsrInteractionController(
         HapticFeedbackHelper.performTap(context, prefs, view)
     }
 }
-

@@ -12,11 +12,11 @@ internal class ExtensionButtonActionDispatcher(
     private val inputHelper: InputConnectionHelper,
     private val uiListenerProvider: () -> KeyboardActionHandler.UiListener?,
     private val handleUndo: (InputConnection) -> Boolean,
-    private val logTag: String
+    private val logTag: String,
 ) {
     fun dispatch(
         action: ExtensionButtonAction,
-        ic: InputConnection?
+        ic: InputConnection?,
     ): KeyboardActionHandler.ExtensionButtonActionResult {
         return when (action) {
             ExtensionButtonAction.NONE -> KeyboardActionHandler.ExtensionButtonActionResult.SUCCESS
@@ -122,4 +122,3 @@ internal class ExtensionButtonActionDispatcher(
         }
     }
 }
-

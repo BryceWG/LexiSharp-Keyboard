@@ -19,7 +19,7 @@ internal class PromptApplyUseCase(
     private val saveUndoSnapshot: (InputConnection) -> Unit,
     private val getLastAsrCommitText: () -> String?,
     private val updateSessionContext: ((KeyboardSessionContext) -> KeyboardSessionContext) -> Unit,
-    private val logTag: String
+    private val logTag: String,
 ) {
     fun apply(ic: InputConnection?, promptOverride: String?) {
         if (ic == null) return
@@ -40,7 +40,7 @@ internal class PromptApplyUseCase(
                     target.text,
                     llmPostProcessor,
                     promptOverride = promptOverride,
-                    forceAi = true
+                    forceAi = true,
                 )
             } catch (t: Throwable) {
                 Log.e(logTag, "apply prompt failed", t)
@@ -78,7 +78,7 @@ internal class PromptApplyUseCase(
                         PostprocCommit(processed = out, raw = target.text)
                     } else {
                         null
-                    }
+                    },
                 )
             }
 
@@ -92,13 +92,13 @@ internal class PromptApplyUseCase(
 
     private data class Target(
         val mode: TargetMode,
-        val text: String
+        val text: String,
     )
 
     private enum class TargetMode {
         SELECTION,
         LAST_ASR,
-        ENTIRE
+        ENTIRE,
     }
 
     private fun resolveTargetText(ic: InputConnection): Target? {
@@ -124,4 +124,3 @@ internal class PromptApplyUseCase(
         return Target(TargetMode.ENTIRE, all)
     }
 }
-

@@ -18,7 +18,7 @@ sealed class KeyboardState {
     data class Listening(
         val partialText: String? = null,
         val committedStableLen: Int = 0,
-        val lockedBySwipe: Boolean = false
+        val lockedBySwipe: Boolean = false,
     ) : KeyboardState()
 
     /**
@@ -41,7 +41,7 @@ sealed class KeyboardState {
     data class AiEditListening(
         val targetIsSelection: Boolean,
         val targetText: String,
-        val instruction: String? = null
+        val instruction: String? = null,
     ) : KeyboardState()
 
     /**
@@ -53,7 +53,7 @@ sealed class KeyboardState {
     data class AiEditProcessing(
         val targetIsSelection: Boolean,
         val targetText: String,
-        val instruction: String
+        val instruction: String,
     ) : KeyboardState()
 }
 
@@ -62,7 +62,7 @@ sealed class KeyboardState {
  */
 data class UndoSnapshot(
     val beforeCursor: CharSequence,
-    val afterCursor: CharSequence
+    val afterCursor: CharSequence,
 )
 
 /**
@@ -70,7 +70,7 @@ data class UndoSnapshot(
  */
 data class PostprocCommit(
     val processed: String,
-    val raw: String
+    val raw: String,
 )
 
 /**
@@ -78,7 +78,7 @@ data class PostprocCommit(
  */
 enum class ClipboardPreviewType {
     TEXT,
-    FILE
+    FILE,
 }
 
 /**
@@ -88,7 +88,7 @@ data class ClipboardPreview(
     val fullText: String,
     val displaySnippet: String,
     val type: ClipboardPreviewType = ClipboardPreviewType.TEXT,
-    val fileEntryId: String? = null
+    val fileEntryId: String? = null,
 )
 
 /**
@@ -99,5 +99,5 @@ data class KeyboardSessionContext(
     val lastPostprocCommit: PostprocCommit? = null,
     val undoSnapshot: UndoSnapshot? = null,
     val lastRequestDurationMs: Long? = null,
-    val clipboardPreview: ClipboardPreview? = null
+    val clipboardPreview: ClipboardPreview? = null,
 )

@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class SpeechPreset(
     val id: String,
     val name: String,
-    val content: String
+    val content: String,
 )

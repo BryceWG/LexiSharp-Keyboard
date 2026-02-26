@@ -8,26 +8,26 @@ package com.brycewg.asrkb.ui.settings.floating
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.core.net.toUri
-import com.brycewg.asrkb.ui.BaseActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.BaseActivity
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
 import com.brycewg.asrkb.ui.installExplainedSwitch
 import com.brycewg.asrkb.ui.settings.search.SettingsSearchNavigator
+import com.brycewg.asrkb.util.HapticFeedbackHelper
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.button.MaterialButton
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.View
-import android.util.Log
-import com.brycewg.asrkb.util.HapticFeedbackHelper
 import kotlinx.coroutines.launch
 
 class FloatingSettingsActivity : BaseActivity() {
@@ -55,7 +55,6 @@ class FloatingSettingsActivity : BaseActivity() {
     private lateinit var switchFloatingWritePaste: MaterialSwitch
     private lateinit var etFloatingWritePastePkgs: TextInputEditText
     private lateinit var btnResetFloatingPos: MaterialButton
-    
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -199,7 +198,9 @@ class FloatingSettingsActivity : BaseActivity() {
             onDescRes = R.string.feature_floating_only_when_ime_visible_on_desc,
             preferenceKey = "floating_only_when_ime_visible_explained",
             readPref = { viewModel.onlyWhenImeVisible.value },
-            writePref = { v -> /* handled in onChanged */ },
+            writePref = { v ->
+                // handled in onChanged
+            },
             preCheck = { target ->
                 // 检查权限
                 val permissionRequest = viewModel.handleOnlyWhenImeVisibleToggle(this, target, serviceManager)
@@ -214,7 +215,7 @@ class FloatingSettingsActivity : BaseActivity() {
             onChanged = { enabled ->
                 // 权限检查通过后的额外处理已在 preCheck 中的 handleOnlyWhenImeVisibleToggle 完成
             },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
 
         // 直接拖动移动悬浮球
@@ -226,7 +227,7 @@ class FloatingSettingsActivity : BaseActivity() {
             preferenceKey = "floating_direct_drag_explained",
             readPref = { viewModel.directDragEnabled.value },
             writePref = { v -> viewModel.handleDirectDragToggle(this, v) },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
 
         // 悬浮窗透明度
@@ -269,7 +270,9 @@ class FloatingSettingsActivity : BaseActivity() {
             onDescRes = R.string.feature_floating_asr_on_desc,
             preferenceKey = "floating_asr_explained",
             readPref = { viewModel.asrEnabled.value },
-            writePref = { v -> /* handled in onChanged */ },
+            writePref = { v ->
+                // handled in onChanged
+            },
             preCheck = { target ->
                 // 检查权限
                 val permissionRequest = viewModel.handleAsrToggle(this, target, serviceManager)
@@ -298,7 +301,7 @@ class FloatingSettingsActivity : BaseActivity() {
             onChanged = { enabled ->
                 // 权限检查通过后的额外处理已在 preCheck 中的 handleAsrToggle 完成
             },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
 
         // 悬浮球写入文字兼容性模式
@@ -310,7 +313,7 @@ class FloatingSettingsActivity : BaseActivity() {
             preferenceKey = "floating_write_compat_explained",
             readPref = { viewModel.writeCompatEnabled.value },
             writePref = { v -> viewModel.handleWriteCompatToggle(this, v) },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
 
         // 悬浮球写入文字采取粘贴方案
@@ -322,7 +325,7 @@ class FloatingSettingsActivity : BaseActivity() {
             preferenceKey = "floating_write_paste_explained",
             readPref = { viewModel.writePasteEnabled.value },
             writePref = { v -> viewModel.handleWritePasteToggle(this, v) },
-            hapticFeedback = { hapticTapIfEnabled(it) }
+            hapticFeedback = { hapticTapIfEnabled(it) },
         )
 
         // 重置悬浮球位置
@@ -349,7 +352,6 @@ class FloatingSettingsActivity : BaseActivity() {
                 viewModel.updateWritePastePackages(this@FloatingSettingsActivity, s?.toString() ?: "")
             }
         })
-
     }
 
     /**
@@ -440,7 +442,8 @@ class FloatingSettingsActivity : BaseActivity() {
 
             // overlay 已授予且之前是 overlay 阶段触发的请求，则自动进入无障碍授权
             if (hasOverlay && !hasA11y &&
-                pendingAsrPermission == FloatingSettingsViewModel.PermissionRequest.OVERLAY) {
+                pendingAsrPermission == FloatingSettingsViewModel.PermissionRequest.OVERLAY
+            ) {
                 pendingAsrPermission = FloatingSettingsViewModel.PermissionRequest.ACCESSIBILITY
                 showAccessibilityPermissionToast()
                 requestAccessibilityPermission()

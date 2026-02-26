@@ -29,7 +29,7 @@ class UpdateChecker(private val context: Context) {
             // 直接读取 GitHub 原始内容
             "https://raw.githubusercontent.com/BryceWG/BiBi-Keyboard/main/version.json",
             // jsDelivr 主域 (作为兜底）
-            "https://cdn.jsdelivr.net/gh/BryceWG/BiBi-Keyboard@main/version.json"
+            "https://cdn.jsdelivr.net/gh/BryceWG/BiBi-Keyboard@main/version.json",
         )
     }
 
@@ -53,16 +53,16 @@ class UpdateChecker(private val context: Context) {
         val updateTime: String? = null,
         val releaseNotes: String? = null,
         val importantNotice: String? = null,
-        val noticeLevel: NoticeLevel = NoticeLevel.INFO
+        val noticeLevel: NoticeLevel = NoticeLevel.INFO,
     )
 
     /**
      * 提示级别
      */
     enum class NoticeLevel {
-        INFO,       // 普通信息（使用 tertiary 颜色）
-        WARNING,    // 警告信息（使用 secondary 颜色）
-        CRITICAL    // 重要信息（使用 error 颜色）
+        INFO, // 普通信息（使用 tertiary 颜色）
+        WARNING, // 警告信息（使用 secondary 颜色）
+        CRITICAL, // 重要信息（使用 error 颜色）
     }
 
     /**
@@ -112,7 +112,7 @@ class UpdateChecker(private val context: Context) {
             updateTime = latestRemote.updateTime,
             releaseNotes = latestRemote.releaseNotes,
             importantNotice = latestRemote.importantNotice,
-            noticeLevel = latestRemote.noticeLevel
+            noticeLevel = latestRemote.noticeLevel,
         )
     }
 
@@ -148,7 +148,7 @@ class UpdateChecker(private val context: Context) {
      */
     private suspend fun fetchRemoteVersions(
         client: OkHttpClient,
-        urls: List<String>
+        urls: List<String>,
     ): List<RemoteVersion> = coroutineScope {
         // 为每个 URL 创建异步任务
         val jobs = urls.map { url ->
@@ -190,7 +190,7 @@ class UpdateChecker(private val context: Context) {
             val json = JSONObject(body)
 
             val version = normalizeVersion(
-                json.optString("version", "").removePrefix("v")
+                json.optString("version", "").removePrefix("v"),
             )
 
             if (version.isEmpty()) {
@@ -199,7 +199,7 @@ class UpdateChecker(private val context: Context) {
 
             val downloadUrl = json.optString(
                 "download_url",
-                "https://github.com/BryceWG/BiBi-Keyboard/releases"
+                "https://github.com/BryceWG/BiBi-Keyboard/releases",
             )
 
             val updateTime = json.optString("update_time", "").ifBlank { null }
@@ -288,6 +288,6 @@ class UpdateChecker(private val context: Context) {
         val updateTime: String?,
         val releaseNotes: String?,
         val importantNotice: String?,
-        val noticeLevel: NoticeLevel
+        val noticeLevel: NoticeLevel,
     )
 }

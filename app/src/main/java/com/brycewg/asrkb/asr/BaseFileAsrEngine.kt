@@ -5,17 +5,17 @@ import android.media.AudioFormat
 import android.util.Log
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
-import com.brycewg.asrkb.store.debug.DebugLogManager
 
 /**
  * 基础的文件识别 ASR 引擎，封装了麦克风采集、静音判停等通用逻辑，
@@ -26,7 +26,7 @@ abstract class BaseFileAsrEngine(
     private val scope: CoroutineScope,
     protected val prefs: Prefs,
     protected val listener: StreamingAsrEngine.Listener,
-    protected val onRequestDuration: ((Long) -> Unit)? = null
+    protected val onRequestDuration: ((Long) -> Unit)? = null,
 ) : StreamingAsrEngine {
 
     companion object {
@@ -34,18 +34,22 @@ abstract class BaseFileAsrEngine(
     }
 
     private val running = AtomicBoolean(false)
+
     @Volatile private var stopRequested: Boolean = false
+
     @Volatile private var stoppedDelivered: Boolean = false
     private var audioJob: Job? = null
     private var processingJob: Job? = null
     private var segmentChan: Channel<ByteArray>? = null
     private var lastSegmentForRetry: ByteArray? = null
+
     @Volatile private var discardOnStop: Boolean = false
 
     protected open val sampleRate: Int = 16000
     protected open val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO
     protected open val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT
     protected open val chunkMillis: Int = 200
+
     // 非流式录音的最大时长（子类按供应商覆盖）。
     // 达到该时长会立即结束录音并触发一次识别请求，以避免超过服务商限制。
     protected open val maxRecordDurationMillis: Int = 30 * 60 * 1000 // 默认 30 分钟
@@ -67,7 +71,7 @@ abstract class BaseFileAsrEngine(
         // 使用有界队列并在溢出时丢弃最旧的数据，避免内存溢出
         val chan = Channel<ByteArray>(
             capacity = 10,
-            onBufferOverflow = BufferOverflow.DROP_OLDEST
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
         segmentChan = chan
         // 顺序消费识别请求，确保结果按段落顺序提交
@@ -84,14 +88,14 @@ abstract class BaseFileAsrEngine(
                             context = context,
                             prefs = prefs,
                             pcm = seg,
-                            sampleRate = sampleRate
+                            sampleRate = sampleRate,
                         )
                         recognize(denoised)
                     } catch (t: Throwable) {
                         Log.e(TAG, "Recognition failed for segment", t)
                         try {
                             listener.onError(
-                                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
+                                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""),
                             )
                         } catch (e: Throwable) {
                             Log.e(TAG, "Failed to notify recognition error", e)
@@ -108,7 +112,9 @@ abstract class BaseFileAsrEngine(
                 recordAndEnqueueSegments(chan)
             } finally {
                 running.set(false)
-                try { DebugLogManager.log("asr", "engine_run_end", mapOf("reason" to "audio_job_end")) } catch (_: Throwable) { }
+                try {
+                    DebugLogManager.log("asr", "engine_run_end", mapOf("reason" to "audio_job_end"))
+                } catch (_: Throwable) { }
                 // 若录音流意外结束且未显式通知 onStopped，则补发一次，确保上层释放音频焦点与路由。
                 if (!stoppedDelivered) {
                     try {
@@ -174,7 +180,7 @@ abstract class BaseFileAsrEngine(
             sampleRate = sampleRate,
             channelConfig = channelConfig,
             audioFormat = audioFormat,
-            chunkMillis = chunkMillis
+            chunkMillis = chunkMillis,
         )
 
         // 权限检查
@@ -194,9 +200,11 @@ abstract class BaseFileAsrEngine(
                 context,
                 sampleRate,
                 prefs.autoStopSilenceWindowMs,
-                prefs.autoStopSilenceSensitivity
+                prefs.autoStopSilenceSensitivity,
             )
-        } else null
+        } else {
+            null
+        }
 
         // 计算分段阈值
         val maxBytes = (maxRecordDurationMillis / 1000.0 * sampleRate * bytesPerSample).toInt()
@@ -236,7 +244,9 @@ abstract class BaseFileAsrEngine(
                             val ok = chan.trySend(head).isSuccess
                             if (ok) {
                                 pendingList.removeFirst()
-                            } else break
+                            } else {
+                                break
+                            }
                         }
                         // 尝试直接投递最后一段；不成则加入待发送
                         val ok2 = chan.trySend(last).isSuccess
@@ -263,7 +273,9 @@ abstract class BaseFileAsrEngine(
                     if (r.isSuccess) {
                         pendingList.removeFirst()
                         Log.d(TAG, "Pending segment sent (${head.size} bytes)")
-                    } else break
+                    } else {
+                        break
+                    }
                 }
 
                 // 达到上限：切出一个片段，不打断录音
@@ -278,7 +290,9 @@ abstract class BaseFileAsrEngine(
                         val ok = chan.trySend(head).isSuccess
                         if (ok) {
                             pendingList.removeFirst()
-                        } else break
+                        } else {
+                            break
+                        }
                     }
 
                     // 再投递当前片段；不成则加入待发送队列
@@ -426,14 +440,14 @@ abstract class BaseFileAsrEngine(
                     context = context,
                     prefs = prefs,
                     pcm = data,
-                    sampleRate = sampleRate
+                    sampleRate = sampleRate,
                 )
                 recognize(denoised)
             } catch (t: Throwable) {
                 Log.e(TAG, "retryLastSegment recognize failed", t)
                 try {
                     listener.onError(
-                        context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
+                        context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""),
                     )
                 } catch (e: Throwable) {
                     Log.e(TAG, "Failed to notify recognition error (retry)", e)

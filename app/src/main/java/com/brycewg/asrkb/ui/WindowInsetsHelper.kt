@@ -27,13 +27,13 @@ object WindowInsetsHelper {
     fun applySystemBarsInsets(
         rootView: View,
         applyTop: Boolean = true,
-        applyBottom: Boolean = true
+        applyBottom: Boolean = true,
     ) {
         val initialPadding = Rect(
             rootView.paddingLeft,
             rootView.paddingTop,
             rootView.paddingRight,
-            rootView.paddingBottom
+            rootView.paddingBottom,
         )
 
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { v, windowInsets ->
@@ -50,7 +50,7 @@ object WindowInsetsHelper {
                 top = if (applyTop) initialPadding.top + sysBars.top else initialPadding.top,
                 bottom = if (applyBottom) initialPadding.bottom + bottomInset else initialPadding.bottom,
                 left = initialPadding.left + sysBars.left,
-                right = initialPadding.right + sysBars.right
+                right = initialPadding.right + sysBars.right,
             )
 
             windowInsets
@@ -67,13 +67,13 @@ object WindowInsetsHelper {
             view.paddingLeft,
             view.paddingTop,
             view.paddingRight,
-            view.paddingBottom
+            view.paddingBottom,
         )
 
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.updatePadding(
-                top = initialPadding.top + insets.top
+                top = initialPadding.top + insets.top,
             )
             windowInsets
         }
@@ -87,7 +87,7 @@ object WindowInsetsHelper {
             view.paddingLeft,
             view.paddingTop,
             view.paddingRight,
-            view.paddingBottom
+            view.paddingBottom,
         )
 
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, windowInsets ->
@@ -95,7 +95,7 @@ object WindowInsetsHelper {
             val ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime())
             val bottomInset = max(sysBars.bottom, ime.bottom)
             v.updatePadding(
-                bottom = initialPadding.bottom + bottomInset
+                bottom = initialPadding.bottom + bottomInset,
             )
             windowInsets
         }
@@ -119,6 +119,6 @@ object WindowInsetsHelper {
         val left: Int,
         val top: Int,
         val right: Int,
-        val bottom: Int
+        val bottom: Int,
     )
 }

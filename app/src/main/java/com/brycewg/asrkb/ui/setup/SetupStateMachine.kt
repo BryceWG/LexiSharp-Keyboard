@@ -88,7 +88,8 @@ class SetupStateMachine(private val context: Context) {
                         SetupState.Completed
                     }
                 } else if (state.waitingSince > 0 &&
-                           System.currentTimeMillis() - state.waitingSince > IME_PICKER_TIMEOUT_MS) {
+                    System.currentTimeMillis() - state.waitingSince > IME_PICKER_TIMEOUT_MS
+                ) {
                     // 超时，中止流程
                     Log.w(TAG, "IME selection timeout")
                     SetupState.Aborted("选择输入法超时")
@@ -134,7 +135,7 @@ class SetupStateMachine(private val context: Context) {
                     Toast.makeText(
                         context,
                         context.getString(R.string.toast_setup_enable_keyboard_first),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                     try {
                         context.startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
@@ -160,7 +161,7 @@ class SetupStateMachine(private val context: Context) {
                         // 更新状态：标记已唤起，并记录开始等待的时间
                         currentState = SetupState.SelectingIme(
                             askedOnce = true,
-                            waitingSince = System.currentTimeMillis()
+                            waitingSince = System.currentTimeMillis(),
                         )
                         Log.d(TAG, "IME picker shown, waiting for user selection")
                         true
@@ -184,7 +185,7 @@ class SetupStateMachine(private val context: Context) {
                 Toast.makeText(
                     context,
                     context.getString(R.string.toast_setup_all_done),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
                 false
             }
@@ -194,7 +195,7 @@ class SetupStateMachine(private val context: Context) {
                 Toast.makeText(
                     context,
                     "设置已中止: ${state.reason}",
-                    Toast.LENGTH_LONG
+                    Toast.LENGTH_LONG,
                 ).show()
                 false
             }
@@ -235,12 +236,12 @@ class SetupStateMachine(private val context: Context) {
             Toast.makeText(
                 context,
                 context.getString(R.string.toast_need_overlay_perm),
-                Toast.LENGTH_LONG
+                Toast.LENGTH_LONG,
             ).show()
             try {
                 val intent = Intent(
                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    "package:${context.packageName}".toUri()
+                    "package:${context.packageName}".toUri(),
                 )
                 context.startActivity(intent)
                 currentState = state.copy(askedOverlay = true)
@@ -270,7 +271,7 @@ class SetupStateMachine(private val context: Context) {
             Toast.makeText(
                 context,
                 context.getString(R.string.toast_need_accessibility_perm),
-                Toast.LENGTH_LONG
+                Toast.LENGTH_LONG,
             ).show()
             try {
                 context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -321,7 +322,7 @@ class SetupStateMachine(private val context: Context) {
     private fun hasMicrophonePermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         ) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -333,7 +334,7 @@ class SetupStateMachine(private val context: Context) {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
                 context,
-                Manifest.permission.POST_NOTIFICATIONS
+                Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
         } else {
             true // Android 13 以下默认已授予
@@ -345,7 +346,7 @@ class SetupStateMachine(private val context: Context) {
         val enabledServicesSetting = try {
             Settings.Secure.getString(
                 context.contentResolver,
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to check accessibility permission", e)
@@ -376,7 +377,7 @@ class SetupStateMachine(private val context: Context) {
         return try {
             val enabled = Settings.Secure.getString(
                 context.contentResolver,
-                Settings.Secure.ENABLED_INPUT_METHODS
+                Settings.Secure.ENABLED_INPUT_METHODS,
             )
             val ids = getOurImeIdCandidates()
             ids.any { enabled?.contains(it) == true } ||
@@ -391,7 +392,7 @@ class SetupStateMachine(private val context: Context) {
         return try {
             val current = Settings.Secure.getString(
                 context.contentResolver,
-                Settings.Secure.DEFAULT_INPUT_METHOD
+                Settings.Secure.DEFAULT_INPUT_METHOD,
             )
             val ids = getOurImeIdCandidates()
             current != null && ids.contains(current)
@@ -405,7 +406,7 @@ class SetupStateMachine(private val context: Context) {
         val component = ComponentName(context, AsrKeyboardService::class.java)
         return setOf(
             component.flattenToShortString(),
-            component.flattenToString()
+            component.flattenToString(),
         )
     }
 

@@ -5,23 +5,23 @@
  */
 package com.brycewg.asrkb
 
-import android.app.Application
 import android.app.Activity
 import android.app.ActivityManager
-import android.os.Bundle
+import android.app.Application
 import android.content.Intent
+import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import com.google.android.material.color.DynamicColors
-import com.brycewg.asrkb.store.Prefs
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import com.brycewg.asrkb.analytics.AnalyticsManager
+import com.brycewg.asrkb.asr.VadDetector
+import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.floating.FloatingAsrService
 import com.brycewg.asrkb.ui.floating.FloatingKeepAliveService
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveScheduler
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveStarter
-import com.brycewg.asrkb.asr.VadDetector
-import com.brycewg.asrkb.analytics.AnalyticsManager
+import com.google.android.material.color.DynamicColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

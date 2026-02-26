@@ -15,8 +15,8 @@ class ClipboardFileManager(private val context: Context) {
     companion object {
         private const val TAG = "ClipboardFileManager"
         private const val BIBI_FOLDER = "BiBi"
-        private const val MAX_CACHE_SIZE_MB = 500  // 最大缓存 500MB
-        private const val MAX_FILE_AGE_DAYS = 30   // 文件最长保留 30 天
+        private const val MAX_CACHE_SIZE_MB = 500 // 最大缓存 500MB
+        private const val MAX_FILE_AGE_DAYS = 30 // 文件最长保留 30 天
     }
 
     /**
@@ -75,7 +75,7 @@ class ClipboardFileManager(private val context: Context) {
         fileName: String,
         inputStream: InputStream,
         totalBytes: Long = -1,
-        progressCallback: ((Long, Long) -> Unit)? = null
+        progressCallback: ((Long, Long) -> Unit)? = null,
     ): String? {
         return try {
             val file = getFile(fileName)

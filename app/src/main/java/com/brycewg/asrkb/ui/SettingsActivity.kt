@@ -26,29 +26,29 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.UiColors
 import com.brycewg.asrkb.UiColorTokens
+import com.brycewg.asrkb.UiColors
+import com.brycewg.asrkb.analytics.AnalyticsManager
 import com.brycewg.asrkb.store.Prefs
-import com.brycewg.asrkb.ui.setup.SetupState
-import com.brycewg.asrkb.ui.setup.SetupStateMachine
-import com.brycewg.asrkb.ui.update.UpdateChecker
-import com.brycewg.asrkb.ui.update.ApkDownloadService
 import com.brycewg.asrkb.ui.about.AboutActivity
-import com.brycewg.asrkb.ui.settings.input.InputSettingsActivity
-import com.brycewg.asrkb.ui.settings.asr.AsrSettingsActivity
 import com.brycewg.asrkb.ui.settings.ai.AiPostSettingsActivity
-import com.brycewg.asrkb.ui.settings.other.OtherSettingsActivity
-import com.brycewg.asrkb.ui.settings.floating.FloatingSettingsActivity
+import com.brycewg.asrkb.ui.settings.asr.AsrSettingsActivity
 import com.brycewg.asrkb.ui.settings.backup.BackupSettingsActivity
+import com.brycewg.asrkb.ui.settings.floating.FloatingSettingsActivity
+import com.brycewg.asrkb.ui.settings.input.InputSettingsActivity
+import com.brycewg.asrkb.ui.settings.other.OtherSettingsActivity
 import com.brycewg.asrkb.ui.settings.search.SettingsSearchActivity
 import com.brycewg.asrkb.ui.setup.OnboardingActionExecutor
 import com.brycewg.asrkb.ui.setup.OnboardingGuideActivity
-import com.brycewg.asrkb.analytics.AnalyticsManager
+import com.brycewg.asrkb.ui.setup.SetupState
+import com.brycewg.asrkb.ui.setup.SetupStateMachine
+import com.brycewg.asrkb.ui.update.ApkDownloadService
+import com.brycewg.asrkb.ui.update.UpdateChecker
 import com.brycewg.asrkb.util.HapticFeedbackHelper
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -56,11 +56,10 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.io.File
-import androidx.core.content.FileProvider
 
 /**
  * 主设置页面
@@ -86,7 +85,11 @@ class SettingsActivity : BaseActivity() {
     // 更新检查器（可按渠道禁用）
     private var updateChecker: UpdateChecker? = null
     private val updatesEnabled: Boolean by lazy {
-        try { resources.getBoolean(R.bool.enable_update_checker) } catch (_: Throwable) { true }
+        try {
+            resources.getBoolean(R.bool.enable_update_checker)
+        } catch (_: Throwable) {
+            true
+        }
     }
 
     // 无障碍服务状态（用于检测服务刚刚被启用）
@@ -238,7 +241,7 @@ class SettingsActivity : BaseActivity() {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
@@ -392,12 +395,12 @@ class SettingsActivity : BaseActivity() {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             if (ContextCompat.checkSelfPermission(
                                     this,
-                                    Manifest.permission.POST_NOTIFICATIONS
+                                    Manifest.permission.POST_NOTIFICATIONS,
                                 ) != PackageManager.PERMISSION_GRANTED
                             ) {
                                 requestPermissions(
                                     arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                                    1001
+                                    1001,
                                 )
                             } else {
                                 // 已授予，继续推进
@@ -466,7 +469,7 @@ class SettingsActivity : BaseActivity() {
                             Toast.makeText(
                                 this@SettingsActivity,
                                 getString(R.string.toast_setup_choose_keyboard),
-                                Toast.LENGTH_SHORT
+                                Toast.LENGTH_SHORT,
                             ).show()
                         } else {
                             Log.d(TAG, "Skip IME choose toast: picker not foreground")
@@ -624,15 +627,14 @@ class SettingsActivity : BaseActivity() {
      * 显示更新对话框
      */
     private fun showUpdateDialog(result: UpdateChecker.UpdateCheckResult) {
-
         // OSS 版本显示标准更新对话框（提供 APK 下载）
         val messageBuilder = StringBuilder()
         messageBuilder.append(
             getString(
                 R.string.update_dialog_message,
                 result.currentVersion,
-                result.latestVersion
-            )
+                result.latestVersion,
+            ),
         )
 
         // 添加重要提示（如果有）
@@ -662,7 +664,7 @@ class SettingsActivity : BaseActivity() {
             createStyledMessage(
                 messageBuilder.toString(),
                 result.importantNotice,
-                result.noticeLevel
+                result.noticeLevel,
             )
         } else {
             messageBuilder.toString()
@@ -674,21 +676,26 @@ class SettingsActivity : BaseActivity() {
             val start = length
             append(getString(R.string.btn_view_release_page))
             val end = length
-            setSpan(object : android.text.style.ClickableSpan() {
-                override fun onClick(widget: android.view.View) {
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(result.downloadUrl))
-                        startActivity(intent)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to open release page", e)
-                        Toast.makeText(
-                            this@SettingsActivity,
-                            getString(R.string.error_open_browser),
-                            Toast.LENGTH_SHORT
-                        ).show()
+            setSpan(
+                object : android.text.style.ClickableSpan() {
+                    override fun onClick(widget: android.view.View) {
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(result.downloadUrl))
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to open release page", e)
+                            Toast.makeText(
+                                this@SettingsActivity,
+                                getString(R.string.error_open_browser),
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
                     }
-                }
-            }, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                },
+                start,
+                end,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
             // 加粗并着色以示为操作项（使用默认链接样式即可，避免直接取主题色）
             setSpan(StyleSpan(Typeface.BOLD), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             setSpan(android.text.style.UnderlineSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -722,8 +729,8 @@ class SettingsActivity : BaseActivity() {
         messageBuilder.append(
             getString(
                 R.string.current_version_message,
-                result.currentVersion
-            )
+                result.currentVersion,
+            ),
         )
 
         // 添加重要提示（如果有）
@@ -753,7 +760,7 @@ class SettingsActivity : BaseActivity() {
             createStyledMessage(
                 messageBuilder.toString(),
                 result.importantNotice,
-                result.noticeLevel
+                result.noticeLevel,
             )
         } else {
             messageBuilder.toString()
@@ -776,7 +783,7 @@ class SettingsActivity : BaseActivity() {
                     Toast.makeText(
                         this,
                         getString(R.string.error_open_browser),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
@@ -794,11 +801,11 @@ class SettingsActivity : BaseActivity() {
     private fun createStyledMessage(
         message: String,
         notice: String,
-        level: UpdateChecker.NoticeLevel
+        level: UpdateChecker.NoticeLevel,
     ): SpannableString {
         val spannable = SpannableString(
             message.replace("{{IMPORTANT_NOTICE_START}}", "")
-                .replace("{{IMPORTANT_NOTICE_END}}", "")
+                .replace("{{IMPORTANT_NOTICE_END}}", ""),
         )
 
         // 查找重要提示在文本中的位置
@@ -828,13 +835,13 @@ class SettingsActivity : BaseActivity() {
             ForegroundColorSpan(color),
             noticeStart,
             noticeEnd,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
         )
         spannable.setSpan(
             StyleSpan(Typeface.BOLD),
             noticeStart,
             noticeEnd,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
         )
 
         return spannable
@@ -851,7 +858,7 @@ class SettingsActivity : BaseActivity() {
                 try {
                     val intent = Intent(
                         Intent.ACTION_VIEW,
-                        Uri.parse("https://github.com/BryceWG/BiBi-Keyboard/releases")
+                        Uri.parse("https://github.com/BryceWG/BiBi-Keyboard/releases"),
                     )
                     startActivity(intent)
                 } catch (e: Exception) {
@@ -859,7 +866,7 @@ class SettingsActivity : BaseActivity() {
                     Toast.makeText(
                         this,
                         getString(R.string.error_open_browser),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
@@ -874,7 +881,7 @@ class SettingsActivity : BaseActivity() {
         try {
             val intent = Intent(
                 Intent.ACTION_VIEW,
-                Uri.parse("https://bibi.brycewg.com/changelog.html")
+                Uri.parse("https://bibi.brycewg.com/changelog.html"),
             )
             startActivity(intent)
         } catch (e: Exception) {
@@ -882,7 +889,7 @@ class SettingsActivity : BaseActivity() {
             Toast.makeText(
                 this,
                 getString(R.string.error_open_browser),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
         }
     }
@@ -900,7 +907,7 @@ class SettingsActivity : BaseActivity() {
         DownloadSourceDialog.show(
             context = this,
             titleRes = R.string.download_source_title,
-            options = downloadOptions
+            options = downloadOptions,
         ) { option ->
             try {
                 // 启动下载服务
@@ -908,14 +915,14 @@ class SettingsActivity : BaseActivity() {
                 Toast.makeText(
                     this,
                     getString(R.string.apk_download_started),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start download", e)
                 Toast.makeText(
                     this,
                     getString(R.string.apk_download_start_failed),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
             }
         }
@@ -1297,7 +1304,7 @@ class SettingsActivity : BaseActivity() {
                         Toast.makeText(
                             this,
                             getString(R.string.model_guide_select_prompt),
-                            Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT,
                         ).show()
                     }
                 }
@@ -1325,7 +1332,7 @@ class SettingsActivity : BaseActivity() {
                     Toast.makeText(
                         this,
                         getString(R.string.external_aidl_guide_open_failed),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
@@ -1346,25 +1353,25 @@ class SettingsActivity : BaseActivity() {
             context = this,
             titleRes = R.string.download_source_title,
             options = downloadOptions,
-            cancelable = false
+            cancelable = false,
         ) { option ->
             try {
                 com.brycewg.asrkb.ui.settings.asr.ModelDownloadService.startDownload(
                     this,
                     option.url,
-                    variant
+                    variant,
                 )
                 Toast.makeText(
                     this,
                     getString(R.string.model_guide_downloading),
-                    Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT,
                 ).show()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start model download", e)
                 Toast.makeText(
                     this,
                     getString(R.string.sv_download_status_failed),
-                    Toast.LENGTH_LONG
+                    Toast.LENGTH_LONG,
                 ).show()
             }
         }
@@ -1387,7 +1394,7 @@ class SettingsActivity : BaseActivity() {
                 if (!shown) {
                     edit.postDelayed(
                         { imm?.showSoftInput(edit, InputMethodManager.SHOW_IMPLICIT) },
-                        120
+                        120,
                     )
                 }
             }
@@ -1420,7 +1427,7 @@ class SettingsActivity : BaseActivity() {
             Toast.makeText(
                 this,
                 getString(R.string.toast_accessibility_enabled),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
         }
 
@@ -1436,7 +1443,7 @@ class SettingsActivity : BaseActivity() {
         val enabledServicesSetting = try {
             Settings.Secure.getString(
                 contentResolver,
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get accessibility services", e)
@@ -1565,7 +1572,7 @@ class SettingsActivity : BaseActivity() {
             Toast.makeText(
                 this,
                 getString(R.string.external_aidl_guide_open_failed),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
         }
     }

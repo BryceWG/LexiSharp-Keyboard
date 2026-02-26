@@ -12,7 +12,6 @@ internal fun EditText.bindString(onChange: (String) -> Unit) {
             override fun afterTextChanged(s: Editable?) {
                 onChange(s?.toString() ?: "")
             }
-        }
+        },
     )
 }
-

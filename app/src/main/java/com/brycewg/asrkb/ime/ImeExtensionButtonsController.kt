@@ -104,7 +104,8 @@ internal class ImeExtensionButtonsController(
             }
 
             KeyboardActionHandler.ExtensionButtonActionResult.NEED_CURSOR_LEFT,
-            KeyboardActionHandler.ExtensionButtonActionResult.NEED_CURSOR_RIGHT -> {
+            KeyboardActionHandler.ExtensionButtonActionResult.NEED_CURSOR_RIGHT,
+            -> {
                 // 光标移动已在长按处理中完成
             }
 
@@ -176,4 +177,3 @@ internal class ImeExtensionButtonsController(
         updateBtn(views.btnExt4, prefs.extBtn4)
     }
 }
-

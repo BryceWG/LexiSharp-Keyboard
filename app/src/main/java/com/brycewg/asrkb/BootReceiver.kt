@@ -95,7 +95,7 @@ class BootReceiver : BroadcastReceiver() {
                     context,
                     "keepalive",
                     "boot_start_result",
-                    mapOf("ok" to false, "method" to result.method.name.lowercase(), "exit" to result.exitCode)
+                    mapOf("ok" to false, "method" to result.method.name.lowercase(), "exit" to result.exitCode),
                 )
             }
         } catch (t: Throwable) {

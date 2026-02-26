@@ -28,7 +28,7 @@ class SenseVoiceFileAsrEngine(
     scope: CoroutineScope,
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
-    onRequestDuration: ((Long) -> Unit)? = null
+    onRequestDuration: ((Long) -> Unit)? = null,
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration), PcmBatchRecognizer {
 
     // 本地 SenseVoice：为降低内存占用，主动限制为 5 分钟
@@ -42,7 +42,9 @@ class SenseVoiceFileAsrEngine(
     private fun showToast(resId: Int) {
         try {
             Handler(Looper.getMainLooper()).post {
-                try { Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show() } catch (t: Throwable) {
+                try {
+                    Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
+                } catch (t: Throwable) {
                     Log.e("SenseVoiceFileAsrEngine", "Failed to show toast", t)
                 }
             }
@@ -54,7 +56,9 @@ class SenseVoiceFileAsrEngine(
     private fun notifyLoadStart() {
         val ui = (listener as? LocalModelLoadUi)
         if (ui != null) {
-            try { ui.onLocalModelLoadStart() } catch (t: Throwable) {
+            try {
+                ui.onLocalModelLoadStart()
+            } catch (t: Throwable) {
                 Log.e("SenseVoiceFileAsrEngine", "Failed to notify load start", t)
             }
         } else {
@@ -65,7 +69,9 @@ class SenseVoiceFileAsrEngine(
     private fun notifyLoadDone() {
         val ui = (listener as? LocalModelLoadUi)
         if (ui != null) {
-            try { ui.onLocalModelLoadDone() } catch (t: Throwable) {
+            try {
+                ui.onLocalModelLoadDone()
+            } catch (t: Throwable) {
                 Log.e("SenseVoiceFileAsrEngine", "Failed to notify load done", t)
             }
         }
@@ -76,7 +82,9 @@ class SenseVoiceFileAsrEngine(
         // 若未集成 sherpa-onnx Kotlin/so，则直接报错以避免无意义的录音
         val manager = SenseVoiceOnnxManager.getInstance()
         if (!manager.isOnnxAvailable()) {
-            try { listener.onError(context.getString(R.string.error_local_asr_not_ready)) } catch (t: Throwable) {
+            try {
+                listener.onError(context.getString(R.string.error_local_asr_not_ready))
+            } catch (t: Throwable) {
                 Log.e("SenseVoiceFileAsrEngine", "Failed to send error callback", t)
             }
             return false
@@ -93,12 +101,16 @@ class SenseVoiceFileAsrEngine(
                 return
             }
             // 模型目录：固定为外部专属目录（不可配置）；外部不可用时回退内部目录
-            val base = try { context.getExternalFilesDir(null) } catch (t: Throwable) {
+            val base = try {
+                context.getExternalFilesDir(null)
+            } catch (t: Throwable) {
                 Log.w("SenseVoiceFileAsrEngine", "Failed to get external files dir", t)
                 null
             } ?: context.filesDir
             val probeRoot = java.io.File(base, "sensevoice")
-            val rawVariant = try { prefs.svModelVariant } catch (t: Throwable) {
+            val rawVariant = try {
+                prefs.svModelVariant
+            } catch (t: Throwable) {
                 Log.w("SenseVoiceFileAsrEngine", "Failed to get model variant", t)
                 "small-int8"
             }
@@ -136,7 +148,9 @@ class SenseVoiceFileAsrEngine(
             // 注意：当从绝对路径加载模型/词表时，必须将 assetManager 设为 null
             // 参考 sherpa-onnx 提示 https://github.com/k2-fsa/sherpa-onnx/issues/2562
             // 在需要创建新识别器时，向用户提示"加载中/完成"
-            val keepMinutes = try { prefs.svKeepAliveMinutes } catch (t: Throwable) {
+            val keepMinutes = try {
+                prefs.svKeepAliveMinutes
+            } catch (t: Throwable) {
                 Log.w("SenseVoiceFileAsrEngine", "Failed to get keep alive minutes", t)
                 -1
             }
@@ -153,12 +167,16 @@ class SenseVoiceFileAsrEngine(
                     Log.w("SenseVoiceFileAsrEngine", "Failed to get language", t)
                     "auto"
                 },
-                useItn = try { prefs.svUseItn } catch (t: Throwable) {
+                useItn = try {
+                    prefs.svUseItn
+                } catch (t: Throwable) {
                     Log.w("SenseVoiceFileAsrEngine", "Failed to get useItn", t)
                     false
                 },
                 provider = "cpu",
-                numThreads = try { prefs.svNumThreads } catch (t: Throwable) {
+                numThreads = try {
+                    prefs.svNumThreads
+                } catch (t: Throwable) {
                     Log.w("SenseVoiceFileAsrEngine", "Failed to get num threads", t)
                     2
                 },
@@ -167,7 +185,7 @@ class SenseVoiceFileAsrEngine(
                 keepAliveMs = keepMs,
                 alwaysKeep = alwaysKeep,
                 onLoadStart = { notifyLoadStart() },
-                onLoadDone = { notifyLoadDone() }
+                onLoadDone = { notifyLoadDone() },
             )
 
             if (text.isNullOrBlank()) {
@@ -181,13 +199,17 @@ class SenseVoiceFileAsrEngine(
             listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
         } finally {
             val dt = System.currentTimeMillis() - t0
-            try { onRequestDuration?.invoke(dt) } catch (t: Throwable) {
+            try {
+                onRequestDuration?.invoke(dt)
+            } catch (t: Throwable) {
                 Log.e("SenseVoiceFileAsrEngine", "Failed to invoke duration callback", t)
             }
         }
     }
 
-    override suspend fun recognizeFromPcm(pcm: ByteArray) { recognize(pcm) }
+    override suspend fun recognizeFromPcm(pcm: ByteArray) {
+        recognize(pcm)
+    }
 
     private fun pcmToFloatArray(pcm: ByteArray): FloatArray {
         if (pcm.isEmpty()) return FloatArray(0)
@@ -226,7 +248,7 @@ fun preloadSenseVoiceIfConfigured(
     force: Boolean = false,
     // 该预加载是否紧跟着会被立即使用（例如开始录音）。
     // 若为 true，则不在此处调度卸载，由实际使用/释放时再调度；否则预加载后按设置调度卸载。
-    forImmediateUse: Boolean = false
+    forImmediateUse: Boolean = false,
 ) {
     try {
         val manager = SenseVoiceOnnxManager.getInstance()
@@ -283,7 +305,7 @@ fun preloadSenseVoiceIfConfigured(
                     Toast.makeText(
                         context,
                         context.getString(R.string.sv_model_ready_with_ms, dt),
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
@@ -346,7 +368,7 @@ private data class RecognizerConfig(
     val language: String,
     val useItn: Boolean,
     val provider: String,
-    val numThreads: Int
+    val numThreads: Int,
 ) {
     fun toCacheKey(): String = listOf(tokens, model, language, useItn, provider, numThreads).joinToString("|")
 }
@@ -384,7 +406,7 @@ internal class ReflectiveStream(val instance: Any) {
  */
 internal class ReflectiveRecognizer(
     private val instance: Any,
-    private val clsOfflineRecognizer: Class<*>
+    private val clsOfflineRecognizer: Class<*>,
 ) {
 
     fun createStream(): ReflectiveStream {
@@ -435,7 +457,7 @@ class SenseVoiceOnnxManager private constructor() {
         private const val TAG = "SenseVoiceOnnxManager"
 
         @Volatile
-    private var instance: SenseVoiceOnnxManager? = null
+        private var instance: SenseVoiceOnnxManager? = null
 
         fun getInstance(): SenseVoiceOnnxManager {
             return instance ?: synchronized(this) {
@@ -448,12 +470,19 @@ class SenseVoiceOnnxManager private constructor() {
     private val mutex = Mutex()
 
     @Volatile private var cachedConfig: RecognizerConfig? = null
+
     @Volatile private var cachedRecognizer: ReflectiveRecognizer? = null
+
     @Volatile private var preparing: Boolean = false
+
     @Volatile private var clsOfflineRecognizer: Class<*>? = null
+
     @Volatile private var clsOfflineRecognizerConfig: Class<*>? = null
+
     @Volatile private var clsOfflineModelConfig: Class<*>? = null
+
     @Volatile private var clsOfflineSenseVoiceModelConfig: Class<*>? = null
+
     @Volatile private var unloadJob: Job? = null
 
     fun isOnnxAvailable(): Boolean {
@@ -496,6 +525,7 @@ class SenseVoiceOnnxManager private constructor() {
 
     // 记录最近一次配置，用于解码完成后按用户设置调度卸载
     @Volatile private var lastKeepAliveMs: Long = 0L
+
     @Volatile private var lastAlwaysKeep: Boolean = false
 
     /**
@@ -659,7 +689,7 @@ class SenseVoiceOnnxManager private constructor() {
         assetManager: android.content.res.AssetManager?,
         config: RecognizerConfig,
         onLoadStart: (() -> Unit)?,
-        onLoadDone: (() -> Unit)?
+        onLoadDone: (() -> Unit)?,
     ): ReflectiveRecognizer? {
         initClasses()
 
@@ -718,7 +748,7 @@ class SenseVoiceOnnxManager private constructor() {
         keepAliveMs: Long,
         alwaysKeep: Boolean,
         onLoadStart: (() -> Unit)? = null,
-        onLoadDone: (() -> Unit)? = null
+        onLoadDone: (() -> Unit)? = null,
     ): String? = mutex.withLock {
         try {
             val config = RecognizerConfig(tokens, model, language, useItn, provider, numThreads)
@@ -760,7 +790,7 @@ class SenseVoiceOnnxManager private constructor() {
         keepAliveMs: Long,
         alwaysKeep: Boolean,
         onLoadStart: (() -> Unit)? = null,
-        onLoadDone: (() -> Unit)? = null
+        onLoadDone: (() -> Unit)? = null,
     ): Boolean = mutex.withLock {
         try {
             val config = RecognizerConfig(tokens, model, language, useItn, provider, numThreads)
@@ -778,7 +808,6 @@ class SenseVoiceOnnxManager private constructor() {
             return@withLock false
         }
     }
-
 }
 
 /**
@@ -808,10 +837,10 @@ object SenseVoiceOnnxBridge {
         keepAliveMs: Long,
         alwaysKeep: Boolean,
         onLoadStart: (() -> Unit)? = null,
-        onLoadDone: (() -> Unit)? = null
+        onLoadDone: (() -> Unit)? = null,
     ): String? = manager.decodeOffline(
         assetManager, tokens, model, language, useItn, provider, numThreads,
-        samples, sampleRate, keepAliveMs, alwaysKeep, onLoadStart, onLoadDone
+        samples, sampleRate, keepAliveMs, alwaysKeep, onLoadStart, onLoadDone,
     )
 
     suspend fun prepare(
@@ -825,10 +854,10 @@ object SenseVoiceOnnxBridge {
         keepAliveMs: Long,
         alwaysKeep: Boolean,
         onLoadStart: (() -> Unit)? = null,
-        onLoadDone: (() -> Unit)? = null
+        onLoadDone: (() -> Unit)? = null,
     ): Boolean = manager.prepare(
         assetManager, tokens, model, language, useItn, provider, numThreads,
-        keepAliveMs, alwaysKeep, onLoadStart, onLoadDone
+        keepAliveMs, alwaysKeep, onLoadStart, onLoadDone,
     )
 }
 

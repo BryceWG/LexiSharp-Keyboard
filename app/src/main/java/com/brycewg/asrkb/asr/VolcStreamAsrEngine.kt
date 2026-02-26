@@ -25,8 +25,8 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.util.UUID
 import java.util.ArrayDeque
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.GZIPInputStream
@@ -42,12 +42,13 @@ class VolcStreamAsrEngine(
     private val scope: CoroutineScope,
     private val prefs: Prefs,
     private val listener: StreamingAsrEngine.Listener,
-    private val externalPcmMode: Boolean = false
+    private val externalPcmMode: Boolean = false,
 ) : StreamingAsrEngine, ExternalPcmConsumer {
 
     companion object {
         private const val TAG = "VolcStreamAsrEngine"
         private const val WS_ENDPOINT_BIDI_ASYNC = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async"
+
         // 流式识别模型 1.0 / 2.0
         private const val STREAM_RESOURCE_V1 = "volc.bigasr.sauc.duration"
         private const val STREAM_RESOURCE_V2 = "volc.seedasr.sauc.duration"
@@ -106,7 +107,7 @@ class VolcStreamAsrEngine(
         if (!externalPcmMode) {
             val hasPermission = ContextCompat.checkSelfPermission(
                 context,
-                Manifest.permission.RECORD_AUDIO
+                Manifest.permission.RECORD_AUDIO,
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasPermission) {
                 listener.onError(context.getString(R.string.error_record_permission_denied))
@@ -147,7 +148,9 @@ class VolcStreamAsrEngine(
                     }
                 }
                 flushed?.forEach { b ->
-                    try { sendAudioFrame(b, last = false) } catch (_: Throwable) { }
+                    try {
+                        sendAudioFrame(b, last = false)
+                    } catch (_: Throwable) { }
                 }
                 // 发送最后一包标记（空载荷亦可作为结束信号）
                 if (!audioLastSent.get()) {
@@ -165,7 +168,9 @@ class VolcStreamAsrEngine(
                 delay(50)
                 left -= 50
             }
-            try { ws?.close(1000, "stop") } catch (_: Throwable) { }
+            try {
+                ws?.close(1000, "stop")
+            } catch (_: Throwable) { }
             ws = null
             wsReady.set(false)
         }
@@ -178,70 +183,79 @@ class VolcStreamAsrEngine(
             .url(WS_ENDPOINT_BIDI_ASYNC)
             .headers(
                 Headers.headersOf(
-                    "X-Api-App-Key", prefs.appKey,
-                    "X-Api-Access-Key", prefs.accessKey,
+                    "X-Api-App-Key",
+                    prefs.appKey,
+                    "X-Api-Access-Key",
+                    prefs.accessKey,
                     // 使用小时版资源（可根据需要切换并发版）
-                    "X-Api-Resource-Id", streamResource,
-                    "X-Api-Connect-Id", connectId
-                )
+                    "X-Api-Resource-Id",
+                    streamResource,
+                    "X-Api-Connect-Id",
+                    connectId,
+                ),
             )
             .build()
 
-        ws = http.newWebSocket(req, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                Log.d(TAG, "WebSocket opened, sending full client request")
-                // 发送 full client request
-                try {
-                    val full = buildFullClientRequestJson()
-                    val payload = gzip(full.toByteArray(Charsets.UTF_8))
-                    val frame = buildClientFrame(
-                        messageType = MSG_TYPE_FULL_CLIENT_REQ,
-                        flags = 0,
-                        serialization = SERIALIZE_JSON,
-                        compression = COMPRESS_GZIP,
-                        payload = payload
-                    )
-                    webSocket.send(ByteString.of(*frame))
-                    wsReady.set(true)
-                    Log.d(TAG, "WebSocket ready, audio streaming can begin")
-                    // 若用户在握手期间已 stop()，此处立即冲刷预缓冲并发送最后标记，避免尾段丢失
-                    if (!running.get() && awaitingFinal.get()) {
-                        flushPrebufferAndSendLast()
+        ws = http.newWebSocket(
+            req,
+            object : WebSocketListener() {
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    Log.d(TAG, "WebSocket opened, sending full client request")
+                    // 发送 full client request
+                    try {
+                        val full = buildFullClientRequestJson()
+                        val payload = gzip(full.toByteArray(Charsets.UTF_8))
+                        val frame = buildClientFrame(
+                            messageType = MSG_TYPE_FULL_CLIENT_REQ,
+                            flags = 0,
+                            serialization = SERIALIZE_JSON,
+                            compression = COMPRESS_GZIP,
+                            payload = payload,
+                        )
+                        webSocket.send(ByteString.of(*frame))
+                        wsReady.set(true)
+                        Log.d(TAG, "WebSocket ready, audio streaming can begin")
+                        // 若用户在握手期间已 stop()，此处立即冲刷预缓冲并发送最后标记，避免尾段丢失
+                        if (!running.get() && awaitingFinal.get()) {
+                            flushPrebufferAndSendLast()
+                        }
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "Failed to send full client request", t)
+                        listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
+                        stop()
+                        return
                     }
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to send full client request", t)
-                    listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
-                    stop()
-                    return
                 }
-            }
 
-            override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                try {
-                    handleServerMessage(bytes)
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to handle server message", t)
-                    listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
+                override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
+                    try {
+                        handleServerMessage(bytes)
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "Failed to handle server message", t)
+                        listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
+                    }
                 }
-            }
 
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                Log.d(TAG, "WebSocket closing with code $code: $reason")
-                try { webSocket.close(code, reason) } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to close WebSocket", t)
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    Log.d(TAG, "WebSocket closing with code $code: $reason")
+                    try {
+                        webSocket.close(code, reason)
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "Failed to close WebSocket", t)
+                    }
+                    wsReady.set(false)
                 }
-                wsReady.set(false)
-            }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e(TAG, "WebSocket failed: ${t.message}", t)
-                wsReady.set(false)
-                if (running.get()) {
-                    listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
+                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                    Log.e(TAG, "WebSocket failed: ${t.message}", t)
+                    wsReady.set(false)
+                    if (running.get()) {
+                        listener.onError(context.getString(R.string.error_recognize_failed_with_reason, t.message ?: ""))
+                    }
+                    running.set(false)
                 }
-                running.set(false)
-            }
-        })
+            },
+        )
     }
 
     // ========== ExternalPcmConsumer 实现（外部推流） ==========
@@ -251,13 +265,18 @@ class VolcStreamAsrEngine(
             Log.w(TAG, "ignore frame: sr=$sampleRate ch=$channels")
             return
         }
-        try { listener.onAmplitude(com.brycewg.asrkb.asr.calculateNormalizedAmplitude(pcm)) } catch (_: Throwable) { }
+        try {
+            listener.onAmplitude(com.brycewg.asrkb.asr.calculateNormalizedAmplitude(pcm))
+        } catch (_: Throwable) { }
         if (!wsReady.get()) {
             synchronized(prebufferLock) { prebuffer.addLast(pcm.copyOf()) }
         } else {
             var flushed: Array<ByteArray>? = null
             synchronized(prebufferLock) {
-                if (prebuffer.isNotEmpty()) { flushed = prebuffer.toTypedArray(); prebuffer.clear() }
+                if (prebuffer.isNotEmpty()) {
+                    flushed = prebuffer.toTypedArray()
+                    prebuffer.clear()
+                }
             }
             flushed?.forEach { b -> kotlin.runCatching { sendAudioFrame(b, last = false) } }
             kotlin.runCatching { sendAudioFrame(pcm, last = false) }
@@ -281,7 +300,7 @@ class VolcStreamAsrEngine(
                 sampleRate = sampleRate,
                 channelConfig = channelConfig,
                 audioFormat = audioFormat,
-                chunkMillis = chunkMillis
+                chunkMillis = chunkMillis,
             )
 
             if (!audioManager.hasPermission()) {
@@ -292,9 +311,11 @@ class VolcStreamAsrEngine(
             }
 
             // 长按说话模式下由用户松手决定停止，绕过 VAD 自动判停
-            val vadDetector = if (isVadAutoStopEnabled(context, prefs))
+            val vadDetector = if (isVadAutoStopEnabled(context, prefs)) {
                 VadDetector(context, sampleRate, prefs.autoStopSilenceWindowMs, prefs.autoStopSilenceSensitivity)
-            else null
+            } else {
+                null
+            }
 
             val maxFrames = (2000 / chunkMillis).coerceAtLeast(1) // 预缓冲上限≈2s
 
@@ -314,7 +335,9 @@ class VolcStreamAsrEngine(
                     // VAD 自动判停
                     if (vadDetector?.shouldStop(audioChunk, audioChunk.size) == true) {
                         Log.d(TAG, "Silence detected, stopping recording")
-                        try { listener.onStopped() } catch (t: Throwable) {
+                        try {
+                            listener.onStopped()
+                        } catch (t: Throwable) {
                             Log.e(TAG, "Failed to notify stopped", t)
                         }
                         stop()
@@ -407,7 +430,7 @@ class VolcStreamAsrEngine(
             flags = flags,
             serialization = SERIALIZE_NONE,
             compression = COMPRESS_GZIP,
-            payload = payload
+            payload = payload,
         )
         webSocket.send(ByteString.of(*frame))
     }
@@ -442,7 +465,6 @@ class VolcStreamAsrEngine(
                 put("force_to_speech_time", 1000)
                 // 说明：配置 end_window_size 后 vad_segment_duration 不生效，这里不再冗余设置
             }
-
         }
         return JSONObject().apply {
             put("user", user)
@@ -484,13 +506,17 @@ class VolcStreamAsrEngine(
                     Log.d(TAG, "Received final result, length: ${text.length}")
                     // 重要：即使服务端最终文本为空也要回调 onFinal("")，
                     // 以便上层（悬浮球/IME）清理 isProcessing 状态并给出友好提示。
-                    try { listener.onFinal(text) } catch (t: Throwable) {
+                    try {
+                        listener.onFinal(text)
+                    } catch (t: Throwable) {
                         Log.e(TAG, "Failed to notify final result", t)
                     }
                     running.set(false)
                     awaitingFinal.set(false)
                     scope.launch(Dispatchers.IO) {
-                        try { ws?.close(1000, "final") } catch (t: Throwable) {
+                        try {
+                            ws?.close(1000, "final")
+                        } catch (t: Throwable) {
                             Log.e(TAG, "Failed to close WebSocket after final", t)
                         }
                         ws = null
@@ -509,7 +535,9 @@ class VolcStreamAsrEngine(
             val size = readUInt32BE(arr, offset + 4)
             val start = offset + 8
             val end = (start + size).coerceAtMost(arr.size)
-            val msg = try { String(arr.copyOfRange(start, end), Charsets.UTF_8) } catch (t: Throwable) {
+            val msg = try {
+                String(arr.copyOfRange(start, end), Charsets.UTF_8)
+            } catch (t: Throwable) {
                 Log.e(TAG, "Failed to decode error message", t)
                 ""
             }
@@ -529,8 +557,12 @@ class VolcStreamAsrEngine(
             if (o.has("result")) {
                 val r = o.getJSONObject("result")
                 r.optString("text", "")
-            } else ""
-        } catch (_: Throwable) { "" }
+            } else {
+                ""
+            }
+        } catch (_: Throwable) {
+            ""
+        }
     }
 
     @Suppress("SameParameterValue")
@@ -539,7 +571,7 @@ class VolcStreamAsrEngine(
         flags: Int,
         serialization: Int,
         compression: Int,
-        payload: ByteArray
+        payload: ByteArray,
     ): ByteArray {
         val header = ByteArray(4)
         header[0] = (((PROTOCOL_VERSION and 0x0F) shl 4) or (HEADER_SIZE_UNITS and 0x0F)).toByte()
