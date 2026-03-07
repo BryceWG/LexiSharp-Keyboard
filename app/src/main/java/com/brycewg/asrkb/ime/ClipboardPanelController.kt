@@ -53,6 +53,8 @@ internal class ClipboardPanelController(
         ensureListInit()
         refreshList()
 
+        views.clipList?.post { views.clipList?.scrollToPosition(0) }
+
         val panel = views.layoutClipboardPanel
         if (panel != null) {
             themeStyler.applyKeyboardBackgroundColor(panel)
