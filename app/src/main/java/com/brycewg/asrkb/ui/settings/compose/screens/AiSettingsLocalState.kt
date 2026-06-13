@@ -24,6 +24,7 @@ internal class AiSettingsLocalState(
     var typewriterEnabled by mutableStateOf(prefs.postprocTypewriterEnabled)
     var aiEditPreferLastAsr by mutableStateOf(prefs.aiEditDefaultToLastAsr)
     var skipUnderChars by mutableStateOf(prefs.postprocSkipUnderChars.coerceIn(0, 100))
+    var aiEditSystemPrompt by mutableStateOf(prefs.aiEditSystemPrompt)
     var sfUseFreeService by mutableStateOf(!prefs.sfFreeLlmUsePaidKey)
     var sfApiKey by mutableStateOf(prefs.getLlmVendorApiKey(LlmVendor.SF_FREE))
     var sfModel by mutableStateOf(currentSfModel(prefs))
@@ -92,6 +93,7 @@ internal class AiSettingsLocalState(
         typewriterEnabled = typewriterEnabled,
         aiEditPreferLastAsr = aiEditPreferLastAsr,
         skipUnderChars = skipUnderChars,
+        aiEditSystemPrompt = aiEditSystemPrompt,
         sfUseFreeService = sfUseFreeService,
         sfApiKey = sfApiKey,
         sfModel = sfModel,

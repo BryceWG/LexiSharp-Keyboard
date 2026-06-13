@@ -185,6 +185,17 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_AI_EDIT_DEFAULT_TO_LAST_ASR, false)
         set(value) = sp.edit { putBoolean(KEY_AI_EDIT_DEFAULT_TO_LAST_ASR, value) }
 
+    // AI 编辑系统提示词：为空时回退到内置本地化提示词
+    var aiEditSystemPrompt: String
+        get() = sp.getString(KEY_AI_EDIT_SYSTEM_PROMPT, "") ?: ""
+        set(value) = sp.edit { putString(KEY_AI_EDIT_SYSTEM_PROMPT, value) }
+
+    /** 返回有效的 AI 编辑系统提示词：自定义非空则用自定义，否则用本地化内置 */
+    fun getEffectiveAiEditSystemPrompt(): String {
+        val custom = aiEditSystemPrompt.trim()
+        return if (custom.isNotEmpty()) custom else getLocalizedString(R.string.llm_edit_system_prompt)
+    }
+
     // AI 后处理：少于该字数时自动跳过（0 表示不启用）
     var postprocSkipUnderChars: Int
         get() = sp.getInt(KEY_POSTPROC_SKIP_UNDER_CHARS, 0).coerceIn(0, 1000)

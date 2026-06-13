@@ -8,6 +8,7 @@
 package com.brycewg.asrkb.ui.settings.compose.screens
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 
@@ -18,14 +19,16 @@ internal fun AiPostProcessSection(
     typewriterEnabled: Boolean,
     aiEditPreferLastAsr: Boolean,
     skipUnderChars: Int,
+    aiEditSystemPrompt: String,
     onPostProcessChange: (Boolean) -> Unit,
     onTypewriterChange: (Boolean) -> Unit,
     onAiEditPreferLastAsrChange: (Boolean) -> Unit,
     onSkipUnderCharsChange: (Int) -> Unit,
-    onSkipUnderCharsFinished: () -> Unit
+    onSkipUnderCharsFinished: () -> Unit,
+    onAiEditSystemPromptChange: (String) -> Unit
 ) {
     AiSection(uiMode = uiMode, titleRes = R.string.section_post_process_scope) {
-        val itemCount = if (postProcessEnabled) 4 else 1
+        val itemCount = if (postProcessEnabled) 5 else 1
         AiSwitchPreference(
             id = "post_process_enabled",
             titleRes = R.string.label_ai_post_process_enabled,
@@ -66,6 +69,26 @@ internal fun AiPostProcessSection(
                 onValueChangeFinished = onSkipUnderCharsFinished
             )
             AiBodyText(uiMode = uiMode, textRes = R.string.helper_ai_skip_under_chars)
+            AiTextField(
+                uiMode = uiMode,
+                value = aiEditSystemPrompt,
+                onValueChange = onAiEditSystemPromptChange,
+                label = stringResource(R.string.label_ai_edit_system_prompt),
+                singleLine = false,
+                minLines = 3,
+                index = 4,
+                count = itemCount
+            )
+            AiBodyText(uiMode = uiMode, textRes = R.string.helper_ai_edit_system_prompt)
+            if (aiEditSystemPrompt.isNotEmpty()) {
+                AiButtonRow(uiMode = uiMode) {
+                    AiButton(
+                        uiMode = uiMode,
+                        textRes = R.string.action_reset_to_default,
+                        onClick = { onAiEditSystemPromptChange("") }
+                    )
+                }
+            }
         }
     }
 }

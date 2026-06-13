@@ -76,6 +76,7 @@ internal object PrefsBackup {
         o.put(KEY_POSTPROC_ENABLED, postProcessEnabled)
         o.put(KEY_POSTPROC_TYPEWRITER_ENABLED, postprocTypewriterEnabled)
         o.put(KEY_AI_EDIT_DEFAULT_TO_LAST_ASR, aiEditDefaultToLastAsr)
+        if (aiEditSystemPrompt.isNotEmpty()) o.put(KEY_AI_EDIT_SYSTEM_PROMPT, aiEditSystemPrompt)
         o.put(KEY_HEADSET_MIC_PRIORITY_ENABLED, headsetMicPriorityEnabled)
         o.put(KEY_LLM_ENDPOINT, llmEndpoint)
         o.put(KEY_LLM_API_KEY, llmApiKey)
@@ -396,6 +397,7 @@ internal object PrefsBackup {
             optString(KEY_LLM_MODEL)?.let { llmModel = it.ifBlank { Prefs.DEFAULT_LLM_MODEL } }
             optFloat(KEY_LLM_TEMPERATURE)?.let { llmTemperature = it.coerceIn(0f, 2f) }
             optBool(KEY_AI_EDIT_DEFAULT_TO_LAST_ASR)?.let { aiEditDefaultToLastAsr = it }
+            optString(KEY_AI_EDIT_SYSTEM_PROMPT)?.let { aiEditSystemPrompt = it }
             optInt(KEY_POSTPROC_SKIP_UNDER_CHARS)?.let { postprocSkipUnderChars = it }
             val importedOpenAiStreaming = optBool(KEY_OA_ASR_STREAMING_ENABLED)
             val importedOpenAiUsePrompt = optBool(KEY_OA_ASR_USE_PROMPT)

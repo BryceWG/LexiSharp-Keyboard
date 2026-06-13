@@ -50,6 +50,7 @@ internal fun AiSettingsRouteContent(
                         typewriterEnabled = typewriterEnabled,
                         aiEditPreferLastAsr = aiEditPreferLastAsr,
                         skipUnderChars = skipUnderChars,
+                        aiEditSystemPrompt = aiEditSystemPrompt,
                         onPostProcessChange = { checked ->
                             onShowExplainedSwitch(
                                 postProcessEnabled,
@@ -99,7 +100,11 @@ internal fun AiSettingsRouteContent(
                             onSkipUnderCharsChange(next)
                             prefs.postprocSkipUnderChars = next
                         },
-                        onSkipUnderCharsFinished = {}
+                        onSkipUnderCharsFinished = {},
+                        onAiEditSystemPromptChange = { value ->
+                            onAiEditSystemPromptChange(value)
+                            prefs.aiEditSystemPrompt = value
+                        }
                     )
                 }
 

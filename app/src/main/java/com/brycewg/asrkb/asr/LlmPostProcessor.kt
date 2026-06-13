@@ -1037,7 +1037,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
 
         val config = getActiveConfig(prefs)
 
-        val systemPrompt = prefs.getLocalizedString(R.string.llm_edit_system_prompt)
+        val systemPrompt = prefs.getEffectiveAiEditSystemPrompt()
         val instructionLabel = prefs.getLocalizedString(R.string.llm_edit_instruction_label)
         val originalLabel = prefs.getLocalizedString(R.string.llm_edit_original_label)
 
