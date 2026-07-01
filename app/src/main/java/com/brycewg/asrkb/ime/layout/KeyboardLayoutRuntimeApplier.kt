@@ -9,10 +9,11 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ime.ImeKeyboardViewFactory
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 object KeyboardLayoutRuntimeApplier {
     private const val KEY_MARGIN_DP = 6f
@@ -77,7 +78,7 @@ object KeyboardLayoutRuntimeApplier {
             val blockWidth = (placement.width * cellWidth).toInt() - margin
             val blockHeight = (placement.height * cellHeight).toInt() - margin
             val micBounds = if (view.id == R.id.btnAiPanelMic) {
-                centeredMicBounds(left, top, blockWidth, blockHeight)
+                scaledMicBounds(left, top, blockWidth, blockHeight)
             } else {
                 PlacedBounds(left, top, blockWidth, blockHeight)
             }
@@ -104,22 +105,26 @@ object KeyboardLayoutRuntimeApplier {
         return changed
     }
 
-    private data class PlacedBounds(
+    internal data class PlacedBounds(
         val left: Int,
         val top: Int,
         val width: Int,
         val height: Int
     )
 
-    private fun centeredMicBounds(left: Int, top: Int, width: Int, height: Int): PlacedBounds {
-        val size = (minOf(width, height) * MIC_SIZE_RATIO).toInt().coerceAtLeast(1)
+    internal fun scaledMicBounds(left: Int, top: Int, width: Int, height: Int): PlacedBounds {
+        val visualWidth = scaledMicDimension(width)
+        val visualHeight = scaledMicDimension(height)
         return PlacedBounds(
-            left = left + (width - size) / 2,
-            top = top + (height - size) / 2,
-            width = size,
-            height = size
+            left = left + (width - visualWidth) / 2,
+            top = top + (height - visualHeight) / 2,
+            width = visualWidth,
+            height = visualHeight
         )
     }
+
+    private fun scaledMicDimension(value: Int): Int =
+        (value.coerceAtLeast(1) * MIC_SIZE_RATIO).toInt().coerceAtLeast(1)
 
     private fun resolveFrameWidth(frame: FrameLayout, root: View): Int? {
         ancestorExplicitContentWidth(frame, R.id.keyboardContentPanel)?.let { return it }
@@ -202,11 +207,15 @@ object KeyboardLayoutRuntimeApplier {
     }
 
     private fun applyPlacedMicSizing(view: View, width: Int, height: Int): Boolean = when (view.id) {
-        R.id.btnAiPanelMic -> applyMicFabSizing(view as? FloatingActionButton, minOf(width, height))
+        R.id.btnAiPanelMic -> applyMicButtonSizing(view as? ImageButton, width, height)
         R.id.groupMicStatus -> {
             val centered = applyMainMicContainerGravity(view)
-            val micSize = micContentSize(width, height)
-            applyMicFabSizing(view.findViewById<FloatingActionButton>(R.id.btnMic), micSize) || centered
+            val micBounds = scaledMicBounds(0, 0, width, height)
+            applyMicButtonSizing(
+                button = view.findViewById(R.id.btnMic),
+                width = micBounds.width,
+                height = micBounds.height
+            ) || centered
         }
         else -> false
     }
@@ -218,20 +227,35 @@ object KeyboardLayoutRuntimeApplier {
         return true
     }
 
-    private fun applyMicFabSizing(fab: FloatingActionButton?, size: Int): Boolean {
-        if (fab == null) return false
-        val finalSize = size.coerceAtLeast(1)
+    private fun applyMicButtonSizing(button: ImageButton?, width: Int, height: Int): Boolean {
+        if (button == null) return false
+        val finalWidth = width.coerceAtLeast(1)
+        val finalHeight = height.coerceAtLeast(1)
         var changed = false
-        if (fab.customSize != finalSize) {
-            fab.customSize = finalSize
+        val lp = button.layoutParams ?: LinearLayout.LayoutParams(finalWidth, finalHeight)
+        if (lp.width != finalWidth || lp.height != finalHeight) {
+            lp.width = finalWidth
+            lp.height = finalHeight
+            button.layoutParams = lp
             changed = true
         }
-        val iconSize = (finalSize * MIC_ICON_SIZE_RATIO).toInt().coerceAtLeast(1)
-        fab.setMaxImageSize(iconSize)
+        val iconSize = (minOf(finalWidth, finalHeight) * MIC_ICON_SIZE_RATIO).toInt().coerceAtLeast(1)
+        val horizontalPadding = ((finalWidth - iconSize) / 2).coerceAtLeast(0)
+        val verticalPadding = ((finalHeight - iconSize) / 2).coerceAtLeast(0)
+        if (button.paddingLeft != horizontalPadding ||
+            button.paddingRight != horizontalPadding ||
+            button.paddingTop != verticalPadding ||
+            button.paddingBottom != verticalPadding
+        ) {
+            button.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding)
+            changed = true
+        }
+        if (button.scaleType != ImageView.ScaleType.FIT_CENTER) {
+            button.scaleType = ImageView.ScaleType.FIT_CENTER
+            changed = true
+        }
         return changed
     }
-
-    private fun micContentSize(width: Int, height: Int): Int = (minOf(width, height).coerceAtLeast(1) * MIC_SIZE_RATIO).toInt().coerceAtLeast(1)
 
     private fun setSize(view: View, width: Int, height: Int): Boolean {
         val lp = view.layoutParams ?: return false
@@ -284,6 +308,6 @@ object KeyboardLayoutRuntimeApplier {
         }
     }
 
-    private const val MIC_SIZE_RATIO = 0.9f
+    private const val MIC_SIZE_RATIO = 1f
     private const val MIC_ICON_SIZE_RATIO = 0.42f
 }

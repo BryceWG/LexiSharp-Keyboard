@@ -39,7 +39,6 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.BibiViewThemes
 import com.brycewg.asrkb.ui.widgets.PunctKeyView
 import com.brycewg.asrkb.ui.widgets.WaveformView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 internal object ImeKeyboardViewFactory {
 
@@ -158,10 +157,7 @@ internal object ImeKeyboardViewFactory {
         }
 
         listOf(R.id.btnMic, R.id.btnAiPanelMic).forEach { id ->
-            root.findViewById<FloatingActionButton>(id)?.apply {
-                backgroundTintList = ColorStateList.valueOf(theme.micContainer)
-                imageTintList = ColorStateList.valueOf(theme.micContent)
-            }
+            root.findViewById<ImageButton>(id)?.applyMicButtonTheme(theme)
         }
         root.findViewById<WaveformView>(R.id.waveformView)?.setWaveformColor(theme.primary)
 
@@ -427,7 +423,7 @@ internal object ImeKeyboardViewFactory {
 
     private fun createButtonFromDef(context: Context, def: BlockDef): View {
         val id = def.viewId ?: View.NO_ID
-        if (id == R.id.btnAiPanelMic) return micFabButton(context, id, def.labelRes)
+        if (id == R.id.btnAiPanelMic) return micButton(context, id, def.labelRes)
         if (def.viewKind == ButtonViewKind.Status && def.viewId == null) {
             return keyButton(context, id, def.labelRes).apply {
                 text = context.getString(def.labelRes)
@@ -616,7 +612,7 @@ internal object ImeKeyboardViewFactory {
         ).apply {
             gravity = Gravity.CENTER
         }
-        addView(micFabButton(context, R.id.btnMic, R.string.cd_mic))
+        addView(micButton(context, R.id.btnMic, R.string.cd_mic))
         addView(
             TextView(context).apply {
                 id = R.id.txtStatus
@@ -690,24 +686,29 @@ internal object ImeKeyboardViewFactory {
         }
     }
 
-    private fun micFabButton(context: Context, id: Int, contentDescriptionRes: Int): FloatingActionButton = FloatingActionButton(context).apply {
+    private fun micButton(context: Context, id: Int, contentDescriptionRes: Int): ImageButton = ImageButton(context).apply {
         this.id = id
         contentDescription = context.getString(contentDescriptionRes)
         setImageResource(R.drawable.microphone)
-        backgroundTintList = ColorStateList.valueOf(
-            UiColors.get(context, UiColorTokens.secondaryContainer)
+        background = BibiViewThemes.roundedRipple(
+            context = context,
+            color = UiColors.get(context, UiColorTokens.secondaryContainer),
+            rippleColor = UiColors.get(context, UiColorTokens.ripple),
+            radiusDp = 8f,
+            insetDp = 0
         )
         imageTintList = ColorStateList.valueOf(
             UiColors.get(context, UiColorTokens.onSecondaryContainer)
         )
-        elevation = 0f
-        compatElevation = 0f
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        adjustViewBounds = false
+        setPadding(dp(context, 16), dp(context, 16), dp(context, 16), dp(context, 16))
+        minimumWidth = 0
+        minimumHeight = 0
         stateListAnimator = null
-        customSize = dp(context, 72)
-        setMaxImageSize(dp(context, 40))
         layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+            dp(context, 72),
+            dp(context, 72)
         )
     }
 
@@ -840,6 +841,17 @@ internal object ImeKeyboardViewFactory {
             is TextView -> setTextColor(theme.keyContent)
             is ImageButton -> imageTintList = ColorStateList.valueOf(theme.keyContent)
         }
+    }
+
+    private fun ImageButton.applyMicButtonTheme(theme: com.brycewg.asrkb.ui.BibiViewTheme) {
+        background = BibiViewThemes.roundedRipple(
+            context,
+            theme.micContainer,
+            theme.ripple,
+            theme.iconKeyRadiusDp,
+            insetDp = 0
+        )
+        imageTintList = ColorStateList.valueOf(theme.micContent)
     }
 
     private fun applyTaggedKeys(view: View, theme: com.brycewg.asrkb.ui.BibiViewTheme) {

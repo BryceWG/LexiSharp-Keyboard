@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ui.widgets.PunctKeyView
 import com.brycewg.asrkb.ui.widgets.WaveformView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 internal class ImeViewRefs private constructor(
     val rootView: View,
@@ -28,7 +27,7 @@ internal class ImeViewRefs private constructor(
     val layoutClipboardPanel: View?,
 
     // Main controls
-    val btnMic: FloatingActionButton?,
+    val btnMic: ImageButton?,
     val btnSettings: ImageButton?,
     val btnEnter: ImageButton?,
     val btnPostproc: ImageButton?,

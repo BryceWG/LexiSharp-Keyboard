@@ -12,6 +12,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.widget.FrameLayout
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.core.view.ViewCompat
 import com.brycewg.asrkb.R
@@ -275,20 +277,19 @@ internal class ImeLayoutController(
         }
         refs?.btnMic?.let { mic ->
             val group = refs.groupMicStatus
-            val groupSize = listOfNotNull(
-                group?.dimensionOrLayoutParam(isWidth = true),
-                group?.dimensionOrLayoutParam(isWidth = false)
-            ).minOrNull()
-            val size = if (groupSize != null) {
-                (groupSize * MIC_SIZE_RATIO).toInt().coerceAtLeast(1)
+            val groupWidth = group?.dimensionOrLayoutParam(isWidth = true)
+            val groupHeight = group?.dimensionOrLayoutParam(isWidth = false)
+            val targetWidth: Int
+            val targetHeight: Int
+            if (groupWidth != null && groupHeight != null) {
+                targetWidth = scaledMicDimension(groupWidth)
+                targetHeight = scaledMicDimension(groupHeight)
             } else {
-                dp(80f * scale)
+                val fallbackSize = dp(80f * scale)
+                targetWidth = fallbackSize
+                targetHeight = fallbackSize
             }
-            if (mic.customSize != size) {
-                mic.customSize = size
-                layoutChanged = true
-            }
-            mic.setMaxImageSize((size * MIC_ICON_SIZE_RATIO).toInt().coerceAtLeast(1))
+            layoutChanged = applyMicButtonSizing(mic, targetWidth, targetHeight) || layoutChanged
         }
         refs
             ?.takeIf { it.layoutMainKeyboard?.visibility == View.VISIBLE }
@@ -545,6 +546,38 @@ internal class ImeLayoutController(
         return current.takeIf { it > 0 }
     }
 
+    private fun scaledMicDimension(value: Int): Int =
+        (value.coerceAtLeast(1) * MIC_SIZE_RATIO).toInt().coerceAtLeast(1)
+
+    private fun applyMicButtonSizing(button: ImageButton, width: Int, height: Int): Boolean {
+        val finalWidth = width.coerceAtLeast(1)
+        val finalHeight = height.coerceAtLeast(1)
+        var changed = false
+        val lp = button.layoutParams ?: LinearLayout.LayoutParams(finalWidth, finalHeight)
+        if (lp.width != finalWidth || lp.height != finalHeight) {
+            lp.width = finalWidth
+            lp.height = finalHeight
+            button.layoutParams = lp
+            changed = true
+        }
+        val iconSize = (minOf(finalWidth, finalHeight) * MIC_ICON_SIZE_RATIO).toInt().coerceAtLeast(1)
+        val horizontalPadding = ((finalWidth - iconSize) / 2).coerceAtLeast(0)
+        val verticalPadding = ((finalHeight - iconSize) / 2).coerceAtLeast(0)
+        if (button.paddingLeft != horizontalPadding ||
+            button.paddingRight != horizontalPadding ||
+            button.paddingTop != verticalPadding ||
+            button.paddingBottom != verticalPadding
+        ) {
+            button.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding)
+            changed = true
+        }
+        if (button.scaleType != ImageView.ScaleType.FIT_CENTER) {
+            button.scaleType = ImageView.ScaleType.FIT_CENTER
+            changed = true
+        }
+        return changed
+    }
+
     private companion object {
         private const val TABLET_SMALLEST_WIDTH_DP = 600
         private const val DOCKED_PANEL_VERTICAL_PADDING_DP = 8f
@@ -559,7 +592,7 @@ internal class ImeLayoutController(
         private const val FOLDABLE_LIKE_MAX_ASPECT_RATIO = 1.7f
         private const val PHONE_LANDSCAPE_MIN_WIDTH_DP = 600
         private const val PHONE_LANDSCAPE_MIN_SHORT_SIDE_DP = 320
-        private const val MIC_SIZE_RATIO = 0.9f
+        private const val MIC_SIZE_RATIO = 1f
         private const val MIC_ICON_SIZE_RATIO = 0.42f
     }
 
