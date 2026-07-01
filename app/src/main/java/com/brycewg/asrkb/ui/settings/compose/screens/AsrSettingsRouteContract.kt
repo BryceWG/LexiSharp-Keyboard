@@ -121,6 +121,8 @@ internal data class AsrOnlineSettingsRouteState(
     val onSonioxApiKeyChange: (String) -> Unit,
     val sonioxStreaming: Boolean,
     val onSonioxStreamingChange: (Boolean) -> Unit,
+    val sonioxEndpointSensitivityLevel: Int,
+    val onSonioxEndpointSensitivityLevelChange: (Int) -> Unit,
     val sonioxLanguages: List<String>,
     val sonioxLanguageStrict: Boolean,
     val onSonioxLanguageStrictChange: (Boolean) -> Unit

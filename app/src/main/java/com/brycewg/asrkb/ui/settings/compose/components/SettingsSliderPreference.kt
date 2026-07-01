@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
@@ -35,6 +37,8 @@ internal fun SettingsSliderPreference(
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int,
     showKeyPoints: Boolean = steps in 1..10,
+    startLabel: String? = null,
+    endLabel: String? = null,
     highlightId: String? = null,
     index: Int = 0,
     count: Int = 1,
@@ -59,12 +63,21 @@ internal fun SettingsSliderPreference(
                     onValueChange = onValueChange,
                     onValueChangeFinished = finishWithHaptic,
                     valueRange = valueRange,
-                    steps = if (showKeyPoints) steps else 0,
+                    steps = steps,
+                    colors = if (showKeyPoints) {
+                        SliderDefaults.colors()
+                    } else {
+                        SliderDefaults.colors(
+                            activeTickColor = Color.Transparent,
+                            inactiveTickColor = Color.Transparent
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = SettingsLayoutMetrics.SliderHorizontalPadding)
                         .padding(bottom = SettingsLayoutMetrics.SliderBottomPadding)
                 )
+                SettingsSliderScaleLabels(uiMode, startLabel, endLabel)
             }
 
             BibiUiMode.Miuix -> {
@@ -78,13 +91,14 @@ internal fun SettingsSliderPreference(
                     onValueChange = onValueChange,
                     onValueChangeFinished = finishWithHaptic,
                     valueRange = valueRange,
-                    steps = if (showKeyPoints) steps else 0,
+                    steps = steps,
                     showKeyPoints = showKeyPoints,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = SettingsLayoutMetrics.SliderHorizontalPadding)
                         .padding(bottom = SettingsLayoutMetrics.SliderBottomPadding)
                 )
+                SettingsSliderScaleLabels(uiMode, startLabel, endLabel)
             }
         }
     }
@@ -92,6 +106,52 @@ internal fun SettingsSliderPreference(
         content()
     } else {
         SettingsHighlightContainer(entryId = highlightId, uiMode = uiMode, content = content)
+    }
+}
+
+@Composable
+private fun SettingsSliderScaleLabels(
+    uiMode: BibiUiMode,
+    startLabel: String?,
+    endLabel: String?
+) {
+    if (startLabel == null && endLabel == null) return
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = SettingsLayoutMetrics.SliderHorizontalPadding,
+                vertical = SettingsLayoutMetrics.ControlLabelVerticalPadding
+            ),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        when (uiMode) {
+            BibiUiMode.Material -> {
+                Text(
+                    text = startLabel.orEmpty(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = endLabel.orEmpty(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            BibiUiMode.Miuix -> {
+                MiuixText(
+                    text = startLabel.orEmpty(),
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    style = MiuixTheme.textStyles.body2
+                )
+                MiuixText(
+                    text = endLabel.orEmpty(),
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    style = MiuixTheme.textStyles.body2
+                )
+            }
+        }
     }
 }
 

@@ -72,6 +72,7 @@ internal class AsrOnlineSettingsFields(
     var openAiLanguage by mutableStateOf(prefs.oaAsrLanguage)
     var sonioxApiKey by mutableStateOf(prefs.sonioxApiKey)
     var sonioxStreaming by mutableStateOf(prefs.sonioxStreamingEnabled)
+    var sonioxEndpointSensitivityLevel by mutableStateOf(prefs.sonioxEndpointSensitivityLevel)
     var sonioxLanguages by mutableStateOf(prefs.getSonioxLanguages())
     var sonioxLanguageStrict by mutableStateOf(prefs.sonioxLanguageHintsStrict)
 
@@ -119,6 +120,7 @@ internal class AsrOnlineSettingsFields(
         refreshOpenAiFromPrefs()
         sonioxApiKey = prefs.sonioxApiKey
         sonioxStreaming = prefs.sonioxStreamingEnabled
+        sonioxEndpointSensitivityLevel = prefs.sonioxEndpointSensitivityLevel
         sonioxLanguages = prefs.getSonioxLanguages()
         sonioxLanguageStrict = prefs.sonioxLanguageHintsStrict
     }
@@ -422,6 +424,11 @@ internal class AsrOnlineSettingsFields(
         sonioxStreaming = sonioxStreaming,
         onSonioxStreamingChange = { checked ->
             applySonioxStreamingSwitch(checked)
+        },
+        sonioxEndpointSensitivityLevel = sonioxEndpointSensitivityLevel,
+        onSonioxEndpointSensitivityLevelChange = { level ->
+            sonioxEndpointSensitivityLevel = level
+            prefs.sonioxEndpointSensitivityLevel = level
         },
         sonioxLanguages = sonioxLanguages,
         sonioxLanguageStrict = sonioxLanguageStrict,

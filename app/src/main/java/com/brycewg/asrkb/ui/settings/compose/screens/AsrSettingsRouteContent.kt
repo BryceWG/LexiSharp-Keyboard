@@ -242,6 +242,8 @@ internal fun AsrSettingsRouteContent(
                         onSonioxApiKeyChange = onlineState.onSonioxApiKeyChange,
                         sonioxStreaming = onlineState.sonioxStreaming,
                         onSonioxStreamingChange = onlineState.onSonioxStreamingChange,
+                        sonioxEndpointSensitivityLevel = onlineState.sonioxEndpointSensitivityLevel,
+                        onSonioxEndpointSensitivityLevelChange = onlineState.onSonioxEndpointSensitivityLevelChange,
                         sonioxLanguages = onlineState.sonioxLanguages,
                         onChooseSonioxLanguages = showSonioxLanguagePicker,
                         sonioxLanguageStrict = onlineState.sonioxLanguageStrict,

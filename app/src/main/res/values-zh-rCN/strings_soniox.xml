@@ -5,9 +5,15 @@
 
     <!-- Soniox configuration -->
     <string name="label_soniox_streaming">流式识别</string>
+    <string name="label_soniox_endpoint_mode">识别模式</string>
     <string name="label_soniox_language">识别语言（可多选）</string>
     <string name="label_soniox_language_strict">严格限制识别语言</string>
     <string name="label_soniox_api_key">API Key（Bearer）</string>
+
+    <!-- Soniox endpoint modes -->
+    <string name="soniox_endpoint_mode_low_latency">低延迟</string>
+    <string name="soniox_endpoint_mode_default">默认</string>
+    <string name="soniox_endpoint_mode_high_accuracy">高精度</string>
 
     <!-- Soniox language options -->
     <string name="soniox_lang_auto">自动（多语言）</string>

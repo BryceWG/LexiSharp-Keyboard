@@ -1068,6 +1068,29 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_SONIOX_STREAMING_ENABLED, true)
         set(value) = sp.edit { putBoolean(KEY_SONIOX_STREAMING_ENABLED, value) }
 
+    // Soniox：服务端 endpoint 判停灵敏度档位。0=低延迟(+1.0)，10=官方默认(0.0)，20=高精度(-1.0)
+    var sonioxEndpointSensitivityLevel: Int
+        get() = sp.getInt(
+            KEY_SONIOX_ENDPOINT_SENSITIVITY_LEVEL,
+            DEFAULT_SONIOX_ENDPOINT_SENSITIVITY_LEVEL
+        ).coerceIn(SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MIN, SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MAX)
+        set(value) = sp.edit {
+            putInt(
+                KEY_SONIOX_ENDPOINT_SENSITIVITY_LEVEL,
+                value.coerceIn(
+                    SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MIN,
+                    SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MAX
+                )
+            )
+        }
+
+    val sonioxEndpointSensitivity: Float?
+        get() = when (val level = sonioxEndpointSensitivityLevel) {
+            DEFAULT_SONIOX_ENDPOINT_SENSITIVITY_LEVEL -> null
+            else -> (DEFAULT_SONIOX_ENDPOINT_SENSITIVITY_LEVEL - level) /
+                DEFAULT_SONIOX_ENDPOINT_SENSITIVITY_LEVEL.toFloat()
+        }
+
     // Soniox：识别语言提示（language_hints）；空字符串表示不设置（多语言自动）
     var sonioxLanguage: String
         get() = sp.getString(KEY_SONIOX_LANGUAGE, "") ?: ""
@@ -1784,6 +1807,10 @@ class Prefs(context: Context) {
         const val VOLUME_KEY_MODE_DOWN_TOGGLE = "volume_down_toggle"
         const val VOLUME_KEY_MODE_UP_START_DOWN_STOP = "volume_up_start_down_stop"
         const val VOLUME_KEY_MODE_DOWN_START_UP_STOP = "volume_down_start_up_stop"
+
+        const val SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MIN = 0
+        const val DEFAULT_SONIOX_ENDPOINT_SENSITIVITY_LEVEL = 10
+        const val SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MAX = 20
 
         val VOLUME_KEY_RECORDING_MODES: Set<String> = setOf(
             VOLUME_KEY_MODE_UP_TOGGLE,

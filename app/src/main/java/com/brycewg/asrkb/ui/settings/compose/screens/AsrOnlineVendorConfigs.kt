@@ -20,6 +20,7 @@ import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButtonRow
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.model.DropdownOption
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 internal fun CurrentAsrVendorConfig(
@@ -110,6 +111,8 @@ internal fun CurrentAsrVendorConfig(
     onSonioxApiKeyChange: (String) -> Unit,
     sonioxStreaming: Boolean,
     onSonioxStreamingChange: (Boolean) -> Unit,
+    sonioxEndpointSensitivityLevel: Int,
+    onSonioxEndpointSensitivityLevelChange: (Int) -> Unit,
     sonioxLanguages: List<String>,
     onChooseSonioxLanguages: () -> Unit,
     sonioxLanguageStrict: Boolean,
@@ -500,6 +503,8 @@ internal fun CurrentAsrVendorConfig(
                 onApiKeyChange = onSonioxApiKeyChange,
                 streaming = sonioxStreaming,
                 onStreamingChange = onSonioxStreamingChange,
+                endpointSensitivityLevel = sonioxEndpointSensitivityLevel,
+                onEndpointSensitivityLevelChange = onSonioxEndpointSensitivityLevelChange,
                 languages = sonioxLanguages,
                 onChooseLanguages = onChooseSonioxLanguages,
                 languageStrict = sonioxLanguageStrict,
@@ -672,6 +677,8 @@ private fun SonioxAsrConfig(
     onApiKeyChange: (String) -> Unit,
     streaming: Boolean,
     onStreamingChange: (Boolean) -> Unit,
+    endpointSensitivityLevel: Int,
+    onEndpointSensitivityLevelChange: (Int) -> Unit,
     languages: List<String>,
     onChooseLanguages: () -> Unit,
     languageStrict: Boolean,
@@ -682,7 +689,11 @@ private fun SonioxAsrConfig(
 ) {
     val context = LocalContext.current
     var itemIndex = primaryIndexOffset
-    val itemCount = primaryGroupCount ?: 5
+    val itemCount = primaryGroupCount ?: 6
+    val endpointLevelMin = Prefs.SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MIN
+    val endpointLevelMax = Prefs.SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MAX
+    val endpointLevelRange = endpointLevelMin.toFloat()..endpointLevelMax.toFloat()
+    val endpointLevelSteps = endpointLevelMax - endpointLevelMin - 1
     AsrTextField(
         uiMode = uiMode,
         value = apiKey,
@@ -699,6 +710,28 @@ private fun SonioxAsrConfig(
         index = itemIndex++,
         count = itemCount,
         onCheckedChange = onStreamingChange
+    )
+    AsrSliderPreference(
+        titleRes = R.string.label_soniox_endpoint_mode,
+        valueLabel = sonioxEndpointSensitivityLabel(context, endpointSensitivityLevel),
+        value = endpointSensitivityLevel.toFloat(),
+        valueRange = endpointLevelRange,
+        steps = endpointLevelSteps,
+        uiMode = uiMode,
+        showKeyPoints = false,
+        startLabel = context.getString(R.string.soniox_endpoint_mode_low_latency),
+        endLabel = context.getString(R.string.soniox_endpoint_mode_high_accuracy),
+        index = itemIndex++,
+        count = itemCount,
+        onValueChange = { value ->
+            onEndpointSensitivityLevelChange(
+                value.roundToInt().coerceIn(
+                    endpointLevelMin,
+                    endpointLevelMax
+                )
+            )
+        },
+        onValueChangeFinished = {}
     )
     AsrSwitchPreference(
         id = "soniox_language_strict",
@@ -748,7 +781,7 @@ internal fun currentOnlineAsrPrimaryItemCount(
         openAiUsePrompt,
         openAiUseCompletions
     )
-    AsrVendor.Soniox -> 5
+    AsrVendor.Soniox -> 6
     else -> 0
 }
 
@@ -896,6 +929,24 @@ internal fun sonioxLanguageOptions(context: Context): List<OnlineVendorChoice> =
     OnlineVendorChoice("ms", context.getString(R.string.soniox_lang_ms)),
     OnlineVendorChoice("fil", context.getString(R.string.soniox_lang_fil))
 )
+
+private fun sonioxEndpointSensitivityLabel(context: Context, level: Int): String {
+    val sensitivity = sonioxEndpointSensitivityForLevel(level)
+    return if (sensitivity == 0f) {
+        "${context.getString(R.string.soniox_endpoint_mode_default)} (0.0)"
+    } else {
+        String.format(Locale.US, "%+.1f", sensitivity)
+    }
+}
+
+private fun sonioxEndpointSensitivityForLevel(level: Int): Float {
+    val normalized = level.coerceIn(
+        Prefs.SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MIN,
+        Prefs.SONIOX_ENDPOINT_SENSITIVITY_LEVEL_MAX
+    )
+    return (Prefs.DEFAULT_SONIOX_ENDPOINT_SENSITIVITY_LEVEL - normalized) /
+        Prefs.DEFAULT_SONIOX_ENDPOINT_SENSITIVITY_LEVEL.toFloat()
+}
 
 internal fun sonioxLanguageSummary(context: Context, languages: List<String>): String {
     if (languages.isEmpty()) return context.getString(R.string.soniox_lang_auto)

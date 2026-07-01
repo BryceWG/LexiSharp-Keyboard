@@ -122,6 +122,7 @@ internal object PrefsBackup {
         o.put(KEY_SONIOX_LANGUAGE, sonioxLanguage)
         o.put(KEY_SONIOX_LANGUAGES, sonioxLanguagesJson)
         o.put(KEY_SONIOX_STREAMING_ENABLED, sonioxStreamingEnabled)
+        o.put(KEY_SONIOX_ENDPOINT_SENSITIVITY_LEVEL, sonioxEndpointSensitivityLevel)
         // StepAudio 设置
         o.put(KEY_STEPAUDIO_USE_ITN, stepAudioUseItn)
         // Gemini 设置
@@ -455,6 +456,9 @@ internal object PrefsBackup {
                 optString(KEY_SONIOX_LANGUAGE)?.let { sonioxLanguage = it }
             }
             optBool(KEY_SONIOX_STREAMING_ENABLED)?.let { sonioxStreamingEnabled = it }
+            optInt(KEY_SONIOX_ENDPOINT_SENSITIVITY_LEVEL)?.let {
+                sonioxEndpointSensitivityLevel = it
+            }
             // StepAudio 设置
             optBool(KEY_STEPAUDIO_USE_ITN)?.let { stepAudioUseItn = it }
             // ElevenLabs streaming toggle

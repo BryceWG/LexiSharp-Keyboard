@@ -143,7 +143,7 @@ class SonioxStreamAsrEngine(
             category = "ASR",
             vendor = "soniox",
             model = MODEL,
-            requestStructure = "WebSocket config keys=api_key, audio_format, enable_endpoint_detection, enable_language_identification, language_hints?, language_hints_strict?, model, num_channels, sample_rate"
+            requestStructure = "WebSocket config keys=api_key, audio_format, enable_endpoint_detection, endpoint_sensitivity?, enable_language_identification, language_hints?, language_hints_strict?, model, num_channels, sample_rate"
         )
         val req = Request.Builder()
             .url(Prefs.SONIOX_WS_URL)
@@ -375,6 +375,9 @@ class SonioxStreamAsrEngine(
             put("num_channels", 1)
             // 辅助能力（尽量低延迟）
             put("enable_endpoint_detection", true)
+            prefs.sonioxEndpointSensitivity?.let { sensitivity ->
+                put("endpoint_sensitivity", sensitivity.toDouble())
+            }
             put("enable_language_identification", true)
             // 若选择了识别语言，作为 language_hints 提示（显著提升准确率）
             val langs = prefs.getSonioxLanguages()
