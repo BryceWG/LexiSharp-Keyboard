@@ -439,6 +439,7 @@ internal class ImeFloatingKeyboardController(
             applyFloatingHostWindowFrame(root, targetWidth, panelHeight)
         }
         changed = hostWindowChanged || changed
+        changed = updateDragHandleForCurrentWindow(root, panelHeight) || changed
         changed = movePanelToOrigin(panel) || changed
         changed = showPositioned(root, panel) || changed
         if (changed) {
@@ -520,7 +521,12 @@ internal class ImeFloatingKeyboardController(
                 it.visibility = target
                 changed = true
             }
-            changed = updateDragHandleRowPlacement(root, it, visible) || changed
+            changed = updateDragHandleRowPlacement(
+                root = root,
+                row = it,
+                visible = visible,
+                placement = FloatingDragHandlePlacement.BOTTOM
+            ) || changed
         }
         handle?.let {
             if (it.visibility != target) {
@@ -531,22 +537,61 @@ internal class ImeFloatingKeyboardController(
         return changed
     }
 
-    private fun updateDragHandleRowPlacement(root: View, row: View, visible: Boolean): Boolean {
+    private fun updateDragHandleForCurrentWindow(root: View, panelHeight: Int): Boolean {
+        val row = root.findViewById<View>(R.id.keyboardDragHandleRow) ?: return false
+        val placement = currentDragHandlePlacement(root, panelHeight)
+        return updateDragHandleRowPlacement(root, row, visible = true, placement = placement)
+    }
+
+    private fun currentDragHandlePlacement(root: View, panelHeight: Int): FloatingDragHandlePlacement {
+        val windowY = windowProvider()?.attributes?.y ?: return FloatingDragHandlePlacement.BOTTOM
+        return resolveFloatingDragHandlePlacement(
+            windowY = windowY,
+            panelHeight = panelHeight,
+            screenHeight = screenHeight(root),
+            bottomThresholdPx = dp(root, DRAG_HANDLE_BOTTOM_THRESHOLD_DP)
+        )
+    }
+
+    private fun updateDragHandleRowPlacement(
+        root: View,
+        row: View,
+        visible: Boolean,
+        placement: FloatingDragHandlePlacement
+    ): Boolean {
         val lp = row.layoutParams as? FrameLayout.LayoutParams ?: return false
         val rowHeight = lp.height.takeIf { it > 0 }
             ?: row.height.takeIf { it > 0 }
             ?: dp(root, DRAG_HANDLE_ROW_HEIGHT_DP)
-        val bottomPadding = if (visible) {
-            keyboardPanel(root).paddingBottom
+        val panel = keyboardPanel(root)
+        val topHandle = visible && placement == FloatingDragHandlePlacement.TOP
+        val targetGravity = if (topHandle) {
+            Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        } else {
+            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        }
+        val paddingBand = if (!visible) {
+            0
+        } else if (topHandle) {
+            panel.paddingTop
+        } else {
+            panel.paddingBottom
+        }
+        val targetMargin = if (visible && paddingBand > 0) {
+            -((paddingBand + rowHeight) / 2)
         } else {
             0
         }
-        val targetBottomMargin = if (visible && bottomPadding > 0) {
-            -((bottomPadding + rowHeight) / 2)
-        } else {
-            0
+        val targetTopMargin = if (topHandle) targetMargin else 0
+        val targetBottomMargin = if (topHandle) 0 else targetMargin
+        if (lp.gravity == targetGravity &&
+            lp.topMargin == targetTopMargin &&
+            lp.bottomMargin == targetBottomMargin
+        ) {
+            return false
         }
-        if (lp.bottomMargin == targetBottomMargin) return false
+        lp.gravity = targetGravity
+        lp.topMargin = targetTopMargin
         lp.bottomMargin = targetBottomMargin
         row.layoutParams = lp
         return true
@@ -768,6 +813,7 @@ internal class ImeFloatingKeyboardController(
         changed = updatePanelFrame(panel, width, Gravity.TOP or Gravity.START) || changed
         changed = setRootSize(root, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) || changed
         changed = applyFloatingHostWindowFrame(root, width, targetHeight, nextX, nextY) || changed
+        changed = updateDragHandleForCurrentWindow(root, targetHeight) || changed
         changed = movePanelToOrigin(panel) || changed
         if (changed) {
             ViewCompat.requestApplyInsets(root)
@@ -800,7 +846,8 @@ internal class ImeFloatingKeyboardController(
             attrs.windowAnimations = 0
             window.attributes = attrs
         }
-        return changed
+        val dragHandleChanged = updateDragHandleForCurrentWindow(root, targetHeight)
+        return changed || dragHandleChanged
     }
 
     private fun saveWindowPosition(root: View) {
@@ -909,6 +956,7 @@ internal class ImeFloatingKeyboardController(
         private const val FLOATING_RESIZE_MIN_WIDTH_DP = 260f
         private const val FLOATING_SIDE_MARGIN_DP = 20f
         private const val DRAG_HANDLE_ROW_HEIGHT_DP = 24f
+        private const val DRAG_HANDLE_BOTTOM_THRESHOLD_DP = 100f
         private const val RESIZE_HANDLE_HEIGHT_DP = 24f
         private val FLOATING_WINDOW_FLAGS =
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
