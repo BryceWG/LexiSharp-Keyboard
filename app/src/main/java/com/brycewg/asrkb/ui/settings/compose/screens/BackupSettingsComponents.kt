@@ -8,6 +8,7 @@
 package com.brycewg.asrkb.ui.settings.compose.screens
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsPreference
@@ -55,14 +57,16 @@ internal fun BackupBodyText(text: String, uiMode: BibiUiMode) {
     when (uiMode) {
         BibiUiMode.Material -> Text(
             text = text,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodyMedium
         )
 
         BibiUiMode.Miuix -> MiuixText(
             text = text,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-            style = MiuixTheme.textStyles.body2
+            style = MiuixTheme.textStyles.footnote1
         )
     }
 }
