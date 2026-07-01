@@ -26,12 +26,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+
+internal fun xAsrShouldStopAfterTailDrainChunk(chunkIndex: Int, maxChunks: Int): Boolean {
+    return maxChunks > 0 && chunkIndex >= maxChunks
+}
 
 /**
  * 基于 sherpa-onnx OnlineRecognizer 的本地 X-ASR 流式识别引擎。
  * - 反射调用 sherpa-onnx Kotlin API，避免编译期强耦合。
  * - 录音分片（默认200ms），送入在线流；每次分片后尽可能 decode，并节流发送 partial。
- * - 停止时写入尾部静音 + inputFinished + 完整 decode 输出最终结果。
+ * - 停止时先读取少量真实尾部 PCM，再 inputFinished + 完整 decode 输出最终结果。
  */
 class XAsrStreamAsrEngine(
     private val context: Context,
@@ -45,12 +50,16 @@ class XAsrStreamAsrEngine(
     companion object {
         private const val TAG = "XAsrStreamAsrEngine"
         private const val FRAME_MS = 200
+        private const val CAPTURE_TAIL_DRAIN_CHUNKS = 2
+        private const val CAPTURE_TAIL_DRAIN_TIMEOUT_MS = 900L
     }
 
     private val running = AtomicBoolean(false)
     private val closing = AtomicBoolean(false)
     private val finalizeOnce = AtomicBoolean(false)
     private val closeSilently = AtomicBoolean(false)
+    private val captureTailDrainRequested = AtomicBoolean(false)
+    private val captureTailDrainChunks = AtomicInteger(0)
 
     @Volatile private var useItnForSession: Boolean = false
 
@@ -86,6 +95,8 @@ class XAsrStreamAsrEngine(
         closing.set(false)
         finalizeOnce.set(false)
         closeSilently.set(false)
+        captureTailDrainRequested.set(false)
+        captureTailDrainChunks.set(0)
         loggedAudioBytes.set(0)
         streamLog = LocalAsrCallLogger.startInference(
             prefs = prefs,
@@ -246,22 +257,27 @@ class XAsrStreamAsrEngine(
     }
 
     override fun stop() {
-        if (!running.get() && currentStream == null) {
-            // 尚在加载阶段：仅标记关闭并停止采集
-            closing.set(true)
-            audioJob?.cancel()
-            audioJob = null
-            return
-        }
         running.set(false)
         closing.set(true)
-        audioJob?.cancel()
+        val jobToJoin = audioJob
+        val s = currentStream
+        val drainCaptureTail = !externalPcmMode && s != null && jobToJoin?.isActive == true
+        if (drainCaptureTail) {
+            captureTailDrainChunks.set(0)
+            captureTailDrainRequested.set(true)
+        } else {
+            jobToJoin?.cancel()
+        }
         audioJob = null
 
-        val s = currentStream
-        if (s != null && finalizeOnce.compareAndSet(false, true)) {
+        if (s == null) {
+            return
+        }
+
+        if (finalizeOnce.compareAndSet(false, true)) {
             scope.launch(Dispatchers.Default) {
                 val finalText = try {
+                    awaitCaptureJobStopped(jobToJoin, drainCaptureTail)
                     finalizeAndRelease(s)
                 } catch (t: Throwable) {
                     Log.e(TAG, "finalizeAndRelease failed", t)
@@ -279,6 +295,19 @@ class XAsrStreamAsrEngine(
                 closing.set(false)
             }
         }
+    }
+
+    private suspend fun awaitCaptureJobStopped(job: Job?, drainTail: Boolean) {
+        if (job == null) return
+        if (drainTail) {
+            val stopped = withTimeoutOrNull(CAPTURE_TAIL_DRAIN_TIMEOUT_MS) {
+                job.join()
+                true
+            } == true
+            if (stopped) return
+        }
+        job.cancel()
+        job.join()
     }
 
     private fun notifyLoadUi(start: Boolean) {
@@ -333,11 +362,22 @@ class XAsrStreamAsrEngine(
             } else {
                 null
             }
+            val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+                prefs = prefs,
+                sampleRate = sampleRate
+            )
 
             try {
                 Log.d(TAG, "Starting audio capture for X-ASR with chunk=${chunkMillis}ms")
                 audioManager.startCapture().collect { audioChunk ->
                     if (!running.get() && currentStream == null) return@collect
+                    if (audioChunk.isEmpty()) return@collect
+                    val tailDrainRequestedAtChunkStart = captureTailDrainRequested.get()
+                    val tailDrainChunkIndex = if (tailDrainRequestedAtChunkStart) {
+                        captureTailDrainChunks.incrementAndGet()
+                    } else {
+                        0
+                    }
                     if (audioChunk.isNotEmpty()) {
                         loggedAudioBytes.addAndGet(audioChunk.size)
                     }
@@ -352,8 +392,31 @@ class XAsrStreamAsrEngine(
                         Log.w(TAG, "Failed to calculate amplitude", t)
                     }
 
-                    // VAD 自动判停
-                    if (vadDetector?.shouldStop(audioChunk, audioChunk.size) == true) {
+                    val shouldStopForVad = vadDetector?.shouldStop(audioChunk, audioChunk.size) == true
+                    val s = currentStream
+                    if (s == null) {
+                        withContext(NonCancellable) {
+                            appendPrebuffer(audioChunk)
+                        }
+                    } else {
+                        withContext(NonCancellable) {
+                            deliverChunk(s, audioChunk, audioChunk.size)
+                        }
+                    }
+
+                    if (maxDurationLimiter.acceptPcm(audioChunk.size)) {
+                        Log.d(TAG, "Max recording duration reached, stopping recording")
+                        try {
+                            listener.onStopped()
+                        } catch (t: Throwable) {
+                            Log.e(TAG, "Failed to notify stopped", t)
+                        }
+                        stop()
+                        return@collect
+                    }
+
+                    // VAD 自动判停：当前块必须先进入模型，避免尾段在停止前被丢弃。
+                    if (shouldStopForVad) {
                         Log.d(TAG, "Silence detected, stopping recording")
                         try {
                             listener.onStopped()
@@ -365,16 +428,14 @@ class XAsrStreamAsrEngine(
                         stop()
                         return@collect
                     }
-
-                    val s = currentStream
-                    if (s == null) {
-                        withContext(NonCancellable) {
-                            appendPrebuffer(audioChunk)
-                        }
-                    } else {
-                        withContext(NonCancellable) {
-                            deliverChunk(s, audioChunk, audioChunk.size)
-                        }
+                    if (
+                        tailDrainRequestedAtChunkStart &&
+                        xAsrShouldStopAfterTailDrainChunk(
+                            tailDrainChunkIndex,
+                            CAPTURE_TAIL_DRAIN_CHUNKS
+                        )
+                    ) {
+                        throw CancellationException("X-ASR capture stopped after tail drain")
                     }
                 }
             } catch (t: Throwable) {
