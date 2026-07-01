@@ -83,6 +83,7 @@ import com.brycewg.asrkb.ime.layout.BlockPlacement
 import com.brycewg.asrkb.ime.layout.BlockSize
 import com.brycewg.asrkb.ime.layout.GridSize
 import com.brycewg.asrkb.ime.layout.KeyboardLayout
+import com.brycewg.asrkb.ime.layout.KeyboardLayoutBundle
 import com.brycewg.asrkb.ime.layout.KeyboardLayoutPanel
 import com.brycewg.asrkb.ime.layout.KeyboardLayoutStore
 import com.brycewg.asrkb.ime.layout.validateLayout
@@ -132,16 +133,23 @@ internal fun KeyboardLayoutEditorScreen(
     var jsonText by remember(bundle) { mutableStateOf(KeyboardLayoutStore.encodeBundle(bundle)) }
     var messageDialog by remember { mutableStateOf<SettingsMessageDialogState?>(null) }
 
+    fun replaceBundle(nextBundle: KeyboardLayoutBundle) {
+        bundle = nextBundle
+        selectedIndex = selectedIndex?.takeIf { it in nextBundle.layoutFor(panel).blocks.indices }
+        jsonText = KeyboardLayoutStore.encodeBundle(nextBundle)
+    }
+
     fun replaceCurrentLayout(layout: KeyboardLayout) {
         val updated = layout.copy(updatedAt = System.currentTimeMillis())
-        val nextBundle = bundle.withLayout(updated)
-        bundle = nextBundle
-        selectedIndex = selectedIndex?.takeIf { it in updated.blocks.indices }
-        jsonText = KeyboardLayoutStore.encodeBundle(nextBundle)
+        replaceBundle(bundle.withLayout(updated))
     }
 
     fun updateLayout(transform: (KeyboardLayout) -> KeyboardLayout) {
         replaceCurrentLayout(transform(bundle.layoutFor(panel)))
+    }
+
+    fun syncLayoutGridSize(gridSize: GridSize) {
+        replaceBundle(bundle.withSyncedGridSize(panel, gridSize))
     }
 
     fun showMessage(message: String) {
@@ -230,16 +238,10 @@ internal fun KeyboardLayoutEditorScreen(
                         uiMode = uiMode,
                         layout = layout,
                         onColsChange = { cols ->
-                            updateLayout { current ->
-                                val grid = current.gridSize.copy(cols = cols).coerceForPanel(panel)
-                                current.copy(gridSize = grid, blocks = current.blocks.filter { it.placement.withinGrid(grid) })
-                            }
+                            syncLayoutGridSize(layout.gridSize.copy(cols = cols))
                         },
                         onRowsChange = { rows ->
-                            updateLayout { current ->
-                                val grid = current.gridSize.copy(rows = rows).coerceForPanel(panel)
-                                current.copy(gridSize = grid, blocks = current.blocks.filter { it.placement.withinGrid(grid) })
-                            }
+                            syncLayoutGridSize(layout.gridSize.copy(rows = rows))
                         }
                     )
 

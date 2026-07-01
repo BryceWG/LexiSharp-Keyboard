@@ -111,6 +111,28 @@ data class KeyboardLayoutBundle(
         KeyboardLayoutPanel.AiEdit -> copy(aiEdit = layout)
         KeyboardLayoutPanel.Recording -> copy(recording = layout)
     }
+
+    fun withSyncedGridSize(
+        sourcePanel: KeyboardLayoutPanel,
+        gridSize: GridSize,
+        updatedAt: Long = System.currentTimeMillis()
+    ): KeyboardLayoutBundle {
+        val sourceGrid = gridSize.coerceForPanel(sourcePanel)
+        return KeyboardLayoutBundle(
+            main = main.withGridSize(sourceGrid, updatedAt),
+            aiEdit = aiEdit.withGridSize(sourceGrid, updatedAt),
+            recording = recording.withGridSize(sourceGrid, updatedAt)
+        )
+    }
+
+    private fun KeyboardLayout.withGridSize(gridSize: GridSize, updatedAt: Long): KeyboardLayout {
+        val nextGrid = gridSize.coerceForPanel(panel)
+        return copy(
+            gridSize = nextGrid,
+            blocks = blocks.filter { it.placement.withinGrid(nextGrid) },
+            updatedAt = updatedAt
+        )
+    }
 }
 
 sealed class LayoutError {
