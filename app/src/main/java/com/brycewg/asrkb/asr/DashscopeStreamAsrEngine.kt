@@ -692,6 +692,10 @@ class DashscopeStreamAsrEngine(
             } else {
                 null
             }
+            val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+                prefs = prefs,
+                sampleRate = sampleRate
+            )
 
             try {
                 audioManager.startCapture().collect { audioChunk ->
@@ -725,6 +729,17 @@ class DashscopeStreamAsrEngine(
                     } else {
                         flushPrebuffer()
                         sendAudioFrame(audioChunk)
+                    }
+
+                    if (maxDurationLimiter.acceptPcm(audioChunk.size)) {
+                        Log.d(TAG, "Max recording duration reached, stopping recording")
+                        try {
+                            listener.onStopped()
+                        } catch (t: Throwable) {
+                            Log.e(TAG, "notify stopped failed", t)
+                        }
+                        stop()
+                        return@collect
                     }
                 }
             } catch (t: Throwable) {

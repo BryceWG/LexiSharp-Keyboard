@@ -331,6 +331,10 @@ class OpenAiRealtimeAsrEngine(
             } else {
                 null
             }
+            val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+                prefs = prefs,
+                sampleRate = targetSampleRate
+            )
             val maxFrames = (PREBUFFER_MS / chunkMillis).coerceAtLeast(1)
 
             try {
@@ -359,6 +363,13 @@ class OpenAiRealtimeAsrEngine(
                         flushPrebuffer()
                         val socket = ws
                         if (socket != null) sendAppendAudio(socket, chunk)
+                    }
+
+                    if (maxDurationLimiter.acceptPcm(chunk.size)) {
+                        Log.d(TAG, "Max recording duration reached, stopping stream")
+                        notifyStoppedIfNeeded()
+                        stop()
+                        return@collect
                     }
                 }
             } catch (t: Throwable) {

@@ -245,6 +245,10 @@ class ElevenLabsStreamAsrEngine(
             } else {
                 null
             }
+            val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+                prefs = prefs,
+                sampleRate = sampleRate
+            )
             val maxFrames = (2000 / chunkMillis).coerceAtLeast(1)
 
             try {
@@ -273,6 +277,13 @@ class ElevenLabsStreamAsrEngine(
                     } else {
                         flushPrebuffer()
                         sendAudioChunk(chunk, commit = false)
+                    }
+
+                    if (maxDurationLimiter.acceptPcm(chunk.size)) {
+                        Log.d(TAG, "Max recording duration reached, stopping stream")
+                        notifyStoppedIfNeeded()
+                        stop()
+                        return@collect
                     }
                 }
             } catch (t: Throwable) {

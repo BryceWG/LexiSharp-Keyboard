@@ -50,6 +50,11 @@ internal fun SettingsSliderPreference(
         onValueChangeFinished()
         hapticTap()
     }
+    val sliderBottomPadding = if (index == count - 1) {
+        SettingsLayoutMetrics.SliderLastItemBottomPadding
+    } else {
+        SettingsLayoutMetrics.SliderBottomPadding
+    }
     val content: @Composable () -> Unit = {
         when (uiMode) {
             BibiUiMode.Material -> SettingsMaterialItemSurface(index = index, count = count) {
@@ -75,7 +80,7 @@ internal fun SettingsSliderPreference(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = SettingsLayoutMetrics.SliderHorizontalPadding)
-                        .padding(bottom = SettingsLayoutMetrics.SliderBottomPadding)
+                        .padding(bottom = sliderBottomPadding)
                 )
                 SettingsSliderScaleLabels(uiMode, startLabel, endLabel)
             }
@@ -96,7 +101,7 @@ internal fun SettingsSliderPreference(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = SettingsLayoutMetrics.SliderHorizontalPadding)
-                        .padding(bottom = SettingsLayoutMetrics.SliderBottomPadding)
+                        .padding(bottom = sliderBottomPadding)
                 )
                 SettingsSliderScaleLabels(uiMode, startLabel, endLabel)
             }

@@ -236,9 +236,15 @@
   <!-- 录音判停设置 -->
   <!-- ============================================== -->
   <string name="section_silence_autostop">無音時自動停止</string>
+  <string name="label_recording_auto_stop_mode">録音の自動停止方法</string>
+  <string name="option_recording_auto_stop_manual">手動操作</string>
+  <string name="option_recording_auto_stop_silence">発話終了で停止</string>
+  <string name="option_recording_auto_stop_max_duration">タイムアウト停止</string>
   <string name="label_auto_stop_silence">音声がない時に自動停止</string>
   <string name="label_silence_window_ms">停止ウィンドウ（ms）</string>
   <string name="label_silence_sensitivity">感度（1-10；高いほど敏感）</string>
+  <string name="label_recording_max_duration">最大録音時間</string>
+  <string name="label_recording_max_duration_value_s">%1$d 秒</string>
 
   <!-- ============================================== -->
   <!-- 其他通用设置 -->

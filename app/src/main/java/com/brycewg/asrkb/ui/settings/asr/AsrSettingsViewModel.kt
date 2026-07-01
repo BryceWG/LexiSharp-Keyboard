@@ -65,9 +65,11 @@ class AsrSettingsViewModel : ViewModel() {
         fun isQwenOmniModel(model: String): Boolean = model.startsWith("Qwen/Qwen3-Omni-30B-A3B-")
         _uiState.value = AsrSettingsUiState(
             selectedVendor = prefs.asrVendor,
+            recordingAutoStopMode = prefs.recordingAutoStopMode,
             autoStopSilenceEnabled = prefs.autoStopOnSilenceEnabled,
             silenceWindowMs = prefs.autoStopSilenceWindowMs,
             silenceSensitivity = prefs.autoStopSilenceSensitivity,
+            recordingMaxDurationMs = prefs.recordingMaxDurationMs,
             aiEditPreferLastAsr = prefs.aiEditDefaultToLastAsr,
             // Volc settings
             volcStreamingEnabled = prefs.volcStreamingEnabled,
@@ -278,7 +280,18 @@ class AsrSettingsViewModel : ViewModel() {
 
     fun updateAutoStopSilence(enabled: Boolean) {
         prefs.autoStopOnSilenceEnabled = enabled
-        _uiState.value = _uiState.value.copy(autoStopSilenceEnabled = enabled)
+        _uiState.value = _uiState.value.copy(
+            recordingAutoStopMode = prefs.recordingAutoStopMode,
+            autoStopSilenceEnabled = prefs.autoStopOnSilenceEnabled
+        )
+    }
+
+    fun updateRecordingAutoStopMode(mode: Prefs.RecordingAutoStopMode) {
+        prefs.recordingAutoStopMode = mode
+        _uiState.value = _uiState.value.copy(
+            recordingAutoStopMode = mode,
+            autoStopSilenceEnabled = mode == Prefs.RecordingAutoStopMode.SILENCE
+        )
     }
 
     fun updateSilenceWindow(windowMs: Int) {
@@ -289,6 +302,11 @@ class AsrSettingsViewModel : ViewModel() {
     fun updateSilenceSensitivity(sensitivity: Int) {
         prefs.autoStopSilenceSensitivity = sensitivity
         _uiState.value = _uiState.value.copy(silenceSensitivity = sensitivity)
+    }
+
+    fun updateRecordingMaxDuration(durationMs: Int) {
+        prefs.recordingMaxDurationMs = durationMs
+        _uiState.value = _uiState.value.copy(recordingMaxDurationMs = prefs.recordingMaxDurationMs)
     }
 
     fun updateVolcStreaming(enabled: Boolean) {
@@ -896,9 +914,11 @@ class AsrSettingsViewModel : ViewModel() {
  */
 data class AsrSettingsUiState(
     val selectedVendor: AsrVendor = AsrVendor.Volc,
+    val recordingAutoStopMode: Prefs.RecordingAutoStopMode = Prefs.RecordingAutoStopMode.MANUAL,
     val autoStopSilenceEnabled: Boolean = false,
     val silenceWindowMs: Int = 1200,
     val silenceSensitivity: Int = 4,
+    val recordingMaxDurationMs: Int = Prefs.DEFAULT_RECORDING_MAX_DURATION_MS,
     val aiEditPreferLastAsr: Boolean = false,
     // Volcengine settings
     val volcStreamingEnabled: Boolean = false,

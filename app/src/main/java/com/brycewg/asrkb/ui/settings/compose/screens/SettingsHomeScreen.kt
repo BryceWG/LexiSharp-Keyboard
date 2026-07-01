@@ -474,7 +474,7 @@ private fun inputControlSummary(context: Context, prefs: Prefs): String = contex
 
 private fun asrSummary(context: Context, prefs: Prefs): String = context.getString(
     R.string.home_summary_asr_format,
-    enabledSummary(context, prefs.autoStopOnSilenceEnabled),
+    enabledSummary(context, prefs.recordingAutoStopMode != Prefs.RecordingAutoStopMode.MANUAL),
     AsrVendorUi.name(context, prefs.asrVendor)
 )
 

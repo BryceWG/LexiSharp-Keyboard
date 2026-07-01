@@ -476,7 +476,7 @@ object VadAutoStopGuard {
 fun isVadAutoStopEnabled(context: Context, prefs: Prefs): Boolean {
     return try {
         if (VadAutoStopGuard.isSuppressed()) return false
-        prefs.autoStopOnSilenceEnabled
+        prefs.recordingAutoStopMode == Prefs.RecordingAutoStopMode.SILENCE
     } catch (t: Throwable) {
         Log.w("VadDetector", "Failed to read prefs for VAD auto-stop", t)
         false

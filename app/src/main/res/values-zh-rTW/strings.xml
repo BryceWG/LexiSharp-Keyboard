@@ -235,9 +235,15 @@
   <!-- 錄音判停設定 -->
   <!-- ============================================== -->
   <string name="section_silence_autostop">錄音判停設定</string>
+  <string name="label_recording_auto_stop_mode">錄音自動停止方式</string>
+  <string name="option_recording_auto_stop_manual">手動控制</string>
+  <string name="option_recording_auto_stop_silence">停說自動停止</string>
+  <string name="option_recording_auto_stop_max_duration">逾時停止</string>
   <string name="label_auto_stop_silence">停說自動停止錄音</string>
   <string name="label_silence_window_ms">判停時間閾值（毫秒）</string>
   <string name="label_silence_sensitivity">靈敏度（1-10，越高越敏感）</string>
+  <string name="label_recording_max_duration">最長錄音時長</string>
+  <string name="label_recording_max_duration_value_s">%1$d 秒</string>
 
   <!-- ============================================== -->
   <!-- 其他通用設定 -->

@@ -231,6 +231,11 @@ abstract class BaseFileAsrEngine(
         } else {
             null
         }
+        val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+            prefs = prefs,
+            sampleRate = sampleRate,
+            bytesPerSample = bytesPerSample
+        )
 
         // 计算分段阈值
         val maxBytes = (maxRecordDurationMillis / 1000.0 * sampleRate * bytesPerSample).toInt()
@@ -251,10 +256,18 @@ abstract class BaseFileAsrEngine(
 
                 currentSeg.write(audioChunk)
 
-                // VAD 自动判停：结束录音，推送最后一段
-                if (vadDetector?.shouldStop(audioChunk, audioChunk.size) == true) {
+                val stopReason = when {
+                    vadDetector?.shouldStop(audioChunk, audioChunk.size) == true ->
+                        "Silence detected, stopping recording"
+                    maxDurationLimiter.acceptPcm(audioChunk.size) ->
+                        "Max recording duration reached, stopping recording"
+                    else -> null
+                }
+
+                // 自动停止：结束录音，推送最后一段
+                if (stopReason != null) {
                     running.set(false)
-                    Log.d(TAG, "Silence detected, stopping recording")
+                    Log.d(TAG, stopReason)
                     try {
                         listener.onStopped()
                         stoppedDelivered = true
@@ -414,6 +427,11 @@ abstract class BaseFileAsrEngine(
         } else {
             null
         }
+        val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+            prefs = prefs,
+            sampleRate = sampleRate,
+            bytesPerSample = bytesPerSample
+        )
 
         val maxBytes = (maxRecordDurationMillis / 1000.0 * sampleRate * bytesPerSample).toInt()
         val currentPcm = ByteArrayOutputStream()
@@ -485,9 +503,17 @@ abstract class BaseFileAsrEngine(
                 )
                 encoder?.writePcm(encodedInput) ?: error("Upload audio encoder is missing")
 
-                if (vadDetector?.shouldStop(audioChunk, audioChunk.size) == true) {
+                val stopReason = when {
+                    vadDetector?.shouldStop(audioChunk, audioChunk.size) == true ->
+                        "Silence detected, stopping recording"
+                    maxDurationLimiter.acceptPcm(audioChunk.size) ->
+                        "Max recording duration reached, stopping recording"
+                    else -> null
+                }
+
+                if (stopReason != null) {
                     running.set(false)
-                    Log.d(TAG, "Silence detected, stopping recording")
+                    Log.d(TAG, stopReason)
                     try {
                         listener.onStopped()
                         stoppedDelivered = true

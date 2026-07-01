@@ -310,6 +310,10 @@ class ParallelAsrEngine(
             } else {
                 null
             }
+            val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+                prefs = prefs,
+                sampleRate = SAMPLE_RATE
+            )
 
             try {
                 audioManager.startCapture().collect { chunk ->
@@ -324,6 +328,13 @@ class ParallelAsrEngine(
                     audioBytes.addAndGet(chunk.size.toLong())
 
                     appendPcmToConsumers(chunk, sourceLabel = "capture")
+
+                    if (maxDurationLimiter.acceptPcm(chunk.size)) {
+                        Log.d(TAG, "Max recording duration reached, stopping session")
+                        notifyStoppedIfNeeded()
+                        stop()
+                        return@collect
+                    }
 
                     if (vadDetector?.shouldStop(chunk, chunk.size) == true) {
                         Log.d(TAG, "VAD silence detected, stopping session")

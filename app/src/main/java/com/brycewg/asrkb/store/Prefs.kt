@@ -19,7 +19,32 @@ import kotlin.reflect.KProperty
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+internal fun resolveRecordingAutoStopMode(
+    storedModeId: String?,
+    legacySilenceEnabled: Boolean
+): Prefs.RecordingAutoStopMode {
+    if (storedModeId == null) {
+        return if (legacySilenceEnabled) {
+            Prefs.RecordingAutoStopMode.SILENCE
+        } else {
+            Prefs.RecordingAutoStopMode.MANUAL
+        }
+    }
+    return Prefs.RecordingAutoStopMode.fromId(storedModeId)
+}
+
 class Prefs(context: Context) {
+    enum class RecordingAutoStopMode(val id: String) {
+        MANUAL("manual"),
+        SILENCE("silence"),
+        MAX_DURATION("max_duration");
+
+        companion object {
+            fun fromId(id: String?): RecordingAutoStopMode =
+                entries.firstOrNull { it.id == id } ?: MANUAL
+        }
+    }
+
     private val appContext = context.applicationContext
     private val sp = appContext.getSharedPreferences("asr_prefs", Context.MODE_PRIVATE)
     init {
@@ -220,10 +245,41 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_EXTERNAL_AIDL_ENABLED, false)
         set(value) = sp.edit { putBoolean(KEY_EXTERNAL_AIDL_ENABLED, value) }
 
-    // 静音自动判停：开关
+    var recordingAutoStopMode: RecordingAutoStopMode
+        get() = resolveRecordingAutoStopMode(
+            storedModeId = sp.getString(KEY_RECORDING_AUTO_STOP_MODE, null),
+            legacySilenceEnabled = sp.getBoolean(KEY_AUTO_STOP_ON_SILENCE_ENABLED, false)
+        )
+        set(value) {
+            sp.edit {
+                putString(KEY_RECORDING_AUTO_STOP_MODE, value.id)
+                putBoolean(KEY_AUTO_STOP_ON_SILENCE_ENABLED, value == RecordingAutoStopMode.SILENCE)
+            }
+        }
+
+    // 最长录音时长兜底：时间窗口（ms）
+    var recordingMaxDurationMs: Int
+        get() = sp.getInt(
+            KEY_RECORDING_MAX_DURATION_MS,
+            DEFAULT_RECORDING_MAX_DURATION_MS
+        ).coerceIn(RECORDING_MAX_DURATION_MIN_MS, RECORDING_MAX_DURATION_MAX_MS)
+        set(value) = sp.edit {
+            putInt(
+                KEY_RECORDING_MAX_DURATION_MS,
+                value.coerceIn(RECORDING_MAX_DURATION_MIN_MS, RECORDING_MAX_DURATION_MAX_MS)
+            )
+        }
+
+    // 静音自动判停：兼容开关。新代码优先使用 [recordingAutoStopMode]。
     var autoStopOnSilenceEnabled: Boolean
-        get() = sp.getBoolean(KEY_AUTO_STOP_ON_SILENCE_ENABLED, false)
-        set(value) = sp.edit { putBoolean(KEY_AUTO_STOP_ON_SILENCE_ENABLED, value) }
+        get() = recordingAutoStopMode == RecordingAutoStopMode.SILENCE
+        set(value) {
+            recordingAutoStopMode = if (value) {
+                RecordingAutoStopMode.SILENCE
+            } else {
+                RecordingAutoStopMode.MANUAL
+            }
+        }
 
     // 静音自动判停：时间窗口（ms），连续低能量超过该时间则自动停止
     var autoStopSilenceWindowMs: Int
@@ -1793,6 +1849,10 @@ class Prefs(context: Context) {
         // 静音自动判停默认值
         const val DEFAULT_SILENCE_WINDOW_MS = 1200
         const val DEFAULT_SILENCE_SENSITIVITY = 4 // 1-10
+        const val DEFAULT_RECORDING_MAX_DURATION_MS = 120_000
+        const val RECORDING_MAX_DURATION_MIN_MS = 30_000
+        const val RECORDING_MAX_DURATION_MAX_MS = 600_000
+        const val RECORDING_MAX_DURATION_STEP_MS = 30_000
 
         // 标点按钮默认值
         const val DEFAULT_PUNCT_1 = "，"

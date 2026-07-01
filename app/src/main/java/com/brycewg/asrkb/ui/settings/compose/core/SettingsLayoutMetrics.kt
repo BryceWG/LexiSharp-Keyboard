@@ -50,6 +50,7 @@ internal object SettingsLayoutMetrics {
     val ControlLabelSpacing = 16.dp
     val SliderHorizontalPadding = SettingsPreferenceHorizontalPadding
     val SliderBottomPadding = 8.dp
+    val SliderLastItemBottomPadding = 20.dp
     val SheetHorizontalPadding = 20.dp
     val SheetBottomPadding = 16.dp
     val SheetTitleBottomPadding = 12.dp

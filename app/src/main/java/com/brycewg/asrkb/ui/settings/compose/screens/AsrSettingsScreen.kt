@@ -320,6 +320,29 @@ fun AsrSettingsScreen(
         )
     }
 
+    fun applyRecordingAutoStopMode(mode: Prefs.RecordingAutoStopMode) {
+        when (mode) {
+            Prefs.RecordingAutoStopMode.SILENCE -> {
+                if (uiState.recordingAutoStopMode == Prefs.RecordingAutoStopMode.MANUAL) {
+                    applyAutoStopSwitch(true)
+                } else {
+                    viewModel.updateRecordingAutoStopMode(mode)
+                    try {
+                        VadDetector.preload(
+                            context.applicationContext,
+                            16000,
+                            prefs.autoStopSilenceSensitivity
+                        )
+                    } catch (t: Throwable) {
+                        android.util.Log.w("AsrSettingsScreen", "Failed to preload VAD", t)
+                    }
+                }
+            }
+            Prefs.RecordingAutoStopMode.MANUAL,
+            Prefs.RecordingAutoStopMode.MAX_DURATION -> viewModel.updateRecordingAutoStopMode(mode)
+        }
+    }
+
     fun applyElevenStreamingSwitch(target: Boolean) {
         featureExplainerDialog = settingsFeatureExplainerDialogState(
             context = context,
@@ -610,6 +633,7 @@ fun AsrSettingsScreen(
                     viewModel.updateVendor(vendor)
                     backupAsrVendor = prefs.backupAsrVendor
                 },
+                applyRecordingAutoStopMode = ::applyRecordingAutoStopMode,
                 applyAutoStopSwitch = ::applyAutoStopSwitch,
                 applyVolcSwitch = ::applyVolcSwitch,
                 rebuildVadIfNeeded = ::rebuildVadIfNeeded,

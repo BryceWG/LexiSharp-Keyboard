@@ -158,6 +158,10 @@ abstract class LocalModelPseudoStreamAsrEngine(
                 } else {
                     null
                 }
+                val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+                    prefs = prefs,
+                    sampleRate = sampleRate
+                )
 
                 audioManager.startCapture().collect { audioChunk ->
                     if (!running.get()) return@collect
@@ -209,6 +213,12 @@ abstract class LocalModelPseudoStreamAsrEngine(
                         }
                         segmentBuffer.reset()
                         segmentElapsedMs = 0L
+                    }
+
+                    if (maxDurationLimiter.acceptPcm(audioChunk.size)) {
+                        Log.d(TAG, "Max recording duration reached, stopping pseudo stream")
+                        stop()
+                        return@collect
                     }
 
                     // 停录 VAD：启用静音自动停止时持续喂入，避免分段缓冲导致判停失效

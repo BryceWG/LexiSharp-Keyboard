@@ -48,6 +48,7 @@ internal object PrefsInitTasks {
 
     fun run(appContext: Context, sp: SharedPreferences) {
         registerGlobalToggleListenerIfNeeded(sp)
+        migrateRecordingAutoStopModeIfNeeded(sp)
         migrateOnboardingGuideStateIfNeeded(sp)
         migrateTeleSpeechToFireRedAsrIfNeeded(sp)
         normalizeFireRedVariantIfNeeded(sp)
@@ -60,6 +61,24 @@ internal object PrefsInitTasks {
         ensureFunAsrItnDefaultIfMissing(sp)
         normalizeFunAsrVariantIfNeeded(sp)
         cleanupLegacyFunAsrModelsIfNeeded(appContext, sp)
+    }
+
+    private fun migrateRecordingAutoStopModeIfNeeded(sp: SharedPreferences) {
+        try {
+            if (sp.contains(KEY_RECORDING_AUTO_STOP_MODE)) return
+            val legacyEnabled = try {
+                sp.getBoolean(KEY_AUTO_STOP_ON_SILENCE_ENABLED, false)
+            } catch (_: ClassCastException) {
+                false
+            }
+            val mode = resolveRecordingAutoStopMode(
+                storedModeId = null,
+                legacySilenceEnabled = legacyEnabled
+            )
+            sp.edit { putString(KEY_RECORDING_AUTO_STOP_MODE, mode.id) }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to migrate recording auto-stop mode", t)
+        }
     }
 
     private fun migrateTeleSpeechToFireRedAsrIfNeeded(sp: SharedPreferences) {

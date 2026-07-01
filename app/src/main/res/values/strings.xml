@@ -237,9 +237,15 @@
   <!-- Silence Auto-stop Settings -->
   <!-- ============================================== -->
   <string name="section_silence_autostop">Auto-stop on Silence</string>
+  <string name="label_recording_auto_stop_mode">Recording auto-stop mode</string>
+  <string name="option_recording_auto_stop_manual">Manual control</string>
+  <string name="option_recording_auto_stop_silence">Stop when speech ends</string>
+  <string name="option_recording_auto_stop_max_duration">Timeout stop</string>
   <string name="label_auto_stop_silence">Auto stop when no speech</string>
   <string name="label_silence_window_ms">Stop window (ms)</string>
   <string name="label_silence_sensitivity">Sensitivity (1-10; higher = more sensitive)</string>
+  <string name="label_recording_max_duration">Maximum recording duration</string>
+  <string name="label_recording_max_duration_value_s">%1$d s</string>
 
   <!-- ============================================== -->
   <!-- Other General Settings -->

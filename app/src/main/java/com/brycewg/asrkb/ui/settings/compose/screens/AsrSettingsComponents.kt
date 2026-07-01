@@ -125,6 +125,7 @@ internal fun AsrValuePreference(
 
 @Composable
 internal fun AsrDropdownPreference(
+    id: String? = null,
     titleRes: Int,
     options: List<DropdownOption>,
     selectedOptionId: String,
@@ -134,7 +135,7 @@ internal fun AsrDropdownPreference(
 ) {
     SettingsPreference(
         entry = SettingsEntry.Dropdown(
-            id = "asr_dropdown_$titleRes",
+            id = id ?: "asr_dropdown_$titleRes",
             titleRes = titleRes,
             options = options,
             selectedOptionId = selectedOptionId,

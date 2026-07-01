@@ -155,6 +155,7 @@ internal data class AsrSettingsRouteActions(
     val showStepAudioModelPicker: () -> Unit,
     val showSonioxLanguagePicker: () -> Unit,
     val onPrimaryVendorSelected: (AsrVendor) -> Unit,
+    val applyRecordingAutoStopMode: (Prefs.RecordingAutoStopMode) -> Unit,
     val applyAutoStopSwitch: (Boolean) -> Unit,
     val applyVolcSwitch: AsrVolcSwitchExplainer,
     val rebuildVadIfNeeded: () -> Unit,

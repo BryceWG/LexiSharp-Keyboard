@@ -36,6 +36,8 @@ internal object PrefsBackup {
         o.put(KEY_AUTO_FILTER_SILENT_AUDIO_SEGMENTS, autoFilterSilentAudioSegmentsEnabled)
         o.put(KEY_OFFLINE_DENOISE_ENABLED, offlineDenoiseEnabled)
         o.put(KEY_UPLOAD_AUDIO_COMPRESSION_ENABLED, uploadAudioCompressionEnabled)
+        o.put(KEY_RECORDING_AUTO_STOP_MODE, recordingAutoStopMode.id)
+        o.put(KEY_RECORDING_MAX_DURATION_MS, recordingMaxDurationMs)
         o.put(KEY_AUTO_STOP_ON_SILENCE_ENABLED, autoStopOnSilenceEnabled)
         o.put(KEY_AUTO_STOP_SILENCE_WINDOW_MS, autoStopSilenceWindowMs)
         o.put(KEY_AUTO_STOP_SILENCE_SENSITIVITY, autoStopSilenceSensitivity)
@@ -332,7 +334,13 @@ internal object PrefsBackup {
             optBool(KEY_AUTO_FILTER_SILENT_AUDIO_SEGMENTS)?.let { autoFilterSilentAudioSegmentsEnabled = it }
             optBool(KEY_OFFLINE_DENOISE_ENABLED)?.let { offlineDenoiseEnabled = it }
             optBool(KEY_UPLOAD_AUDIO_COMPRESSION_ENABLED)?.let { uploadAudioCompressionEnabled = it }
-            optBool(KEY_AUTO_STOP_ON_SILENCE_ENABLED)?.let { autoStopOnSilenceEnabled = it }
+            val importedAutoStopMode = optString(KEY_RECORDING_AUTO_STOP_MODE)
+            if (importedAutoStopMode != null) {
+                recordingAutoStopMode = Prefs.RecordingAutoStopMode.fromId(importedAutoStopMode)
+            } else {
+                optBool(KEY_AUTO_STOP_ON_SILENCE_ENABLED)?.let { autoStopOnSilenceEnabled = it }
+            }
+            optInt(KEY_RECORDING_MAX_DURATION_MS)?.let { recordingMaxDurationMs = it }
             optInt(KEY_AUTO_STOP_SILENCE_WINDOW_MS)?.let { autoStopSilenceWindowMs = it }
             optInt(KEY_AUTO_STOP_SILENCE_SENSITIVITY)?.let { autoStopSilenceSensitivity = it }
             optInt(KEY_KEYBOARD_HEIGHT_TIER)?.let { keyboardHeightTier = it }

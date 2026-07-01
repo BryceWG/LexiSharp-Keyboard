@@ -370,6 +370,10 @@ class VolcStreamAsrEngine(
             } else {
                 null
             }
+            val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+                prefs = prefs,
+                sampleRate = sampleRate
+            )
 
             val maxFrames = (2000 / chunkMillis).coerceAtLeast(1) // 预缓冲上限≈2s
 
@@ -428,6 +432,17 @@ class VolcStreamAsrEngine(
                         } catch (t: Throwable) {
                             Log.e(TAG, "Failed to send audio frame", t)
                         }
+                    }
+
+                    if (maxDurationLimiter.acceptPcm(audioChunk.size)) {
+                        Log.d(TAG, "Max recording duration reached, stopping recording")
+                        try {
+                            listener.onStopped()
+                        } catch (t: Throwable) {
+                            Log.e(TAG, "Failed to notify stopped", t)
+                        }
+                        stop()
+                        return@collect
                     }
                 }
             } catch (t: Throwable) {

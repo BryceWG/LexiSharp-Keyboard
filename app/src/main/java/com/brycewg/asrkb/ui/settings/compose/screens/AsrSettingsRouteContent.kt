@@ -48,12 +48,11 @@ internal fun AsrSettingsRouteContent(
             item("silence") {
                 AsrSilenceSection(
                     uiMode = uiMode,
-                    enabled = uiState.autoStopSilenceEnabled,
+                    autoStopMode = uiState.recordingAutoStopMode,
                     silenceWindowMs = uiState.silenceWindowMs,
                     silenceSensitivity = uiState.silenceSensitivity,
-                    onEnabledChange = { checked ->
-                        applyAutoStopSwitch(checked)
-                    },
+                    recordingMaxDurationMs = uiState.recordingMaxDurationMs,
+                    onAutoStopModeChange = applyRecordingAutoStopMode,
                     onWindowChange = { value ->
                         viewModel.updateSilenceWindow(value.coerceIn(300, 5000))
                     },
@@ -63,6 +62,11 @@ internal fun AsrSettingsRouteContent(
                     },
                     onSensitivityFinished = {
                         rebuildVadIfNeeded()
+                    },
+                    onMaxDurationChange = { value ->
+                        viewModel.updateRecordingMaxDuration(value)
+                    },
+                    onMaxDurationFinished = {
                     }
                 )
             }
