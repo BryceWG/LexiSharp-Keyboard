@@ -44,7 +44,7 @@
 
   <string name="label_ai_edit_default_use_last_asr">只對上次識別結果部分生效</string>
   <string name="label_auto_start_recording_on_show">鍵盤出現自動開始錄音</string>
-  <string name="label_continuous_capture">可見時保持麥克風就緒</string>
+  <string name="label_continuous_capture">可見時持續錄音</string>
   <string name="btn_retry">連線失敗，重試？</string>
 
   <!-- ============================================== -->
@@ -343,8 +343,8 @@
   <!-- 自動開始錄音 -->
   <string name="feature_auto_start_recording_on_show_off_desc">鍵盤出現後需要手動按麥克風按鈕開始錄音。</string>
   <string name="feature_auto_start_recording_on_show_on_desc">鍵盤出現時自動開始錄音，省去一次點擊操作。</string>
-  <string name="feature_continuous_capture_off_desc">只在按下麥克風按鈕後開始擷取音訊。</string>
-  <string name="feature_continuous_capture_on_desc">鍵盤或懸浮球可見期間，本機保持麥克風熱擷取，讓按麥後更快進入錄音。開始辨識前不會上傳音訊。</string>
+  <string name="feature_continuous_capture_off_desc">鍵盤或懸浮球可見時不會持續錄音，按麥後才開始錄音。</string>
+  <string name="feature_continuous_capture_on_desc">鍵盤或懸浮球可見期間在本機持續錄音，按麥後可以更快開始辨識。開始辨識前不會上傳音訊。</string>
 
   <!-- 輸入法切換鍵功能 -->
   <string name="feature_fcitx5_return_on_switcher_off_desc">輸入法切換鍵開啟系統的輸入法選擇器。</string>
