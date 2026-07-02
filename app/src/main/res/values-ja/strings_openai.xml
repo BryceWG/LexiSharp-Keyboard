@@ -10,6 +10,7 @@
     <string name="toast_openai_profile_delete_blocked">少なくとも1つのチャンネルを残してください</string>
     <string name="openai_profile_default_name">OpenAI チャンネル %1$d</string>
     <string name="label_openai_asr_endpoint">エンドポイント（../transcriptions または ../chat/completions）</string>
+    <string name="hint_openai_custom_endpoint_wav_upload">カスタム互換サービスでは、互換性を高めるため WAV 音声をアップロードします。</string>
     <string name="label_openai_api_key">APIキー（Bearer）</string>
     <string name="label_openai_model">モデル（例：gpt-4o-mini-transcribe または whisper-1）</string>
     <string name="label_openai_streaming">ストリーミング認識</string>

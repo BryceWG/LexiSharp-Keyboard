@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.isOpenAiCustomTranscriptionsEndpoint
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButton
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButtonRow
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
@@ -581,6 +582,12 @@ private fun OpenAiAsrConfig(
         index = itemIndex++,
         count = itemCount
     )
+    if (!useCompletions && isOpenAiCustomTranscriptionsEndpoint(endpoint)) {
+        AsrBodyText(
+            uiMode = uiMode,
+            textRes = R.string.hint_openai_custom_endpoint_wav_upload
+        )
+    }
     AsrTextField(
         uiMode = uiMode,
         value = apiKey,

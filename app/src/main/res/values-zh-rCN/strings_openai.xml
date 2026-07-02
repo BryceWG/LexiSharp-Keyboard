@@ -10,6 +10,7 @@
     <string name="toast_openai_profile_delete_blocked">请至少保留一个渠道</string>
     <string name="openai_profile_default_name">OpenAI 渠道 %1$d</string>
     <string name="label_openai_asr_endpoint">Endpoint（../transcriptions 或 ../chat/completions）</string>
+    <string name="hint_openai_custom_endpoint_wav_upload">自定义兼容服务将使用 WAV 上传，以提高兼容性。</string>
     <string name="label_openai_api_key">API Key（Bearer）</string>
     <string name="label_openai_model">模型名称（如：gpt-4o-mini-transcribe 或 whisper-1）</string>
     <string name="label_openai_streaming">流式识别</string>

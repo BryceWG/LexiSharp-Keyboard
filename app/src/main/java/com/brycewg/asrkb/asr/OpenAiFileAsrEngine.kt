@@ -5,6 +5,7 @@ import android.util.Base64
 import android.util.Log
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.shouldCompressAudioBeforeOpenAiUpload
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
@@ -130,12 +131,22 @@ class OpenAiFileAsrEngine(
         .build()
 
     override val uploadAudioEncodingSpec: UploadAudioEncodingSpec?
-        get() = if (prefs.oaAsrUseCompletions) null else UploadAudioEncodingSpec.M4A_AAC_LC
+        get() = if (prefs.oaAsrUseCompletions || !shouldCompressTranscriptionsUpload) {
+            null
+        } else {
+            UploadAudioEncodingSpec.M4A_AAC_LC
+        }
+
+    private val shouldCompressTranscriptionsUpload: Boolean
+        get() = shouldCompressAudioBeforeOpenAiUpload(
+            globalEnabled = prefs.uploadAudioCompressionEnabled,
+            endpoint = prefs.oaAsrEndpoint
+        )
 
     override suspend fun recognize(pcm: ByteArray) {
         val audio = if (prefs.oaAsrUseCompletions) {
             pcmToWavUploadAudio(pcm)
-        } else if (prefs.uploadAudioCompressionEnabled) {
+        } else if (shouldCompressTranscriptionsUpload) {
             encodePcmForUpload(context, pcm, sampleRate, UploadAudioEncodingSpec.M4A_AAC_LC)
         } else {
             pcmToWavUploadAudio(pcm)

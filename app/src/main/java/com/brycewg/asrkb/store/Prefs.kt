@@ -1500,9 +1500,7 @@ class Prefs(context: Context) {
         val endpoint = oaAsrEndpoint.ifBlank { DEFAULT_OA_ASR_ENDPOINT }.trim()
         val model = oaAsrModel.ifBlank { DEFAULT_OA_ASR_MODEL }.trim()
         if (endpoint.isBlank() || model.isBlank()) return false
-        val endpointNormalized = endpoint.trimEnd('/')
-        val defaultEndpointNormalized = DEFAULT_OA_ASR_ENDPOINT.trimEnd('/')
-        return if (endpointNormalized.equals(defaultEndpointNormalized, ignoreCase = true)) {
+        return if (isOpenAiOfficialTranscriptionsEndpoint(endpoint)) {
             oaAsrApiKey.isNotBlank()
         } else {
             true
