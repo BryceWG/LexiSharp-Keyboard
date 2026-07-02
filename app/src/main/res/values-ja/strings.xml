@@ -45,6 +45,7 @@
 
   <string name="label_ai_edit_default_use_last_asr">前回の認識結果部分のみに適用</string>
   <string name="label_auto_start_recording_on_show">キーボード表示時に自動的に録音を開始</string>
+  <string name="label_continuous_capture">表示中はマイクを待機状態にする</string>
   <string name="btn_retry">接続に失敗しました。再試行しますか?</string>
 
   <!-- ============================================== -->
@@ -343,6 +344,8 @@
   <!-- 表示時自動録音開始 -->
   <string name="feature_auto_start_recording_on_show_off_desc">キーボードが表示された後、手動でマイクボタンを押して録音を開始する必要があります。</string>
   <string name="feature_auto_start_recording_on_show_on_desc">キーボードが表示されたときに自動的に録音を開始し、1タップを節約します。</string>
+  <string name="feature_continuous_capture_off_desc">マイクボタンを押した後にだけ音声の取得を開始します。</string>
+  <string name="feature_continuous_capture_on_desc">キーボードまたはフローティングボールの表示中、マイクをローカルで待機状態に保ち、録音開始を速くします。認識を開始するまで音声はアップロードされません。</string>
 
   <!-- 入力法切替キーの機能 -->
   <string name="feature_fcitx5_return_on_switcher_off_desc">入力法切替キーはシステムの入力法選択画面を開きます。</string>

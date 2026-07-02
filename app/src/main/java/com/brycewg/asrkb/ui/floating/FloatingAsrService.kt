@@ -25,6 +25,8 @@ import com.brycewg.asrkb.imebridge.ImeBridgeResult
 import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BluetoothRouteManager
+import com.brycewg.asrkb.asr.ContinuousCaptureCoordinator
+import com.brycewg.asrkb.asr.ContinuousCaptureOwner
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.ui.SettingsActivity
@@ -85,6 +87,7 @@ class FloatingAsrService : Service() {
     private var bridgeImeVisible: Boolean? = null
     private var localPreloadTriggered: Boolean = false
     private var recordingForegroundActive: Boolean = false
+    private var continuousCaptureForegroundActive: Boolean = false
     private val imeBridgeClient by lazy { ImeBridgeClient(applicationContext) }
 
     private val hintReceiver = object : android.content.BroadcastReceiver() {
@@ -261,7 +264,7 @@ class FloatingAsrService : Service() {
         } catch (e: Throwable) {
             Log.w(TAG, "Failed to cancel notifier", e)
         }
-        stopRecordingForeground()
+        stopRecordingForeground(force = true)
 
         hideBall()
         viewManager.cleanup()
@@ -313,7 +316,8 @@ class FloatingAsrService : Service() {
         }
     }
 
-    private fun stopRecordingForeground() {
+    private fun stopRecordingForeground(force: Boolean = false) {
+        if (!force && continuousCaptureForegroundActive) return
         if (!recordingForegroundActive) return
         recordingForegroundActive = false
         try {
@@ -376,6 +380,7 @@ class FloatingAsrService : Service() {
             viewManager.applyBallAlpha()
             viewManager.applyBallSize()
             viewManager.updateStateVisual(stateMachine.state)
+            startContinuousCaptureForBall()
             return
         }
 
@@ -395,14 +400,36 @@ class FloatingAsrService : Service() {
             DebugLogManager.log("float", "show_success")
         }
 
+        startContinuousCaptureForBall()
         tryPreloadLocalAsrOnce()
     }
 
     private fun hideBall() {
+        stopContinuousCaptureForBall()
         viewManager.hideBall()
         if (DebugLogManager.isRecording()) {
             DebugLogManager.log("float", "hide")
         }
+    }
+
+    private fun startContinuousCaptureForBall() {
+        if (!prefs.continuousCaptureEnabled) {
+            stopContinuousCaptureForBall()
+            return
+        }
+        if (!startRecordingForeground()) {
+            ContinuousCaptureCoordinator.release(ContinuousCaptureOwner.FloatingBall)
+            return
+        }
+        continuousCaptureForegroundActive = true
+        ContinuousCaptureCoordinator.acquire(ContinuousCaptureOwner.FloatingBall, this)
+    }
+
+    private fun stopContinuousCaptureForBall() {
+        ContinuousCaptureCoordinator.release(ContinuousCaptureOwner.FloatingBall)
+        if (!continuousCaptureForegroundActive) return
+        continuousCaptureForegroundActive = false
+        stopRecordingForeground(force = true)
     }
 
     private fun handleResetBallPosition() {

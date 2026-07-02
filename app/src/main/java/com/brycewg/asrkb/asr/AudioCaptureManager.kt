@@ -127,7 +127,14 @@ class AudioCaptureManager(
      * @throws SecurityException 如果缺少录音权限
      * @throws IllegalStateException 如果 AudioRecord 初始化失败
      */
-    fun startCapture(): Flow<ByteArray> = flow {
+    fun startCapture(): Flow<ByteArray> =
+        ContinuousCaptureCoordinator.attachActiveSessionFlow(
+            sampleRate = sampleRate,
+            channelConfig = channelConfig,
+            audioFormat = audioFormat
+        ) ?: startPlatformCapture()
+
+    internal fun startPlatformCapture(): Flow<ByteArray> = flow {
         try {
             DebugLogManager.log(
                 category = "audio",

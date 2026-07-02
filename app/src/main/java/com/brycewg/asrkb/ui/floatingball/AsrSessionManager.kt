@@ -125,6 +125,9 @@ class AsrSessionManager(
 
     private fun clearActiveSessionToken(expectedToken: Long? = null) {
         if (expectedToken == null || activeSessionToken == expectedToken) {
+            if (activeSessionToken != 0L) {
+                ContinuousCaptureCoordinator.endSession(activeSessionToken)
+            }
             activeSessionToken = 0L
         }
     }
@@ -316,6 +319,7 @@ class AsrSessionManager(
         listener.onSessionStateChanged(FloatingBallState.Recording)
         asrEngine?.let { engine ->
             preloadLocalAsrForImmediateUse(context, prefs)
+            ContinuousCaptureCoordinator.beginSession(sessionToken)
             engine.start()
         }
         try {
@@ -331,6 +335,7 @@ class AsrSessionManager(
     fun stopRecording() {
         Log.d(TAG, "stopRecording called")
         snapshotAudioDurationIfPossible()
+        ContinuousCaptureCoordinator.endSession(activeSessionToken)
         asrEngine?.stop()
         releaseRecordingResources("stop_recording")
 
@@ -347,6 +352,7 @@ class AsrSessionManager(
     fun cancelSession() {
         Log.d(TAG, "cancelSession called")
         val sessionToken = activeSessionToken
+        ContinuousCaptureCoordinator.endSession(sessionToken)
         val commitText = peekInterruptedPostProcessingCommitText(sessionToken)
         postproc.cancelActiveRequest()
         clearActiveSessionToken(sessionToken)
@@ -455,6 +461,7 @@ class AsrSessionManager(
     /** 清理会话 */
     fun cleanup() {
         clearActiveSessionToken()
+        ContinuousCaptureCoordinator.endAnySession()
         postproc.cancelActiveRequest()
         try {
             asrEngine?.stop()
@@ -695,6 +702,7 @@ class AsrSessionManager(
             Log.d(TAG, "Ignoring onStopped from stale session: $sessionToken")
             return
         }
+        ContinuousCaptureCoordinator.endSession(sessionToken)
         serviceScope.launch {
             if (!isSessionActive(sessionToken)) return@launch
             listener.onSessionStateChanged(FloatingBallState.Processing)

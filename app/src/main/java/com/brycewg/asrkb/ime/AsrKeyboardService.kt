@@ -21,6 +21,8 @@ import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BluetoothRouteManager
+import com.brycewg.asrkb.asr.ContinuousCaptureCoordinator
+import com.brycewg.asrkb.asr.ContinuousCaptureOwner
 import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.asr.partitionAsrVendorsByConfigured
 import com.brycewg.asrkb.store.Prefs
@@ -171,6 +173,7 @@ class AsrKeyboardService :
 
     override fun onDestroy() {
         super.onDestroy()
+        ContinuousCaptureCoordinator.release(ContinuousCaptureOwner.Ime)
         asrManager.cleanup()
         serviceScope.cancel()
         clipboardCoordinator?.stopClipboardPreviewListener()
@@ -330,6 +333,7 @@ class AsrKeyboardService :
         ) {
             android.util.Log.w("AsrKeyboardService", "BluetoothRouteManager setImeActive(true)", t)
         }
+        ContinuousCaptureCoordinator.acquire(ContinuousCaptureOwner.Ime, this)
 
         // 自动启动录音（如果开启了设置）
         if (prefs.autoStartRecordingOnShow) {
@@ -388,6 +392,7 @@ class AsrKeyboardService :
         ) {
             android.util.Log.w("AsrKeyboardService", "BluetoothRouteManager setImeActive(false)", t)
         }
+        ContinuousCaptureCoordinator.release(ContinuousCaptureOwner.Ime)
 
         // 如开启：键盘收起后自动切回上一个输入法
         if (prefs.returnPrevImeOnHide) {

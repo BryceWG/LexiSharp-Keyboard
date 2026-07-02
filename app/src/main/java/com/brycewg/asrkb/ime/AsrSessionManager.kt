@@ -131,6 +131,9 @@ class AsrSessionManager(
 
     private fun clearActiveSession(expectedSeq: Long? = null) {
         if (expectedSeq == null || sessionSeq == expectedSeq) {
+            if (sessionSeq != 0L) {
+                ContinuousCaptureCoordinator.endSession(sessionSeq)
+            }
             sessionSeq = 0L
         }
     }
@@ -713,6 +716,7 @@ class AsrSessionManager(
             Log.e(TAG, "Local model preload guard failed", t)
         }
         asrEngine?.let { engine ->
+            ContinuousCaptureCoordinator.beginSession(activeSeq)
             engine.start()
         }
         try {
@@ -742,6 +746,7 @@ class AsrSessionManager(
         val activeSeq = sessionSeq
         snapshotAudioDurationIfPossible()
         markLocalModelProcessingStartIfNeeded(activeSeq)
+        ContinuousCaptureCoordinator.endSession(activeSeq)
         asrEngine?.stop()
         try {
             DebugLogManager.log(
@@ -832,6 +837,7 @@ class AsrSessionManager(
      */
     fun cleanup() {
         clearActiveSession()
+        ContinuousCaptureCoordinator.endAnySession()
         asrEngine?.stop()
         try {
             localModelReadyWaitJob?.cancel()
@@ -971,6 +977,7 @@ class AsrSessionManager(
             return
         }
         Log.d(TAG, "onStopped: state=$currentState")
+        ContinuousCaptureCoordinator.endSession(seq)
         markLocalModelProcessingStartIfNeeded(seq)
         // 计算本次会话录音时长
         if (sessionStartUptimeMs > 0L) {

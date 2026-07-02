@@ -180,6 +180,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_AUTO_START_RECORDING_ON_SHOW, false)
         set(value) = sp.edit { putBoolean(KEY_AUTO_START_RECORDING_ON_SHOW, value) }
 
+    // 键盘/悬浮球可见期间预先热启动麦克风采集，默认关闭
+    var continuousCaptureEnabled: Boolean
+        get() = sp.getBoolean(KEY_CONTINUOUS_CAPTURE_ENABLED, false)
+        set(value) = sp.edit { putBoolean(KEY_CONTINUOUS_CAPTURE_ENABLED, value) }
+
     // 录音时音频避让（请求短时独占音频焦点以暂停/静音媒体），默认开启
     var duckMediaOnRecordEnabled: Boolean
         get() = sp.getBoolean(KEY_DUCK_MEDIA_ON_RECORD, true)

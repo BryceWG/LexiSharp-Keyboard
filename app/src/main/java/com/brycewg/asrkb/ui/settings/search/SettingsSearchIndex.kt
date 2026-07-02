@@ -105,6 +105,7 @@ object SettingsSearchIndex {
         item(R.string.label_trim_trailing_punct, R.string.section_input_behavior)
         item(R.string.label_mic_tap_toggle, R.string.section_input_behavior)
         item(R.string.label_auto_start_recording_on_show, R.string.section_input_behavior)
+        item(R.string.label_continuous_capture, R.string.section_input_behavior)
         item(R.string.label_hide_recent_task_card, R.string.section_input_behavior)
         item(R.string.label_fcitx5_return_on_switcher, R.string.section_input_behavior, "fcitx5")
         item(R.string.label_return_prev_ime_on_hide, R.string.section_input_behavior)
