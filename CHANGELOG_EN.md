@@ -14,6 +14,7 @@
 - **Floating Keyboard Drag Handle**: Automatically moves the drag handle to the top or bottom based on bottom window gap
 - **Microphone Button Styling**: Removed the fixed square microphone button constraint for more flexible custom layout proportions
 - **Custom Keyboard Layout Grid Sync**: Syncs grid size across all panels when any panel is resized, automatically filtering out-of-bounds buttons
+- **[Pro] Continuous Mode Optimization**: Tried to solve the problem of audio being discarded before triggering recording in continuous mode
 - Improved backup settings page text styling
 
 ### Bug Fixes
