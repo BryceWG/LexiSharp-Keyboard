@@ -1,11 +1,11 @@
 {
-  "version": "4.0.2",
-  "version_code": 159,
-  "download_url": "https://github.com/BryceWG/BiBi-Keyboard/releases/tag/v4.0.2",
-  "release_notes": "### 新增功能\n\n- **IME 桥接模式**：新增 IME 桥接模式，通过广播与 LSPosed 模块联动实现键盘状态检测、文字插入、组合文本预览和会话管理\n- **悬浮球录音前台服务**：为悬浮球录音添加 Android 14 所需的麦克风前台服务支持\n- **AI 编辑系统提示词自定义**：允许用户自定义 AI 编辑功能的系统提示词，留空则使用默认值\n\n### 改进优化\n\n- **Soniox 流式模型升级**：升级 Soniox 流式识别模型至 stt-rt-v5\n- **无障碍相关文案优化**：优化无障碍兼容性和高级功能相关字符串描述",
-  "release_notes_en": "### New Features\n\n- **IME Bridge Mode**: Added IME bridge mode that communicates with LSPosed modules via broadcast, supporting keyboard state detection, text insertion, composing text preview, and session management\n- **Floating Ball Foreground Service**: Added microphone foreground service support required by Android 14 for floating ball recording\n- **AI Edit System Prompt Customization**: Allow users to customize the AI edit feature's system prompt; leaving it empty falls back to the default\n\n### Improvements\n\n- **Soniox Streaming Model Upgrade**: Upgraded Soniox streaming recognition model to stt-rt-v5\n- **Accessibility Copy Optimization**: Updated accessibility compatibility and advanced feature related string descriptions",
+  "version": "4.0.3",
+  "version_code": 160,
+  "download_url": "https://github.com/BryceWG/BiBi-Keyboard/releases/tag/v4.0.3",
+  "release_notes": "### 新增功能\n\n- **可见时持续录音**：键盘或悬浮球可见期间在本机持续录音，按麦后更快开始识别\n- **录音超时停止**：新增超时停止录音自动停止模式，并支持配置最长录音时长\n- **Soniox 识别模式**：Soniox 流式识别新增低延迟到高精度的灵敏度选项\n\n### 改进优化\n\n- **OpenAI 自定义端点兼容性**：自定义服务不再生效非流式压缩\n- **悬浮键盘拖动把手**：根据窗口底部间隙自动将拖动把手切换到顶部或底部\n- **麦克风按钮样式**：去掉麦克风按钮固定方形限制，支持更灵活的自定义布局比例\n- **自定义键盘布局网格同步**：调整任一面板网格大小时同步更新所有面板，并自动过滤越界按钮\n- 优化备份设置页文字样式\n\n### 问题修复\n\n- **X-ASR 尾部音频**：修复 X-ASR 流式识别停止时可能丢失尾部音频的问题\n- **[Pro] Pro 备份修复**：修复 Pro 版配置备份丢失部分内容的问题",
+  "release_notes_en": "### New Features\n\n- **Continuous Recording While Visible**: Records audio locally while the keyboard or floating ball is visible for faster recognition startup\n- **Recording Timeout Stop**: Added timeout-based auto-stop recording mode with configurable maximum recording duration\n- **Soniox Recognition Mode**: Added low-latency to high-accuracy sensitivity options for Soniox streaming recognition\n\n### Improvements\n\n- **OpenAI Custom Endpoint Compatibility**: Non-streaming compression no longer applies to custom endpoints\n- **Floating Keyboard Drag Handle**: Automatically moves the drag handle to the top or bottom based on bottom window gap\n- **Microphone Button Styling**: Removed the fixed square microphone button constraint for more flexible custom layout proportions\n- **Custom Keyboard Layout Grid Sync**: Syncs grid size across all panels when any panel is resized, automatically filtering out-of-bounds buttons\n- Improved backup settings page text styling\n\n### Bug Fixes\n\n- **X-ASR Tail Audio**: Fixed potential loss of tail audio when stopping X-ASR streaming recognition\n- **[Pro] Pro Backup Fix**: Fixed partial content loss in Pro configuration backup",
   "important_notice": "1. 4.0.0 版本将迎来大量重构和众多更新，欢迎下载尝鲜\n2. BiBi Keyboard Pro版本已上架，欢迎在3.8.6后版本-关于页面中了解详情。\n3. 官方网站和使用文档均已上线,网址分别为: bibi.brycewg.com bibidocs.brycewg.com",
   "notice_level": "info",
   "min_supported_version": "2.6.5",
-  "update_time": "2026-06-18T03:55:57Z"
+  "update_time": "2026-07-02T14:37:14Z"
 }
