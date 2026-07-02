@@ -1,5 +1,28 @@
 # Changelog
 
+## v4.0.3 (2026-07-02)
+
+### New Features
+
+- **Continuous Recording While Visible**: Records audio locally while the keyboard or floating ball is visible for faster recognition startup
+- **Recording Timeout Stop**: Added timeout-based auto-stop recording mode with configurable maximum recording duration
+- **Soniox Recognition Mode**: Added low-latency to high-accuracy sensitivity options for Soniox streaming recognition
+
+### Improvements
+
+- **OpenAI Custom Endpoint Compatibility**: Non-streaming compression no longer applies to custom endpoints
+- **Floating Keyboard Drag Handle**: Automatically moves the drag handle to the top or bottom based on bottom window gap
+- **Microphone Button Styling**: Removed the fixed square microphone button constraint for more flexible custom layout proportions
+- **Custom Keyboard Layout Grid Sync**: Syncs grid size across all panels when any panel is resized, automatically filtering out-of-bounds buttons
+- Improved backup settings page text styling
+
+### Bug Fixes
+
+- **X-ASR Tail Audio**: Fixed potential loss of tail audio when stopping X-ASR streaming recognition
+- **[Pro] Pro Backup Fix**: Fixed partial content loss in Pro configuration backup
+
+---
+
 ## v4.0.2 (2026-06-18)
 
 ### New Features
