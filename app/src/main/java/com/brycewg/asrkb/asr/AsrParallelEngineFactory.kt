@@ -1,0 +1,158 @@
+// Builds the top-level ParallelAsrEngine wrapper when backup ASR policy allows it.
+package com.brycewg.asrkb.asr
+
+import android.content.Context
+import com.brycewg.asrkb.store.Prefs
+import kotlinx.coroutines.CoroutineScope
+
+internal data class AsrParallelEngineRequest(
+    val context: Context,
+    val scope: CoroutineScope,
+    val prefs: Prefs,
+    val listener: StreamingAsrEngine.Listener,
+    val primaryVendor: AsrVendor,
+    val backupVendor: AsrVendor,
+    val externalPcmInput: Boolean = false,
+    val onPrimaryRequestDuration: ((Long) -> Unit)? = null
+)
+
+internal data class AsrParallelEnginePlan(
+    val decision: AsrParallelEngineDecision,
+    val primaryVendor: AsrVendor,
+    val backupVendor: AsrVendor,
+    val externalPcmInput: Boolean
+) {
+    val shouldUseParallel: Boolean
+        get() = decision == AsrParallelEngineDecision.UseParallel
+
+    val engineClassName: String?
+        get() = if (shouldUseParallel) "ParallelAsrEngine" else null
+}
+
+internal enum class AsrParallelEngineDecision {
+    UseParallel,
+    UsePrimaryOnly
+}
+
+internal class AsrParallelEngineFactory(
+    private val constructors: AsrParallelEngineConstructorTable =
+        RealAsrParallelEngineConstructorTable
+) {
+    fun createOrNull(request: AsrParallelEngineRequest): StreamingAsrEngine? {
+        val plan = resolvePlan(request)
+        return createPlanned(plan) {
+            ParallelAsrEngine(
+                context = request.context,
+                scope = request.scope,
+                prefs = request.prefs,
+                listener = request.listener,
+                primaryVendor = plan.primaryVendor,
+                backupVendor = plan.backupVendor,
+                onPrimaryRequestDuration = request.onPrimaryRequestDuration,
+                externalPcmInput = plan.externalPcmInput
+            )
+        }
+    }
+
+    fun createOrNull(
+        context: Context,
+        scope: CoroutineScope,
+        prefs: Prefs,
+        listener: StreamingAsrEngine.Listener,
+        primaryVendor: AsrVendor = prefs.asrVendor,
+        backupVendor: AsrVendor = prefs.backupAsrVendor,
+        externalPcmInput: Boolean = false,
+        onPrimaryRequestDuration: ((Long) -> Unit)? = null
+    ): StreamingAsrEngine? = createOrNull(
+        AsrParallelEngineRequest(
+            context = context,
+            scope = scope,
+            prefs = prefs,
+            listener = listener,
+            primaryVendor = primaryVendor,
+            backupVendor = backupVendor,
+            externalPcmInput = externalPcmInput,
+            onPrimaryRequestDuration = onPrimaryRequestDuration
+        )
+    )
+
+    fun createPlanned(
+        plan: AsrParallelEnginePlan,
+        engineFactory: () -> StreamingAsrEngine
+    ): StreamingAsrEngine? {
+        if (!plan.shouldUseParallel) return null
+        return constructors.create(plan, engineFactory)
+    }
+
+    fun resolvePlan(request: AsrParallelEngineRequest): AsrParallelEnginePlan =
+        resolvePlan(
+            context = request.context,
+            prefs = request.prefs,
+            primaryVendor = request.primaryVendor,
+            backupVendor = request.backupVendor,
+            externalPcmInput = request.externalPcmInput
+        )
+
+    fun resolvePlan(
+        context: Context,
+        prefs: Prefs,
+        primaryVendor: AsrVendor,
+        backupVendor: AsrVendor,
+        externalPcmInput: Boolean = false
+    ): AsrParallelEnginePlan = planFor(
+        primaryVendor = primaryVendor,
+        backupVendor = backupVendor,
+        externalPcmInput = externalPcmInput,
+        shouldUseParallel = shouldUseBackupAsr(
+            context = context,
+            prefs = prefs,
+            primaryVendor = primaryVendor,
+            backupVendor = backupVendor
+        )
+    )
+
+    fun resolvePlan(
+        backupPolicyInput: AsrBackupPolicyInput,
+        externalPcmInput: Boolean = false
+    ): AsrParallelEnginePlan = planFor(
+        primaryVendor = backupPolicyInput.primaryVendor,
+        backupVendor = backupPolicyInput.backupVendor,
+        externalPcmInput = externalPcmInput,
+        shouldUseParallel = shouldUseBackupAsr(backupPolicyInput)
+    )
+
+    private fun planFor(
+        primaryVendor: AsrVendor,
+        backupVendor: AsrVendor,
+        externalPcmInput: Boolean,
+        shouldUseParallel: Boolean
+    ): AsrParallelEnginePlan = AsrParallelEnginePlan(
+        decision = if (shouldUseParallel) {
+            AsrParallelEngineDecision.UseParallel
+        } else {
+            AsrParallelEngineDecision.UsePrimaryOnly
+        },
+        primaryVendor = primaryVendor,
+        backupVendor = backupVendor,
+        externalPcmInput = externalPcmInput
+    )
+}
+
+internal fun interface AsrParallelEngineConstructorTable {
+    fun create(
+        plan: AsrParallelEnginePlan,
+        engineFactory: () -> StreamingAsrEngine
+    ): StreamingAsrEngine
+}
+
+internal object RealAsrParallelEngineConstructorTable : AsrParallelEngineConstructorTable {
+    override fun create(
+        plan: AsrParallelEnginePlan,
+        engineFactory: () -> StreamingAsrEngine
+    ): StreamingAsrEngine {
+        require(plan.shouldUseParallel) {
+            "ParallelAsrEngine can only be constructed from an approved parallel plan"
+        }
+        return engineFactory()
+    }
+}

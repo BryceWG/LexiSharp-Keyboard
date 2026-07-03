@@ -1,19 +1,15 @@
+// ASR settings state and local model status orchestration.
 package com.brycewg.asrkb.ui.settings.asr
 
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.brycewg.asrkb.asr.AsrLocalVendorLifecycles
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LocalModelCheck
 import com.brycewg.asrkb.asr.LocalModelSpecs
 import com.brycewg.asrkb.asr.SherpaPunctuationManager
-import com.brycewg.asrkb.asr.checkFireRedAsrModelFiles
-import com.brycewg.asrkb.asr.checkFunAsrNanoModel
-import com.brycewg.asrkb.asr.checkParakeetModel
-import com.brycewg.asrkb.asr.checkQwen3AsrModel
-import com.brycewg.asrkb.asr.checkSenseVoiceModel
-import com.brycewg.asrkb.asr.checkXAsrModelFiles
 import com.brycewg.asrkb.asr.requireModelFilesCached
 import com.brycewg.asrkb.store.Prefs
 import java.io.File
@@ -843,35 +839,45 @@ class AsrSettingsViewModel : ViewModel() {
         }
     }
 
-    internal fun checkXAsrModelStatus(context: Context): LocalModelCheck<*> {
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        return checkXAsrModelFiles(context, File(base, "x_asr"))
-    }
+    internal fun checkLocalVendorModelStatus(context: Context, vendor: AsrVendor): LocalModelCheck<*> =
+        localVendorModelStatusOrMissing(
+            vendor = vendor,
+            modelStatus = { AsrLocalVendorLifecycles.modelStatus(context, prefs, vendor) },
+            logFailure = { failedVendor, throwable ->
+                Log.w(TAG, "Failed to check local ASR model for $failedVendor", throwable)
+            }
+        )
+
+    fun checkLocalVendorModelDownloaded(context: Context, vendor: AsrVendor): Boolean =
+        checkLocalVendorModelStatus(context, vendor) is LocalModelCheck.Ready
+
+    internal fun checkXAsrModelStatus(context: Context): LocalModelCheck<*> =
+        checkLocalVendorModelStatus(context, AsrVendor.XAsr)
 
     fun checkXAsrModelDownloaded(context: Context): Boolean = checkXAsrModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkSvModelStatus(context: Context): LocalModelCheck<*> = checkSenseVoiceModel(context, prefs)
+    internal fun checkSvModelStatus(context: Context): LocalModelCheck<*> =
+        checkLocalVendorModelStatus(context, AsrVendor.SenseVoice)
 
     fun checkSvModelDownloaded(context: Context): Boolean = checkSvModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkFnModelStatus(context: Context): LocalModelCheck<*> = checkFunAsrNanoModel(context, prefs)
+    internal fun checkFnModelStatus(context: Context): LocalModelCheck<*> =
+        checkLocalVendorModelStatus(context, AsrVendor.FunAsrNano)
 
     fun checkFnModelDownloaded(context: Context): Boolean = checkFnModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkQwModelStatus(context: Context): LocalModelCheck<*> = checkQwen3AsrModel(context, prefs)
+    internal fun checkQwModelStatus(context: Context): LocalModelCheck<*> =
+        checkLocalVendorModelStatus(context, AsrVendor.Qwen3Asr)
 
     fun checkQwModelDownloaded(context: Context): Boolean = checkQwModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkPkModelStatus(context: Context): LocalModelCheck<*> = checkParakeetModel(context, prefs)
+    internal fun checkPkModelStatus(context: Context): LocalModelCheck<*> =
+        checkLocalVendorModelStatus(context, AsrVendor.Parakeet)
 
     fun checkPkModelDownloaded(context: Context): Boolean = checkPkModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkFrModelStatus(context: Context): LocalModelCheck<*> = try {
-        checkFireRedAsrModelFiles(context, prefs)
-    } catch (t: Throwable) {
-        Log.w(TAG, "Failed to resolve FireRedASR model files", t)
-        LocalModelCheck.Missing
-    }
+    internal fun checkFrModelStatus(context: Context): LocalModelCheck<*> =
+        checkLocalVendorModelStatus(context, AsrVendor.FireRedAsr)
 
     fun checkFrModelDownloaded(context: Context): Boolean = checkFrModelStatus(context) is LocalModelCheck.Ready
 
@@ -906,6 +912,17 @@ class AsrSettingsViewModel : ViewModel() {
     companion object {
         private const val TAG = "AsrSettingsViewModel"
     }
+}
+
+internal fun localVendorModelStatusOrMissing(
+    vendor: AsrVendor,
+    modelStatus: () -> LocalModelCheck<*>?,
+    logFailure: (AsrVendor, Throwable) -> Unit = { _, _ -> }
+): LocalModelCheck<*> = try {
+    modelStatus() ?: LocalModelCheck.Missing
+} catch (t: Throwable) {
+    logFailure(vendor, t)
+    LocalModelCheck.Missing
 }
 
 /**

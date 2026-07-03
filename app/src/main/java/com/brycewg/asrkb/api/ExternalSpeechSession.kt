@@ -78,6 +78,9 @@ internal class ExternalSpeechSession(
     private val sessionJob = SupervisorJob()
     private val sessionScope = CoroutineScope(sessionJob + Dispatchers.Default)
     private val processingTimeoutLock = Any()
+    private val parallelEngineFactory = AsrParallelEngineFactory()
+    private val directMicrophoneEngineFactory = AsrDirectMicrophoneEngineFactory()
+    private val pushPcmEngineFactory = AsrPushPcmEngineFactory()
 
     @Volatile private var processingTimeoutJob: Job? = null
 
@@ -270,21 +273,25 @@ internal class ExternalSpeechSession(
         val primaryVendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
         this.vendor = primaryVendor
-        val streamingPref = resolveStreamingBySettings(primaryVendor)
-        val backupEnabled = shouldUseBackupAsr(primaryVendor, backupVendor)
-        engine = if (backupEnabled) {
-            ParallelAsrEngine(
-                context = context,
-                scope = CoroutineScope(sessionJob + Dispatchers.Main),
-                prefs = prefs,
-                listener = this,
-                primaryVendor = primaryVendor,
-                backupVendor = backupVendor,
-                onPrimaryRequestDuration = ::onRequestDuration
-            )
-        } else {
-            buildEngine(primaryVendor, streamingPref)
-        }
+        engine = parallelEngineFactory.createOrNull(
+            context = context,
+            scope = CoroutineScope(sessionJob + Dispatchers.Main),
+            prefs = prefs,
+            listener = this,
+            primaryVendor = primaryVendor,
+            backupVendor = backupVendor,
+            externalPcmInput = false,
+            onPrimaryRequestDuration = ::onRequestDuration
+        ) ?: directMicrophoneEngineFactory.createOrNull(
+            context = context,
+            scope = CoroutineScope(Dispatchers.Main),
+            prefs = prefs,
+            listener = this,
+            vendor = primaryVendor,
+            preferences = prefs.asrEngineModePreferencesSnapshot(),
+            source = AsrEngineConstructionSource.ExternalIntegration,
+            onRequestDuration = ::onRequestDuration
+        )
         return engine != null
     }
 
@@ -292,22 +299,26 @@ internal class ExternalSpeechSession(
         val primaryVendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
         this.vendor = primaryVendor
-        val streamingPref = resolveStreamingBySettings(primaryVendor)
-        val backupEnabled = shouldUseBackupAsr(primaryVendor, backupVendor)
-        engine = if (backupEnabled) {
-            ParallelAsrEngine(
-                context = context,
-                scope = CoroutineScope(sessionJob + Dispatchers.Main),
-                prefs = prefs,
-                listener = this,
-                primaryVendor = primaryVendor,
-                backupVendor = backupVendor,
-                onPrimaryRequestDuration = ::onRequestDuration,
-                externalPcmInput = true
-            )
-        } else {
-            buildPushPcmEngine(primaryVendor, streamingPref)
-        }
+        engine = parallelEngineFactory.createOrNull(
+            context = context,
+            scope = CoroutineScope(sessionJob + Dispatchers.Main),
+            prefs = prefs,
+            listener = this,
+            primaryVendor = primaryVendor,
+            backupVendor = backupVendor,
+            externalPcmInput = true,
+            onPrimaryRequestDuration = ::onRequestDuration
+        ) ?: pushPcmEngineFactory.createOrNull(
+            context = context,
+            scope = CoroutineScope(Dispatchers.Main),
+            prefs = prefs,
+            listener = this,
+            vendor = primaryVendor,
+            invocationMode = AsrEngineInvocationMode.PushPcm,
+            preferences = prefs.asrEngineModePreferencesSnapshot(),
+            source = AsrEngineConstructionSource.ExternalIntegration,
+            onRequestDuration = ::onRequestDuration
+        )
         return engine != null
     }
 
@@ -401,513 +412,6 @@ internal class ExternalSpeechSession(
             e.appendPcm(pcm, sampleRate, channels)
         } catch (t: Throwable) {
             Log.w(TAG, "appendPcm failed for sid=$id", t)
-        }
-    }
-
-    private fun shouldUseBackupAsr(primaryVendor: AsrVendor, backupVendor: AsrVendor): Boolean {
-        val enabled = try {
-            prefs.backupAsrEnabled
-        } catch (_: Throwable) {
-            false
-        }
-        if (!enabled) return false
-        if (backupVendor == primaryVendor) return false
-        return try {
-            when (backupVendor) {
-                AsrVendor.SiliconFlow -> prefs.hasSfKeys()
-                AsrVendor.OpenRouter -> prefs.hasOpenRouterKeys()
-                AsrVendor.StepAudio -> prefs.hasStepAudioKeys()
-                else -> prefs.hasVendorKeys(backupVendor)
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to check backup vendor keys: $backupVendor", t)
-            false
-        }
-    }
-
-    private fun resolveStreamingBySettings(vendor: AsrVendor): Boolean = when (vendor) {
-        AsrVendor.Volc -> prefs.volcStreamingEnabled
-        AsrVendor.DashScope -> prefs.isDashStreamingModelSelected()
-        AsrVendor.Soniox -> prefs.sonioxStreamingEnabled
-        // 本地 sherpa-onnx：X-ASR 仅流式；其它本地模型仅非流式
-        AsrVendor.XAsr -> true
-        AsrVendor.SenseVoice,
-        AsrVendor.FunAsrNano,
-        AsrVendor.Qwen3Asr,
-        AsrVendor.Parakeet,
-        AsrVendor.FireRedAsr -> false
-        AsrVendor.ElevenLabs -> prefs.elevenStreamingEnabled
-        AsrVendor.OpenAI -> prefs.isOpenAiStreamingEffective()
-        // 其他云厂商（Gemini/SiliconFlow/OpenRouter/StepAudio/Zhipu/MiMo）仅非流式
-        AsrVendor.Gemini,
-        AsrVendor.SiliconFlow,
-        AsrVendor.OpenRouter,
-        AsrVendor.StepAudio,
-        AsrVendor.Zhipu,
-        AsrVendor.MiMo -> false
-    }
-
-    private fun buildEngine(
-        vendor: AsrVendor,
-        streamingPreferred: Boolean
-    ): StreamingAsrEngine? {
-        val scope = CoroutineScope(Dispatchers.Main)
-        return when (vendor) {
-            AsrVendor.Volc -> if (streamingPreferred) {
-                VolcStreamAsrEngine(context, scope, prefs, this)
-            } else {
-                VolcFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            }
-            AsrVendor.SiliconFlow -> SiliconFlowFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.ElevenLabs -> if (streamingPreferred) {
-                ElevenLabsStreamAsrEngine(context, scope, prefs, this)
-            } else {
-                ElevenLabsFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            }
-            AsrVendor.OpenAI -> if (streamingPreferred) {
-                OpenAiRealtimeAsrEngine(context, scope, prefs, this)
-            } else {
-                OpenAiFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            }
-            AsrVendor.OpenRouter -> OpenRouterFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.MiMo -> MiMoFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.DashScope -> if (streamingPreferred) {
-                DashscopeStreamAsrEngine(context, scope, prefs, this)
-            } else {
-                DashscopeFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            }
-            AsrVendor.Gemini -> GeminiFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.Soniox -> if (streamingPreferred) {
-                SonioxStreamAsrEngine(context, scope, prefs, this)
-            } else {
-                SonioxFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            }
-            AsrVendor.StepAudio -> StepAudioFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.Zhipu -> ZhipuFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.SenseVoice -> SenseVoiceFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.FunAsrNano -> FunAsrNanoFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.Qwen3Asr -> Qwen3AsrFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.Parakeet -> ParakeetFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.FireRedAsr -> FireRedAsrFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                onRequestDuration = ::onRequestDuration
-            )
-            AsrVendor.XAsr -> XAsrStreamAsrEngine(context, scope, prefs, this)
-        }
-    }
-
-    private fun buildPushPcmEngine(
-        vendor: AsrVendor,
-        streamingPreferred: Boolean
-    ): StreamingAsrEngine? {
-        val scope = CoroutineScope(Dispatchers.Main)
-        return when (vendor) {
-            AsrVendor.Volc -> if (streamingPreferred) {
-                VolcStreamAsrEngine(context, scope, prefs, this, externalPcmMode = true)
-            } else {
-                if (prefs.volcFileStandardEnabled) {
-                    com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        com.brycewg.asrkb.asr.VolcStandardFileAsrEngine(
-                            context,
-                            scope,
-                            prefs,
-                            this,
-                            onRequestDuration = ::onRequestDuration
-                        )
-                    )
-                } else {
-                    com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        com.brycewg.asrkb.asr.VolcFileAsrEngine(
-                            context,
-                            scope,
-                            prefs,
-                            this,
-                            onRequestDuration = ::onRequestDuration
-                        )
-                    )
-                }
-            }
-            // 阿里 DashScope：依据设置走流式或非流式
-            AsrVendor.DashScope -> if (streamingPreferred) {
-                com.brycewg.asrkb.asr.DashscopeStreamAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    externalPcmMode = true
-                )
-            } else {
-                com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    com.brycewg.asrkb.asr.DashscopeFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        onRequestDuration = ::onRequestDuration
-                    )
-                )
-            }
-            // Soniox：依据设置走流式或非流式
-            AsrVendor.Soniox -> if (streamingPreferred) {
-                com.brycewg.asrkb.asr.SonioxStreamAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    externalPcmMode = true
-                )
-            } else {
-                com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    com.brycewg.asrkb.asr.SonioxFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        onRequestDuration = ::onRequestDuration
-                    )
-                )
-            }
-            // 其他云厂商：仅非流式（若供应商另行支持流式则走对应分支）
-            AsrVendor.ElevenLabs -> if (streamingPreferred) {
-                com.brycewg.asrkb.asr.ElevenLabsStreamAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    externalPcmMode = true
-                )
-            } else {
-                com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    com.brycewg.asrkb.asr.ElevenLabsFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        onRequestDuration = ::onRequestDuration
-                    )
-                )
-            }
-            AsrVendor.OpenAI -> if (streamingPreferred) {
-                com.brycewg.asrkb.asr.OpenAiRealtimeAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    externalPcmMode = true
-                )
-            } else {
-                com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    com.brycewg.asrkb.asr.OpenAiFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        onRequestDuration = ::onRequestDuration
-                    )
-                )
-            }
-            AsrVendor.OpenRouter -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                context,
-                scope,
-                prefs,
-                this,
-                com.brycewg.asrkb.asr.OpenRouterFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            )
-            AsrVendor.MiMo -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                context,
-                scope,
-                prefs,
-                this,
-                com.brycewg.asrkb.asr.MiMoFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            )
-            AsrVendor.Gemini -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                context,
-                scope,
-                prefs,
-                this,
-                com.brycewg.asrkb.asr.GeminiFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            )
-            AsrVendor.SiliconFlow -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                context,
-                scope,
-                prefs,
-                this,
-                com.brycewg.asrkb.asr.SiliconFlowFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            )
-            AsrVendor.StepAudio -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                context,
-                scope,
-                prefs,
-                this,
-                com.brycewg.asrkb.asr.StepAudioFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            )
-            AsrVendor.Zhipu -> com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                context,
-                scope,
-                prefs,
-                this,
-                com.brycewg.asrkb.asr.ZhipuFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    onRequestDuration = ::onRequestDuration
-                )
-            )
-            // 本地：X-ASR 固定流式
-            AsrVendor.XAsr -> com.brycewg.asrkb.asr.XAsrStreamAsrEngine(
-                context,
-                scope,
-                prefs,
-                this,
-                externalPcmMode = true
-            )
-            // SenseVoice：支持伪流式（VAD 分片预览 + 整段离线识别）
-            AsrVendor.SenseVoice -> {
-                if (prefs.svPseudoStreamEnabled) {
-                    com.brycewg.asrkb.asr.SenseVoicePushPcmPseudoStreamAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        onRequestDuration = ::onRequestDuration
-                    )
-                } else {
-                    com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        com.brycewg.asrkb.asr.SenseVoiceFileAsrEngine(
-                            context,
-                            scope,
-                            prefs,
-                            this,
-                            onRequestDuration = ::onRequestDuration
-                        )
-                    )
-                }
-            }
-            // FunASR Nano：整段离线识别（算力开销高，不支持伪流式预览）
-            AsrVendor.FunAsrNano -> {
-                // FunASR Nano 算力开销高：不支持伪流式预览，仅保留整段离线识别
-                com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    com.brycewg.asrkb.asr.FunAsrNanoFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        onRequestDuration = ::onRequestDuration
-                    )
-                )
-            }
-            AsrVendor.Qwen3Asr -> {
-                com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    com.brycewg.asrkb.asr.Qwen3AsrFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        onRequestDuration = ::onRequestDuration
-                    )
-                )
-            }
-            AsrVendor.Parakeet -> {
-                com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                    context,
-                    scope,
-                    prefs,
-                    this,
-                    com.brycewg.asrkb.asr.ParakeetFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        onRequestDuration = ::onRequestDuration
-                    )
-                )
-            }
-            // FireRedASR：当前沿用整段离线转录；伪流式开关仅复用整段转录链路
-            AsrVendor.FireRedAsr -> {
-                if (prefs.frPseudoStreamEnabled) {
-                    com.brycewg.asrkb.asr.FireRedAsrPushPcmPseudoStreamAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        onRequestDuration = ::onRequestDuration
-                    )
-                } else {
-                    com.brycewg.asrkb.asr.GenericPushFileAsrAdapter(
-                        context,
-                        scope,
-                        prefs,
-                        this,
-                        com.brycewg.asrkb.asr.FireRedAsrFileAsrEngine(
-                            context,
-                            scope,
-                            prefs,
-                            this,
-                            onRequestDuration = ::onRequestDuration
-                        )
-                    )
-                }
-            }
         }
     }
 

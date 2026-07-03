@@ -24,57 +24,17 @@ fun preloadLocalAsrIfConfigured(
     forImmediateUse: Boolean = false
 ) {
     try {
-        when (prefs.asrVendor) {
-            AsrVendor.SenseVoice -> preloadSenseVoiceIfConfigured(
-                context,
-                prefs,
-                onLoadStart,
-                onLoadDone,
-                suppressToastOnStart,
-                forImmediateUse
+        AsrLocalVendorLifecycles.preload(
+            prefs.asrVendor,
+            AsrLocalVendorPreloadRequest.create(
+                context = context,
+                prefs = prefs,
+                onLoadStart = onLoadStart,
+                onLoadDone = onLoadDone,
+                suppressToastOnStart = suppressToastOnStart,
+                forImmediateUse = forImmediateUse
             )
-            AsrVendor.FunAsrNano -> preloadFunAsrNanoIfConfigured(
-                context,
-                prefs,
-                onLoadStart,
-                onLoadDone,
-                suppressToastOnStart,
-                forImmediateUse
-            )
-            AsrVendor.Qwen3Asr -> preloadQwen3AsrIfConfigured(
-                context,
-                prefs,
-                onLoadStart,
-                onLoadDone,
-                suppressToastOnStart,
-                forImmediateUse
-            )
-            AsrVendor.Parakeet -> preloadParakeetIfConfigured(
-                context,
-                prefs,
-                onLoadStart,
-                onLoadDone,
-                suppressToastOnStart,
-                forImmediateUse
-            )
-            AsrVendor.FireRedAsr -> preloadFireRedAsrIfConfigured(
-                context,
-                prefs,
-                onLoadStart,
-                onLoadDone,
-                suppressToastOnStart,
-                forImmediateUse
-            )
-            AsrVendor.XAsr -> preloadXAsrIfConfigured(
-                context,
-                prefs,
-                onLoadStart,
-                onLoadDone,
-                suppressToastOnStart,
-                forImmediateUse
-            )
-            else -> { /* no-op for cloud vendors */ }
-        }
+        )
     } catch (t: Throwable) {
         Log.e("LocalModelPreload", "preloadLocalAsrIfConfigured failed", t)
     }
@@ -114,15 +74,7 @@ fun preloadLocalAsrForImmediateUse(
  * 统一检查本地 ASR 是否已准备（模型已加载或正在加载中）
  */
 fun isLocalAsrPrepared(prefs: Prefs): Boolean = try {
-    when (prefs.asrVendor) {
-        AsrVendor.SenseVoice -> isSenseVoicePrepared()
-        AsrVendor.FunAsrNano -> isFunAsrNanoPrepared()
-        AsrVendor.Qwen3Asr -> isQwen3AsrPrepared()
-        AsrVendor.Parakeet -> isParakeetPrepared()
-        AsrVendor.FireRedAsr -> isFireRedAsrPrepared()
-        AsrVendor.XAsr -> isXAsrPrepared()
-        else -> false
-    }
+    AsrLocalVendorLifecycles.isPrepared(prefs.asrVendor)
 } catch (t: Throwable) {
     Log.e("LocalModelPreload", "isLocalAsrPrepared failed", t)
     false
@@ -132,48 +84,14 @@ fun isLocalAsrPrepared(prefs: Prefs): Boolean = try {
  * 判断当前 vendor 是否为“本地模型”。
  * 说明：这里的“本地模型”指需要在设备侧加载/准备模型（可能耗时较长）的 vendor。
  */
-fun isLocalAsrVendor(vendor: AsrVendor): Boolean = when (vendor) {
-    AsrVendor.SenseVoice,
-    AsrVendor.FunAsrNano,
-    AsrVendor.Qwen3Asr,
-    AsrVendor.Parakeet,
-    AsrVendor.FireRedAsr,
-    AsrVendor.XAsr -> true
-    else -> false
-}
+fun isLocalAsrVendor(vendor: AsrVendor): Boolean = AsrLocalVendorLifecycles.isLocalVendor(vendor)
 
 /**
  * 本地 ASR 是否已就绪（模型已加载完成）。
  * 注意：与 [isLocalAsrPrepared] 不同，这里不把“正在加载中”视为就绪。
  */
 fun isLocalAsrReady(prefs: Prefs): Boolean = try {
-    when (prefs.asrVendor) {
-        AsrVendor.SenseVoice -> {
-            val manager = SenseVoiceOnnxManager.getInstance()
-            manager.isPrepared() && !manager.isPreparing()
-        }
-        AsrVendor.FunAsrNano -> {
-            val manager = FunAsrNanoOnnxManager.getInstance()
-            manager.isPrepared() && !manager.isPreparing()
-        }
-        AsrVendor.Qwen3Asr -> {
-            val manager = Qwen3AsrOnnxManager.getInstance()
-            manager.isPrepared() && !manager.isPreparing()
-        }
-        AsrVendor.Parakeet -> {
-            val manager = ParakeetOnnxManager.getInstance()
-            manager.isPrepared() && !manager.isPreparing()
-        }
-        AsrVendor.FireRedAsr -> {
-            val manager = FireRedAsrOnnxManager.getInstance()
-            manager.isPrepared() && !manager.isPreparing()
-        }
-        AsrVendor.XAsr -> {
-            val manager = XAsrOnnxManager.getInstance()
-            manager.isPrepared() && !manager.isPreparing()
-        }
-        else -> false
-    }
+    AsrLocalVendorLifecycles.isReady(prefs.asrVendor)
 } catch (t: Throwable) {
     Log.e("LocalModelPreload", "isLocalAsrReady failed", t)
     false

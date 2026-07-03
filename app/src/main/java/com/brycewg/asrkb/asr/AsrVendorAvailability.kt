@@ -8,11 +8,48 @@ package com.brycewg.asrkb.asr
 import android.content.Context
 import android.util.Log
 import com.brycewg.asrkb.store.Prefs
-import java.io.File
 
 internal data class AsrVendorPartition(
     val configured: List<AsrVendor>,
     val unconfigured: List<AsrVendor>
+)
+
+internal enum class AsrVendorAvailabilityClassification {
+    OnlineConfiguration,
+    LocalModelReadiness
+}
+
+internal data class AsrVendorReadiness(
+    val vendor: AsrVendor,
+    val classification: AsrVendorAvailabilityClassification,
+    /**
+     * Future-proofing hook for vendors that have enough configuration/model state to be
+     * reported as ready, but should still not be instantiated by shared factories.
+     * Current online and local vendors are all constructible; local primary app paths
+     * intentionally use their own prevalidation so missing-model UI remains reachable.
+     */
+    val isConstructible: Boolean,
+    val onlineConfigured: Boolean?,
+    val localModelReady: Boolean?
+) {
+    val isReady: Boolean
+        get() = when (classification) {
+            AsrVendorAvailabilityClassification.OnlineConfiguration -> onlineConfigured == true
+            AsrVendorAvailabilityClassification.LocalModelReadiness -> localModelReady == true
+        }
+
+    val isUsable: Boolean
+        get() = isConstructible && isReady
+}
+
+internal data class AsrVendorAvailabilityCheckers(
+    val onlineConfiguration: (AsrVendor) -> Boolean,
+    val localModelReadiness: (AsrVendor) -> Boolean
+)
+
+internal data class AsrOnlineConfigurationChecks(
+    val hasSfKeys: () -> Boolean,
+    val hasVendorKeys: (AsrVendor) -> Boolean
 )
 
 internal fun partitionAsrVendorsByConfigured(
@@ -35,35 +72,88 @@ internal fun partitionAsrVendorsByConfigured(
     )
 }
 
-internal fun isAsrVendorConfigured(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean = try {
-    when (vendor) {
-        AsrVendor.SenseVoice -> hasSenseVoiceModelInstalled(context, prefs)
-        AsrVendor.FunAsrNano -> hasFunAsrNanoModelInstalled(context, prefs)
-        AsrVendor.Qwen3Asr -> hasQwen3AsrModelInstalled(context, prefs)
-        AsrVendor.Parakeet -> hasParakeetModelInstalled(context, prefs)
-        AsrVendor.FireRedAsr -> hasFireRedAsrModelInstalled(context, prefs)
-        AsrVendor.XAsr -> hasXAsrModelInstalled(context)
-        AsrVendor.SiliconFlow -> prefs.hasSfKeys()
-        else -> prefs.hasVendorKeys(vendor)
-    }
+internal fun isAsrVendorConfigured(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean =
+    checkAsrVendorAvailability(context, prefs, vendor).isUsable
+
+internal fun checkAsrVendorAvailability(
+    context: Context,
+    prefs: Prefs,
+    vendor: AsrVendor
+): AsrVendorReadiness = try {
+    checkAsrVendorAvailability(
+        vendor = vendor,
+        checkers = AsrVendorAvailabilityCheckers(
+            onlineConfiguration = { checkedVendor ->
+                isOnlineAsrVendorConfigured(
+                    checkedVendor,
+                    AsrOnlineConfigurationChecks(
+                        hasSfKeys = { prefs.hasSfKeys() },
+                        hasVendorKeys = { prefs.hasVendorKeys(it) }
+                    )
+                )
+            },
+            localModelReadiness = { checkedVendor ->
+                AsrLocalVendorLifecycles.isModelReady(context, prefs, checkedVendor)
+            }
+        )
+    )
 } catch (t: Throwable) {
     Log.w(TAG, "Failed to check vendor availability: $vendor", t)
-    false
+    unavailableReadiness(vendor)
 }
 
-private fun hasSenseVoiceModelInstalled(context: Context, prefs: Prefs): Boolean = checkSenseVoiceModel(context, prefs) is LocalModelCheck.Ready
+internal fun checkAsrVendorAvailability(
+    vendor: AsrVendor,
+    checkers: AsrVendorAvailabilityCheckers
+): AsrVendorReadiness {
+    val classification = classifyAsrVendorAvailability(vendor)
+    return when (classification) {
+        AsrVendorAvailabilityClassification.OnlineConfiguration -> AsrVendorReadiness(
+            vendor = vendor,
+            classification = classification,
+            isConstructible = true,
+            onlineConfigured = checkers.onlineConfiguration(vendor),
+            localModelReady = null
+        )
+        AsrVendorAvailabilityClassification.LocalModelReadiness -> AsrVendorReadiness(
+            vendor = vendor,
+            classification = classification,
+            isConstructible = true,
+            onlineConfigured = null,
+            localModelReady = checkers.localModelReadiness(vendor)
+        )
+    }
+}
 
-private fun hasFunAsrNanoModelInstalled(context: Context, prefs: Prefs): Boolean = checkFunAsrNanoModel(context, prefs) is LocalModelCheck.Ready
+internal fun classifyAsrVendorAvailability(vendor: AsrVendor): AsrVendorAvailabilityClassification =
+    AsrVendorRegistry.descriptorFor(vendor).availabilityClassification
 
-private fun hasQwen3AsrModelInstalled(context: Context, prefs: Prefs): Boolean = checkQwen3AsrModel(context, prefs) is LocalModelCheck.Ready
+internal fun isOnlineAsrVendorConfigured(
+    vendor: AsrVendor,
+    checks: AsrOnlineConfigurationChecks
+): Boolean = when (vendor) {
+    AsrVendor.SiliconFlow -> checks.hasSfKeys()
+    else -> checks.hasVendorKeys(vendor)
+}
 
-private fun hasFireRedAsrModelInstalled(context: Context, prefs: Prefs): Boolean = checkFireRedAsrModelFiles(context, prefs) is LocalModelCheck.Ready
-
-private fun hasParakeetModelInstalled(context: Context, prefs: Prefs): Boolean = checkParakeetModel(context, prefs) is LocalModelCheck.Ready
-
-private fun hasXAsrModelInstalled(context: Context): Boolean {
-    val base = context.getExternalFilesDir(null) ?: context.filesDir
-    return checkXAsrModelFiles(context, File(base, "x_asr")) is LocalModelCheck.Ready
+private fun unavailableReadiness(vendor: AsrVendor): AsrVendorReadiness {
+    val classification = classifyAsrVendorAvailability(vendor)
+    return when (classification) {
+        AsrVendorAvailabilityClassification.OnlineConfiguration -> AsrVendorReadiness(
+            vendor = vendor,
+            classification = classification,
+            isConstructible = true,
+            onlineConfigured = false,
+            localModelReady = null
+        )
+        AsrVendorAvailabilityClassification.LocalModelReadiness -> AsrVendorReadiness(
+            vendor = vendor,
+            classification = classification,
+            isConstructible = true,
+            onlineConfigured = null,
+            localModelReady = false
+        )
+    }
 }
 
 private const val TAG = "AsrVendorAvailability"

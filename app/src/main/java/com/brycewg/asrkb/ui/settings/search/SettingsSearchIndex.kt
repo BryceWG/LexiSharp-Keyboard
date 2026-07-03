@@ -8,8 +8,8 @@ package com.brycewg.asrkb.ui.settings.search
 import android.content.Context
 import androidx.annotation.StringRes
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LlmVendor
+import com.brycewg.asrkb.ui.AsrVendorUi
 import com.brycewg.asrkb.ui.settings.compose.core.BibiSettingsRoute
 import java.util.Locale
 
@@ -239,9 +239,9 @@ object SettingsSearchIndex {
 
     private fun asrVendorEntries(context: Context): List<SettingsSearchEntry> {
         val section = context.getString(R.string.label_asr_vendor)
-        return AsrVendor.entries.map { vendor ->
+        return AsrVendorUi.ordered().map { vendor ->
             SettingsSearchEntry(
-                title = context.getString(vendor.displayNameRes()),
+                title = AsrVendorUi.name(context, vendor),
                 sectionPath = listOf(section),
                 screenTitleResId = R.string.title_asr_settings,
                 composeRoute = BibiSettingsRoute.Asr,
@@ -265,27 +265,6 @@ object SettingsSearchIndex {
                 forceLlmVendorId = vendor.id
             )
         }
-    }
-
-    @StringRes
-    private fun AsrVendor.displayNameRes(): Int = when (this) {
-        AsrVendor.Volc -> R.string.vendor_volc
-        AsrVendor.SiliconFlow -> R.string.vendor_sf
-        AsrVendor.ElevenLabs -> R.string.vendor_eleven
-        AsrVendor.OpenAI -> R.string.vendor_openai
-        AsrVendor.OpenRouter -> R.string.vendor_openrouter
-        AsrVendor.DashScope -> R.string.vendor_dashscope
-        AsrVendor.Gemini -> R.string.vendor_gemini
-        AsrVendor.MiMo -> R.string.vendor_mimo
-        AsrVendor.Soniox -> R.string.vendor_soniox
-        AsrVendor.StepAudio -> R.string.vendor_stepaudio
-        AsrVendor.Zhipu -> R.string.vendor_zhipu
-        AsrVendor.SenseVoice -> R.string.vendor_sensevoice
-        AsrVendor.FunAsrNano -> R.string.vendor_funasr_nano
-        AsrVendor.Qwen3Asr -> R.string.vendor_qwen3_asr
-        AsrVendor.Parakeet -> R.string.vendor_parakeet
-        AsrVendor.FireRedAsr -> R.string.vendor_firered_asr
-        AsrVendor.XAsr -> R.string.vendor_x_asr
     }
 
     private fun SettingsSearchEntry.uniqueKey(): String = buildString {

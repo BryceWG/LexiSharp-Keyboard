@@ -76,6 +76,20 @@ class Prefs(context: Context) {
         sp.edit { putString(key, value.trim()) }
     }
 
+    internal fun getPrefBoolean(key: String, default: Boolean): Boolean =
+        sp.getBoolean(key, default)
+
+    internal fun setPrefBoolean(key: String, value: Boolean) {
+        sp.edit { putBoolean(key, value) }
+    }
+
+    internal fun getPrefInt(key: String, default: Int): Int =
+        sp.getInt(key, default)
+
+    internal fun setPrefInt(key: String, value: Int) {
+        sp.edit { putInt(key, value) }
+    }
+
     private fun normalizeAppLanguageTag(tag: String): String = when (tag.trim().lowercase()) {
         "zh", "zh-cn", "zh-hans" -> "zh-CN"
         "zh-tw", "zh-hant" -> "zh-TW"
@@ -1479,6 +1493,9 @@ class Prefs(context: Context) {
     internal val vendorFields: Map<AsrVendor, List<VendorField>> = PrefsAsrVendorFields.vendorFields
 
     fun hasVendorKeys(v: AsrVendor): Boolean {
+        if (v == AsrVendor.SiliconFlow) {
+            return hasSfKeys()
+        }
         if (v == AsrVendor.OpenAI) {
             return hasOpenAiAsrConfigured()
         }
@@ -1490,8 +1507,9 @@ class Prefs(context: Context) {
         if (v == AsrVendor.MiMo) {
             return mimoAsrApiKey.isNotBlank() && getEffectiveMimoAsrEndpoint().isNotBlank()
         }
-        val fields = vendorFields[v] ?: return false
-        return fields.filter { it.required }.all { f ->
+        val fields = PrefsAsrVendorFields.requiredStringFieldsForValidation(v)
+        if (fields.isEmpty() && !vendorFields.containsKey(v)) return false
+        return fields.all { f ->
             getPrefString(f.key, f.default).isNotBlank()
         }
     }
@@ -1502,8 +1520,8 @@ class Prefs(context: Context) {
      * - 自定义（OpenAI 兼容）endpoint 允许空 API Key
      */
     private fun hasOpenAiAsrConfigured(): Boolean {
-        val endpoint = oaAsrEndpoint.ifBlank { DEFAULT_OA_ASR_ENDPOINT }.trim()
-        val model = oaAsrModel.ifBlank { DEFAULT_OA_ASR_MODEL }.trim()
+        val endpoint = oaAsrEndpoint.trim()
+        val model = oaAsrModel.trim()
         if (endpoint.isBlank() || model.isBlank()) return false
         return if (isOpenAiOfficialTranscriptionsEndpoint(endpoint)) {
             oaAsrApiKey.isNotBlank()

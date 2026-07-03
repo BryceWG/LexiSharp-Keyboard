@@ -89,6 +89,9 @@ class AsrSessionManager(
 
     private var listener: Listener? = null
     private var asrEngine: StreamingAsrEngine? = null
+    private var directEngineIdentity: AsrDirectMicrophoneEngineIdentity? = null
+    private val directMicrophoneEngineFactory = AsrDirectMicrophoneEngineFactory()
+    private val parallelEngineFactory = AsrParallelEngineFactory()
 
     // 当前会话状态
     private var currentState: KeyboardState = KeyboardState.Idle
@@ -175,7 +178,8 @@ class AsrSessionManager(
 
     private data class BuiltEngine(
         val engine: StreamingAsrEngine,
-        val listenerBridge: SessionBoundEngineListener
+        val listenerBridge: SessionBoundEngineListener,
+        val directIdentity: AsrDirectMicrophoneEngineIdentity?
     )
 
     private fun createEngineListener(seq: Long): SessionBoundEngineListener = SessionBoundEngineListener(seq)
@@ -225,269 +229,46 @@ class AsrSessionManager(
         }
         val primaryVendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
-        val backupEnabled = shouldUseBackupAsr(primaryVendor, backupVendor)
-        if (backupEnabled) {
+        val preferences = prefs.asrEngineModePreferencesSnapshot()
+        val parallelEngine = parallelEngineFactory.createOrNull(
+            context = context,
+            scope = scope,
+            prefs = prefs,
+            listener = engineListener,
+            primaryVendor = primaryVendor,
+            backupVendor = backupVendor,
+            externalPcmInput = false,
+            onPrimaryRequestDuration = requestDurationCallback
+        )
+        if (parallelEngine != null) {
             return BuiltEngine(
-                engine = ParallelAsrEngine(
-                    context = context,
-                    scope = scope,
-                    prefs = prefs,
-                    listener = engineListener,
-                    primaryVendor = primaryVendor,
-                    backupVendor = backupVendor,
-                    onPrimaryRequestDuration = requestDurationCallback
-                ),
-                listenerBridge = engineListener
+                engine = parallelEngine,
+                listenerBridge = engineListener,
+                directIdentity = null
             )
         }
-        val engine = when (prefs.asrVendor) {
-            AsrVendor.Volc -> if (prefs.hasVolcKeys()) {
-                if (prefs.volcStreamingEnabled) {
-                    VolcStreamAsrEngine(context, scope, prefs, engineListener)
-                } else {
-                    if (prefs.volcFileStandardEnabled) {
-                        VolcStandardFileAsrEngine(
-                            context,
-                            scope,
-                            prefs,
-                            engineListener,
-                            requestDurationCallback
-                        )
-                    } else {
-                        VolcFileAsrEngine(
-                            context,
-                            scope,
-                            prefs,
-                            engineListener,
-                            requestDurationCallback
-                        )
-                    }
-                }
-            } else {
-                null
-            }
-
-            AsrVendor.SiliconFlow -> if (prefs.hasSfKeys()) {
-                SiliconFlowFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    requestDurationCallback
-                )
-            } else {
-                null
-            }
-
-            AsrVendor.ElevenLabs -> if (prefs.hasElevenKeys()) {
-                if (prefs.elevenStreamingEnabled) {
-                    ElevenLabsStreamAsrEngine(context, scope, prefs, engineListener)
-                } else {
-                    ElevenLabsFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        engineListener,
-                        requestDurationCallback
-                    )
-                }
-            } else {
-                null
-            }
-
-            AsrVendor.OpenAI -> if (prefs.hasOpenAiKeys()) {
-                if (prefs.isOpenAiStreamingEffective()) {
-                    OpenAiRealtimeAsrEngine(context, scope, prefs, engineListener)
-                } else {
-                    OpenAiFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        engineListener,
-                        requestDurationCallback
-                    )
-                }
-            } else {
-                null
-            }
-
-            AsrVendor.OpenRouter -> if (prefs.hasOpenRouterKeys()) {
-                OpenRouterFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    requestDurationCallback
-                )
-            } else {
-                null
-            }
-            AsrVendor.MiMo -> if (prefs.hasMiMoKeys()) {
-                MiMoFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    requestDurationCallback
-                )
-            } else {
-                null
-            }
-
-            AsrVendor.DashScope -> if (prefs.hasDashKeys()) {
-                if (prefs.isDashStreamingModelSelected()) {
-                    DashscopeStreamAsrEngine(context, scope, prefs, engineListener)
-                } else {
-                    DashscopeFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        engineListener,
-                        requestDurationCallback
-                    )
-                }
-            } else {
-                null
-            }
-
-            AsrVendor.Gemini -> if (prefs.hasGeminiKeys()) {
-                GeminiFileAsrEngine(context, scope, prefs, engineListener, requestDurationCallback)
-            } else {
-                null
-            }
-
-            AsrVendor.Soniox -> if (prefs.hasSonioxKeys()) {
-                if (prefs.sonioxStreamingEnabled) {
-                    SonioxStreamAsrEngine(context, scope, prefs, engineListener)
-                } else {
-                    SonioxFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        engineListener,
-                        requestDurationCallback
-                    )
-                }
-            } else {
-                null
-            }
-
-            AsrVendor.StepAudio -> if (prefs.hasStepAudioKeys()) {
-                StepAudioFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    requestDurationCallback
-                )
-            } else {
-                null
-            }
-
-            AsrVendor.Zhipu -> if (prefs.hasZhipuKeys()) {
-                ZhipuFileAsrEngine(context, scope, prefs, engineListener, requestDurationCallback)
-            } else {
-                null
-            }
-
-            AsrVendor.SenseVoice -> {
-                if (prefs.svPseudoStreamEnabled) {
-                    // 本地 SenseVoice：伪流式模式（VAD 分片预览 + 整段离线识别）
-                    SenseVoicePseudoStreamAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        engineListener,
-                        requestDurationCallback
-                    )
-                } else {
-                    // 本地 SenseVoice：传统文件识别模式
-                    SenseVoiceFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        engineListener,
-                        requestDurationCallback
-                    )
-                }
-            }
-            AsrVendor.FunAsrNano -> {
-                // 本地 FunASR Nano：算力开销高，不支持伪流式预览，仅保留整段离线识别
-                FunAsrNanoFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    requestDurationCallback
-                )
-            }
-            AsrVendor.Qwen3Asr -> {
-                Qwen3AsrFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    requestDurationCallback
-                )
-            }
-            AsrVendor.Parakeet -> {
-                ParakeetFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    requestDurationCallback
-                )
-            }
-            AsrVendor.FireRedAsr -> {
-                if (prefs.frPseudoStreamEnabled) {
-                    // 本地 FireRedASR：当前伪流式开关仍走整段离线转录链路
-                    FireRedAsrPseudoStreamAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        engineListener,
-                        requestDurationCallback
-                    )
-                } else {
-                    // 本地 FireRedASR：传统文件识别模式
-                    FireRedAsrFileAsrEngine(
-                        context,
-                        scope,
-                        prefs,
-                        engineListener,
-                        requestDurationCallback
-                    )
-                }
-            }
-            AsrVendor.XAsr -> {
-                XAsrStreamAsrEngine(context, scope, prefs, engineListener)
-            }
-        }
-        return engine?.let {
-            BuiltEngine(engine = it, listenerBridge = engineListener)
-        }
-    }
-
-    private fun shouldUseBackupAsr(primaryVendor: AsrVendor, backupVendor: AsrVendor): Boolean {
-        val enabled = try {
-            prefs.backupAsrEnabled
-        } catch (_: Throwable) {
-            false
-        }
-        if (!enabled) return false
-        if (backupVendor == primaryVendor) return false
-        return try {
-            when (backupVendor) {
-                AsrVendor.SiliconFlow -> prefs.hasSfKeys()
-                AsrVendor.OpenRouter -> prefs.hasOpenRouterKeys()
-                AsrVendor.StepAudio -> prefs.hasStepAudioKeys()
-                else -> prefs.hasVendorKeys(backupVendor)
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to check backup vendor keys: $backupVendor", t)
-            false
-        }
+        if (!isPrimaryVendorConstructible(primaryVendor)) return null
+        val directPlan = directMicrophoneEngineFactory.resolvePlan(
+            vendor = primaryVendor,
+            preferences = preferences,
+            source = AsrEngineConstructionSource.App
+        )
+        return BuiltEngine(
+            // 主键盘路径已在这里完成在线配置预校验；本地供应商保持可构造，
+            // 让后续模型加载与缺模型 UI 继续由既有会话流程处理。
+            engine = directMicrophoneEngineFactory.create(
+                context = context,
+                scope = scope,
+                prefs = prefs,
+                listener = engineListener,
+                vendor = primaryVendor,
+                preferences = preferences,
+                source = AsrEngineConstructionSource.App,
+                onRequestDuration = requestDurationCallback
+            ),
+            listenerBridge = engineListener,
+            directIdentity = directPlan.identity
+        )
     }
 
     /**
@@ -509,19 +290,23 @@ class AsrSessionManager(
     }
 
     private fun ensureEngineMatchesMode(targetSessionSeq: Long): StreamingAsrEngine? {
-        if (!prefs.hasAsrKeys()) {
-            asrEngine = null
-            engineSessionSeq = 0L
-            engineListenerBridge = null
+        val primaryVendor = prefs.asrVendor
+        if (!isPrimaryVendorConstructible(primaryVendor)) {
+            clearEngineBinding()
             return null
         }
 
-        val primaryVendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
-        val backupEnabled = shouldUseBackupAsr(primaryVendor, backupVendor)
-        if (backupEnabled) {
-            val current = asrEngine
-            val matched = when (current) {
+        val parallelPlan = parallelEngineFactory.resolvePlan(
+            context = context,
+            prefs = prefs,
+            primaryVendor = primaryVendor,
+            backupVendor = backupVendor,
+            externalPcmInput = false
+        )
+        val current = asrEngine
+        val matched = if (parallelPlan.shouldUseParallel) {
+            when (current) {
                 is ParallelAsrEngine -> if (current.primaryVendor == primaryVendor &&
                     current.backupVendor == backupVendor
                 ) {
@@ -531,118 +316,74 @@ class AsrSessionManager(
                 }
                 else -> null
             }
-            val reusable = tryReuseMatchedEngine(matched, targetSessionSeq)
-            val built = if (reusable == null) createBuiltEngine(targetSessionSeq) else null
-            val engine = reusable ?: built?.engine ?: return null
-            if (engine !== asrEngine) {
-                asrEngine?.stop()
-                asrEngine = engine
-                engineListenerBridge = built?.listenerBridge
-                engineSessionSeq = targetSessionSeq
-            }
-            return asrEngine
-        }
-
-        val current = asrEngine
-        val matched = when (prefs.asrVendor) {
-            AsrVendor.Volc -> {
-                when (current) {
-                    is VolcStreamAsrEngine -> if (prefs.volcStreamingEnabled) current else null
-                    is VolcStandardFileAsrEngine -> if (!prefs.volcStreamingEnabled &&
-                        prefs.volcFileStandardEnabled
-                    ) {
-                        current
-                    } else {
-                        null
-                    }
-                    is VolcFileAsrEngine -> if (!prefs.volcStreamingEnabled &&
-                        !prefs.volcFileStandardEnabled
-                    ) {
-                        current
-                    } else {
-                        null
-                    }
-                    else -> null
-                }
-            }
-            AsrVendor.SiliconFlow -> if (current is SiliconFlowFileAsrEngine) current else null
-            AsrVendor.ElevenLabs -> when (current) {
-                is ElevenLabsFileAsrEngine -> if (!prefs.elevenStreamingEnabled) current else null
-                is ElevenLabsStreamAsrEngine -> if (prefs.elevenStreamingEnabled) current else null
-                else -> null
-            }
-            AsrVendor.OpenAI -> when (current) {
-                is OpenAiRealtimeAsrEngine -> if (prefs.isOpenAiStreamingEffective()) current else null
-                is OpenAiFileAsrEngine -> if (!prefs.isOpenAiStreamingEffective()) current else null
-                else -> null
-            }
-            AsrVendor.OpenRouter -> if (current is OpenRouterFileAsrEngine) current else null
-            AsrVendor.MiMo -> if (current is MiMoFileAsrEngine) current else null
-            AsrVendor.DashScope -> when (current) {
-                is DashscopeFileAsrEngine -> if (!prefs.isDashStreamingModelSelected()) current else null
-                is DashscopeStreamAsrEngine -> if (prefs.isDashStreamingModelSelected()) current else null
-                else -> null
-            }
-            AsrVendor.Gemini -> if (current is GeminiFileAsrEngine) current else null
-
-            AsrVendor.Soniox -> when (current) {
-                is SonioxFileAsrEngine -> if (!prefs.sonioxStreamingEnabled) current else null
-                is SonioxStreamAsrEngine -> if (prefs.sonioxStreamingEnabled) current else null
-                else -> null
-            }
-
-            AsrVendor.StepAudio -> if (current is StepAudioFileAsrEngine) current else null
-
-            AsrVendor.Zhipu -> if (current is ZhipuFileAsrEngine) current else null
-
-            AsrVendor.SenseVoice -> when (current) {
-                is SenseVoicePseudoStreamAsrEngine -> if (prefs.svPseudoStreamEnabled) current else null
-                is SenseVoiceFileAsrEngine -> if (!prefs.svPseudoStreamEnabled) current else null
-                else -> null
-            }
-            AsrVendor.FunAsrNano -> when (current) {
-                is FunAsrNanoFileAsrEngine -> current
-                else -> null
-            }
-            AsrVendor.Qwen3Asr -> when (current) {
-                is Qwen3AsrFileAsrEngine -> current
-                else -> null
-            }
-            AsrVendor.Parakeet -> when (current) {
-                is ParakeetFileAsrEngine -> current
-                else -> null
-            }
-            AsrVendor.FireRedAsr -> when (current) {
-                is FireRedAsrPseudoStreamAsrEngine -> if (prefs.frPseudoStreamEnabled) current else null
-                is FireRedAsrFileAsrEngine -> if (!prefs.frPseudoStreamEnabled) current else null
-                else -> null
-            }
-            AsrVendor.XAsr -> when (current) {
-                is XAsrStreamAsrEngine -> current
-                else -> null
-            }
+        } else {
+            matchedDirectEngine(current, primaryVendor)
         }
 
         val reusable = tryReuseMatchedEngine(matched, targetSessionSeq)
-        val built = if (reusable == null) createBuiltEngine(targetSessionSeq) else null
+        val built = if (reusable == null) {
+            try {
+                createBuiltEngine(targetSessionSeq)
+            } catch (t: Throwable) {
+                clearEngineBinding()
+                throw t
+            }
+        } else {
+            null
+        }
         val engine = reusable ?: built?.engine ?: return null
         if (engine !== asrEngine) {
             asrEngine?.stop()
             asrEngine = engine
             engineListenerBridge = built?.listenerBridge
             engineSessionSeq = targetSessionSeq
+            directEngineIdentity = built?.directIdentity
         }
         return asrEngine
+    }
+
+    private fun matchedDirectEngine(
+        current: StreamingAsrEngine?,
+        primaryVendor: AsrVendor
+    ): StreamingAsrEngine? {
+        val engine = current ?: return null
+        val directIdentity = directEngineIdentity ?: return null
+        val plan = directMicrophoneEngineFactory.resolvePlan(
+            vendor = primaryVendor,
+            preferences = prefs.asrEngineModePreferencesSnapshot(),
+            source = AsrEngineConstructionSource.App
+        )
+        return if (directIdentity == plan.identity) engine else null
+    }
+
+    private fun isPrimaryVendorConstructible(vendor: AsrVendor): Boolean = when {
+        // 本地模型即使尚未就绪也允许构造，保留加载等待与缺模型提示路径。
+        isLocalAsrVendor(vendor) -> true
+        vendor == AsrVendor.SiliconFlow -> prefs.hasSfKeys()
+        else -> prefs.hasVendorKeys(vendor)
     }
 
     /**
      * 重新构建引擎（设置改变时使用）
      */
     fun rebuildEngine() {
-        val built = createBuiltEngine(0L)
+        val built = try {
+            createBuiltEngine(0L)
+        } catch (t: Throwable) {
+            clearEngineBinding()
+            throw t
+        }
         asrEngine = built?.engine
         engineListenerBridge = built?.listenerBridge
+        directEngineIdentity = built?.directIdentity
         engineSessionSeq = 0L
+    }
+
+    private fun clearEngineBinding() {
+        asrEngine = null
+        engineSessionSeq = 0L
+        engineListenerBridge = null
+        directEngineIdentity = null
     }
 
     /**
@@ -681,9 +422,7 @@ class AsrSessionManager(
         try {
             val eng = ensureEngineMatchesMode(activeSeq)
             if (eng == null) {
-                asrEngine = null
-                engineSessionSeq = 0L
-                engineListenerBridge = null
+                clearEngineBinding()
                 clearActiveSession(activeSeq)
             }
             DebugLogManager.log(
@@ -847,6 +586,7 @@ class AsrSessionManager(
         localModelReadyWaitJob = null
         engineSessionSeq = 0L
         engineListenerBridge = null
+        directEngineIdentity = null
         sessionStartTotalUptimeMs = 0L
         listener = null
     }

@@ -32,6 +32,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+internal fun floatingBallLocalAsrMissingModelErrorRes(vendor: AsrVendor): Int? =
+    AsrLocalModelCatalog.missingModelErrorRes(vendor)
+
 /**
  * ASR 会话管理器
  * 负责 ASR 引擎的生命周期管理、结果处理和超时兜底
@@ -57,6 +60,8 @@ class AsrSessionManager(
     private var asrEngine: StreamingAsrEngine? = null
     private val postproc = LlmPostProcessor()
     private val imeBridgeClient by lazy { ImeBridgeClient(context.applicationContext) }
+    private val directMicrophoneEngineFactory = AsrDirectMicrophoneEngineFactory()
+    private val parallelEngineFactory = AsrParallelEngineFactory()
 
     // 会话上下文
     private var focusContext: FocusContext? = null
@@ -817,113 +822,25 @@ class AsrSessionManager(
     // ==================== 私有辅助方法 ====================
 
     private fun checkLocalModelError(): String? {
-        if (
-            prefs.asrVendor != AsrVendor.SenseVoice &&
-            prefs.asrVendor != AsrVendor.FunAsrNano &&
-            prefs.asrVendor != AsrVendor.FireRedAsr &&
-            prefs.asrVendor != AsrVendor.Qwen3Asr &&
-            prefs.asrVendor != AsrVendor.Parakeet &&
-            prefs.asrVendor != AsrVendor.XAsr
-        ) {
-            return null
-        }
+        val vendor = prefs.asrVendor
+        val localEntry = AsrLocalModelCatalog.entryFor(vendor) ?: return null
+        val lifecycle = localEntry.lifecycle
 
         val prepared = try {
-            when (prefs.asrVendor) {
-                AsrVendor.SenseVoice -> com.brycewg.asrkb.asr.isSenseVoicePrepared()
-                AsrVendor.FunAsrNano -> com.brycewg.asrkb.asr.isFunAsrNanoPrepared()
-                AsrVendor.FireRedAsr -> com.brycewg.asrkb.asr.isFireRedAsrPrepared()
-                AsrVendor.Qwen3Asr -> com.brycewg.asrkb.asr.isQwen3AsrPrepared()
-                AsrVendor.Parakeet -> com.brycewg.asrkb.asr.isParakeetPrepared()
-                AsrVendor.XAsr -> com.brycewg.asrkb.asr.isXAsrPrepared()
-                else -> true
-            }
+            lifecycle.isPrepared()
         } catch (e: Throwable) {
             Log.w(TAG, "Failed to check local model preparation", e)
             false
         }
         if (prepared) return null
 
-        val base = try {
-            context.getExternalFilesDir(null)
-        } catch (e: Throwable) {
-            Log.w(TAG, "Failed to get external files dir", e)
-            context.filesDir
-        }
-        return when (prefs.asrVendor) {
-            AsrVendor.FireRedAsr -> {
-                val check = com.brycewg.asrkb.asr.checkFireRedAsrModelFiles(context, prefs)
-                if (check is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    null
-                } else {
-                    com.brycewg.asrkb.asr.localModelErrorMessage(
-                        context,
-                        check,
-                        com.brycewg.asrkb.R.string.error_firered_asr_model_missing
-                    )
-                }
-            }
-            AsrVendor.FunAsrNano -> {
-                val check = com.brycewg.asrkb.asr.checkFunAsrNanoModel(context, prefs)
-                if (check is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    null
-                } else {
-                    com.brycewg.asrkb.asr.localModelErrorMessage(
-                        context,
-                        check,
-                        com.brycewg.asrkb.R.string.error_funasr_model_missing
-                    )
-                }
-            }
-            AsrVendor.Qwen3Asr -> {
-                val check = com.brycewg.asrkb.asr.checkQwen3AsrModel(context, prefs)
-                if (check is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    null
-                } else {
-                    com.brycewg.asrkb.asr.localModelErrorMessage(
-                        context,
-                        check,
-                        com.brycewg.asrkb.R.string.error_qwen3_asr_model_missing
-                    )
-                }
-            }
-            AsrVendor.Parakeet -> {
-                val check = com.brycewg.asrkb.asr.checkParakeetModel(context, prefs)
-                if (check is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    null
-                } else {
-                    com.brycewg.asrkb.asr.localModelErrorMessage(
-                        context,
-                        check,
-                        com.brycewg.asrkb.R.string.error_parakeet_model_missing
-                    )
-                }
-            }
-            AsrVendor.XAsr -> {
-                val check = com.brycewg.asrkb.asr.checkXAsrModelFiles(context, java.io.File(base, "x_asr"))
-                if (check is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    null
-                } else {
-                    com.brycewg.asrkb.asr.localModelErrorMessage(
-                        context,
-                        check,
-                        com.brycewg.asrkb.R.string.error_x_asr_model_missing
-                    )
-                }
-            }
-            else -> {
-                val check = com.brycewg.asrkb.asr.checkSenseVoiceModel(context, prefs)
-                if (check is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    null
-                } else {
-                    com.brycewg.asrkb.asr.localModelErrorMessage(
-                        context,
-                        check,
-                        com.brycewg.asrkb.R.string.error_sensevoice_model_missing
-                    )
-                }
-            }
-        }
+        val check = AsrLocalModelCatalog.modelStatus(context, prefs, vendor) ?: return null
+        if (check is LocalModelCheck.Ready<*>) return null
+        return localModelErrorMessage(
+            context,
+            check,
+            localEntry.missingModelErrorRes
+        )
     }
 
     private fun buildEngineForCurrentMode(sessionToken: Long): StreamingAsrEngine? {
@@ -931,262 +848,38 @@ class AsrSessionManager(
         val requestDurationCallback: (Long) -> Unit = { ms -> onRequestDuration(sessionToken, ms) }
         val primaryVendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
-        val backupEnabled = shouldUseBackupAsr(primaryVendor, backupVendor)
-        if (backupEnabled) {
-            return ParallelAsrEngine(
-                context = context,
-                scope = serviceScope,
-                prefs = prefs,
-                listener = engineListener,
-                primaryVendor = primaryVendor,
-                backupVendor = backupVendor,
-                onPrimaryRequestDuration = requestDurationCallback
-            )
-        }
+        val parallelEngine = parallelEngineFactory.createOrNull(
+            context = context,
+            scope = serviceScope,
+            prefs = prefs,
+            listener = engineListener,
+            primaryVendor = primaryVendor,
+            backupVendor = backupVendor,
+            externalPcmInput = false,
+            onPrimaryRequestDuration = requestDurationCallback
+        )
+        if (parallelEngine != null) return parallelEngine
+        if (!isPrimaryVendorConstructible(primaryVendor)) return null
 
-        return when (primaryVendor) {
-            AsrVendor.Volc -> if (prefs.hasVolcKeys()) {
-                if (prefs.volcStreamingEnabled) {
-                    VolcStreamAsrEngine(context, serviceScope, prefs, engineListener)
-                } else {
-                    if (prefs.volcFileStandardEnabled) {
-                        VolcStandardFileAsrEngine(
-                            context,
-                            serviceScope,
-                            prefs,
-                            engineListener,
-                            onRequestDuration = requestDurationCallback
-                        )
-                    } else {
-                        VolcFileAsrEngine(
-                            context,
-                            serviceScope,
-                            prefs,
-                            engineListener,
-                            onRequestDuration = requestDurationCallback
-                        )
-                    }
-                }
-            } else {
-                null
-            }
-            AsrVendor.SiliconFlow -> if (prefs.hasSfKeys()) {
-                SiliconFlowFileAsrEngine(
-                    context,
-                    serviceScope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = requestDurationCallback
-                )
-            } else {
-                null
-            }
-            AsrVendor.ElevenLabs -> if (prefs.hasElevenKeys()) {
-                if (prefs.elevenStreamingEnabled) {
-                    ElevenLabsStreamAsrEngine(context, serviceScope, prefs, engineListener)
-                } else {
-                    ElevenLabsFileAsrEngine(
-                        context,
-                        serviceScope,
-                        prefs,
-                        engineListener,
-                        onRequestDuration = requestDurationCallback
-                    )
-                }
-            } else {
-                null
-            }
-            AsrVendor.OpenAI -> if (prefs.hasOpenAiKeys()) {
-                if (prefs.isOpenAiStreamingEffective()) {
-                    OpenAiRealtimeAsrEngine(context, serviceScope, prefs, engineListener)
-                } else {
-                    OpenAiFileAsrEngine(
-                        context,
-                        serviceScope,
-                        prefs,
-                        engineListener,
-                        onRequestDuration = requestDurationCallback
-                    )
-                }
-            } else {
-                null
-            }
-            AsrVendor.OpenRouter -> if (prefs.hasOpenRouterKeys()) {
-                OpenRouterFileAsrEngine(
-                    context,
-                    serviceScope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = requestDurationCallback
-                )
-            } else {
-                null
-            }
-            AsrVendor.MiMo -> if (prefs.hasMiMoKeys()) {
-                MiMoFileAsrEngine(
-                    context,
-                    serviceScope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = requestDurationCallback
-                )
-            } else {
-                null
-            }
-            AsrVendor.DashScope -> if (prefs.hasDashKeys()) {
-                if (prefs.isDashStreamingModelSelected()) {
-                    DashscopeStreamAsrEngine(context, serviceScope, prefs, engineListener)
-                } else {
-                    DashscopeFileAsrEngine(
-                        context,
-                        serviceScope,
-                        prefs,
-                        engineListener,
-                        onRequestDuration = requestDurationCallback
-                    )
-                }
-            } else {
-                null
-            }
-            AsrVendor.Gemini -> if (prefs.hasGeminiKeys()) {
-                GeminiFileAsrEngine(
-                    context,
-                    serviceScope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = requestDurationCallback
-                )
-            } else {
-                null
-            }
-            AsrVendor.Soniox -> if (prefs.hasSonioxKeys()) {
-                if (prefs.sonioxStreamingEnabled) {
-                    SonioxStreamAsrEngine(context, serviceScope, prefs, engineListener)
-                } else {
-                    SonioxFileAsrEngine(
-                        context,
-                        serviceScope,
-                        prefs,
-                        engineListener,
-                        onRequestDuration = requestDurationCallback
-                    )
-                }
-            } else {
-                null
-            }
-            AsrVendor.StepAudio -> if (prefs.hasStepAudioKeys()) {
-                StepAudioFileAsrEngine(
-                    context,
-                    serviceScope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = requestDurationCallback
-                )
-            } else {
-                null
-            }
-            AsrVendor.Zhipu -> if (prefs.hasZhipuKeys()) {
-                ZhipuFileAsrEngine(
-                    context,
-                    serviceScope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = requestDurationCallback
-                )
-            } else {
-                null
-            }
-            AsrVendor.SenseVoice -> {
-                if (prefs.svPseudoStreamEnabled) {
-                    SenseVoicePseudoStreamAsrEngine(
-                        context,
-                        serviceScope,
-                        prefs,
-                        engineListener,
-                        onRequestDuration = requestDurationCallback
-                    )
-                } else {
-                    SenseVoiceFileAsrEngine(
-                        context,
-                        serviceScope,
-                        prefs,
-                        engineListener,
-                        onRequestDuration = requestDurationCallback
-                    )
-                }
-            }
-            AsrVendor.FunAsrNano -> {
-                // FunASR Nano 算力开销高：不支持伪流式预览，仅保留整段离线识别
-                FunAsrNanoFileAsrEngine(
-                    context,
-                    serviceScope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = requestDurationCallback
-                )
-            }
-            AsrVendor.Qwen3Asr -> {
-                Qwen3AsrFileAsrEngine(
-                    context,
-                    serviceScope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = requestDurationCallback
-                )
-            }
-            AsrVendor.Parakeet -> {
-                ParakeetFileAsrEngine(
-                    context,
-                    serviceScope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = requestDurationCallback
-                )
-            }
-            AsrVendor.FireRedAsr -> {
-                if (prefs.frPseudoStreamEnabled) {
-                    FireRedAsrPseudoStreamAsrEngine(
-                        context,
-                        serviceScope,
-                        prefs,
-                        engineListener,
-                        onRequestDuration = requestDurationCallback
-                    )
-                } else {
-                    FireRedAsrFileAsrEngine(
-                        context,
-                        serviceScope,
-                        prefs,
-                        engineListener,
-                        onRequestDuration = requestDurationCallback
-                    )
-                }
-            }
-            AsrVendor.XAsr -> {
-                XAsrStreamAsrEngine(context, serviceScope, prefs, engineListener)
-            }
-        }
+        // 悬浮球主路径已先做在线配置预校验；本地供应商保持可构造，
+        // 让模型加载等待与缺模型提示继续走现有 UI 流程。
+        return directMicrophoneEngineFactory.create(
+            context = context,
+            scope = serviceScope,
+            prefs = prefs,
+            listener = engineListener,
+            vendor = primaryVendor,
+            preferences = prefs.asrEngineModePreferencesSnapshot(),
+            source = AsrEngineConstructionSource.App,
+            onRequestDuration = requestDurationCallback
+        )
     }
 
-    private fun shouldUseBackupAsr(primaryVendor: AsrVendor, backupVendor: AsrVendor): Boolean {
-        val enabled = try {
-            prefs.backupAsrEnabled
-        } catch (_: Throwable) {
-            false
-        }
-        if (!enabled) return false
-        if (backupVendor == primaryVendor) return false
-        return try {
-            when (backupVendor) {
-                AsrVendor.SiliconFlow -> prefs.hasSfKeys()
-                AsrVendor.OpenRouter -> prefs.hasOpenRouterKeys()
-                AsrVendor.StepAudio -> prefs.hasStepAudioKeys()
-                else -> prefs.hasVendorKeys(backupVendor)
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to check backup vendor keys: $backupVendor", t)
-            false
-        }
+    private fun isPrimaryVendorConstructible(vendor: AsrVendor): Boolean = when {
+        // 本地模型即使尚未就绪也允许构造，保留加载等待与缺模型提示路径。
+        isLocalAsrVendor(vendor) -> true
+        vendor == AsrVendor.SiliconFlow -> prefs.hasSfKeys()
+        else -> prefs.hasVendorKeys(vendor)
     }
 
     private fun onRequestDuration(sessionToken: Long, ms: Long) {

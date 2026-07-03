@@ -19,12 +19,18 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.AsrLocalVendorLifecycles
+import com.brycewg.asrkb.asr.AsrLocalModelCatalog
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.asr.ContinuousCaptureCoordinator
 import com.brycewg.asrkb.asr.ContinuousCaptureOwner
+import com.brycewg.asrkb.asr.LocalModelCheck
 import com.brycewg.asrkb.asr.LlmPostProcessor
+import com.brycewg.asrkb.asr.isLocalAsrPrepared
+import com.brycewg.asrkb.asr.localModelErrorMessage
 import com.brycewg.asrkb.asr.partitionAsrVendorsByConfigured
+import com.brycewg.asrkb.asr.preloadLocalAsrIfConfigured
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.ui.AsrVendorUi
@@ -35,6 +41,31 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+
+internal data class LocalAsrPreloadFlags(
+    val senseVoice: Boolean,
+    val funAsrNano: Boolean,
+    val qwen3Asr: Boolean,
+    val parakeet: Boolean,
+    val fireRedAsr: Boolean,
+    val xAsr: Boolean
+)
+
+internal fun isLocalAsrPreloadEnabled(
+    vendor: AsrVendor,
+    flags: LocalAsrPreloadFlags
+): Boolean = when (vendor) {
+    AsrVendor.SenseVoice -> flags.senseVoice
+    AsrVendor.FunAsrNano -> flags.funAsrNano
+    AsrVendor.Qwen3Asr -> flags.qwen3Asr
+    AsrVendor.Parakeet -> flags.parakeet
+    AsrVendor.FireRedAsr -> flags.fireRedAsr
+    AsrVendor.XAsr -> flags.xAsr
+    else -> false
+}
+
+internal fun localAsrMissingModelErrorRes(vendor: AsrVendor): Int? =
+    AsrLocalModelCatalog.missingModelErrorRes(vendor)
 
 /**
  * ASR 键盘服务
@@ -723,95 +754,18 @@ class AsrKeyboardService :
             DebugLogManager.log("ime", "asr_not_ready", mapOf("reason" to "keys"))
             return false
         }
-        if (prefs.asrVendor == AsrVendor.SenseVoice) {
-            val prepared = com.brycewg.asrkb.asr.isSenseVoicePrepared()
-            if (!prepared) {
-                val check = com.brycewg.asrkb.asr.checkSenseVoiceModel(this, prefs)
-                if (check !is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    uiRenderer?.clearStatusTextStyle()
-                    viewRefs?.txtStatusText?.text =
-                        com.brycewg.asrkb.asr.localModelErrorMessage(
-                            this,
-                            check,
-                            R.string.error_sensevoice_model_missing
-                        )
-                    return false
-                }
-            }
-        } else if (prefs.asrVendor == AsrVendor.FunAsrNano) {
-            val prepared = com.brycewg.asrkb.asr.isFunAsrNanoPrepared()
-            if (!prepared) {
-                val check = com.brycewg.asrkb.asr.checkFunAsrNanoModel(this, prefs)
-                if (check !is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    uiRenderer?.clearStatusTextStyle()
-                    viewRefs?.txtStatusText?.text = com.brycewg.asrkb.asr.localModelErrorMessage(
-                        this,
-                        check,
-                        R.string.error_funasr_model_missing
-                    )
-                    return false
-                }
-            }
-        } else if (prefs.asrVendor == AsrVendor.Qwen3Asr) {
-            val prepared = com.brycewg.asrkb.asr.isQwen3AsrPrepared()
-            if (!prepared) {
-                val check = com.brycewg.asrkb.asr.checkQwen3AsrModel(this, prefs)
-                if (check !is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    uiRenderer?.clearStatusTextStyle()
-                    viewRefs?.txtStatusText?.text =
-                        com.brycewg.asrkb.asr.localModelErrorMessage(
-                            this,
-                            check,
-                            R.string.error_qwen3_asr_model_missing
-                        )
-                    return false
-                }
-            }
-        } else if (prefs.asrVendor == AsrVendor.Parakeet) {
-            val prepared = com.brycewg.asrkb.asr.isParakeetPrepared()
-            if (!prepared) {
-                val check = com.brycewg.asrkb.asr.checkParakeetModel(this, prefs)
-                if (check !is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    uiRenderer?.clearStatusTextStyle()
-                    viewRefs?.txtStatusText?.text =
-                        com.brycewg.asrkb.asr.localModelErrorMessage(
-                            this,
-                            check,
-                            R.string.error_parakeet_model_missing
-                        )
-                    return false
-                }
-            }
-        } else if (prefs.asrVendor == AsrVendor.FireRedAsr) {
-            val prepared = com.brycewg.asrkb.asr.isFireRedAsrPrepared()
-            if (!prepared) {
-                val check = com.brycewg.asrkb.asr.checkFireRedAsrModelFiles(this, prefs)
-                if (check !is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    uiRenderer?.clearStatusTextStyle()
-                    viewRefs?.txtStatusText?.text =
-                        com.brycewg.asrkb.asr.localModelErrorMessage(
-                            this,
-                            check,
-                            R.string.error_firered_asr_model_missing
-                        )
-                    return false
-                }
-            }
-        } else if (prefs.asrVendor == AsrVendor.XAsr) {
-            val prepared = com.brycewg.asrkb.asr.isXAsrPrepared()
-            if (!prepared) {
-                val base = getExternalFilesDir(null) ?: filesDir
-                val check = com.brycewg.asrkb.asr.checkXAsrModelFiles(this, java.io.File(base, "x_asr"))
-                if (check !is com.brycewg.asrkb.asr.LocalModelCheck.Ready) {
-                    uiRenderer?.clearStatusTextStyle()
-                    viewRefs?.txtStatusText?.text =
-                        com.brycewg.asrkb.asr.localModelErrorMessage(
-                            this,
-                            check,
-                            R.string.error_x_asr_model_missing
-                        )
-                    return false
-                }
+        val localEntry = AsrLocalModelCatalog.entryFor(prefs.asrVendor)
+        if (localEntry != null && !localEntry.lifecycle.isPrepared()) {
+            val check = AsrLocalModelCatalog.modelStatus(this, prefs, localEntry.vendor)
+                ?: return false
+            if (check !is LocalModelCheck.Ready) {
+                uiRenderer?.clearStatusTextStyle()
+                viewRefs?.txtStatusText?.text = localModelErrorMessage(
+                    this,
+                    check,
+                    localEntry.missingModelErrorRes
+                )
+                return false
             }
         }
         // 确保引擎匹配当前模式
@@ -952,35 +906,8 @@ class AsrKeyboardService :
 
                 // 离开本地引擎时卸载缓存识别器，释放内存
                 try {
-                    if (old == com.brycewg.asrkb.asr.AsrVendor.SenseVoice &&
-                        vendor != com.brycewg.asrkb.asr.AsrVendor.SenseVoice
-                    ) {
-                        com.brycewg.asrkb.asr.unloadSenseVoiceRecognizer()
-                    }
-                    if (old == com.brycewg.asrkb.asr.AsrVendor.FunAsrNano &&
-                        vendor != com.brycewg.asrkb.asr.AsrVendor.FunAsrNano
-                    ) {
-                        com.brycewg.asrkb.asr.unloadFunAsrNanoRecognizer()
-                    }
-                    if (old == com.brycewg.asrkb.asr.AsrVendor.Qwen3Asr &&
-                        vendor != com.brycewg.asrkb.asr.AsrVendor.Qwen3Asr
-                    ) {
-                        com.brycewg.asrkb.asr.unloadQwen3AsrRecognizer()
-                    }
-                    if (old == com.brycewg.asrkb.asr.AsrVendor.Parakeet &&
-                        vendor != com.brycewg.asrkb.asr.AsrVendor.Parakeet
-                    ) {
-                        com.brycewg.asrkb.asr.unloadParakeetRecognizer()
-                    }
-                    if (old == com.brycewg.asrkb.asr.AsrVendor.FireRedAsr &&
-                        vendor != com.brycewg.asrkb.asr.AsrVendor.FireRedAsr
-                    ) {
-                        com.brycewg.asrkb.asr.unloadFireRedAsrRecognizer()
-                    }
-                    if (old == com.brycewg.asrkb.asr.AsrVendor.XAsr &&
-                        vendor != com.brycewg.asrkb.asr.AsrVendor.XAsr
-                    ) {
-                        com.brycewg.asrkb.asr.unloadXAsrRecognizer()
+                    if (AsrLocalVendorLifecycles.isLocalVendor(old)) {
+                        AsrLocalVendorLifecycles.unload(old)
                     }
                 } catch (t: Throwable) {
                     android.util.Log.e("AsrKeyboardService", "Failed to unload local recognizer", t)
@@ -993,44 +920,10 @@ class AsrKeyboardService :
 
                 // 切换到本地引擎且启用预加载时，尝试预加载
                 try {
-                    when (vendor) {
-                        com.brycewg.asrkb.asr.AsrVendor.SenseVoice -> if (prefs.svPreloadEnabled) {
-                            com.brycewg.asrkb.asr.preloadSenseVoiceIfConfigured(
-                                this,
-                                prefs
-                            )
-                        }
-                        com.brycewg.asrkb.asr.AsrVendor.FunAsrNano -> if (prefs.fnPreloadEnabled) {
-                            com.brycewg.asrkb.asr.preloadFunAsrNanoIfConfigured(
-                                this,
-                                prefs
-                            )
-                        }
-                        com.brycewg.asrkb.asr.AsrVendor.Qwen3Asr -> if (prefs.qwPreloadEnabled) {
-                            com.brycewg.asrkb.asr.preloadQwen3AsrIfConfigured(
-                                this,
-                                prefs
-                            )
-                        }
-                        com.brycewg.asrkb.asr.AsrVendor.Parakeet -> if (prefs.pkPreloadEnabled) {
-                            com.brycewg.asrkb.asr.preloadParakeetIfConfigured(
-                                this,
-                                prefs
-                            )
-                        }
-                        com.brycewg.asrkb.asr.AsrVendor.FireRedAsr -> if (prefs.frPreloadEnabled) {
-                            com.brycewg.asrkb.asr.preloadFireRedAsrIfConfigured(
-                                this,
-                                prefs
-                            )
-                        }
-                        com.brycewg.asrkb.asr.AsrVendor.XAsr -> if (prefs.xAsrPreloadEnabled) {
-                            com.brycewg.asrkb.asr.preloadXAsrIfConfigured(
-                                this,
-                                prefs
-                            )
-                        }
-                        else -> {}
+                    if (AsrLocalVendorLifecycles.isLocalVendor(vendor) &&
+                        isLocalAsrPreloadEnabled(vendor, prefs.localAsrPreloadFlags())
+                    ) {
+                        preloadLocalAsrIfConfigured(this, prefs)
                     }
                 } catch (t: Throwable) {
                     android.util.Log.e(
@@ -1062,17 +955,8 @@ class AsrKeyboardService :
     private fun tryPreloadLocalModel() {
         if (localPreloadTriggered) return
         val p = prefs
-        val enabled = when (p.asrVendor) {
-            AsrVendor.SenseVoice -> p.svPreloadEnabled
-            AsrVendor.FunAsrNano -> p.fnPreloadEnabled
-            AsrVendor.Qwen3Asr -> p.qwPreloadEnabled
-            AsrVendor.Parakeet -> p.pkPreloadEnabled
-            AsrVendor.FireRedAsr -> p.frPreloadEnabled
-            AsrVendor.XAsr -> p.xAsrPreloadEnabled
-            else -> false
-        }
-        if (!enabled) return
-        if (com.brycewg.asrkb.asr.isLocalAsrPrepared(p)) {
+        if (!isLocalAsrPreloadEnabled(p.asrVendor, p.localAsrPreloadFlags())) return
+        if (isLocalAsrPrepared(p)) {
             localPreloadTriggered = true
             return
         }
@@ -1086,7 +970,7 @@ class AsrKeyboardService :
 
         serviceScope.launch(Dispatchers.Default) {
             val t0 = android.os.SystemClock.uptimeMillis()
-            com.brycewg.asrkb.asr.preloadLocalAsrIfConfigured(
+            preloadLocalAsrIfConfigured(
                 this@AsrKeyboardService,
                 p,
                 onLoadStart = null,
@@ -1118,4 +1002,13 @@ class AsrKeyboardService :
         val w = window?.window ?: return
         themeStyler.syncSystemBarsToKeyboardBackground(w, anchorView, anchorView?.context ?: this)
     }
+
+    private fun Prefs.localAsrPreloadFlags(): LocalAsrPreloadFlags = LocalAsrPreloadFlags(
+        senseVoice = svPreloadEnabled,
+        funAsrNano = fnPreloadEnabled,
+        qwen3Asr = qwPreloadEnabled,
+        parakeet = pkPreloadEnabled,
+        fireRedAsr = frPreloadEnabled,
+        xAsr = xAsrPreloadEnabled
+    )
 }

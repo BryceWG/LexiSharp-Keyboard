@@ -93,10 +93,6 @@ internal object PrefsBackup {
         o.put(KEY_SF_FREE_LLM_ENABLED, sfFreeLlmEnabled)
         o.put(KEY_SF_FREE_LLM_MODEL, sfFreeLlmModel)
         o.put(KEY_SF_FREE_LLM_USE_PAID_KEY, sfFreeLlmUsePaidKey)
-        // SiliconFlow ASR 配置
-        o.put(KEY_SF_FREE_ASR_ENABLED, sfFreeAsrEnabled)
-        o.put(KEY_SF_FREE_ASR_MODEL, sfFreeAsrModel)
-        o.put(KEY_SF_USE_OMNI, sfUseOmni)
         o.put(KEY_SF_OMNI_PROMPT, sfOmniPrompt)
         // OpenAI ASR：流式/Prompt 开关（布尔）
         o.put(KEY_OA_ASR_STREAMING_ENABLED, oaAsrStreamingEnabled)
@@ -106,34 +102,13 @@ internal object PrefsBackup {
         o.put(KEY_OA_ASR_PROVIDERS, openAiAsrProvidersJson)
         o.put(KEY_OA_ASR_ACTIVE_ID, activeOpenAiAsrProviderId)
         // OpenRouter ASR 字符串字段（endpoint/apiKey/model）
-        // Volcano streaming toggle
-        o.put(KEY_VOLC_STREAMING_ENABLED, volcStreamingEnabled)
-        // DashScope streaming toggle
+        // DashScope legacy streaming toggles, kept for old backup compatibility.
         o.put(KEY_DASH_STREAMING_ENABLED, dashStreamingEnabled)
-        o.put(KEY_DASH_REGION, dashRegion)
         o.put(KEY_DASH_FUNASR_ENABLED, dashFunAsrEnabled)
         o.put(KEY_DASH_ASR_MODEL, dashAsrModel)
-        o.put(KEY_DASH_FUNASR_SEMANTIC_PUNCT_ENABLED, dashFunAsrSemanticPunctEnabled)
-        // Volcano extras
-        o.put(KEY_VOLC_DDC_ENABLED, volcDdcEnabled)
-        o.put(KEY_VOLC_VAD_ENABLED, volcVadEnabled)
-        o.put(KEY_VOLC_NONSTREAM_ENABLED, volcNonstreamEnabled)
-        o.put(KEY_VOLC_LANGUAGE, volcLanguage)
-        o.put(KEY_VOLC_FILE_STANDARD_ENABLED, volcFileStandardEnabled)
-        o.put(KEY_VOLC_MODEL_V2_ENABLED, volcModelV2Enabled)
-        // Soniox（同时导出单值与数组，便于兼容）
+        // Soniox 单值语言字段保留显式导出；数组字段走 supplier schema。
         o.put(KEY_SONIOX_LANGUAGE, sonioxLanguage)
-        o.put(KEY_SONIOX_LANGUAGES, sonioxLanguagesJson)
-        o.put(KEY_SONIOX_STREAMING_ENABLED, sonioxStreamingEnabled)
-        o.put(KEY_SONIOX_ENDPOINT_SENSITIVITY_LEVEL, sonioxEndpointSensitivityLevel)
-        // StepAudio 设置
-        o.put(KEY_STEPAUDIO_USE_ITN, stepAudioUseItn)
-        // Gemini 设置
-        o.put(KEY_GEMINI_DISABLE_THINKING, geminiDisableThinking)
-        // MiMo 设置
-        o.put(KEY_MIMO_ASR_DISABLE_THINKING, mimoAsrDisableThinking)
-        // ElevenLabs streaming toggle
-        o.put(KEY_ELEVEN_STREAMING_ENABLED, elevenStreamingEnabled)
+        o.put(KEY_GEM_PROMPT, gemPrompt)
         // 多 LLM 配置
         o.put(KEY_LLM_PROVIDERS, llmProvidersJson)
         o.put(KEY_LLM_ACTIVE_ID, activeLlmId)
@@ -150,9 +125,7 @@ internal object PrefsBackup {
         o.put(KEY_BACKUP_ASR_VENDOR, backupAsrVendor.id)
         o.put(KEY_BACKUP_ASR_TIMEOUT_SENSITIVITY, backupAsrTimeoutSensitivity)
         // 遍历所有供应商字段，统一导出，避免逐个硬编码
-        vendorFields.values.flatten().forEach { f ->
-            o.put(f.key, getPrefString(f.key, f.default))
-        }
+        PrefsAsrVendorFields.exportToJson(asVendorFieldStore(), o)
         // 自定义标点
         o.put(KEY_PUNCT_1, punct1)
         o.put(KEY_PUNCT_2, punct2)
@@ -196,34 +169,6 @@ internal object PrefsBackup {
         o.put(KEY_FLOATING_IME_BRIDGE_ENABLED, floatingImeBridgeEnabled)
         // 允许外部输入法联动（AIDL）
         o.put(KEY_EXTERNAL_AIDL_ENABLED, externalAidlEnabled)
-        // SenseVoice（本地 ASR）
-        o.put(KEY_SV_MODEL_DIR, svModelDir)
-        o.put(KEY_SV_MODEL_VARIANT, svModelVariant)
-        o.put(KEY_SV_NUM_THREADS, svNumThreads)
-        o.put(KEY_SV_LANGUAGE, svLanguage)
-        o.put(KEY_SV_USE_ITN, svUseItn)
-        o.put(KEY_SV_PRELOAD_ENABLED, svPreloadEnabled)
-        o.put(KEY_SV_KEEP_ALIVE_MINUTES, svKeepAliveMinutes)
-        o.put(KEY_SV_PSEUDO_STREAM_ENABLED, svPseudoStreamEnabled)
-        // FunASR Nano（本地 ASR）
-        o.put(KEY_FN_MODEL_VARIANT, fnModelVariant)
-        o.put(KEY_FN_NUM_THREADS, fnNumThreads)
-        o.put(KEY_FN_USE_ITN, fnUseItn)
-        o.put(KEY_FN_USER_PROMPT, fnUserPrompt)
-        o.put(KEY_FN_LANGUAGE, fnLanguage)
-        o.put(KEY_FN_PRELOAD_ENABLED, fnPreloadEnabled)
-        o.put(KEY_FN_KEEP_ALIVE_MINUTES, fnKeepAliveMinutes)
-        // Qwen3-ASR（本地 ASR）
-        o.put(KEY_QW_MODEL_VARIANT, qwModelVariant)
-        o.put(KEY_QW_NUM_THREADS, qwNumThreads)
-        o.put(KEY_QW_PRELOAD_ENABLED, qwPreloadEnabled)
-        o.put(KEY_QW_KEEP_ALIVE_MINUTES, qwKeepAliveMinutes)
-        o.put(KEY_QW_USE_ITN, qwUseItn)
-        // Parakeet（本地 ASR）
-        o.put(KEY_PK_MODEL_VARIANT, pkModelVariant)
-        o.put(KEY_PK_NUM_THREADS, pkNumThreads)
-        o.put(KEY_PK_PRELOAD_ENABLED, pkPreloadEnabled)
-        o.put(KEY_PK_KEEP_ALIVE_MINUTES, pkKeepAliveMinutes)
         // FireRedASR（本地 ASR）
         o.put(KEY_FR_MODEL_VARIANT, frModelVariant)
         o.put(KEY_FR_NUM_THREADS, frNumThreads)
@@ -366,10 +311,6 @@ internal object PrefsBackup {
             optBool(KEY_SF_FREE_LLM_ENABLED)?.let { sfFreeLlmEnabled = it }
             optString(KEY_SF_FREE_LLM_MODEL)?.let { sfFreeLlmModel = it }
             optBool(KEY_SF_FREE_LLM_USE_PAID_KEY)?.let { sfFreeLlmUsePaidKey = it }
-            // SiliconFlow ASR 配置
-            optBool(KEY_SF_FREE_ASR_ENABLED)?.let { sfFreeAsrEnabled = it }
-            optString(KEY_SF_FREE_ASR_MODEL)?.let { sfFreeAsrModel = it }
-            optBool(KEY_SF_USE_OMNI)?.let { sfUseOmni = it }
             optString(KEY_SF_OMNI_PROMPT)?.let { sfOmniPrompt = it }
             // 外部输入法联动（AIDL）
             optBool(KEY_EXTERNAL_AIDL_ENABLED)?.let { externalAidlEnabled = it }
@@ -432,7 +373,6 @@ internal object PrefsBackup {
             val hasOpenAiProviders = o.has(KEY_OA_ASR_PROVIDERS)
             val importedOpenAiProviders = optString(KEY_OA_ASR_PROVIDERS)
             val importedOpenAiActiveId = optString(KEY_OA_ASR_ACTIVE_ID)
-            optBool(KEY_VOLC_STREAMING_ENABLED)?.let { volcStreamingEnabled = it }
             // DashScope：优先读取新模型字段；否则回退旧开关并迁移
             val importedDashModel = optString(KEY_DASH_ASR_MODEL)
             if (importedDashModel != null) {
@@ -446,37 +386,15 @@ internal object PrefsBackup {
                     dashAsrModel = deriveDashAsrModelFromLegacyFlagsForBackup()
                 }
             }
-            optString(KEY_DASH_REGION)?.let { dashRegion = it }
-            optBool(KEY_DASH_FUNASR_SEMANTIC_PUNCT_ENABLED)?.let {
-                dashFunAsrSemanticPunctEnabled =
-                    it
-            }
-            optBool(KEY_VOLC_DDC_ENABLED)?.let { volcDdcEnabled = it }
-            optBool(KEY_VOLC_VAD_ENABLED)?.let { volcVadEnabled = it }
-            optBool(KEY_VOLC_NONSTREAM_ENABLED)?.let { volcNonstreamEnabled = it }
-            optString(KEY_VOLC_LANGUAGE)?.let { volcLanguage = it }
             optBool(KEY_RETURN_PREV_IME_ON_HIDE)?.let { returnPrevImeOnHide = it }
             optString(KEY_IME_SWITCH_TARGET_ID)?.let { imeSwitchTargetId = it }
-            optBool(KEY_VOLC_FILE_STANDARD_ENABLED)?.let { volcFileStandardEnabled = it }
-            optBool(KEY_VOLC_MODEL_V2_ENABLED)?.let { volcModelV2Enabled = it }
             // Soniox（若提供数组则优先；否则回退单值）
             if (o.has(KEY_SONIOX_LANGUAGES)) {
                 optString(KEY_SONIOX_LANGUAGES)?.let { sonioxLanguagesJson = it }
             } else {
                 optString(KEY_SONIOX_LANGUAGE)?.let { sonioxLanguage = it }
             }
-            optBool(KEY_SONIOX_STREAMING_ENABLED)?.let { sonioxStreamingEnabled = it }
-            optInt(KEY_SONIOX_ENDPOINT_SENSITIVITY_LEVEL)?.let {
-                sonioxEndpointSensitivityLevel = it
-            }
-            // StepAudio 设置
-            optBool(KEY_STEPAUDIO_USE_ITN)?.let { stepAudioUseItn = it }
-            // ElevenLabs streaming toggle
-            optBool(KEY_ELEVEN_STREAMING_ENABLED)?.let { elevenStreamingEnabled = it }
-            // Gemini 设置
-            optBool(KEY_GEMINI_DISABLE_THINKING)?.let { geminiDisableThinking = it }
-            // MiMo 设置
-            optBool(KEY_MIMO_ASR_DISABLE_THINKING)?.let { mimoAsrDisableThinking = it }
+            optString(KEY_GEM_PROMPT)?.let { gemPrompt = it }
             // 多 LLM 配置（优先于旧字段，仅当存在时覆盖）
             optString(KEY_LLM_PROVIDERS)?.let { llmProvidersJson = it }
             optString(KEY_LLM_ACTIVE_ID)?.let { activeLlmId = it }
@@ -499,12 +417,7 @@ internal object PrefsBackup {
             optInt(KEY_BACKUP_ASR_TIMEOUT_SENSITIVITY)?.let { backupAsrTimeoutSensitivity = it }
             // 供应商设置（通用导入）
             // OpenRouter ASR 字符串字段（endpoint/apiKey/model）在这里随 vendorFields 导入。
-            vendorFields.values.flatten().forEach { f ->
-                optString(f.key)?.let { v ->
-                    val final = v.ifBlank { f.default }
-                    setPrefString(f.key, final)
-                }
-            }
+            PrefsAsrVendorFields.importFromJson(asVendorFieldStore(), o)
             if (hasOpenAiProviders) {
                 openAiAsrProvidersJson = importedOpenAiProviders.orEmpty()
                 activeOpenAiAsrProviderId = importedOpenAiActiveId.orEmpty()
@@ -556,34 +469,6 @@ internal object PrefsBackup {
             optString(KEY_ASR_HISTORY_JSON)?.let { setPrefString(KEY_ASR_HISTORY_JSON, it) }
             optString(KEY_FIRST_USE_DATE)?.let { firstUseDate = it }
             optBool(KEY_SHOWN_ONBOARDING_GUIDE_V2_ONCE)?.let { hasShownOnboardingGuideV2Once = it }
-            // SenseVoice（本地 ASR）
-            optString(KEY_SV_MODEL_DIR)?.let { svModelDir = it }
-            optString(KEY_SV_MODEL_VARIANT)?.let { svModelVariant = it }
-            optInt(KEY_SV_NUM_THREADS)?.let { svNumThreads = it.coerceIn(1, 8) }
-            optString(KEY_SV_LANGUAGE)?.let { svLanguage = it }
-            optBool(KEY_SV_USE_ITN)?.let { svUseItn = it }
-            optBool(KEY_SV_PRELOAD_ENABLED)?.let { svPreloadEnabled = it }
-            optInt(KEY_SV_KEEP_ALIVE_MINUTES)?.let { svKeepAliveMinutes = it }
-            optBool(KEY_SV_PSEUDO_STREAM_ENABLED)?.let { svPseudoStreamEnabled = it }
-            // FunASR Nano（本地 ASR）
-            optString(KEY_FN_MODEL_VARIANT)?.let { fnModelVariant = it }
-            optInt(KEY_FN_NUM_THREADS)?.let { fnNumThreads = it.coerceIn(1, 8) }
-            optBool(KEY_FN_USE_ITN)?.let { fnUseItn = it }
-            optString(KEY_FN_USER_PROMPT)?.let { fnUserPrompt = it }
-            optString(KEY_FN_LANGUAGE)?.let { fnLanguage = it }
-            optBool(KEY_FN_PRELOAD_ENABLED)?.let { fnPreloadEnabled = it }
-            optInt(KEY_FN_KEEP_ALIVE_MINUTES)?.let { fnKeepAliveMinutes = it }
-            // Qwen3-ASR（本地 ASR）
-            optString(KEY_QW_MODEL_VARIANT)?.let { qwModelVariant = it }
-            optInt(KEY_QW_NUM_THREADS)?.let { qwNumThreads = it.coerceIn(1, 8) }
-            optBool(KEY_QW_PRELOAD_ENABLED)?.let { qwPreloadEnabled = it }
-            optInt(KEY_QW_KEEP_ALIVE_MINUTES)?.let { qwKeepAliveMinutes = it }
-            optBool(KEY_QW_USE_ITN)?.let { qwUseItn = it }
-            // Parakeet（本地 ASR）
-            optString(KEY_PK_MODEL_VARIANT)?.let { pkModelVariant = it }
-            optInt(KEY_PK_NUM_THREADS)?.let { pkNumThreads = it.coerceIn(1, 8) }
-            optBool(KEY_PK_PRELOAD_ENABLED)?.let { pkPreloadEnabled = it }
-            optInt(KEY_PK_KEEP_ALIVE_MINUTES)?.let { pkKeepAliveMinutes = it }
             // FireRedASR（本地 ASR）
             (optString(KEY_FR_MODEL_VARIANT) ?: optString(KEY_TS_MODEL_VARIANT))?.let {
                 frModelVariant = it
@@ -665,5 +550,25 @@ internal object PrefsBackup {
         if (!streaming) return Prefs.DEFAULT_DASH_MODEL
         val funAsr = dashFunAsrEnabled
         return if (funAsr) Prefs.DASH_MODEL_FUN_ASR_REALTIME else Prefs.DASH_MODEL_QWEN3_REALTIME
+    }
+
+    private fun Prefs.asVendorFieldStore(): VendorFieldStore = object : VendorFieldStore {
+        override fun getString(key: String, default: String): String = getPrefString(key, default)
+
+        override fun putString(key: String, value: String) {
+            setPrefString(key, value)
+        }
+
+        override fun getBoolean(key: String, default: Boolean): Boolean = getPrefBoolean(key, default)
+
+        override fun putBoolean(key: String, value: Boolean) {
+            setPrefBoolean(key, value)
+        }
+
+        override fun getInt(key: String, default: Int): Int = getPrefInt(key, default)
+
+        override fun putInt(key: String, value: Int) {
+            setPrefInt(key, value)
+        }
     }
 }

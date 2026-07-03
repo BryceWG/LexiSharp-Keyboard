@@ -21,7 +21,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.store.ApiLogStore
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.ui.AsrVendorUi
@@ -53,7 +52,7 @@ internal fun SettingsHistoryRoute(
     val hapticTap = LocalSettingsHapticTap.current
     val scope = rememberCoroutineScope()
     val vendors = remember(context) {
-        AsrVendor.entries.map { vendor ->
+        AsrVendorUi.ordered().map { vendor ->
             HistoryVendorOption(vendor.id, AsrVendorUi.name(context, vendor))
         }
     }

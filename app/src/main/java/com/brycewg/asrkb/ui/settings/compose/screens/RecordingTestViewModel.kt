@@ -16,44 +16,24 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.AsrEngineConstructionSource
+import com.brycewg.asrkb.asr.AsrEngineInvocationMode
+import com.brycewg.asrkb.asr.AsrParallelEngineFactory
+import com.brycewg.asrkb.asr.AsrPushPcmEngineFactory
+import com.brycewg.asrkb.asr.AsrPushPcmEngineFamily
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.AudioCaptureManager
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.asr.CancelableAsrEngine
-import com.brycewg.asrkb.asr.DashscopeFileAsrEngine
-import com.brycewg.asrkb.asr.DashscopeStreamAsrEngine
-import com.brycewg.asrkb.asr.ElevenLabsFileAsrEngine
-import com.brycewg.asrkb.asr.ElevenLabsStreamAsrEngine
 import com.brycewg.asrkb.asr.ExternalPcmConsumer
-import com.brycewg.asrkb.asr.FireRedAsrFileAsrEngine
-import com.brycewg.asrkb.asr.FireRedAsrPushPcmPseudoStreamAsrEngine
-import com.brycewg.asrkb.asr.FunAsrNanoFileAsrEngine
-import com.brycewg.asrkb.asr.GeminiFileAsrEngine
-import com.brycewg.asrkb.asr.GenericPushFileAsrAdapter
 import com.brycewg.asrkb.asr.LlmPostProcessor
-import com.brycewg.asrkb.asr.MiMoFileAsrEngine
 import com.brycewg.asrkb.asr.OfflineSpeechDenoiserManager
-import com.brycewg.asrkb.asr.OpenAiFileAsrEngine
-import com.brycewg.asrkb.asr.OpenAiRealtimeAsrEngine
-import com.brycewg.asrkb.asr.OpenRouterFileAsrEngine
-import com.brycewg.asrkb.asr.ParakeetFileAsrEngine
-import com.brycewg.asrkb.asr.ParallelAsrEngine
-import com.brycewg.asrkb.asr.PcmBatchRecognizer
-import com.brycewg.asrkb.asr.Qwen3AsrFileAsrEngine
 import com.brycewg.asrkb.asr.RecordedAudioVoiceFilter
-import com.brycewg.asrkb.asr.SenseVoiceFileAsrEngine
-import com.brycewg.asrkb.asr.SenseVoicePushPcmPseudoStreamAsrEngine
-import com.brycewg.asrkb.asr.SiliconFlowFileAsrEngine
-import com.brycewg.asrkb.asr.SonioxFileAsrEngine
-import com.brycewg.asrkb.asr.SonioxStreamAsrEngine
-import com.brycewg.asrkb.asr.StepAudioFileAsrEngine
 import com.brycewg.asrkb.asr.StreamingAsrEngine
-import com.brycewg.asrkb.asr.VolcFileAsrEngine
-import com.brycewg.asrkb.asr.VolcStandardFileAsrEngine
-import com.brycewg.asrkb.asr.VolcStreamAsrEngine
-import com.brycewg.asrkb.asr.XAsrStreamAsrEngine
-import com.brycewg.asrkb.asr.ZhipuFileAsrEngine
+import com.brycewg.asrkb.asr.asrEngineModePreferencesSnapshot
+import com.brycewg.asrkb.asr.isAsrVendorConfigured
 import com.brycewg.asrkb.asr.preloadLocalAsrForImmediateUse
+import com.brycewg.asrkb.asr.shouldUseBackupAsr
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.PromptPreset
 import com.brycewg.asrkb.util.AsrFinalFilters
@@ -138,6 +118,8 @@ internal class RecordingTestViewModel(
     private var firstFrameUptimeMs: Long? = null
     private var recordingStartUptimeMs: Long = 0L
     private var peakAbs: Int = 0
+    private val parallelEngineFactory = AsrParallelEngineFactory()
+    private val pushPcmEngineFactory = AsrPushPcmEngineFactory()
 
     fun refreshConfiguredAsr() {
         _uiState.update {
@@ -632,194 +614,60 @@ internal class RecordingTestViewModel(
     private fun buildConfiguredPushPcmEngine(listener: StreamingAsrEngine.Listener): StreamingAsrEngine? {
         val primaryVendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
-        if (shouldUseBackupAsr(primaryVendor, backupVendor)) {
-            return ParallelAsrEngine(
-                context = appContext,
-                scope = viewModelScope,
-                prefs = prefs,
-                listener = listener,
-                primaryVendor = primaryVendor,
-                backupVendor = backupVendor,
-                externalPcmInput = true
-            )
-        }
-        if (!hasKeysForVendor(primaryVendor)) return null
-        return buildSinglePushPcmEngine(
-            vendor = primaryVendor,
+        parallelEngineFactory.createOrNull(
+            context = appContext,
+            scope = viewModelScope,
+            prefs = prefs,
             listener = listener,
-            onRequestDuration = null
+            primaryVendor = primaryVendor,
+            backupVendor = backupVendor,
+            externalPcmInput = true
+        )?.let { return it }
+
+        if (!isAsrVendorConfigured(appContext, prefs, primaryVendor)) return null
+        return pushPcmEngineFactory.create(
+            context = appContext,
+            scope = viewModelScope,
+            prefs = prefs,
+            listener = listener,
+            vendor = primaryVendor,
+            invocationMode = AsrEngineInvocationMode.RecordingTest,
+            preferences = prefs.asrEngineModePreferencesSnapshot(),
+            source = AsrEngineConstructionSource.App,
+            onRequestDuration = null,
+            applyVoiceFilter = true
         )
     }
-
-    private fun buildSinglePushPcmEngine(
-        vendor: AsrVendor,
-        listener: StreamingAsrEngine.Listener,
-        onRequestDuration: ((Long) -> Unit)?
-    ): StreamingAsrEngine? = when (vendor) {
-        AsrVendor.Volc -> if (prefs.volcStreamingEnabled) {
-            VolcStreamAsrEngine(appContext, viewModelScope, prefs, listener, externalPcmMode = true)
-        } else {
-            wrapPushFileEngine(
-                listener,
-                if (prefs.volcFileStandardEnabled) {
-                    VolcStandardFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-                } else {
-                    VolcFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-                }
-            )
-        }
-        AsrVendor.SiliconFlow -> wrapPushFileEngine(
-            listener,
-            SiliconFlowFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        )
-        AsrVendor.ElevenLabs -> if (prefs.elevenStreamingEnabled) {
-            ElevenLabsStreamAsrEngine(appContext, viewModelScope, prefs, listener, externalPcmMode = true)
-        } else {
-            wrapPushFileEngine(
-                listener,
-                ElevenLabsFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-            )
-        }
-        AsrVendor.OpenAI -> if (prefs.isOpenAiStreamingEffective()) {
-            OpenAiRealtimeAsrEngine(appContext, viewModelScope, prefs, listener, externalPcmMode = true)
-        } else {
-            wrapPushFileEngine(
-                listener,
-                OpenAiFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-            )
-        }
-        AsrVendor.OpenRouter -> wrapPushFileEngine(
-            listener,
-            OpenRouterFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        )
-        AsrVendor.DashScope -> if (prefs.isDashStreamingModelSelected()) {
-            DashscopeStreamAsrEngine(appContext, viewModelScope, prefs, listener, externalPcmMode = true)
-        } else {
-            wrapPushFileEngine(
-                listener,
-                DashscopeFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-            )
-        }
-        AsrVendor.Gemini -> wrapPushFileEngine(
-            listener,
-            GeminiFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        )
-        AsrVendor.MiMo -> wrapPushFileEngine(
-            listener,
-            MiMoFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        )
-        AsrVendor.Soniox -> if (prefs.sonioxStreamingEnabled) {
-            SonioxStreamAsrEngine(appContext, viewModelScope, prefs, listener, externalPcmMode = true)
-        } else {
-            wrapPushFileEngine(
-                listener,
-                SonioxFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-            )
-        }
-        AsrVendor.StepAudio -> wrapPushFileEngine(
-            listener,
-            StepAudioFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        )
-        AsrVendor.Zhipu -> wrapPushFileEngine(
-            listener,
-            ZhipuFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        )
-        AsrVendor.SenseVoice -> if (prefs.svPseudoStreamEnabled) {
-            SenseVoicePushPcmPseudoStreamAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        } else {
-            wrapPushFileEngine(
-                listener,
-                SenseVoiceFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-            )
-        }
-        AsrVendor.FunAsrNano -> wrapPushFileEngine(
-            listener,
-            FunAsrNanoFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        )
-        AsrVendor.Qwen3Asr -> wrapPushFileEngine(
-            listener,
-            Qwen3AsrFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        )
-        AsrVendor.Parakeet -> wrapPushFileEngine(
-            listener,
-            ParakeetFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        )
-        AsrVendor.FireRedAsr -> if (prefs.frPseudoStreamEnabled) {
-            FireRedAsrPushPcmPseudoStreamAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-        } else {
-            wrapPushFileEngine(
-                listener,
-                FireRedAsrFileAsrEngine(appContext, viewModelScope, prefs, listener, onRequestDuration)
-            )
-        }
-        AsrVendor.XAsr -> XAsrStreamAsrEngine(appContext, viewModelScope, prefs, listener, externalPcmMode = true)
-    }
-
-    private fun wrapPushFileEngine(
-        listener: StreamingAsrEngine.Listener,
-        recognizer: PcmBatchRecognizer
-    ): GenericPushFileAsrAdapter = GenericPushFileAsrAdapter(
-        context = appContext,
-        scope = viewModelScope,
-        prefs = prefs,
-        listener = listener,
-        recognizer = recognizer,
-        applyVoiceFilter = true
-    )
 
     private fun configuredBackupVendorOrNull(): AsrVendor? {
         val primary = prefs.asrVendor
         val backup = prefs.backupAsrVendor
-        return backup.takeIf { shouldUseBackupAsr(primary, backup) }
+        return backup.takeIf { shouldUseBackupAsr(appContext, prefs, primary, backup) }
     }
 
-    private fun configuredRecordingTestAsrMode(): RecordingTestAsrMode = if (isPushPcmMode(prefs.asrVendor) || configuredBackupVendorOrNull() != null) {
+    private fun configuredRecordingTestAsrMode(): RecordingTestAsrMode = if (configuredBackupVendorOrNull() != null || resolvesRecordingTestAsPushPcm(prefs.asrVendor)) {
         RecordingTestAsrMode.PushPcm
     } else {
         RecordingTestAsrMode.File
     }
 
-    private fun shouldUseBackupAsr(primaryVendor: AsrVendor, backupVendor: AsrVendor): Boolean {
-        val enabled = try {
-            prefs.backupAsrEnabled
-        } catch (_: Throwable) {
-            false
-        }
-        if (!enabled) return false
-        if (backupVendor == primaryVendor) return false
-        return hasKeysForVendor(backupVendor)
-    }
-
-    private fun hasKeysForVendor(vendor: AsrVendor): Boolean = try {
-        when (vendor) {
-            AsrVendor.SiliconFlow -> prefs.hasSfKeys()
-            AsrVendor.OpenRouter -> prefs.hasOpenRouterKeys()
-            AsrVendor.StepAudio -> prefs.hasStepAudioKeys()
-            else -> prefs.hasVendorKeys(vendor)
+    private fun resolvesRecordingTestAsPushPcm(vendor: AsrVendor): Boolean = try {
+        when (
+            pushPcmEngineFactory.resolvePlan(
+                vendor = vendor,
+                invocationMode = AsrEngineInvocationMode.RecordingTest,
+                preferences = prefs.asrEngineModePreferencesSnapshot(),
+                source = AsrEngineConstructionSource.App
+            ).family
+        ) {
+            AsrPushPcmEngineFamily.FileAdapter -> false
+            AsrPushPcmEngineFamily.NativeStream,
+            AsrPushPcmEngineFamily.LocalStream,
+            AsrPushPcmEngineFamily.PseudoStream -> true
         }
     } catch (t: Throwable) {
-        Log.w(TAG, "Failed to check ASR vendor keys: $vendor", t)
+        Log.w(TAG, "Failed to resolve recording test ASR mode", t)
         false
-    }
-
-    private fun isPushPcmMode(vendor: AsrVendor): Boolean = when (vendor) {
-        AsrVendor.Volc -> prefs.volcStreamingEnabled
-        AsrVendor.DashScope -> prefs.isDashStreamingModelSelected()
-        AsrVendor.Soniox -> prefs.sonioxStreamingEnabled
-        AsrVendor.ElevenLabs -> prefs.elevenStreamingEnabled
-        AsrVendor.OpenAI -> prefs.isOpenAiStreamingEffective()
-        AsrVendor.XAsr -> true
-        AsrVendor.SenseVoice -> prefs.svPseudoStreamEnabled
-        AsrVendor.FireRedAsr -> prefs.frPseudoStreamEnabled
-        AsrVendor.SiliconFlow,
-        AsrVendor.OpenRouter,
-        AsrVendor.Gemini,
-        AsrVendor.MiMo,
-        AsrVendor.StepAudio,
-        AsrVendor.Zhipu,
-        AsrVendor.FunAsrNano,
-        AsrVendor.Qwen3Asr,
-        AsrVendor.Parakeet -> false
     }
 
     private fun requestTransientAudioFocus() {

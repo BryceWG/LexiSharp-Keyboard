@@ -8,18 +8,13 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 import android.content.Context
 import androidx.annotation.StringRes
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.AsrLocalModelCatalog
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LocalModelCheck
 import com.brycewg.asrkb.asr.SherpaPunctuationManager
 import com.brycewg.asrkb.asr.normalizeFunAsrNanoVariant
 import com.brycewg.asrkb.asr.normalizeParakeetVariant
 import com.brycewg.asrkb.asr.normalizeQwen3AsrVariant
-import com.brycewg.asrkb.asr.unloadFireRedAsrRecognizer
-import com.brycewg.asrkb.asr.unloadFunAsrNanoRecognizer
-import com.brycewg.asrkb.asr.unloadParakeetRecognizer
-import com.brycewg.asrkb.asr.unloadQwen3AsrRecognizer
-import com.brycewg.asrkb.asr.unloadSenseVoiceRecognizer
-import com.brycewg.asrkb.asr.unloadXAsrRecognizer
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsUiState
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsViewModel
@@ -84,19 +79,19 @@ internal val SenseVoiceModelSpec = AsrLocalModelSpec(
             "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17.zip"
         }
     },
-    isReady = { viewModel, context -> viewModel.checkSvModelDownloaded(context) },
-    checkStatus = { viewModel, context -> viewModel.checkSvModelStatus(context) },
+    isReady = linkedAsrModelReady(AsrVendor.SenseVoice),
+    checkStatus = linkedAsrModelStatus(AsrVendor.SenseVoice),
     clearInstalled = { context, prefs ->
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        val root = File(base, "sensevoice")
-        val target = if (prefs.svModelVariant == "small-full") {
-            File(root, "small-full")
-        } else {
-            File(root, "small-int8")
-        }
-        target.deleteIfExists()
-        unloadSenseVoiceRecognizer()
-        true
+        clearInstalledAsrLocalModel(AsrVendor.SenseVoice, deleteInstalled = {
+            val base = context.getExternalFilesDir(null) ?: context.filesDir
+            val root = File(base, "sensevoice")
+            val target = if (prefs.svModelVariant == "small-full") {
+                File(root, "small-full")
+            } else {
+                File(root, "small-int8")
+            }
+            target.deleteIfExists()
+        })
     }
 )
 
@@ -129,18 +124,18 @@ internal val FunAsrNanoModelSpec = AsrLocalModelSpec(
             "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-funasr-nano-int8-2025-12-30.zip"
         }
     },
-    isReady = { viewModel, context -> viewModel.checkFnModelDownloaded(context) },
-    checkStatus = { viewModel, context -> viewModel.checkFnModelStatus(context) },
+    isReady = linkedAsrModelReady(AsrVendor.FunAsrNano),
+    checkStatus = linkedAsrModelStatus(AsrVendor.FunAsrNano),
     clearInstalled = { context, _ ->
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        val legacySenseVoice = File(base, "sensevoice")
-        listOf(
-            File(base, "funasr_nano"),
-            File(legacySenseVoice, "nano-int8"),
-            File(legacySenseVoice, "nano-full")
-        ).forEach { it.deleteIfExists() }
-        unloadFunAsrNanoRecognizer()
-        true
+        clearInstalledAsrLocalModel(AsrVendor.FunAsrNano, deleteInstalled = {
+            val base = context.getExternalFilesDir(null) ?: context.filesDir
+            val legacySenseVoice = File(base, "sensevoice")
+            listOf(
+                File(base, "funasr_nano"),
+                File(legacySenseVoice, "nano-int8"),
+                File(legacySenseVoice, "nano-full")
+            ).forEach { it.deleteIfExists() }
+        })
     }
 )
 
@@ -168,13 +163,13 @@ internal val Qwen3AsrModelSpec = AsrLocalModelSpec(
     downloadUrl = {
         "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.zip"
     },
-    isReady = { viewModel, context -> viewModel.checkQwModelDownloaded(context) },
-    checkStatus = { viewModel, context -> viewModel.checkQwModelStatus(context) },
+    isReady = linkedAsrModelReady(AsrVendor.Qwen3Asr),
+    checkStatus = linkedAsrModelStatus(AsrVendor.Qwen3Asr),
     clearInstalled = { context, prefs ->
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        File(File(base, "qwen3_asr"), normalizeQwen3AsrVariant(prefs.qwModelVariant)).deleteIfExists()
-        unloadQwen3AsrRecognizer()
-        true
+        clearInstalledAsrLocalModel(AsrVendor.Qwen3Asr, deleteInstalled = {
+            val base = context.getExternalFilesDir(null) ?: context.filesDir
+            File(File(base, "qwen3_asr"), normalizeQwen3AsrVariant(prefs.qwModelVariant)).deleteIfExists()
+        })
     }
 )
 
@@ -207,13 +202,13 @@ internal val ParakeetModelSpec = AsrLocalModelSpec(
             "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.zip"
         }
     },
-    isReady = { viewModel, context -> viewModel.checkPkModelDownloaded(context) },
-    checkStatus = { viewModel, context -> viewModel.checkPkModelStatus(context) },
+    isReady = linkedAsrModelReady(AsrVendor.Parakeet),
+    checkStatus = linkedAsrModelStatus(AsrVendor.Parakeet),
     clearInstalled = { context, prefs ->
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        File(File(base, "parakeet"), normalizeParakeetVariant(prefs.pkModelVariant)).deleteIfExists()
-        unloadParakeetRecognizer()
-        true
+        clearInstalledAsrLocalModel(AsrVendor.Parakeet, deleteInstalled = {
+            val base = context.getExternalFilesDir(null) ?: context.filesDir
+            File(File(base, "parakeet"), normalizeParakeetVariant(prefs.pkModelVariant)).deleteIfExists()
+        })
     }
 )
 
@@ -241,13 +236,13 @@ internal val FireRedAsrModelSpec = AsrLocalModelSpec(
     downloadUrl = {
         "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-fire-red-asr2-ctc-zh_en-int8-2026-02-25.zip"
     },
-    isReady = { viewModel, context -> viewModel.checkFrModelDownloaded(context) },
-    checkStatus = { viewModel, context -> viewModel.checkFrModelStatus(context) },
+    isReady = linkedAsrModelReady(AsrVendor.FireRedAsr),
+    checkStatus = linkedAsrModelStatus(AsrVendor.FireRedAsr),
     clearInstalled = { context, prefs ->
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        File(File(base, "firered_asr"), prefs.frModelVariant).deleteIfExists()
-        unloadFireRedAsrRecognizer()
-        true
+        clearInstalledAsrLocalModel(AsrVendor.FireRedAsr, deleteInstalled = {
+            val base = context.getExternalFilesDir(null) ?: context.filesDir
+            File(File(base, "firered_asr"), prefs.frModelVariant).deleteIfExists()
+        })
     }
 )
 
@@ -275,13 +270,13 @@ internal val XAsrModelSpec = AsrLocalModelSpec(
     downloadUrl = {
         "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-streaming-x-asr-480ms-zh-en.zip"
     },
-    isReady = { viewModel, context -> viewModel.checkXAsrModelDownloaded(context) },
-    checkStatus = { viewModel, context -> viewModel.checkXAsrModelStatus(context) },
+    isReady = linkedAsrModelReady(AsrVendor.XAsr),
+    checkStatus = linkedAsrModelStatus(AsrVendor.XAsr),
     clearInstalled = { context, _ ->
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        File(base, "x_asr").deleteIfExists()
-        unloadXAsrRecognizer()
-        true
+        clearInstalledAsrLocalModel(AsrVendor.XAsr, deleteInstalled = {
+            val base = context.getExternalFilesDir(null) ?: context.filesDir
+            File(base, "x_asr").deleteIfExists()
+        })
     }
 )
 
@@ -323,6 +318,32 @@ internal val AllAsrLocalModelSpecs = listOf(
     XAsrModelSpec,
     PunctuationModelSpec
 )
+
+internal fun clearInstalledAsrLocalModel(
+    vendor: AsrVendor,
+    deleteInstalled: () -> Unit,
+    unload: (AsrVendor) -> Boolean = AsrLocalModelCatalog::unload
+): Boolean {
+    deleteInstalled()
+    return unload(vendor)
+}
+
+private fun linkedAsrModelReady(
+    vendor: AsrVendor
+): (AsrSettingsViewModel, Context) -> Boolean = { viewModel, context ->
+    AsrLocalModelCatalog.entryFor(vendor) != null &&
+        viewModel.checkLocalVendorModelDownloaded(context, vendor)
+}
+
+private fun linkedAsrModelStatus(
+    vendor: AsrVendor
+): (AsrSettingsViewModel, Context) -> LocalModelCheck<*> = { viewModel, context ->
+    if (AsrLocalModelCatalog.entryFor(vendor) != null) {
+        viewModel.checkLocalVendorModelStatus(context, vendor)
+    } else {
+        LocalModelCheck.Missing
+    }
+}
 
 private fun File.deleteIfExists() {
     if (exists()) deleteRecursively()

@@ -14,7 +14,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.store.KEY_GEM_API_KEY
+import com.brycewg.asrkb.store.KEY_GEM_ENDPOINT
+import com.brycewg.asrkb.store.KEY_GEM_MODEL
+import com.brycewg.asrkb.store.KEY_GEM_PROMPT
+import com.brycewg.asrkb.store.KEY_OPENROUTER_ASR_API_KEY
+import com.brycewg.asrkb.store.KEY_OPENROUTER_ASR_ENDPOINT
+import com.brycewg.asrkb.store.KEY_OPENROUTER_ASR_MODEL
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.VendorFieldRole
 import com.brycewg.asrkb.store.isOpenAiCustomTranscriptionsEndpoint
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButton
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButtonRow
@@ -285,40 +293,21 @@ internal fun CurrentAsrVendorConfig(
 
         AsrVendor.Gemini -> {
             var itemIndex = primaryIndexOffset
-            val itemCount = primaryGroupCount ?: 6
-            AsrTextField(
-                uiMode = uiMode,
-                value = geminiApiKey,
-                onValueChange = onGeminiApiKeyChange,
-                label = stringResource(R.string.label_gemini_api_key),
-                password = true,
-                index = itemIndex++,
-                count = itemCount
+            val commonFields = geminiCommonTextFields(
+                apiKey = geminiApiKey,
+                onApiKeyChange = onGeminiApiKeyChange,
+                endpoint = geminiEndpoint,
+                onEndpointChange = onGeminiEndpointChange,
+                model = geminiModel,
+                onModelChange = onGeminiModelChange,
+                prompt = geminiPrompt,
+                onPromptChange = onGeminiPromptChange
             )
-            AsrTextField(
+            val itemCount = primaryGroupCount ?: commonFields.size + 2
+            itemIndex = CommonOnlineAsrTextFields(
                 uiMode = uiMode,
-                value = geminiEndpoint.ifBlank { Prefs.DEFAULT_GEM_ENDPOINT },
-                onValueChange = onGeminiEndpointChange,
-                label = stringResource(R.string.label_gemini_endpoint),
-                index = itemIndex++,
-                count = itemCount
-            )
-            AsrTextField(
-                uiMode = uiMode,
-                value = geminiModel,
-                onValueChange = onGeminiModelChange,
-                label = stringResource(R.string.label_gemini_model),
-                index = itemIndex++,
-                count = itemCount
-            )
-            AsrTextField(
-                uiMode = uiMode,
-                value = geminiPrompt,
-                onValueChange = onGeminiPromptChange,
-                label = stringResource(R.string.label_gemini_prompt),
-                singleLine = false,
-                minLines = 2,
-                index = itemIndex++,
+                fields = commonFields,
+                startIndex = itemIndex,
                 count = itemCount
             )
             AsrSwitchPreference(
@@ -340,30 +329,19 @@ internal fun CurrentAsrVendorConfig(
 
         AsrVendor.OpenRouter -> {
             var itemIndex = primaryIndexOffset
-            val itemCount = primaryGroupCount ?: 4
-            AsrTextField(
-                uiMode = uiMode,
-                value = openRouterEndpoint.ifBlank { Prefs.DEFAULT_OPENROUTER_ASR_ENDPOINT },
-                onValueChange = onOpenRouterEndpointChange,
-                label = stringResource(R.string.label_openrouter_asr_endpoint),
-                index = itemIndex++,
-                count = itemCount
+            val commonFields = openRouterCommonTextFields(
+                endpoint = openRouterEndpoint,
+                onEndpointChange = onOpenRouterEndpointChange,
+                apiKey = openRouterApiKey,
+                onApiKeyChange = onOpenRouterApiKeyChange,
+                model = openRouterModel,
+                onModelChange = onOpenRouterModelChange
             )
-            AsrTextField(
+            val itemCount = primaryGroupCount ?: commonFields.size + 1
+            itemIndex = CommonOnlineAsrTextFields(
                 uiMode = uiMode,
-                value = openRouterApiKey,
-                onValueChange = onOpenRouterApiKeyChange,
-                label = stringResource(R.string.label_openrouter_api_key),
-                password = true,
-                index = itemIndex++,
-                count = itemCount
-            )
-            AsrTextField(
-                uiMode = uiMode,
-                value = openRouterModel,
-                onValueChange = onOpenRouterModelChange,
-                label = stringResource(R.string.label_openrouter_model),
-                index = itemIndex++,
+                fields = commonFields,
+                startIndex = itemIndex,
                 count = itemCount
             )
             AsrActionPreference(
@@ -519,6 +497,155 @@ internal fun CurrentAsrVendorConfig(
         else -> Unit
     }
 }
+
+@Composable
+private fun CommonOnlineAsrTextFields(
+    uiMode: BibiUiMode,
+    fields: List<OnlineAsrTextFieldSpec>,
+    startIndex: Int,
+    count: Int
+): Int {
+    val rows = commonOnlineAsrTextRows(
+        fields = fields,
+        startIndex = startIndex,
+        count = count
+    )
+    rows.forEach { row ->
+        AsrTextField(
+            uiMode = uiMode,
+            value = row.value,
+            onValueChange = row.onValueChange,
+            label = stringResource(row.labelRes),
+            password = row.password,
+            singleLine = row.singleLine,
+            minLines = row.minLines,
+            index = row.index,
+            count = row.count
+        )
+    }
+    return startIndex + rows.size
+}
+
+internal data class OnlineAsrTextFieldSpec(
+    val key: String,
+    val role: VendorFieldRole,
+    val labelRes: Int,
+    val value: String,
+    val onValueChange: (String) -> Unit,
+    val password: Boolean = false,
+    val displayDefault: String = "",
+    val singleLine: Boolean = true,
+    val minLines: Int = 1
+)
+
+internal data class OnlineAsrTextFieldRow(
+    val key: String,
+    val role: VendorFieldRole,
+    val labelRes: Int,
+    val value: String,
+    val onValueChange: (String) -> Unit,
+    val password: Boolean,
+    val singleLine: Boolean,
+    val minLines: Int,
+    val index: Int,
+    val count: Int
+)
+
+internal fun commonOnlineAsrTextRows(
+    fields: List<OnlineAsrTextFieldSpec>,
+    startIndex: Int,
+    count: Int
+): List<OnlineAsrTextFieldRow> = fields.mapIndexed { offset, field ->
+    OnlineAsrTextFieldRow(
+        key = field.key,
+        role = field.role,
+        labelRes = field.labelRes,
+        value = field.value.ifBlank { field.displayDefault },
+        onValueChange = field.onValueChange,
+        password = field.password,
+        singleLine = field.singleLine,
+        minLines = field.minLines,
+        index = startIndex + offset,
+        count = count
+    )
+}
+
+internal fun geminiCommonTextFields(
+    apiKey: String,
+    onApiKeyChange: (String) -> Unit,
+    endpoint: String,
+    onEndpointChange: (String) -> Unit,
+    model: String,
+    onModelChange: (String) -> Unit,
+    prompt: String,
+    onPromptChange: (String) -> Unit
+): List<OnlineAsrTextFieldSpec> = listOf(
+    OnlineAsrTextFieldSpec(
+        key = KEY_GEM_API_KEY,
+        role = VendorFieldRole.Credential,
+        labelRes = R.string.label_gemini_api_key,
+        value = apiKey,
+        onValueChange = onApiKeyChange,
+        password = true
+    ),
+    OnlineAsrTextFieldSpec(
+        key = KEY_GEM_ENDPOINT,
+        role = VendorFieldRole.Endpoint,
+        labelRes = R.string.label_gemini_endpoint,
+        value = endpoint,
+        onValueChange = onEndpointChange,
+        displayDefault = Prefs.DEFAULT_GEM_ENDPOINT
+    ),
+    OnlineAsrTextFieldSpec(
+        key = KEY_GEM_MODEL,
+        role = VendorFieldRole.Model,
+        labelRes = R.string.label_gemini_model,
+        value = model,
+        onValueChange = onModelChange
+    ),
+    OnlineAsrTextFieldSpec(
+        key = KEY_GEM_PROMPT,
+        role = VendorFieldRole.Prompt,
+        labelRes = R.string.label_gemini_prompt,
+        value = prompt,
+        onValueChange = onPromptChange,
+        singleLine = false,
+        minLines = 2
+    )
+)
+
+internal fun openRouterCommonTextFields(
+    endpoint: String,
+    onEndpointChange: (String) -> Unit,
+    apiKey: String,
+    onApiKeyChange: (String) -> Unit,
+    model: String,
+    onModelChange: (String) -> Unit
+): List<OnlineAsrTextFieldSpec> = listOf(
+    OnlineAsrTextFieldSpec(
+        key = KEY_OPENROUTER_ASR_ENDPOINT,
+        role = VendorFieldRole.Endpoint,
+        labelRes = R.string.label_openrouter_asr_endpoint,
+        value = endpoint,
+        onValueChange = onEndpointChange,
+        displayDefault = Prefs.DEFAULT_OPENROUTER_ASR_ENDPOINT
+    ),
+    OnlineAsrTextFieldSpec(
+        key = KEY_OPENROUTER_ASR_API_KEY,
+        role = VendorFieldRole.Credential,
+        labelRes = R.string.label_openrouter_api_key,
+        value = apiKey,
+        onValueChange = onApiKeyChange,
+        password = true
+    ),
+    OnlineAsrTextFieldSpec(
+        key = KEY_OPENROUTER_ASR_MODEL,
+        role = VendorFieldRole.Model,
+        labelRes = R.string.label_openrouter_model,
+        value = model,
+        onValueChange = onModelChange
+    )
+)
 
 @Composable
 private fun OpenAiAsrConfig(

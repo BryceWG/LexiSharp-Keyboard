@@ -41,6 +41,8 @@ class AsrRecognitionService : RecognitionService() {
 
     private val prefs by lazy { Prefs(this) }
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val parallelEngineFactory = AsrParallelEngineFactory()
+    private val directMicrophoneEngineFactory = AsrDirectMicrophoneEngineFactory()
 
     // 当前活动会话
     private var currentSession: RecognitionSession? = null
@@ -177,7 +179,7 @@ class AsrRecognitionService : RecognitionService() {
     }
 
     /**
-     * 构建 ASR 引擎（复用 ExternalSpeechService 的逻辑）
+     * 构建 ASR 引擎。
      */
     private fun buildEngine(
         engineContext: Context,
@@ -185,127 +187,24 @@ class AsrRecognitionService : RecognitionService() {
     ): StreamingAsrEngine? {
         val vendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
-        val backupEnabled = shouldUseBackupAsr(vendor, backupVendor)
-        if (backupEnabled) {
-            return ParallelAsrEngine(
-                context = engineContext,
-                scope = serviceScope,
-                prefs = prefs,
-                listener = listener,
-                primaryVendor = vendor,
-                backupVendor = backupVendor
-            )
-        }
+        parallelEngineFactory.createOrNull(
+            context = engineContext,
+            scope = serviceScope,
+            prefs = prefs,
+            listener = listener,
+            primaryVendor = vendor,
+            backupVendor = backupVendor
+        )?.let { return it }
 
-        val streamingPref = resolveStreamingBySettings(vendor)
-        val scope = serviceScope
-
-        return when (vendor) {
-            AsrVendor.Volc -> if (streamingPref) {
-                VolcStreamAsrEngine(engineContext, scope, prefs, listener)
-            } else {
-                if (prefs.volcFileStandardEnabled) {
-                    VolcStandardFileAsrEngine(engineContext, scope, prefs, listener)
-                } else {
-                    VolcFileAsrEngine(engineContext, scope, prefs, listener)
-                }
-            }
-            AsrVendor.SiliconFlow -> SiliconFlowFileAsrEngine(engineContext, scope, prefs, listener)
-            AsrVendor.ElevenLabs -> if (streamingPref) {
-                ElevenLabsStreamAsrEngine(engineContext, scope, prefs, listener)
-            } else {
-                ElevenLabsFileAsrEngine(engineContext, scope, prefs, listener)
-            }
-            AsrVendor.OpenAI -> if (streamingPref) {
-                OpenAiRealtimeAsrEngine(engineContext, scope, prefs, listener)
-            } else {
-                OpenAiFileAsrEngine(engineContext, scope, prefs, listener)
-            }
-            AsrVendor.OpenRouter -> OpenRouterFileAsrEngine(engineContext, scope, prefs, listener)
-            AsrVendor.MiMo -> MiMoFileAsrEngine(engineContext, scope, prefs, listener)
-            AsrVendor.DashScope -> if (streamingPref) {
-                DashscopeStreamAsrEngine(engineContext, scope, prefs, listener)
-            } else {
-                DashscopeFileAsrEngine(engineContext, scope, prefs, listener)
-            }
-            AsrVendor.Gemini -> GeminiFileAsrEngine(engineContext, scope, prefs, listener)
-            AsrVendor.Soniox -> if (streamingPref) {
-                SonioxStreamAsrEngine(engineContext, scope, prefs, listener)
-            } else {
-                SonioxFileAsrEngine(engineContext, scope, prefs, listener)
-            }
-            AsrVendor.StepAudio -> StepAudioFileAsrEngine(engineContext, scope, prefs, listener)
-            AsrVendor.Zhipu -> ZhipuFileAsrEngine(engineContext, scope, prefs, listener)
-            AsrVendor.SenseVoice -> {
-                if (prefs.svPseudoStreamEnabled) {
-                    SenseVoicePseudoStreamAsrEngine(engineContext, scope, prefs, listener)
-                } else {
-                    SenseVoiceFileAsrEngine(engineContext, scope, prefs, listener)
-                }
-            }
-            AsrVendor.FunAsrNano -> {
-                // FunASR Nano 模型算力开销高：不支持伪流式预览，仅保留整段离线识别
-                FunAsrNanoFileAsrEngine(engineContext, scope, prefs, listener)
-            }
-            AsrVendor.Qwen3Asr -> {
-                Qwen3AsrFileAsrEngine(engineContext, scope, prefs, listener)
-            }
-            AsrVendor.Parakeet -> {
-                ParakeetFileAsrEngine(engineContext, scope, prefs, listener)
-            }
-            AsrVendor.FireRedAsr -> {
-                if (prefs.frPseudoStreamEnabled) {
-                    FireRedAsrPseudoStreamAsrEngine(engineContext, scope, prefs, listener)
-                } else {
-                    FireRedAsrFileAsrEngine(engineContext, scope, prefs, listener)
-                }
-            }
-            AsrVendor.XAsr -> XAsrStreamAsrEngine(engineContext, scope, prefs, listener)
-        }
-    }
-
-    private fun shouldUseBackupAsr(primaryVendor: AsrVendor, backupVendor: AsrVendor): Boolean {
-        val enabled = try {
-            prefs.backupAsrEnabled
-        } catch (_: Throwable) {
-            false
-        }
-        if (!enabled) return false
-        if (backupVendor == primaryVendor) return false
-        return try {
-            when (backupVendor) {
-                AsrVendor.SiliconFlow -> prefs.hasSfKeys()
-                AsrVendor.OpenRouter -> prefs.hasOpenRouterKeys()
-                AsrVendor.StepAudio -> prefs.hasStepAudioKeys()
-                else -> prefs.hasVendorKeys(backupVendor)
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to check backup vendor keys: $backupVendor", t)
-            false
-        }
-    }
-
-    /**
-     * 根据设置决定是否使用流式模式
-     */
-    private fun resolveStreamingBySettings(vendor: AsrVendor): Boolean = when (vendor) {
-        AsrVendor.Volc -> prefs.volcStreamingEnabled
-        AsrVendor.DashScope -> prefs.isDashStreamingModelSelected()
-        AsrVendor.Soniox -> prefs.sonioxStreamingEnabled
-        AsrVendor.ElevenLabs -> prefs.elevenStreamingEnabled
-        AsrVendor.OpenAI -> prefs.isOpenAiStreamingEffective()
-        AsrVendor.XAsr -> true
-        AsrVendor.SenseVoice,
-        AsrVendor.FunAsrNano,
-        AsrVendor.Qwen3Asr,
-        AsrVendor.Parakeet,
-        AsrVendor.FireRedAsr -> false
-        AsrVendor.Gemini,
-        AsrVendor.SiliconFlow,
-        AsrVendor.OpenRouter,
-        AsrVendor.StepAudio,
-        AsrVendor.Zhipu,
-        AsrVendor.MiMo -> false
+        return directMicrophoneEngineFactory.createOrNull(
+            context = engineContext,
+            scope = serviceScope,
+            prefs = prefs,
+            listener = listener,
+            vendor = vendor,
+            preferences = prefs.asrEngineModePreferencesSnapshot(),
+            source = AsrEngineConstructionSource.SpeechRecognizer
+        )
     }
 
     /**

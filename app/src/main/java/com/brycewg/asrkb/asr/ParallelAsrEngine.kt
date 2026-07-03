@@ -96,6 +96,7 @@ class ParallelAsrEngine(
     private var backupEngine: StreamingAsrEngine? = null
     private var primaryConsumer: ExternalPcmConsumer? = null
     private var backupConsumer: ExternalPcmConsumer? = null
+    private val pushPcmEngineFactory = AsrPushPcmEngineFactory()
     private val deferredPcmLock = Any()
     private val deferredPcmBuffer = ByteArrayOutputStream()
 
@@ -122,8 +123,18 @@ class ParallelAsrEngine(
             0L
         }
 
-        primaryEngine = buildPushPcmEngine(primaryVendor, primaryListener, onPrimaryRequestDuration)
-        backupEngine = buildPushPcmEngine(backupVendor, backupListener, onRequestDuration = null)
+        primaryEngine = buildPushPcmEngine(
+            vendor = primaryVendor,
+            engineListener = primaryListener,
+            invocationMode = AsrEngineInvocationMode.ParallelPrimary,
+            onRequestDuration = onPrimaryRequestDuration
+        )
+        backupEngine = buildPushPcmEngine(
+            vendor = backupVendor,
+            engineListener = backupListener,
+            invocationMode = AsrEngineInvocationMode.ParallelBackup,
+            onRequestDuration = null
+        )
         primaryConsumer = primaryEngine as? ExternalPcmConsumer
         backupConsumer = backupEngine as? ExternalPcmConsumer
 
@@ -475,7 +486,7 @@ class ParallelAsrEngine(
             calculatePrimarySwitchTimeoutMs(
                 baseTimeoutMs,
                 primaryVendor,
-                isPrimaryStreamingForSwitch(),
+                isPrimaryNativeOrLocalStreamForSwitch(),
                 sensitivityTier
             )
 
@@ -594,14 +605,23 @@ class ParallelAsrEngine(
         return (bytes * 1000L / denom).coerceAtLeast(0L)
     }
 
-    private fun isPrimaryStreamingForSwitch(): Boolean = when (primaryVendor) {
-        AsrVendor.Volc -> prefs.volcStreamingEnabled
-        AsrVendor.DashScope -> prefs.isDashStreamingModelSelected()
-        AsrVendor.Soniox -> prefs.sonioxStreamingEnabled
-        AsrVendor.ElevenLabs -> prefs.elevenStreamingEnabled
-        AsrVendor.OpenAI -> prefs.isOpenAiStreamingEffective()
-        AsrVendor.XAsr -> true
-        else -> false
+    private fun isPrimaryNativeOrLocalStreamForSwitch(): Boolean = try {
+        when (
+            pushPcmEngineFactory.resolvePlan(
+                vendor = primaryVendor,
+                invocationMode = AsrEngineInvocationMode.ParallelPrimary,
+                preferences = prefs.asrEngineModePreferencesSnapshot(),
+                source = AsrEngineConstructionSource.App
+            ).family
+        ) {
+            AsrPushPcmEngineFamily.NativeStream,
+            AsrPushPcmEngineFamily.LocalStream -> true
+            AsrPushPcmEngineFamily.FileAdapter,
+            AsrPushPcmEngineFamily.PseudoStream -> false
+        }
+    } catch (t: Throwable) {
+        Log.w(TAG, "Failed to resolve primary stream mode for switch timeout", t)
+        false
     }
 
     private fun onTerminal(source: Source, t: Terminal) {
@@ -769,242 +789,34 @@ class ParallelAsrEngine(
         }
     }
 
-    private fun wrapPushFileEngine(
-        engineListener: StreamingAsrEngine.Listener,
-        recognizer: PcmBatchRecognizer
-    ): GenericPushFileAsrAdapter = GenericPushFileAsrAdapter(
-        context = context,
-        scope = scope,
-        prefs = prefs,
-        listener = engineListener,
-        recognizer = recognizer,
-        applyVoiceFilter = false
-    )
-
     private fun buildPushPcmEngine(
         vendor: AsrVendor,
         engineListener: StreamingAsrEngine.Listener,
+        invocationMode: AsrEngineInvocationMode,
         onRequestDuration: ((Long) -> Unit)?
     ): StreamingAsrEngine? {
-        val hasKeys = try {
-            when (vendor) {
-                AsrVendor.SiliconFlow -> prefs.hasSfKeys()
-                AsrVendor.OpenRouter -> prefs.hasOpenRouterKeys()
-                else -> prefs.hasVendorKeys(vendor)
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to read keys for vendor=$vendor", t)
-            false
-        }
-        if (!hasKeys) return null
+        if (!hasRequiredVendorConfiguration(vendor)) return null
 
-        return when (vendor) {
-            AsrVendor.Volc -> if (prefs.volcStreamingEnabled) {
-                VolcStreamAsrEngine(context, scope, prefs, engineListener, externalPcmMode = true)
-            } else {
-                if (prefs.volcFileStandardEnabled) {
-                    wrapPushFileEngine(
-                        engineListener,
-                        VolcStandardFileAsrEngine(
-                            context,
-                            scope,
-                            prefs,
-                            engineListener,
-                            onRequestDuration = onRequestDuration
-                        )
-                    )
-                } else {
-                    wrapPushFileEngine(
-                        engineListener,
-                        VolcFileAsrEngine(
-                            context,
-                            scope,
-                            prefs,
-                            engineListener,
-                            onRequestDuration = onRequestDuration
-                        )
-                    )
-                }
-            }
-            AsrVendor.SiliconFlow -> SiliconFlowFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                onRequestDuration = onRequestDuration
-            ).let { wrapPushFileEngine(engineListener, it) }
-            AsrVendor.ElevenLabs -> if (prefs.elevenStreamingEnabled) {
-                ElevenLabsStreamAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    externalPcmMode = true
-                )
-            } else {
-                ElevenLabsFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = onRequestDuration
-                )
-                    .let { wrapPushFileEngine(engineListener, it) }
-            }
-            AsrVendor.OpenAI -> if (prefs.isOpenAiStreamingEffective()) {
-                OpenAiRealtimeAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    externalPcmMode = true
-                )
-            } else {
-                OpenAiFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = onRequestDuration
-                ).let { wrapPushFileEngine(engineListener, it) }
-            }
-            AsrVendor.OpenRouter -> OpenRouterFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                onRequestDuration = onRequestDuration
-            )
-                .let { wrapPushFileEngine(engineListener, it) }
-            AsrVendor.DashScope -> if (prefs.isDashStreamingModelSelected()) {
-                DashscopeStreamAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    externalPcmMode = true
-                )
-            } else {
-                DashscopeFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = onRequestDuration
-                )
-                    .let { wrapPushFileEngine(engineListener, it) }
-            }
-            AsrVendor.Gemini -> GeminiFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                onRequestDuration = onRequestDuration
-            )
-                .let { wrapPushFileEngine(engineListener, it) }
-            AsrVendor.MiMo -> MiMoFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                onRequestDuration = onRequestDuration
-            )
-                .let { wrapPushFileEngine(engineListener, it) }
-            AsrVendor.Soniox -> if (prefs.sonioxStreamingEnabled) {
-                SonioxStreamAsrEngine(context, scope, prefs, engineListener, externalPcmMode = true)
-            } else {
-                SonioxFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = onRequestDuration
-                )
-                    .let { wrapPushFileEngine(engineListener, it) }
-            }
-            AsrVendor.StepAudio -> StepAudioFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                onRequestDuration = onRequestDuration
-            )
-                .let { wrapPushFileEngine(engineListener, it) }
-            AsrVendor.Zhipu -> ZhipuFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                onRequestDuration = onRequestDuration
-            )
-                .let { wrapPushFileEngine(engineListener, it) }
-            AsrVendor.SenseVoice -> if (prefs.svPseudoStreamEnabled) {
-                SenseVoicePushPcmPseudoStreamAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = onRequestDuration
-                )
-            } else {
-                SenseVoiceFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = onRequestDuration
-                )
-                    .let { wrapPushFileEngine(engineListener, it) }
-            }
-            AsrVendor.FunAsrNano -> FunAsrNanoFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                onRequestDuration = onRequestDuration
-            )
-                .let { wrapPushFileEngine(engineListener, it) }
-            AsrVendor.Qwen3Asr -> Qwen3AsrFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                onRequestDuration = onRequestDuration
-            )
-                .let { wrapPushFileEngine(engineListener, it) }
-            AsrVendor.Parakeet -> ParakeetFileAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                onRequestDuration = onRequestDuration
-            )
-                .let { wrapPushFileEngine(engineListener, it) }
-            AsrVendor.FireRedAsr -> if (prefs.frPseudoStreamEnabled) {
-                FireRedAsrPushPcmPseudoStreamAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = onRequestDuration
-                )
-            } else {
-                FireRedAsrFileAsrEngine(
-                    context,
-                    scope,
-                    prefs,
-                    engineListener,
-                    onRequestDuration = onRequestDuration
-                )
-                    .let { wrapPushFileEngine(engineListener, it) }
-            }
-            AsrVendor.XAsr -> XAsrStreamAsrEngine(
-                context,
-                scope,
-                prefs,
-                engineListener,
-                externalPcmMode = true
-            )
+        return pushPcmEngineFactory.create(
+            context = context,
+            scope = scope,
+            prefs = prefs,
+            listener = engineListener,
+            vendor = vendor,
+            invocationMode = invocationMode,
+            preferences = prefs.asrEngineModePreferencesSnapshot(),
+            source = AsrEngineConstructionSource.App,
+            onRequestDuration = onRequestDuration,
+            applyVoiceFilter = false
+        )
+    }
+
+    private fun hasRequiredVendorConfiguration(vendor: AsrVendor): Boolean {
+        return try {
+            isAsrVendorConfigured(context, prefs, vendor)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to check vendor configuration for vendor=$vendor", t)
+            false
         }
     }
 }
