@@ -13,6 +13,7 @@ CLAUDE.md
 CONTEXT.md
 .agents/
 .claude/
+.scratch/
 references/
 docs/
 app/build
