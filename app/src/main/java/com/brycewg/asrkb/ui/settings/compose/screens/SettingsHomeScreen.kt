@@ -424,7 +424,12 @@ private data class SettingsHomeSnapshot(
         fun fromPrefs(context: Context, prefs: Prefs): SettingsHomeSnapshot {
             val floatingEnabled = prefs.floatingAsrEnabled
             val volumeKeyEnabled = prefs.volumeKeyRecordingEnabled
-            val accessibilityMissing = (floatingEnabled || volumeKeyEnabled) && !isAccessibilityServiceEnabled(context)
+            val imeBridgeEnabled = prefs.floatingImeBridgeEnabled
+            val accessibilityMissing = moreInputNeedsAccessibility(
+                floatingEnabled = floatingEnabled,
+                volumeKeyEnabled = volumeKeyEnabled,
+                imeBridgeEnabled = imeBridgeEnabled
+            ) && !isAccessibilityServiceEnabled(context)
             return SettingsHomeSnapshot(
                 oneClickSetupSummary = oneClickSetupSummary(context, prefs),
                 inputControlSummary = inputControlSummary(context, prefs),
@@ -463,6 +468,12 @@ private fun moreInputSummary(
         else -> R.string.home_summary_more_input_disabled
     }
 )
+
+private fun moreInputNeedsAccessibility(
+    floatingEnabled: Boolean,
+    volumeKeyEnabled: Boolean,
+    imeBridgeEnabled: Boolean
+): Boolean = volumeKeyEnabled || (floatingEnabled && !imeBridgeEnabled)
 
 private fun inputControlSummary(context: Context, prefs: Prefs): String = context.getString(
     if (prefs.micTapToggleEnabled) {
@@ -504,6 +515,9 @@ private fun activePromptPresetTitle(prefs: Prefs): String {
 }
 
 private fun oneClickSetupSummary(context: Context, prefs: Prefs): String {
+    val floatingEnabled = prefs.floatingAsrEnabled
+    val volumeKeyEnabled = prefs.volumeKeyRecordingEnabled
+    val imeBridgeEnabled = prefs.floatingImeBridgeEnabled
     val checks = buildList {
         add(isOurImeEnabled(context))
         add(isOurImeCurrent(context))
@@ -511,10 +525,15 @@ private fun oneClickSetupSummary(context: Context, prefs: Prefs): String {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             add(hasNotificationPermission(context))
         }
-        if (prefs.floatingAsrEnabled) {
+        if (floatingEnabled) {
             add(Settings.canDrawOverlays(context))
         }
-        if (prefs.floatingAsrEnabled || prefs.volumeKeyRecordingEnabled) {
+        if (moreInputNeedsAccessibility(
+                floatingEnabled = floatingEnabled,
+                volumeKeyEnabled = volumeKeyEnabled,
+                imeBridgeEnabled = imeBridgeEnabled
+            )
+        ) {
             add(isAccessibilityServiceEnabled(context))
         }
     }
