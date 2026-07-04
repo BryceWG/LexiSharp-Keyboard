@@ -15,6 +15,8 @@ import androidx.compose.material.icons.automirrored.rounded.Article
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.OpenInBrowser
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.StopCircle
 import androidx.compose.material.icons.rounded.WorkspacePremium
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -184,22 +186,22 @@ fun AboutSettingsScreen(
                         AboutText(latest, uiMode)
                     }
                     SettingsPreferenceGroup(
-                        SettingsEntry.Switch(
+                        SettingsEntry.Action(
                             id = "about_debug_recording",
                             titleRes = if (debugRecording) {
                                 R.string.btn_debug_stop_recording
                             } else {
                                 R.string.btn_debug_start_recording
                             },
-                            checked = debugRecording,
-                            onCheckedChange = {
-                                debugRecording = actions.setDebugRecording(it)
+                            icon = if (debugRecording) Icons.Rounded.StopCircle else Icons.Rounded.BugReport,
+                            onClick = {
+                                debugRecording = actions.setDebugRecording(!debugRecording)
                             }
                         ),
                         SettingsEntry.Action(
                             id = "about_debug_export",
                             titleRes = R.string.btn_debug_export,
-                            icon = Icons.Rounded.BugReport,
+                            icon = Icons.Rounded.Share,
                             onClick = actions::exportDebugLog
                         )
                     )

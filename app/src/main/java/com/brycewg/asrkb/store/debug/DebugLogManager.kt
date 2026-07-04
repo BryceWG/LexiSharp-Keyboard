@@ -1,3 +1,8 @@
+/**
+ * 诊断日志的本地写入、导出与详细支持日志状态管理。
+ *
+ * 归属模块：store/debug
+ */
 package com.brycewg.asrkb.store.debug
 
 import android.app.ActivityManager
@@ -20,6 +25,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -49,6 +56,7 @@ object DebugLogManager {
     private const val KEY_LAST_EXIT_STATUS = "last_exit_status"
     private const val KEY_LAST_EXIT_LABEL = "last_exit_label"
     private const val KEY_LAST_HANDLED_EXIT_TS = "last_handled_exit_ts"
+    private const val KEY_CLEAR_ON_NEXT_VERBOSE_START = "clear_on_next_verbose_start"
     private const val MAX_STRING_VALUE = 240
     private const val MAX_ERROR_STACK = 512
 
@@ -66,10 +74,23 @@ object DebugLogManager {
         val description: String?
     )
 
-    private data class PendingLine(
-        val context: Context,
-        val line: String
-    )
+    private sealed interface PendingWrite {
+        val context: Context
+
+        data class Line(
+            override val context: Context,
+            val line: String
+        ) : PendingWrite
+
+        data class ClearLogs(
+            override val context: Context
+        ) : PendingWrite
+
+        data class Barrier(
+            override val context: Context,
+            val latch: CountDownLatch
+        ) : PendingWrite
+    }
 
     @Volatile
     private var recording: Boolean = false
@@ -101,8 +122,11 @@ object DebugLogManager {
     @Volatile
     private var latestExitInfo: LastExitInfo? = null
 
+    @Volatile
+    private var shareUriResolverForTest: ((Context, File) -> Uri)? = null
+
     private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val writeChannel = Channel<PendingLine>(capacity = 512)
+    private val writeChannel = Channel<PendingWrite>(capacity = Channel.UNLIMITED)
 
     fun initialize(context: Context) {
         val app = context.applicationContext
@@ -136,10 +160,38 @@ object DebugLogManager {
 
     fun isRecording(): Boolean = recording
 
+    internal fun resetForTest(context: Context) {
+        val app = context.applicationContext
+        synchronized(this) {
+            appContext = app
+            sessionId = "test-session"
+            processName = app.packageName
+            versionName = BuildConfig.VERSION_NAME
+            versionCode = BuildConfig.VERSION_CODE.toLong()
+            recording = false
+            initialized = true
+            latestExitInfo = null
+            shareUriResolverForTest = null
+            ensureWriterStarted()
+        }
+        flushForTest(app)
+        metaPrefs(app).edit().clear().commit()
+        clearLogFilesDirect(app)
+    }
+
+    internal fun setShareUriResolverForTest(resolver: ((Context, File) -> Uri)?) {
+        shareUriResolverForTest = resolver
+    }
+
+    internal fun flushForTest(context: Context, timeoutMs: Long = 5_000L): Boolean {
+        return awaitPendingWrites(context, timeoutMs)
+    }
+
     @Synchronized
     fun start(context: Context) {
         initialize(context)
         if (recording) return
+        clearLogsIfNeededBeforeVerboseStart(context.applicationContext)
         recording = true
         updateProcessStateSummary("mode=verbose;support=1")
         logBase(
@@ -408,6 +460,10 @@ object DebugLogManager {
     fun buildShareIntent(context: Context): ShareIntentResult {
         initialize(context)
         try {
+            if (!awaitPendingWrites(context.applicationContext)) {
+                Log.e(TAG, "Timed out waiting for diagnostics writer before export")
+                return ShareIntentResult.Error(ShareError.Failed)
+            }
             val src = activeLogFile(context)
             if (!src.exists() || src.length() <= 0) return ShareIntentResult.Error(ShareError.NoLog)
 
@@ -426,7 +482,7 @@ object DebugLogManager {
             }
 
             val uri: Uri = try {
-                FileProvider.getUriForFile(context, context.packageName + ".fileprovider", dst)
+                resolveShareUri(context, dst)
             } catch (e: Throwable) {
                 Log.e(TAG, "Failed to get Uri from FileProvider", e)
                 return ShareIntentResult.Error(ShareError.Failed)
@@ -438,6 +494,7 @@ object DebugLogManager {
                 putExtra(Intent.EXTRA_SUBJECT, "ASRKB Diagnostics Log")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
+            markClearOnNextVerboseStart(context)
             return ShareIntentResult.Success(intent, name)
         } catch (t: Throwable) {
             Log.e(TAG, "Error building share intent", t)
@@ -452,7 +509,11 @@ object DebugLogManager {
         writeScope.launch {
             try {
                 for (pending in writeChannel) {
-                    appendLineDirect(pending.context, pending.line)
+                    when (pending) {
+                        is PendingWrite.Line -> appendLineDirect(pending.context, pending.line)
+                        is PendingWrite.ClearLogs -> clearLogFilesDirect(pending.context)
+                        is PendingWrite.Barrier -> pending.latch.countDown()
+                    }
                 }
             } catch (t: Throwable) {
                 writerStarted = false
@@ -463,12 +524,26 @@ object DebugLogManager {
 
     private fun enqueueLine(context: Context, line: String) {
         ensureWriterStarted()
-        val queued = writeChannel.trySend(PendingLine(context.applicationContext, line)).isSuccess
-        if (!queued) {
-            writeScope.launch {
-                appendLineDirect(context.applicationContext, line)
-            }
-        }
+        val queued = writeChannel.trySend(PendingWrite.Line(context.applicationContext, line)).isSuccess
+        if (!queued) appendLineDirect(context.applicationContext, line)
+    }
+
+    private fun enqueueClearLogs(context: Context) {
+        ensureWriterStarted()
+        val queued = writeChannel.trySend(PendingWrite.ClearLogs(context.applicationContext)).isSuccess
+        if (!queued) clearLogFilesDirect(context.applicationContext)
+    }
+
+    private fun awaitPendingWrites(context: Context, timeoutMs: Long = 5_000L): Boolean {
+        val latch = CountDownLatch(1)
+        ensureWriterStarted()
+        val queued = writeChannel.trySend(PendingWrite.Barrier(context.applicationContext, latch)).isSuccess
+        return if (queued) latch.await(timeoutMs, TimeUnit.MILLISECONDS) else false
+    }
+
+    private fun resolveShareUri(context: Context, file: File): Uri {
+        shareUriResolverForTest?.let { return it(context, file) }
+        return FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
     }
 
     @Synchronized
@@ -497,6 +572,34 @@ object DebugLogManager {
         if (file.exists()) return file
         val legacy = File(dir, LEGACY_FILE_NAME)
         return if (legacy.exists()) legacy else file
+    }
+
+    private fun clearLogsIfNeededBeforeVerboseStart(context: Context) {
+        val prefs = metaPrefs(context)
+        if (!prefs.getBoolean(KEY_CLEAR_ON_NEXT_VERBOSE_START, false)) return
+        prefs.edit().putBoolean(KEY_CLEAR_ON_NEXT_VERBOSE_START, false).apply()
+        enqueueClearLogs(context)
+    }
+
+    private fun markClearOnNextVerboseStart(context: Context) {
+        metaPrefs(context).edit()
+            .putBoolean(KEY_CLEAR_ON_NEXT_VERBOSE_START, true)
+            .apply()
+    }
+
+    @Synchronized
+    private fun clearLogFilesDirect(context: Context) {
+        try {
+            val dir = File(context.noBackupFilesDir, DIR_NAME)
+            val files = listOf(File(dir, FILE_NAME), File(dir, LEGACY_FILE_NAME))
+            files.forEach { file ->
+                if (file.exists() && !file.delete()) {
+                    FileOutputStream(file, false).use { it.flush() }
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed clearing diagnostics log files", t)
+        }
     }
 
     private fun truncateKeepTail(file: File, keepBytes: Long) {
