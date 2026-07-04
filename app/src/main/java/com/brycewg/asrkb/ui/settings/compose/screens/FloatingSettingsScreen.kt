@@ -31,6 +31,8 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.imebridge.ImeBridgeClient
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
+import com.brycewg.asrkb.ui.floating.floatingAsrNeedsAccessibility as policyFloatingAsrNeedsAccessibility
+import com.brycewg.asrkb.ui.floating.floatingInputNeedsAccessibility as policyFloatingInputNeedsAccessibility
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsChoiceSheet
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsChoiceSheetState
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsFeatureExplainerDialog
@@ -183,10 +185,17 @@ fun FloatingSettingsScreen(
         !uiState.imeBridgeEnabled
 
     fun floatingAsrNeedsAccessibility(): Boolean =
-        uiState.asrEnabled && floatingAsrNeedsAccessibilityWhenEnabled()
+        policyFloatingAsrNeedsAccessibility(
+            floatingEnabled = uiState.asrEnabled,
+            imeBridgeEnabled = uiState.imeBridgeEnabled
+        )
 
     fun floatingInputNeedsAccessibility(): Boolean =
-        floatingAsrNeedsAccessibility() || uiState.volumeKeyRecordingEnabled
+        policyFloatingInputNeedsAccessibility(
+            floatingEnabled = uiState.asrEnabled,
+            volumeKeyEnabled = uiState.volumeKeyRecordingEnabled,
+            imeBridgeEnabled = uiState.imeBridgeEnabled
+        )
 
     fun formatImeBridgeStatus(result: com.brycewg.asrkb.imebridge.ImeBridgeResult): String {
         val target = result.targetPackage ?: context.getString(R.string.status_floating_ime_bridge_unknown_target)

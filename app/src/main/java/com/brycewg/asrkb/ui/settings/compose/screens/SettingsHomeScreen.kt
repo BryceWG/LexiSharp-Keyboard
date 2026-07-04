@@ -52,6 +52,7 @@ import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.store.ApiLogStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.AsrVendorUi
+import com.brycewg.asrkb.ui.floating.floatingInputNeedsAccessibility
 import com.brycewg.asrkb.ui.settings.compose.core.BibiSettingsRoute
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsActionController
@@ -425,7 +426,7 @@ private data class SettingsHomeSnapshot(
             val floatingEnabled = prefs.floatingAsrEnabled
             val volumeKeyEnabled = prefs.volumeKeyRecordingEnabled
             val imeBridgeEnabled = prefs.floatingImeBridgeEnabled
-            val accessibilityMissing = moreInputNeedsAccessibility(
+            val accessibilityMissing = floatingInputNeedsAccessibility(
                 floatingEnabled = floatingEnabled,
                 volumeKeyEnabled = volumeKeyEnabled,
                 imeBridgeEnabled = imeBridgeEnabled
@@ -468,12 +469,6 @@ private fun moreInputSummary(
         else -> R.string.home_summary_more_input_disabled
     }
 )
-
-private fun moreInputNeedsAccessibility(
-    floatingEnabled: Boolean,
-    volumeKeyEnabled: Boolean,
-    imeBridgeEnabled: Boolean
-): Boolean = volumeKeyEnabled || (floatingEnabled && !imeBridgeEnabled)
 
 private fun inputControlSummary(context: Context, prefs: Prefs): String = context.getString(
     if (prefs.micTapToggleEnabled) {
@@ -528,7 +523,7 @@ private fun oneClickSetupSummary(context: Context, prefs: Prefs): String {
         if (floatingEnabled) {
             add(Settings.canDrawOverlays(context))
         }
-        if (moreInputNeedsAccessibility(
+        if (floatingInputNeedsAccessibility(
                 floatingEnabled = floatingEnabled,
                 volumeKeyEnabled = volumeKeyEnabled,
                 imeBridgeEnabled = imeBridgeEnabled

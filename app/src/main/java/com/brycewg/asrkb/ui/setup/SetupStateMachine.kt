@@ -14,6 +14,7 @@ import androidx.core.net.toUri
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.floating.floatingInputNeedsAccessibility
 
 /**
  * 一键设置流程的状态机管理器
@@ -244,8 +245,12 @@ class SetupStateMachine(
             }
         }
 
-        // 4) 无障碍权限（悬浮球与音量键录音都依赖无障碍服务）
-        val needA11y = prefs.floatingAsrEnabled || prefs.volumeKeyRecordingEnabled
+        // 4) 无障碍权限（音量键始终依赖；悬浮球在输入法桥接关闭时依赖）
+        val needA11y = floatingInputNeedsAccessibility(
+            floatingEnabled = prefs.floatingAsrEnabled,
+            volumeKeyEnabled = prefs.volumeKeyRecordingEnabled,
+            imeBridgeEnabled = prefs.floatingImeBridgeEnabled
+        )
         if (!state.askedA11y && needA11y && !hasAccessibilityPermission()) {
             Log.d(TAG, "Requesting accessibility permission")
             showSetupMessage(R.string.toast_need_accessibility_perm)
@@ -284,7 +289,11 @@ class SetupStateMachine(
         val micGranted = hasMicrophonePermission()
         val needOverlay = prefs.floatingAsrEnabled
         val overlayGranted = !needOverlay || hasOverlayPermission()
-        val needA11y = prefs.floatingAsrEnabled || prefs.volumeKeyRecordingEnabled
+        val needA11y = floatingInputNeedsAccessibility(
+            floatingEnabled = prefs.floatingAsrEnabled,
+            volumeKeyEnabled = prefs.volumeKeyRecordingEnabled,
+            imeBridgeEnabled = prefs.floatingImeBridgeEnabled
+        )
         val a11yGranted = !needA11y || hasAccessibilityPermission()
 
         // Android 13+ 通知权限仅作为增强项，缺失不阻塞核心功能

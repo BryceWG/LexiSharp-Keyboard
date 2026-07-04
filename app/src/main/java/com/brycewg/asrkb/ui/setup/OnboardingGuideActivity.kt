@@ -31,6 +31,7 @@ import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.BaseActivity
 import com.brycewg.asrkb.ui.DownloadSourceOption
+import com.brycewg.asrkb.ui.floating.floatingInputNeedsAccessibility
 import com.brycewg.asrkb.ui.settings.compose.components.ProPromoDialogHost
 import com.brycewg.asrkb.ui.settings.compose.components.ProPromoDialogUiState
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialog
@@ -159,6 +160,11 @@ class OnboardingGuideActivity : BaseActivity() {
 
     private fun buildPermissionGroups(): List<OnboardingPermissionGroup> {
         val floatingEnabled = prefs.floatingAsrEnabled
+        val a11yRequired = floatingInputNeedsAccessibility(
+            floatingEnabled = floatingEnabled,
+            volumeKeyEnabled = prefs.volumeKeyRecordingEnabled,
+            imeBridgeEnabled = prefs.floatingImeBridgeEnabled
+        )
         val overlayGranted = hasOverlayPermission()
         val a11yGranted = hasAccessibilityPermission()
         val requiredItems = buildList {
@@ -195,6 +201,8 @@ class OnboardingGuideActivity : BaseActivity() {
                         onRequest = ::requestOverlayPermission
                     )
                 )
+            }
+            if (a11yRequired) {
                 add(
                     OnboardingPermissionItem(
                         titleRes = R.string.onboarding_permission_a11y_title,
@@ -215,6 +223,8 @@ class OnboardingGuideActivity : BaseActivity() {
                         onRequest = ::requestOverlayPermission
                     )
                 )
+            }
+            if (!a11yRequired) {
                 add(
                     OnboardingPermissionItem(
                         titleRes = R.string.onboarding_permission_a11y_title,
