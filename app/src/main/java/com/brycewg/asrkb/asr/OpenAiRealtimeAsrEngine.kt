@@ -77,6 +77,9 @@ class OpenAiRealtimeAsrEngine(
     private var finalizeJob: Job? = null
 
     @Volatile private var targetSampleRate: Int = SAMPLE_RATE_OFFICIAL
+    @Volatile private var externalVadInputLeveler = VadInputLevelerBranch(
+        sampleRate = SAMPLE_RATE_OFFICIAL
+    )
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
 
@@ -104,6 +107,7 @@ class OpenAiRealtimeAsrEngine(
         val endpoint = prefs.oaAsrEndpoint.ifBlank { Prefs.DEFAULT_OA_ASR_ENDPOINT }.trim()
         val url = endpoint.toHttpUrlOrNull()
         targetSampleRate = resolveTargetSampleRate(endpoint)
+        externalVadInputLeveler = VadInputLevelerBranch(sampleRate = targetSampleRate)
         if (url != null &&
             url.host.equals(OFFICIAL_HOST, ignoreCase = true) &&
             prefs.oaAsrApiKey.isBlank()
@@ -191,6 +195,7 @@ class OpenAiRealtimeAsrEngine(
         val primaryWsUrl = buildRealtimeWsUrl(endpoint)
         val effectiveEndpoint = if (primaryWsUrl != null) endpoint else Prefs.DEFAULT_OA_ASR_ENDPOINT
         targetSampleRate = resolveTargetSampleRate(effectiveEndpoint)
+        externalVadInputLeveler = VadInputLevelerBranch(sampleRate = targetSampleRate)
         val wsUrl = primaryWsUrl
             ?: buildRealtimeWsUrl(Prefs.DEFAULT_OA_ASR_ENDPOINT)
             ?: run {
@@ -335,19 +340,22 @@ class OpenAiRealtimeAsrEngine(
                 prefs = prefs,
                 sampleRate = targetSampleRate
             )
+            val vadInputLeveler = VadInputLevelerBranch(sampleRate = targetSampleRate)
             val maxFrames = (PREBUFFER_MS / chunkMillis).coerceAtLeast(1)
 
             try {
                 audioManager.startCapture().collect { chunk ->
                     if (!isActive || !running.get()) return@collect
 
+                    val leveled = vadInputLeveler.process(chunk)
+
                     try {
-                        listener.onAmplitude(calculateNormalizedAmplitude(chunk))
+                        listener.onAmplitude(leveled.stableAmplitude)
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to compute amplitude", t)
                     }
 
-                    if (vadDetector?.shouldStop(chunk, chunk.size) == true) {
+                    if (vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true) {
                         Log.d(TAG, "VAD silence detected, stopping stream")
                         notifyStoppedIfNeeded()
                         stop()
@@ -403,8 +411,9 @@ class OpenAiRealtimeAsrEngine(
             else -> return
         }
 
+        val leveled = externalVadInputLeveler.process(pcmForSend)
         try {
-            listener.onAmplitude(calculateNormalizedAmplitude(pcm))
+            listener.onAmplitude(leveled.stableAmplitude)
         } catch (_: Throwable) {}
 
         if (!wsReady.get()) {

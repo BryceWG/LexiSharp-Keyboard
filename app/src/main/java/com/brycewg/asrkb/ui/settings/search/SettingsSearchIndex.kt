@@ -120,7 +120,6 @@ object SettingsSearchIndex {
         item(R.string.label_keyboard_height, R.string.section_ui_settings)
         item(R.string.label_haptic_feedback_strength, R.string.section_ui_settings)
         item(R.string.label_keyboard_bottom_padding, R.string.section_ui_settings)
-        item(R.string.label_waveform_sensitivity, R.string.section_ui_settings)
         item(R.string.label_language, R.string.section_ui_settings)
         item(R.string.label_extension_buttons, R.string.section_ui_settings)
     }
@@ -156,7 +155,7 @@ object SettingsSearchIndex {
         item(R.string.label_recording_auto_stop_mode, R.string.section_silence_autostop, "auto stop", "判停")
         item(R.string.label_auto_stop_silence, R.string.label_auto_stop_silence)
         item(R.string.label_silence_window_ms, R.string.label_auto_stop_silence)
-        item(R.string.label_silence_sensitivity, R.string.label_auto_stop_silence)
+        item(R.string.label_silence_sensitivity, R.string.label_auto_stop_silence, "vad", "判停", "灵敏度")
         item(R.string.label_recording_max_duration, R.string.section_silence_autostop, "maximum duration", "最长")
         item(R.string.label_asr_vendor, R.string.label_asr_vendor)
         item(R.string.label_backup_asr_vendor, R.string.label_backup_asr_engine)

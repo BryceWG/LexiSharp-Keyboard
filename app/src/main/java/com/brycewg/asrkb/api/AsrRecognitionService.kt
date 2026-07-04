@@ -32,6 +32,8 @@ import kotlinx.coroutines.launch
 /**
  * Android 标准语音识别服务实现
  */
+internal fun recognitionServiceRmsFromAmplitude(amplitude: Float): Float = -2f + amplitude * 12f
+
 class AsrRecognitionService : RecognitionService() {
 
     companion object {
@@ -548,7 +550,7 @@ class AsrRecognitionService : RecognitionService() {
         override fun onAmplitude(amplitude: Float) {
             if (canceled || finished) return
             // 将 0.0-1.0 映射到 Android 惯例的 RMS 范围 (-2.0 to 10.0)
-            val rms = -2f + amplitude * 12f
+            val rms = recognitionServiceRmsFromAmplitude(amplitude)
             try {
                 callback.rmsChanged(rms)
             } catch (t: Throwable) {

@@ -244,7 +244,7 @@
   <string name="option_recording_auto_stop_max_duration">Timeout stop</string>
   <string name="label_auto_stop_silence">Auto stop when no speech</string>
   <string name="label_silence_window_ms">Stop window (ms)</string>
-  <string name="label_silence_sensitivity">Sensitivity (1-10; higher = more sensitive)</string>
+  <string name="label_silence_sensitivity">Stop-recording sensitivity (1-10; higher stops sooner)</string>
   <string name="label_recording_max_duration">Maximum recording duration</string>
   <string name="label_recording_max_duration_value_s">%1$d s</string>
 
@@ -290,7 +290,7 @@
   <string name="label_return_prev_ime_on_hide">Switch to specified IME when hidden</string>
   <string name="toast_bt_connect_permission_required">Bluetooth connect permission is required to use headset mic</string>
   <string name="toast_bt_connect_permission_denied">Bluetooth connect permission denied; headset priority disabled</string>
-  <string name="toast_vad_sensitivity_applied">VAD sensitivity updated; will apply to the next recording</string>
+  <string name="toast_vad_sensitivity_applied">Stop sensitivity updated; will apply to the next recording</string>
 
   <!-- Privacy & Data toggles -->
   <string name="section_data_retention">Data Retention</string>

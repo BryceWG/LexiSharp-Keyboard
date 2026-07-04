@@ -99,6 +99,7 @@ class VolcStreamAsrEngine(
     private val sampleRate = 16000
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+    private val externalVadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
     override val isRunning: Boolean
         get() = running.get()
@@ -117,6 +118,7 @@ class VolcStreamAsrEngine(
             }
         }
         running.set(true)
+        externalVadInputLeveler.reset()
         synchronized(prebufferLock) { prebuffer.clear() }
         audioLastSent.set(false)
         openWebSocket(startAudio = !externalPcmMode)
@@ -312,8 +314,9 @@ class VolcStreamAsrEngine(
             Log.w(TAG, "ignore frame: sr=$sampleRate ch=$channels")
             return
         }
+        val leveled = externalVadInputLeveler.process(pcm)
         try {
-            listener.onAmplitude(com.brycewg.asrkb.asr.calculateNormalizedAmplitude(pcm))
+            listener.onAmplitude(leveled.stableAmplitude)
         } catch (
             _: Throwable
         ) { }
@@ -374,6 +377,7 @@ class VolcStreamAsrEngine(
                 prefs = prefs,
                 sampleRate = sampleRate
             )
+            val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
             val maxFrames = (2000 / chunkMillis).coerceAtLeast(1) // 预缓冲上限≈2s
 
@@ -382,18 +386,17 @@ class VolcStreamAsrEngine(
                 audioManager.startCapture().collect { audioChunk ->
                     if (!isActive || !running.get()) return@collect
 
+                    val leveled = vadInputLeveler.process(audioChunk)
+
                     // 计算并发送音频振幅（用于波形动画）
                     try {
-                        val amplitude = com.brycewg.asrkb.asr.calculateNormalizedAmplitude(
-                            audioChunk
-                        )
-                        listener.onAmplitude(amplitude)
+                        listener.onAmplitude(leveled.stableAmplitude)
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to calculate amplitude", t)
                     }
 
                     // VAD 自动判停
-                    if (vadDetector?.shouldStop(audioChunk, audioChunk.size) == true) {
+                    if (vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true) {
                         Log.d(TAG, "Silence detected, stopping recording")
                         try {
                             listener.onStopped()

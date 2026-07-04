@@ -43,6 +43,7 @@ abstract class PushPcmPseudoStreamAsrEngine(
 
     private val sessionBuffer = ByteArrayOutputStream()
     private val segmentBuffer = ByteArrayOutputStream()
+    private var vadInputLeveler = VadInputLevelerBranch()
     private var segmentElapsedMs: Long = 0L
 
     override val isRunning: Boolean
@@ -62,6 +63,7 @@ abstract class PushPcmPseudoStreamAsrEngine(
         finalized.set(false)
         sessionBuffer.reset()
         segmentBuffer.reset()
+        vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
         segmentElapsedMs = 0L
     }
 
@@ -73,6 +75,7 @@ abstract class PushPcmPseudoStreamAsrEngine(
         } catch (t: Throwable) {
             Log.w(TAG, "notify onStopped failed", t)
         }
+        vadInputLeveler.finishDebugSession("stop")
         finalizeOnce()
     }
 
@@ -84,8 +87,9 @@ abstract class PushPcmPseudoStreamAsrEngine(
         }
         if (pcm.isEmpty()) return
 
+        val leveled = vadInputLeveler.process(pcm)
         try {
-            listener.onAmplitude(calculateNormalizedAmplitude(pcm))
+            listener.onAmplitude(leveled.stableAmplitude)
         } catch (t: Throwable) {
             Log.w(TAG, "amp cb failed", t)
         }
@@ -131,6 +135,7 @@ abstract class PushPcmPseudoStreamAsrEngine(
 
     private fun finalizeOnce() {
         if (!finalized.compareAndSet(false, true)) return
+        vadInputLeveler.finishDebugSession("finalize")
         if (segmentBuffer.size() > 0) {
             segmentBuffer.reset()
         }

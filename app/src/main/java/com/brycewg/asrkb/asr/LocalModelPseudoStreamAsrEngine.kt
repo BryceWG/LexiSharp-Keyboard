@@ -162,14 +162,16 @@ abstract class LocalModelPseudoStreamAsrEngine(
                     prefs = prefs,
                     sampleRate = sampleRate
                 )
+                val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
                 audioManager.startCapture().collect { audioChunk ->
                     if (!running.get()) return@collect
 
+                    val leveled = vadInputLeveler.process(audioChunk)
+
                     // 振幅回调（波形）
                     try {
-                        val amplitude = calculateNormalizedAmplitude(audioChunk)
-                        listener.onAmplitude(amplitude)
+                        listener.onAmplitude(leveled.stableAmplitude)
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to calculate amplitude", t)
                     }
@@ -225,7 +227,7 @@ abstract class LocalModelPseudoStreamAsrEngine(
                     val stopVad = stopVadDetector
                     if (autoStopEnabled && stopVad != null && audioChunk.isNotEmpty()) {
                         val shouldStop = try {
-                            stopVad.shouldStop(audioChunk, audioChunk.size)
+                            stopVad.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size)
                         } catch (t: Throwable) {
                             Log.e(TAG, "Stop VAD shouldStop failed", t)
                             false

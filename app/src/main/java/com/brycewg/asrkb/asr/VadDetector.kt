@@ -9,6 +9,47 @@ import com.k2fsa.sherpa.onnx.VadModelConfig
 import java.util.ArrayDeque
 import java.util.concurrent.atomic.AtomicInteger
 
+data class VadTuning(
+    val name: String,
+    val threshold: Float,
+    val minSilenceDuration: Float,
+    val minSpeechDuration: Float = 0.25f,
+    val windowSize: Int = 256,
+    val speechHangoverMs: Int = 250,
+    val initialDebounceMs: Int = 2000
+) {
+    companion object {
+        const val LEVELS: Int = 10
+
+        val Default = tuningForLevel(Prefs.DEFAULT_SILENCE_SENSITIVITY)
+
+        val ConservativeFilter = VadTuning(
+            name = "conservative_filter",
+            threshold = 0.40f,
+            minSilenceDuration = 0.55f,
+            minSpeechDuration = 0.25f,
+            windowSize = 256,
+            speechHangoverMs = 300,
+            initialDebounceMs = 3000
+        )
+
+        fun tuningForLevel(level: Int): VadTuning {
+            val lvl = level.coerceIn(1, LEVELS)
+            val ratio = (lvl - 1).toFloat() / (LEVELS - 1).toFloat()
+            val conservativeRatio = 1f - ratio
+            return VadTuning(
+                name = "level_$lvl",
+                threshold = 0.28f + 0.22f * ratio,
+                minSilenceDuration = 0.30f + 0.30f * conservativeRatio,
+                minSpeechDuration = 0.25f,
+                windowSize = 256,
+                speechHangoverMs = (250 + 300 * conservativeRatio).toInt(),
+                initialDebounceMs = (1400 + 1800 * conservativeRatio).toInt()
+            )
+        }
+    }
+}
+
 /**
  * 基于 Ten VAD（sherpa-onnx）的语音活动检测与判停器。
  *
@@ -24,13 +65,15 @@ import java.util.concurrent.atomic.AtomicInteger
  * @param context Android Context，用于访问 AssetManager
  * @param sampleRate 音频采样率（Hz），必须与 PCM 数据一致
  * @param windowMs 连续非语音的时长阈值（毫秒），超过此值判定为静音
- * @param sensitivityLevel 灵敏度档位（1-10），值越大越容易判定为静音
+ * @param sensitivityLevel 判停灵敏度档位（1-10），值越大越容易判定为无人说话。
+ * @param tuning 内部 VAD 参数；默认按 sensitivityLevel 映射，也可由空音频过滤等内部路径显式指定。
  */
 class VadDetector(
     private val context: Context,
     private val sampleRate: Int,
     private val windowMs: Int,
-    sensitivityLevel: Int
+    sensitivityLevel: Int = Prefs.DEFAULT_SILENCE_SENSITIVITY,
+    private val tuning: VadTuning = VadTuning.tuningForLevel(sensitivityLevel)
 ) {
     /**
      * 单帧分析结果：
@@ -42,28 +85,9 @@ class VadDetector(
     companion object {
         private const val TAG = "VadDetector"
 
-        // 灵敏度档位总数（与设置滑块一致）
-        const val LEVELS: Int = 10
-
-        // 灵敏度映射到 VAD 的 minSilenceDuration 参数（单位：秒）
-        // 调整为更宽松的分段：低档位给更长的静音要求，减少“提前中断”。
-        // 规则：sensitivityLevel 越高，minSilenceDuration 越小（更敏感）。
-        private val MIN_SILENCE_DURATION_MAP: FloatArray = floatArrayOf(
-            0.55f, // 1  非常不敏感：至少 0.60s 静音才算非语音
-            0.50f, // 2
-            0.42f, // 3
-            0.35f, // 4
-            0.30f, // 5
-            0.25f, // 6
-            0.20f, // 7（默认附近）
-            0.16f, // 8
-            0.12f, // 9
-            0.08f // 10 更敏感
-        )
-
         private const val MAX_POOL_SIZE = 2
 
-        private data class VadPoolKey(val sampleRate: Int, val sensitivityLevel: Int)
+        private data class VadPoolKey(val sampleRate: Int, val tuning: VadTuning)
 
         private val poolLock = Any()
 
@@ -71,21 +95,13 @@ class VadDetector(
         private var poolKey: VadPoolKey? = null
         private val vadPool: ArrayDeque<Vad> = ArrayDeque()
 
-        private fun buildVadModelConfig(sampleRate: Int, sensitivityLevel: Int): VadModelConfig {
-            val lvl = sensitivityLevel.coerceIn(1, LEVELS)
-            val threshold = when (lvl) {
-                in 1..3 -> 0.40f
-                in 4..7 -> 0.50f
-                else -> 0.60f
-            }
-            val minSilenceDuration = MIN_SILENCE_DURATION_MAP[lvl - 1]
-
+        private fun buildVadModelConfig(sampleRate: Int, tuning: VadTuning): VadModelConfig {
             val tenConfig = TenVadModelConfig(
                 model = "vad/ten-vad.onnx",
-                threshold = threshold,
-                minSilenceDuration = minSilenceDuration,
-                minSpeechDuration = 0.25f,
-                windowSize = 256
+                threshold = tuning.threshold,
+                minSilenceDuration = tuning.minSilenceDuration,
+                minSpeechDuration = tuning.minSpeechDuration,
+                windowSize = tuning.windowSize
             )
             return VadModelConfig(
                 tenVadModelConfig = tenConfig,
@@ -96,14 +112,13 @@ class VadDetector(
             )
         }
 
-        private fun createVad(context: Context, sampleRate: Int, sensitivityLevel: Int): Vad = Vad(
+        private fun createVad(context: Context, sampleRate: Int, tuning: VadTuning): Vad = Vad(
             assetManager = context.assets,
-            config = buildVadModelConfig(sampleRate, sensitivityLevel)
+            config = buildVadModelConfig(sampleRate, tuning)
         )
 
-        private fun acquireFromPool(context: Context, sampleRate: Int, sensitivityLevel: Int): Vad {
-            val lvl = sensitivityLevel.coerceIn(1, LEVELS)
-            val key = VadPoolKey(sampleRate = sampleRate, sensitivityLevel = lvl)
+        private fun acquireFromPool(context: Context, sampleRate: Int, tuning: VadTuning): Vad {
+            val key = VadPoolKey(sampleRate = sampleRate, tuning = tuning)
 
             var take: Vad? = null
             var toRelease: List<Vad> = emptyList()
@@ -127,7 +142,7 @@ class VadDetector(
                 }
             }
 
-            val vad = take ?: createVad(context, sampleRate, lvl)
+            val vad = take ?: createVad(context, sampleRate, tuning)
             try {
                 vad.reset()
                 while (!vad.empty()) vad.pop()
@@ -172,10 +187,14 @@ class VadDetector(
         }
 
         // 预加载 VAD（填充池，降低首次录音时的模型加载延迟）
-        fun preload(context: Context, sampleRate: Int, sensitivityLevel: Int) {
+        fun preload(
+            context: Context,
+            sampleRate: Int,
+            sensitivityLevel: Int = Prefs.DEFAULT_SILENCE_SENSITIVITY
+        ) {
             try {
-                val lvl = sensitivityLevel.coerceIn(1, LEVELS)
-                val key = VadPoolKey(sampleRate = sampleRate, sensitivityLevel = lvl)
+                val tuning = VadTuning.tuningForLevel(sensitivityLevel)
+                val key = VadPoolKey(sampleRate = sampleRate, tuning = tuning)
 
                 var alreadyReady = false
                 var toRelease: List<Vad> = emptyList()
@@ -196,9 +215,9 @@ class VadDetector(
                 }
                 if (alreadyReady) return
 
-                val vad = createVad(context, sampleRate, lvl)
+                val vad = createVad(context, sampleRate, tuning)
                 recycleToPool(key, vad)
-                Log.i(TAG, "VAD preloaded (sr=$sampleRate, sensitivity=$lvl)")
+                Log.i(TAG, "VAD preloaded (sr=$sampleRate, tuning=${tuning.name})")
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to preload global VAD", t)
             }
@@ -223,10 +242,7 @@ class VadDetector(
                 preload(context, sampleRate, sensitivityLevel)
                 Log.i(
                     TAG,
-                    "VAD pool rebuilt (sr=$sampleRate, sensitivity=${sensitivityLevel.coerceIn(
-                        1,
-                        LEVELS
-                    )})"
+                    "VAD pool rebuilt (sr=$sampleRate, tuning=${VadTuning.tuningForLevel(sensitivityLevel).name})"
                 )
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to rebuild global VAD", t)
@@ -248,40 +264,18 @@ class VadDetector(
     private val poolKey: Companion.VadPoolKey
 
     init {
-        val lvl = sensitivityLevel.coerceIn(1, LEVELS)
-        poolKey = Companion.VadPoolKey(sampleRate = sampleRate, sensitivityLevel = lvl)
-        minSilenceDuration = MIN_SILENCE_DURATION_MAP[lvl - 1]
-
-        // 将灵敏度映射到 VAD 置信阈值：
-        // 10 档：低(1-3)=0.40，中(4-7)=0.50，高(8-10)=0.60
-        threshold = when (lvl) {
-            in 1..3 -> 0.40f
-            in 4..7 -> 0.50f
-            else -> 0.60f
-        }
-
-        // 短暂静音“挂起”时间：在检测到语音后，容忍这段时间内的瞬时静音，避免过早累计。
-        // 档位越低，挂起越长以更保守地保持语音状态。
-        speechHangoverMs = when (lvl) {
-            in 1..3 -> 300
-            in 4..7 -> 250
-            else -> 200
-        }
-
-        // 初期防抖：刚开始录音时，允许一小段时间不累计静音，避免尚未开口或微弱启动噪声导致的提前停。
-        // 比语音挂起略保守一点（低档位更长）。
-        initialDebounceMs = when (lvl) {
-            in 1..3 -> 3000
-            in 4..7 -> 2000
-            else -> 1000
-        }
+        poolKey = Companion.VadPoolKey(sampleRate = sampleRate, tuning = tuning)
+        minSilenceDuration = tuning.minSilenceDuration
+        threshold = tuning.threshold
+        speechHangoverMs = tuning.speechHangoverMs
+        initialDebounceMs = tuning.initialDebounceMs
         initialDebounceRemainingMs = initialDebounceMs
 
         try {
             initVad()
             Log.i(
                 TAG,
-                "VadDetector initialized: windowMs=$windowMs, sensitivity=$lvl, minSilenceDuration=$minSilenceDuration, threshold=$threshold, hangoverMs=$speechHangoverMs, initialDebounceMs=$initialDebounceMs"
+                "VadDetector initialized: windowMs=$windowMs, tuning=${tuning.name}, minSilenceDuration=$minSilenceDuration, threshold=$threshold, hangoverMs=$speechHangoverMs, initialDebounceMs=$initialDebounceMs"
             )
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to initialize VAD, will fallback to no detection", t)
@@ -292,7 +286,7 @@ class VadDetector(
      * 初始化 sherpa-onnx Vad
      */
     private fun initVad() {
-        vad = acquireFromPool(context, sampleRate, poolKey.sensitivityLevel)
+        vad = acquireFromPool(context, sampleRate, tuning)
         Log.d(TAG, "Vad instance acquired")
     }
 

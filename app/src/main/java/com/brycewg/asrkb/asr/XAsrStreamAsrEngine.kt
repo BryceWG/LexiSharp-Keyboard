@@ -72,6 +72,7 @@ class XAsrStreamAsrEngine(
     private val sampleRate = 16000
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+    private val externalVadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
     // 预缓冲：在模型加载/流未创建前缓存音频，避免首字延迟过长
     private val prebufferMutex = Mutex()
@@ -133,6 +134,7 @@ class XAsrStreamAsrEngine(
             false
         }
         running.set(true)
+        externalVadInputLeveler.reset()
         lastEmitUptimeMs = 0L
         lastEmittedText = null
 
@@ -243,8 +245,9 @@ class XAsrStreamAsrEngine(
         if (pcm.isNotEmpty()) {
             loggedAudioBytes.addAndGet(pcm.size)
         }
+        val leveled = externalVadInputLeveler.process(pcm)
         try {
-            listener.onAmplitude(com.brycewg.asrkb.asr.calculateNormalizedAmplitude(pcm))
+            listener.onAmplitude(leveled.stableAmplitude)
         } catch (
             _: Throwable
         ) { }
@@ -366,6 +369,7 @@ class XAsrStreamAsrEngine(
                 prefs = prefs,
                 sampleRate = sampleRate
             )
+            val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
             try {
                 Log.d(TAG, "Starting audio capture for X-ASR with chunk=${chunkMillis}ms")
@@ -382,17 +386,19 @@ class XAsrStreamAsrEngine(
                         loggedAudioBytes.addAndGet(audioChunk.size)
                     }
 
+                    val leveled = vadInputLeveler.process(audioChunk)
+
                     // Calculate and send audio amplitude (for waveform animation)
                     try {
-                        val amplitude = com.brycewg.asrkb.asr.calculateNormalizedAmplitude(
-                            audioChunk
-                        )
-                        listener.onAmplitude(amplitude)
+                        listener.onAmplitude(leveled.stableAmplitude)
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to calculate amplitude", t)
                     }
 
-                    val shouldStopForVad = vadDetector?.shouldStop(audioChunk, audioChunk.size) == true
+                    val shouldStopForVad = vadDetector?.shouldStop(
+                        leveled.leveledPcm,
+                        leveled.leveledPcm.size
+                    ) == true
                     val s = currentStream
                     if (s == null) {
                         withContext(NonCancellable) {

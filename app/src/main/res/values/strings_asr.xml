@@ -8,7 +8,7 @@
 
     <!-- Auto stop on silence -->
     <string name="feature_auto_stop_silence_off_desc">Recording continues until you manually stop it. Useful for capturing longer speech or when pauses are part of your content.</string>
-    <string name="feature_auto_stop_silence_on_desc">Automatically stops recording when no voice is detected for a specified duration, saving time and bandwidth. You can adjust the sensitivity and window settings.</string>
+    <string name="feature_auto_stop_silence_on_desc">Automatically stops recording when no voice is detected for a specified duration, saving time and bandwidth. You can adjust the stop window and stop-recording sensitivity.</string>
 
     <!-- Backup ASR engine -->
     <string name="feature_backup_asr_off_desc">When off, voice input uses only the primary provider.</string>

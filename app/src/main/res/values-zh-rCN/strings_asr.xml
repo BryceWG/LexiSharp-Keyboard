@@ -9,7 +9,7 @@
 
     <!-- 无人说话自动停止录音 - Auto-stop on silence -->
     <string name="feature_auto_stop_silence_off_desc">录音会持续到你手动停止。适合录制较长的语音或者停顿是内容的一部分的场景。</string>
-    <string name="feature_auto_stop_silence_on_desc">检测到指定时长的无人声时自动停止录音，节省时间和流量。你可以调整灵敏度和窗口时长。</string>
+    <string name="feature_auto_stop_silence_on_desc">检测到指定时长的无人声时自动停止录音，节省时间和流量。你可以调整判停等待窗口和判停灵敏度。</string>
 
     <!-- 备用语音识别引擎 -->
     <string name="feature_backup_asr_off_desc">关闭时仅使用主引擎进行识别。</string>

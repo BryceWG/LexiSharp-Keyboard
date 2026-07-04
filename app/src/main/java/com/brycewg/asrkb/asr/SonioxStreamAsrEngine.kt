@@ -65,6 +65,7 @@ class SonioxStreamAsrEngine(
     private val sampleRate = 16000
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+    private val externalVadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
     private val finalTextBuffer = StringBuilder()
 
@@ -89,6 +90,7 @@ class SonioxStreamAsrEngine(
             return
         }
         running.set(true)
+        externalVadInputLeveler.reset()
         wsReady.set(false)
         awaitingFinal.set(false)
         endOfStreamSent.set(false)
@@ -290,6 +292,7 @@ class SonioxStreamAsrEngine(
                 prefs = prefs,
                 sampleRate = sampleRate
             )
+            val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
             val maxFrames = (2000 / chunkMillis).coerceAtLeast(1) // 预缓冲≈2s
 
@@ -298,18 +301,17 @@ class SonioxStreamAsrEngine(
                 audioManager.startCapture().collect { audioChunk ->
                     if (!running.get()) return@collect
 
+                    val leveled = vadInputLeveler.process(audioChunk)
+
                     // Calculate and send audio amplitude (for waveform animation)
                     try {
-                        val amplitude = com.brycewg.asrkb.asr.calculateNormalizedAmplitude(
-                            audioChunk
-                        )
-                        listener.onAmplitude(amplitude)
+                        listener.onAmplitude(leveled.stableAmplitude)
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to calculate amplitude", t)
                     }
 
                     // VAD 自动判停
-                    if (vadDetector?.shouldStop(audioChunk, audioChunk.size) == true) {
+                    if (vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true) {
                         Log.d(TAG, "Silence detected, stopping recording")
                         try {
                             listener.onStopped()
@@ -414,8 +416,9 @@ class SonioxStreamAsrEngine(
     override fun appendPcm(pcm: ByteArray, sampleRate: Int, channels: Int) {
         if (!running.get()) return
         if (sampleRate != 16000 || channels != 1) return
+        val leveled = externalVadInputLeveler.process(pcm)
         try {
-            listener.onAmplitude(com.brycewg.asrkb.asr.calculateNormalizedAmplitude(pcm))
+            listener.onAmplitude(leveled.stableAmplitude)
         } catch (
             _: Throwable
         ) {}

@@ -37,6 +37,7 @@ class GenericPushFileAsrAdapter(
 
     private val running = AtomicBoolean(false)
     private val bos = ByteArrayOutputStream()
+    private val vadInputLeveler = VadInputLevelerBranch(sampleRate = 16_000)
     private var recognitionJob: kotlinx.coroutines.Job? = null
 
     override val isRunning: Boolean
@@ -45,11 +46,13 @@ class GenericPushFileAsrAdapter(
     override fun start() {
         if (running.get()) return
         running.set(true)
+        vadInputLeveler.reset()
     }
 
     override fun stop() {
         if (!running.get()) return
         running.set(false)
+        vadInputLeveler.finishDebugSession("stop")
         try {
             listener.onStopped()
         } catch (t: Throwable) {
@@ -113,6 +116,7 @@ class GenericPushFileAsrAdapter(
 
     override fun cancel() {
         running.set(false)
+        vadInputLeveler.finishDebugSession("cancel")
         bos.reset()
         try {
             recognitionJob?.cancel()
@@ -129,8 +133,9 @@ class GenericPushFileAsrAdapter(
             Log.w(TAG, "ignore frame: sr=$sampleRate ch=$channels")
             return
         }
+        val leveled = vadInputLeveler.process(pcm)
         try {
-            listener.onAmplitude(calculateNormalizedAmplitude(pcm))
+            listener.onAmplitude(leveled.stableAmplitude)
         } catch (
             t: Throwable
         ) {

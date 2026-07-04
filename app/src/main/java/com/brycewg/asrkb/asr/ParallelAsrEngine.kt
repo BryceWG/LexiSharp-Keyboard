@@ -99,6 +99,7 @@ class ParallelAsrEngine(
     private val pushPcmEngineFactory = AsrPushPcmEngineFactory()
     private val deferredPcmLock = Any()
     private val deferredPcmBuffer = ByteArrayOutputStream()
+    private val externalVadInputLeveler = VadInputLevelerBranch(sampleRate = SAMPLE_RATE)
 
     override fun start() {
         if (!running.compareAndSet(false, true)) return
@@ -111,6 +112,7 @@ class ParallelAsrEngine(
         backupTerminal = null
         lastFinalFromBackup = false
         audioBytes.set(0L)
+        externalVadInputLeveler.reset()
         synchronized(deferredPcmLock) {
             deferredPcmBuffer.reset()
         }
@@ -252,8 +254,9 @@ class ParallelAsrEngine(
         if (sampleRate != SAMPLE_RATE || channels != CHANNELS) return
 
         audioBytes.addAndGet(pcm.size.toLong())
+        val leveled = externalVadInputLeveler.process(pcm)
         try {
-            listener.onAmplitude(calculateNormalizedAmplitude(pcm))
+            listener.onAmplitude(leveled.stableAmplitude)
         } catch (t: Throwable) {
             Log.w(TAG, "notify amplitude failed (externalPcmInput)", t)
         }
@@ -325,14 +328,17 @@ class ParallelAsrEngine(
                 prefs = prefs,
                 sampleRate = SAMPLE_RATE
             )
+            val vadInputLeveler = VadInputLevelerBranch(sampleRate = SAMPLE_RATE)
 
             try {
                 audioManager.startCapture().collect { chunk ->
                     if (!isActive || !running.get()) return@collect
                     if (terminalDelivered.get()) return@collect
 
+                    val leveled = vadInputLeveler.process(chunk)
+
                     try {
-                        listener.onAmplitude(calculateNormalizedAmplitude(chunk))
+                        listener.onAmplitude(leveled.stableAmplitude)
                     } catch (t: Throwable) {
                         Log.w(TAG, "notify amplitude failed", t)
                     }
@@ -347,7 +353,7 @@ class ParallelAsrEngine(
                         return@collect
                     }
 
-                    if (vadDetector?.shouldStop(chunk, chunk.size) == true) {
+                    if (vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true) {
                         Log.d(TAG, "VAD silence detected, stopping session")
                         notifyStoppedIfNeeded()
                         stop()

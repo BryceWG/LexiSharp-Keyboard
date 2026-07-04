@@ -88,6 +88,7 @@ class DashscopeStreamAsrEngine(
 
     private val prebuffer = java.util.ArrayDeque<ByteArray>()
     private val prebufferLock = Any()
+    private val externalVadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
     @Volatile private var convReady: Boolean = false
 
@@ -111,6 +112,7 @@ class DashscopeStreamAsrEngine(
         useFunAsrModel = prefs.dashAsrModel.startsWith("fun-asr", ignoreCase = true)
 
         running.set(true)
+        externalVadInputLeveler.reset()
         currentTurnText = ""
         currentTurnStash = ""
         finalTranscript = null
@@ -554,8 +556,9 @@ class DashscopeStreamAsrEngine(
     override fun appendPcm(pcm: ByteArray, sampleRate: Int, channels: Int) {
         if (!running.get()) return
         if (sampleRate != 16000 || channels != 1) return
+        val leveled = externalVadInputLeveler.process(pcm)
         try {
-            listener.onAmplitude(calculateNormalizedAmplitude(pcm))
+            listener.onAmplitude(leveled.stableAmplitude)
         } catch (t: Throwable) {
             Log.w(TAG, "notify amplitude failed", t)
         }
@@ -696,21 +699,23 @@ class DashscopeStreamAsrEngine(
                 prefs = prefs,
                 sampleRate = sampleRate
             )
+            val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
             try {
                 audioManager.startCapture().collect { audioChunk ->
                     if (!running.get()) return@collect
 
+                    val leveled = vadInputLeveler.process(audioChunk)
+
                     // Calculate and send audio amplitude (for waveform animation)
                     try {
-                        val amplitude = calculateNormalizedAmplitude(audioChunk)
-                        listener.onAmplitude(amplitude)
+                        listener.onAmplitude(leveled.stableAmplitude)
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to calculate amplitude", t)
                     }
 
                     // 客户端 VAD 自动停止（可选，与服务端 VAD 独立）
-                    if (vadDetector?.shouldStop(audioChunk, audioChunk.size) == true) {
+                    if (vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true) {
                         Log.d(TAG, "Client VAD: silence detected, stopping recording")
                         try {
                             listener.onStopped()

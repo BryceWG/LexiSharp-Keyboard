@@ -81,9 +81,10 @@ internal fun AsrSilenceSection(
                 valueRange = 1f..10f,
                 steps = 8,
                 uiMode = uiMode,
+                highlightId = "silence_sensitivity",
                 index = 2,
                 count = itemCount,
-                onValueChange = { value -> onSensitivityChange(value.toInt()) },
+                onValueChange = { value -> onSensitivityChange(value.roundToInt()) },
                 onValueChangeFinished = onSensitivityFinished
             )
         }

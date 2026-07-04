@@ -415,7 +415,7 @@ internal fun InputSettingsRouteContent(
                     selectedTier = uiState.keyboardHeightTier,
                     uiMode = uiMode,
                     index = 0,
-                    count = 7,
+                    count = 6,
                     onSelected = { tier ->
                         prefs.keyboardHeightTier = tier
                         onUiStateChange(uiState.copy(keyboardHeightTier = prefs.keyboardHeightTier))
@@ -434,7 +434,7 @@ internal fun InputSettingsRouteContent(
                         }
                     ),
                     index = 1,
-                    count = 7
+                    count = 6
                 )
                 InputSliderPreference(
                     titleRes = R.string.label_haptic_feedback_strength,
@@ -444,7 +444,7 @@ internal fun InputSettingsRouteContent(
                     steps = 5,
                     uiMode = uiMode,
                     index = 2,
-                    count = 7,
+                    count = 6,
                     onValueChange = { value ->
                         val level = value.toInt().coerceIn(
                             Prefs.HAPTIC_FEEDBACK_LEVEL_OFF,
@@ -471,7 +471,7 @@ internal fun InputSettingsRouteContent(
                     steps = 19,
                     uiMode = uiMode,
                     index = 3,
-                    count = 7,
+                    count = 6,
                     onValueChange = { value ->
                         val next = value.roundToStep(step = 5).toInt().coerceIn(0, 100)
                         if (next != uiState.keyboardBottomPaddingDp) {
@@ -480,27 +480,6 @@ internal fun InputSettingsRouteContent(
                     },
                     onValueChangeFinished = {
                         prefs.keyboardBottomPaddingDp = uiState.keyboardBottomPaddingDp
-                        context.sendImeRefreshBroadcast()
-                        onRefreshState()
-                    }
-                )
-                InputSliderPreference(
-                    titleRes = R.string.label_waveform_sensitivity,
-                    valueLabel = uiState.waveformSensitivity.toString(),
-                    value = uiState.waveformSensitivity.toFloat(),
-                    valueRange = 1f..10f,
-                    steps = 8,
-                    uiMode = uiMode,
-                    index = 4,
-                    count = 7,
-                    onValueChange = { value ->
-                        val next = value.roundToStep(step = 1).toInt().coerceIn(1, 10)
-                        if (next != uiState.waveformSensitivity) {
-                            onUiStateChange(uiState.copy(waveformSensitivity = next))
-                        }
-                    },
-                    onValueChangeFinished = {
-                        prefs.waveformSensitivity = uiState.waveformSensitivity
                         context.sendImeRefreshBroadcast()
                         onRefreshState()
                     }
@@ -524,15 +503,15 @@ internal fun InputSettingsRouteContent(
                             onRefreshState()
                         }
                     ),
-                    index = 5,
-                    count = 7
+                    index = 4,
+                    count = 6
                 )
                 InputValuePreference(
                     titleRes = R.string.label_extension_buttons,
                     value = uiState.extensionButtonsLabel,
                     uiMode = uiMode,
-                    index = 6,
-                    count = 7,
+                    index = 5,
+                    count = 6,
                     onClick = {
                         onShowExtensionButtonsPicker()
                     }

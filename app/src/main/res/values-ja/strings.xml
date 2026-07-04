@@ -243,7 +243,7 @@
   <string name="option_recording_auto_stop_max_duration">タイムアウト停止</string>
   <string name="label_auto_stop_silence">音声がない時に自動停止</string>
   <string name="label_silence_window_ms">停止ウィンドウ（ms）</string>
-  <string name="label_silence_sensitivity">感度（1-10；高いほど敏感）</string>
+  <string name="label_silence_sensitivity">録音停止感度（1-10；高いほど早く停止）</string>
   <string name="label_recording_max_duration">最大録音時間</string>
   <string name="label_recording_max_duration_value_s">%1$d 秒</string>
 
@@ -289,7 +289,7 @@
   <string name="label_return_prev_ime_on_hide">非表示時に指定のIMEに切り替える</string>
   <string name="toast_bt_connect_permission_required">ヘッドセットマイクを使用するにはBluetooth接続権限が必要です</string>
   <string name="toast_bt_connect_permission_denied">Bluetooth接続権限が拒否されました。ヘッドセット優先が無効になりました。</string>
-  <string name="toast_vad_sensitivity_applied">VAD感度が更新されました。次回の録音に適用されます</string>
+  <string name="toast_vad_sensitivity_applied">停止感度を更新しました。次回の録音に適用されます</string>
 
   <!-- プライバシーとデータのトグル -->
   <string name="section_data_retention">データ保持</string>

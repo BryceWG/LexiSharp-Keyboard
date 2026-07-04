@@ -297,7 +297,7 @@ class AsrSettingsViewModel : ViewModel() {
 
     fun updateSilenceSensitivity(sensitivity: Int) {
         prefs.autoStopSilenceSensitivity = sensitivity
-        _uiState.value = _uiState.value.copy(silenceSensitivity = sensitivity)
+        _uiState.value = _uiState.value.copy(silenceSensitivity = prefs.autoStopSilenceSensitivity)
     }
 
     fun updateRecordingMaxDuration(durationMs: Int) {
@@ -934,7 +934,7 @@ data class AsrSettingsUiState(
     val recordingAutoStopMode: Prefs.RecordingAutoStopMode = Prefs.RecordingAutoStopMode.MANUAL,
     val autoStopSilenceEnabled: Boolean = false,
     val silenceWindowMs: Int = 1200,
-    val silenceSensitivity: Int = 4,
+    val silenceSensitivity: Int = Prefs.DEFAULT_SILENCE_SENSITIVITY,
     val recordingMaxDurationMs: Int = Prefs.DEFAULT_RECORDING_MAX_DURATION_MS,
     val aiEditPreferLastAsr: Boolean = false,
     // Volcengine settings

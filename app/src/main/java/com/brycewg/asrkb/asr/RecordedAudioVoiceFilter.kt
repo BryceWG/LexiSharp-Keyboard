@@ -11,6 +11,23 @@ import com.brycewg.asrkb.BuildConfig
 import com.brycewg.asrkb.store.Prefs
 import java.io.ByteArrayOutputStream
 
+internal data class RecordedVoiceFilterEnergy(
+    val maxAbs: Int,
+    val sumSquares: Double,
+    val countAbove30: Int,
+    val sampleCount: Int
+)
+
+internal fun measureRecordedVoiceFilterEnergy(pcm: ByteArray, len: Int): RecordedVoiceFilterEnergy {
+    val stats = computeFrameStats16le(pcm, len, threshold = 30)
+    return RecordedVoiceFilterEnergy(
+        maxAbs = stats.maxAbs,
+        sumSquares = stats.sumSquares.toDouble(),
+        countAbove30 = stats.countAboveThreshold,
+        sampleCount = stats.sampleCount
+    )
+}
+
 /**
  * 对一段 PCM 音频做识别前处理。
  *
@@ -22,12 +39,10 @@ object RecordedAudioVoiceFilter {
     private const val PRE_ROLL_MS = 350
     private const val POST_ROLL_MS = 500
     private const val MIN_SILENT_RUN_TO_TRIM_MS = 800
-    private const val NEAR_SILENCE_MAX_ABS_THRESHOLD = 128
-    private const val NEAR_SILENCE_RMS_THRESHOLD = 48
-    private const val VAD_DOMINANT_MAX_ABS_THRESHOLD = 1_200
-    private const val VAD_DOMINANT_RMS_THRESHOLD = 320
-    private const val FILTER_VAD_SENSITIVITY = 1
-
+    private const val NEAR_SILENCE_MAX_ABS_THRESHOLD = 220
+    private const val NEAR_SILENCE_RMS_THRESHOLD = 90
+    private const val VAD_DOMINANT_MAX_ABS_THRESHOLD = 1_500
+    private const val VAD_DOMINANT_RMS_THRESHOLD = 650
     private data class ChunkMark(
         val offset: Int,
         val length: Int,
@@ -35,7 +50,11 @@ object RecordedAudioVoiceFilter {
         val isSpeech: Boolean,
         val maxAbs: Int,
         val sumSquares: Double,
-        val sampleCount: Int
+        val sampleCount: Int,
+        val rawMaxAbs: Int,
+        val rawSumSquares: Double,
+        val rawCountAbove30: Int,
+        val rawSampleCount: Int
     )
 
     private data class FilterOutput(
@@ -71,7 +90,7 @@ object RecordedAudioVoiceFilter {
                 context = context,
                 sampleRate = sampleRate,
                 windowMs = prefs.autoStopSilenceWindowMs,
-                sensitivityLevel = FILTER_VAD_SENSITIVITY
+                tuning = VadTuning.ConservativeFilter
             )
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to create VAD analyzer", t)
@@ -138,7 +157,7 @@ object RecordedAudioVoiceFilter {
                 context = context,
                 sampleRate = sampleRate,
                 windowMs = prefs.autoStopSilenceWindowMs,
-                sensitivityLevel = FILTER_VAD_SENSITIVITY
+                tuning = VadTuning.ConservativeFilter
             )
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to create VAD filter, keeping original audio", t)
@@ -243,14 +262,18 @@ object RecordedAudioVoiceFilter {
     ): List<ChunkMark> {
         val chunkBytes = (((sampleRate * chunkMillis) / 1000) * BYTES_PER_SAMPLE)
             .coerceAtLeast(BYTES_PER_SAMPLE)
+        val leveler = VadInputLevelerBranch(sampleRate = sampleRate)
         val marks = ArrayList<ChunkMark>()
         var offset = 0
         while (offset < pcm.size) {
             val len = minOf(chunkBytes, pcm.size - offset)
             val chunk = pcm.copyOfRange(offset, offset + len)
             val frameMs = durationMs(len, sampleRate).toInt().coerceAtLeast(1)
-            val isSpeech = detector.analyzeFrame(chunk, chunk.size).isSpeech
-            val energy = measureEnergy(chunk, chunk.size)
+            val rawEnergy = measureEnergy(chunk, chunk.size)
+            val leveled = leveler.process(chunk)
+            val leveledPcm = leveled.leveledPcm
+            val isSpeech = detector.analyzeFrame(leveledPcm, leveledPcm.size).isSpeech
+            val energy = measureEnergy(leveledPcm, leveledPcm.size)
             marks.add(
                 ChunkMark(
                     offset = offset,
@@ -259,7 +282,11 @@ object RecordedAudioVoiceFilter {
                     isSpeech = isSpeech,
                     maxAbs = energy.maxAbs,
                     sumSquares = energy.sumSquares,
-                    sampleCount = energy.sampleCount
+                    sampleCount = energy.sampleCount,
+                    rawMaxAbs = rawEnergy.maxAbs,
+                    rawSumSquares = rawEnergy.sumSquares,
+                    rawCountAbove30 = rawEnergy.countAbove30,
+                    rawSampleCount = rawEnergy.sampleCount
                 )
             )
 
@@ -268,27 +295,14 @@ object RecordedAudioVoiceFilter {
         return marks
     }
 
-    private data class Energy(val maxAbs: Int, val sumSquares: Double, val sampleCount: Int)
+    private fun measureEnergy(pcm: ByteArray, len: Int): RecordedVoiceFilterEnergy =
+        measureRecordedVoiceFilterEnergy(pcm, len)
 
-    private fun measureEnergy(pcm: ByteArray, len: Int): Energy {
-        var maxAbs = 0
-        var sumSquares = 0.0
-        var samples = 0
-        var i = 0
-        while (i + 1 < len) {
-            val lo = pcm[i].toInt() and 0xFF
-            val hi = pcm[i + 1].toInt()
-            val sample = (hi shl 8) or lo
-            val abs = kotlin.math.abs(sample)
-            if (abs > maxAbs) maxAbs = abs
-            sumSquares += sample.toDouble() * sample.toDouble()
-            samples++
-            i += BYTES_PER_SAMPLE
-        }
-        return Energy(maxAbs = maxAbs, sumSquares = sumSquares, sampleCount = samples)
+    private fun shouldDropAsEmptyAudio(marks: List<ChunkMark>): Boolean {
+        if (marks.isEmpty()) return false
+        if (marks.all { it.isRawBadSourceLevel() }) return true
+        return marks.none { it.shouldKeepAsContent() }
     }
-
-    private fun shouldDropAsEmptyAudio(marks: List<ChunkMark>): Boolean = marks.isNotEmpty() && marks.none { it.shouldKeepAsContent() }
 
     private fun filterLongNonContentRuns(pcm: ByteArray, marks: List<ChunkMark>): FilterOutput {
         val keep = BooleanArray(marks.size)
@@ -419,7 +433,7 @@ object RecordedAudioVoiceFilter {
                 "vadRms=$VAD_DOMINANT_RMS_THRESHOLD," +
                 "minRunMs=$MIN_SILENT_RUN_TO_TRIM_MS," +
                 "preMs=$PRE_ROLL_MS,postMs=$POST_ROLL_MS," +
-                "vadSensitivity=$FILTER_VAD_SENSITIVITY}"
+                "vadTuning=${VadTuning.ConservativeFilter.name}}"
         )
     }
 
@@ -447,6 +461,18 @@ object RecordedAudioVoiceFilter {
     }
 
     private fun ChunkMark.rms(): Double = kotlin.math.sqrt(sumSquares / sampleCount)
+
+    private fun ChunkMark.rawRms(): Double = if (rawSampleCount > 0) {
+        kotlin.math.sqrt(rawSumSquares / rawSampleCount)
+    } else {
+        0.0
+    }
+
+    private fun ChunkMark.isRawBadSourceLevel(): Boolean = isLikelyBadSource(
+        maxAbs = rawMaxAbs,
+        rms = rawRms(),
+        countAbove30 = rawCountAbove30
+    )
 
     private fun durationMs(byteCount: Int, sampleRate: Int): Long {
         if (sampleRate <= 0) return 0L

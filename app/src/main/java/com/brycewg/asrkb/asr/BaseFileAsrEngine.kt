@@ -236,6 +236,8 @@ abstract class BaseFileAsrEngine(
             sampleRate = sampleRate,
             bytesPerSample = bytesPerSample
         )
+        val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
+        var vadLevelerFinishReason = "capture_end"
 
         // 计算分段阈值
         val maxBytes = (maxRecordDurationMillis / 1000.0 * sampleRate * bytesPerSample).toInt()
@@ -246,10 +248,11 @@ abstract class BaseFileAsrEngine(
             audioManager.startCapture().collect { audioChunk ->
                 if (!running.get()) return@collect
 
+                val leveled = vadInputLeveler.process(audioChunk)
+
                 // 计算并发送音频振幅（用于波形动画）
                 try {
-                    val amplitude = calculateNormalizedAmplitude(audioChunk)
-                    listener.onAmplitude(amplitude)
+                    listener.onAmplitude(leveled.stableAmplitude)
                 } catch (t: Throwable) {
                     Log.w(TAG, "Failed to calculate amplitude", t)
                 }
@@ -257,7 +260,7 @@ abstract class BaseFileAsrEngine(
                 currentSeg.write(audioChunk)
 
                 val stopReason = when {
-                    vadDetector?.shouldStop(audioChunk, audioChunk.size) == true ->
+                    vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true ->
                         "Silence detected, stopping recording"
                     maxDurationLimiter.acceptPcm(audioChunk.size) ->
                         "Max recording duration reached, stopping recording"
@@ -266,6 +269,7 @@ abstract class BaseFileAsrEngine(
 
                 // 自动停止：结束录音，推送最后一段
                 if (stopReason != null) {
+                    vadLevelerFinishReason = stopReason
                     running.set(false)
                     Log.d(TAG, stopReason)
                     try {
@@ -348,8 +352,10 @@ abstract class BaseFileAsrEngine(
             }
         } catch (t: Throwable) {
             if (t is kotlinx.coroutines.CancellationException) {
+                vadLevelerFinishReason = "capture_cancelled"
                 Log.d(TAG, "Audio capture cancelled: ${t.message}")
             } else {
+                vadLevelerFinishReason = "capture_error"
                 Log.e(TAG, "Audio capture failed", t)
                 try {
                     listener.onError(context.getString(R.string.error_audio_error, t.message ?: ""))
@@ -358,6 +364,7 @@ abstract class BaseFileAsrEngine(
                 }
             }
         } finally {
+            vadInputLeveler.finishDebugSession(vadLevelerFinishReason)
             // 录音结束后，推送任何遗留的待发送段与缓冲
             Log.d(
                 TAG,
@@ -432,6 +439,8 @@ abstract class BaseFileAsrEngine(
             sampleRate = sampleRate,
             bytesPerSample = bytesPerSample
         )
+        val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
+        var vadLevelerFinishReason = "capture_end"
 
         val maxBytes = (maxRecordDurationMillis / 1000.0 * sampleRate * bytesPerSample).toInt()
         val currentPcm = ByteArrayOutputStream()
@@ -487,9 +496,10 @@ abstract class BaseFileAsrEngine(
             audioManager.startCapture().collect { audioChunk ->
                 if (!running.get()) return@collect
 
+                val leveled = vadInputLeveler.process(audioChunk)
+
                 try {
-                    val amplitude = calculateNormalizedAmplitude(audioChunk)
-                    listener.onAmplitude(amplitude)
+                    listener.onAmplitude(leveled.stableAmplitude)
                 } catch (t: Throwable) {
                     Log.w(TAG, "Failed to calculate amplitude", t)
                 }
@@ -504,7 +514,7 @@ abstract class BaseFileAsrEngine(
                 encoder?.writePcm(encodedInput) ?: error("Upload audio encoder is missing")
 
                 val stopReason = when {
-                    vadDetector?.shouldStop(audioChunk, audioChunk.size) == true ->
+                    vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true ->
                         "Silence detected, stopping recording"
                     maxDurationLimiter.acceptPcm(audioChunk.size) ->
                         "Max recording duration reached, stopping recording"
@@ -512,6 +522,7 @@ abstract class BaseFileAsrEngine(
                 }
 
                 if (stopReason != null) {
+                    vadLevelerFinishReason = stopReason
                     running.set(false)
                     Log.d(TAG, stopReason)
                     try {
@@ -538,8 +549,10 @@ abstract class BaseFileAsrEngine(
             }
         } catch (t: Throwable) {
             if (t is kotlinx.coroutines.CancellationException) {
+                vadLevelerFinishReason = "capture_cancelled"
                 Log.d(TAG, "Audio capture cancelled: ${t.message}")
             } else {
+                vadLevelerFinishReason = "capture_error"
                 Log.e(TAG, "Audio capture or upload encoding failed", t)
                 try {
                     listener.onError(context.getString(R.string.error_audio_error, t.message ?: ""))
@@ -548,6 +561,7 @@ abstract class BaseFileAsrEngine(
                 }
             }
         } finally {
+            vadInputLeveler.finishDebugSession(vadLevelerFinishReason)
             Log.d(
                 TAG,
                 "Cleaning up encoded capture: ${pendingList.size} pending segments, " +

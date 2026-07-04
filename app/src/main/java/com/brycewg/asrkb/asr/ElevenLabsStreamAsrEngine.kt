@@ -70,6 +70,7 @@ class ElevenLabsStreamAsrEngine(
     private val sampleRate = 16000
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+    private val externalVadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
     override val isRunning: Boolean
         get() = running.get()
@@ -85,6 +86,7 @@ class ElevenLabsStreamAsrEngine(
             return
         }
         running.set(true)
+        externalVadInputLeveler.reset()
         wsReady.set(false)
         closingByUser.set(false)
         stopNotified.set(false)
@@ -249,20 +251,22 @@ class ElevenLabsStreamAsrEngine(
                 prefs = prefs,
                 sampleRate = sampleRate
             )
+            val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
             val maxFrames = (2000 / chunkMillis).coerceAtLeast(1)
 
             try {
                 audioManager.startCapture().collect { chunk ->
                     if (!isActive || !running.get()) return@collect
 
+                    val leveled = vadInputLeveler.process(chunk)
+
                     try {
-                        val amplitude = calculateNormalizedAmplitude(chunk)
-                        listener.onAmplitude(amplitude)
+                        listener.onAmplitude(leveled.stableAmplitude)
                     } catch (t: Throwable) {
                         Log.w(TAG, "Failed to compute amplitude", t)
                     }
 
-                    if (vadDetector?.shouldStop(chunk, chunk.size) == true) {
+                    if (vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true) {
                         Log.d(TAG, "VAD silence detected, stopping stream")
                         notifyStoppedIfNeeded()
                         stop()
@@ -312,9 +316,9 @@ class ElevenLabsStreamAsrEngine(
     override fun appendPcm(pcm: ByteArray, sampleRate: Int, channels: Int) {
         if (!running.get()) return
         if (sampleRate != this.sampleRate || channels != 1) return
+        val leveled = externalVadInputLeveler.process(pcm)
         try {
-            val amplitude = calculateNormalizedAmplitude(pcm)
-            listener.onAmplitude(amplitude)
+            listener.onAmplitude(leveled.stableAmplitude)
         } catch (_: Throwable) {
         }
         if (!wsReady.get()) {

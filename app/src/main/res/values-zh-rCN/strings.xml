@@ -242,7 +242,7 @@
   <string name="option_recording_auto_stop_max_duration">超时停止</string>
   <string name="label_auto_stop_silence">停说自动停止录音</string>
   <string name="label_silence_window_ms">判停时间阈值（毫秒）</string>
-  <string name="label_silence_sensitivity">灵敏度（1-10，越高越敏感）</string>
+  <string name="label_silence_sensitivity">判停灵敏度（1-10，越高越容易停录）</string>
   <string name="label_recording_max_duration">最长录音时长</string>
   <string name="label_recording_max_duration_value_s">%1$d 秒</string>
 
@@ -288,7 +288,7 @@
   <string name="label_return_prev_ime_on_hide">键盘收起后切换到指定输入法</string>
   <string name="toast_bt_connect_permission_required">需要蓝牙连接权限以使用耳机麦克风</string>
   <string name="toast_bt_connect_permission_denied">已拒绝蓝牙连接权限，将停用耳机麦克风优先</string>
-  <string name="toast_vad_sensitivity_applied">已应用 VAD 灵敏度，将在下次录音生效</string>
+  <string name="toast_vad_sensitivity_applied">已应用判停灵敏度，将在下次录音生效</string>
 
   <!-- 隐私与数据开关 -->
   <string name="section_data_retention">记录留痕</string>
