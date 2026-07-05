@@ -72,8 +72,8 @@ class PrefsHasVendorKeysTest {
 
     @Test
     fun mimoCustomPresetRequiresEffectiveEndpoint() {
-        prefs.mimoAsrApiKey = "mimo-key"
         prefs.mimoAsrEndpointPreset = Prefs.MIMO_ENDPOINT_PRESET_CUSTOM
+        prefs.mimoAsrApiKey = "mimo-key"
         prefs.mimoAsrEndpoint = ""
 
         assertFalse(prefs.hasVendorKeys(AsrVendor.MiMo))
@@ -104,8 +104,8 @@ class PrefsHasVendorKeysTest {
 
     @Test
     fun stepAudioCustomPresetRequiresEffectiveEndpoint() {
-        prefs.stepAudioApiKey = "step-key"
         prefs.stepAudioEndpointPreset = Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM
+        prefs.stepAudioApiKey = "step-key"
         prefs.stepAudioEndpoint = ""
 
         assertFalse(prefs.hasVendorKeys(AsrVendor.StepAudio))
@@ -113,6 +113,31 @@ class PrefsHasVendorKeysTest {
         prefs.stepAudioEndpoint = "https://example.test/v1/audio/asr/sse"
 
         assertTrue(prefs.hasVendorKeys(AsrVendor.StepAudio))
+    }
+
+    @Test
+    fun mimoAndStepAudioKeepApiKeysPerEndpointPreset() {
+        prefs.mimoAsrEndpointPreset = Prefs.MIMO_ENDPOINT_PRESET_PAYGO
+        prefs.mimoAsrApiKey = "mimo-paygo"
+        prefs.mimoAsrEndpointPreset = Prefs.MIMO_ENDPOINT_PRESET_CN
+        prefs.mimoAsrApiKey = "mimo-cn"
+
+        prefs.mimoAsrEndpointPreset = Prefs.MIMO_ENDPOINT_PRESET_PAYGO
+        assertEquals("mimo-paygo", prefs.mimoAsrApiKey)
+
+        prefs.mimoAsrEndpointPreset = Prefs.MIMO_ENDPOINT_PRESET_CN
+        assertEquals("mimo-cn", prefs.mimoAsrApiKey)
+
+        prefs.stepAudioEndpointPreset = Prefs.STEPAUDIO_ENDPOINT_PRESET_PAYGO
+        prefs.stepAudioApiKey = "step-paygo"
+        prefs.stepAudioEndpointPreset = Prefs.STEPAUDIO_ENDPOINT_PRESET_CODING_PLAN
+        prefs.stepAudioApiKey = "step-plan"
+
+        prefs.stepAudioEndpointPreset = Prefs.STEPAUDIO_ENDPOINT_PRESET_PAYGO
+        assertEquals("step-paygo", prefs.stepAudioApiKey)
+
+        prefs.stepAudioEndpointPreset = Prefs.STEPAUDIO_ENDPOINT_PRESET_CODING_PLAN
+        assertEquals("step-plan", prefs.stepAudioApiKey)
     }
 
     @Test

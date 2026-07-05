@@ -76,7 +76,8 @@ internal object PrefsAsrVendorFields {
             VendorField.boolean(KEY_GEMINI_DISABLE_THINKING, default = false)
         ),
         AsrVendor.MiMo to listOf(
-            VendorField.credential(KEY_MIMO_ASR_API_KEY),
+            VendorField(KEY_MIMO_ASR_API_KEYS_JSON, default = ""),
+            VendorField.credential(KEY_MIMO_ASR_API_KEY, required = false),
             VendorField.endpoint(
                 KEY_MIMO_ASR_ENDPOINT,
                 default = Prefs.DEFAULT_MIMO_ASR_ENDPOINT
@@ -100,7 +101,8 @@ internal object PrefsAsrVendorFields {
             VendorField.boolean(KEY_SONIOX_LANGUAGE_HINTS_STRICT, default = false)
         ),
         AsrVendor.StepAudio to listOf(
-            VendorField.credential(KEY_STEPAUDIO_API_KEY),
+            VendorField(KEY_STEPAUDIO_API_KEYS_JSON, default = ""),
+            VendorField.credential(KEY_STEPAUDIO_API_KEY, required = false),
             VendorField.endpoint(
                 KEY_STEPAUDIO_ENDPOINT,
                 default = Prefs.DEFAULT_STEPAUDIO_ASR_ENDPOINT

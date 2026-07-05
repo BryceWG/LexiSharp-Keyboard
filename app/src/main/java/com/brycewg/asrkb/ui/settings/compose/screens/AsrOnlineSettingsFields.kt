@@ -235,6 +235,7 @@ internal class AsrOnlineSettingsFields(
                 stepAudioEndpoint = ""
                 prefs.stepAudioEndpoint = ""
             }
+            stepAudioApiKey = prefs.stepAudioApiKey
         },
         stepAudioModel = stepAudioModel,
         stepAudioLanguage = stepAudioLanguage,
@@ -320,6 +321,7 @@ internal class AsrOnlineSettingsFields(
                 mimoEndpoint = ""
                 prefs.mimoAsrEndpoint = ""
             }
+            mimoApiKey = prefs.mimoAsrApiKey
         },
         mimoLanguage = mimoLanguage,
         onMimoLanguageChange = { value ->

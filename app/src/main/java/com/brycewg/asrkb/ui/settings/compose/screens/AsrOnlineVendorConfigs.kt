@@ -422,6 +422,15 @@ internal fun CurrentAsrVendorConfig(
                     count = itemCount
                 )
             }
+            AsrTextField(
+                uiMode = uiMode,
+                value = mimoApiKey,
+                onValueChange = onMimoApiKeyChange,
+                label = stringResource(R.string.label_mimo_asr_api_key),
+                password = true,
+                index = itemIndex++,
+                count = itemCount
+            )
             AsrDropdownPreference(
                 titleRes = R.string.label_mimo_asr_model,
                 options = listOf(
@@ -432,15 +441,6 @@ internal fun CurrentAsrVendorConfig(
                 index = itemIndex++,
                 count = itemCount,
                 onSelectedOptionChange = onMimoModelChange
-            )
-            AsrTextField(
-                uiMode = uiMode,
-                value = mimoApiKey,
-                onValueChange = onMimoApiKeyChange,
-                label = stringResource(R.string.label_mimo_asr_api_key),
-                password = true,
-                index = itemIndex++,
-                count = itemCount
             )
             AsrDropdownPreference(
                 titleRes = R.string.label_mimo_asr_language,

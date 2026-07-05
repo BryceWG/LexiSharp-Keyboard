@@ -1085,7 +1085,26 @@ class Prefs(context: Context) {
     )
 
     // 小米 MiMo ASR（走 Chat Completions 端点）
-    var mimoAsrApiKey: String by stringPref(KEY_MIMO_ASR_API_KEY, "")
+    var mimoAsrApiKeysJson: String by stringPref(KEY_MIMO_ASR_API_KEYS_JSON, "")
+
+    var mimoAsrApiKey: String
+        get() {
+            val result = PrefsEndpointPresetApiKeyStore.getApiKey(
+                keysJson = mimoAsrApiKeysJson,
+                legacyApiKey = sp.getString(KEY_MIMO_ASR_API_KEY, "").orEmpty(),
+                preset = mimoAsrEndpointPreset
+            )
+            result.migratedKeysJson?.let { mimoAsrApiKeysJson = it }
+            return result.apiKey
+        }
+        set(value) {
+            mimoAsrApiKeysJson = PrefsEndpointPresetApiKeyStore.setApiKey(
+                keysJson = mimoAsrApiKeysJson,
+                preset = mimoAsrEndpointPreset,
+                apiKey = value
+            )
+            sp.edit { putString(KEY_MIMO_ASR_API_KEY, value) }
+        }
 
     var mimoAsrEndpoint: String by stringPref(
         KEY_MIMO_ASR_ENDPOINT,
@@ -1181,7 +1200,26 @@ class Prefs(context: Context) {
         set(value) = sp.edit { putBoolean(KEY_SONIOX_LANGUAGE_HINTS_STRICT, value) }
 
     // StepAudio（阶跃星辰）在线 ASR
-    var stepAudioApiKey: String by stringPref(KEY_STEPAUDIO_API_KEY, "")
+    var stepAudioApiKeysJson: String by stringPref(KEY_STEPAUDIO_API_KEYS_JSON, "")
+
+    var stepAudioApiKey: String
+        get() {
+            val result = PrefsEndpointPresetApiKeyStore.getApiKey(
+                keysJson = stepAudioApiKeysJson,
+                legacyApiKey = sp.getString(KEY_STEPAUDIO_API_KEY, "").orEmpty(),
+                preset = stepAudioEndpointPreset
+            )
+            result.migratedKeysJson?.let { stepAudioApiKeysJson = it }
+            return result.apiKey
+        }
+        set(value) {
+            stepAudioApiKeysJson = PrefsEndpointPresetApiKeyStore.setApiKey(
+                keysJson = stepAudioApiKeysJson,
+                preset = stepAudioEndpointPreset,
+                apiKey = value
+            )
+            sp.edit { putString(KEY_STEPAUDIO_API_KEY, value) }
+        }
 
     var stepAudioEndpoint: String by stringPref(
         KEY_STEPAUDIO_ENDPOINT,

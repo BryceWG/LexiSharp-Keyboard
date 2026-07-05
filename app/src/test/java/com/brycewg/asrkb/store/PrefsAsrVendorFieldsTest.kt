@@ -143,13 +143,16 @@ class PrefsAsrVendorFieldsTest {
     @Test
     fun requiredStringValidationUsesSchemaDefaultsForCommonSuppliers() {
         val store = FakeVendorFieldStore().apply {
-            putString(KEY_STEPAUDIO_API_KEY, "key")
+            putString(
+                KEY_STEPAUDIO_API_KEYS_JSON,
+                """{"paygo":"key"}"""
+            )
         }
 
         assertFalse(hasRequiredSchemaStrings(AsrVendor.Volc, store))
         assertTrue(hasRequiredSchemaStrings(AsrVendor.StepAudio, store))
 
-        store.putString(KEY_STEPAUDIO_API_KEY, "")
+        store.putString(KEY_STEPAUDIO_MODEL, "")
 
         assertFalse(hasRequiredSchemaStrings(AsrVendor.StepAudio, store))
     }
