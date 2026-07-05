@@ -73,6 +73,43 @@ class AsrParallelEngineFactoryTest {
     }
 
     @Test
+    fun readyLocalBackupDefaultsToLazyLocalBackupPlan() {
+        val plan = factory.resolvePlan(
+            backupPolicyInput = input(
+                primaryVendor = AsrVendor.Volc,
+                backupVendor = AsrVendor.SenseVoice,
+                availabilityChecks = availabilityChecks(
+                    onlineConfiguration = { error("local backup should not check online configuration") },
+                    localModelReadiness = { vendor -> vendor == AsrVendor.SenseVoice }
+                )
+            )
+        )
+
+        assertLazyLocalBackup(plan)
+        assertSame(AsrVendor.Volc, plan.primaryVendor)
+        assertSame(AsrVendor.SenseVoice, plan.backupVendor)
+    }
+
+    @Test
+    fun readyLocalBackupWithResidentModePlansParallelEngine() {
+        val plan = factory.resolvePlan(
+            backupPolicyInput = input(
+                primaryVendor = AsrVendor.Volc,
+                backupVendor = AsrVendor.SenseVoice,
+                localBackupResidency = BackupAsrLocalResidency.Resident,
+                availabilityChecks = availabilityChecks(
+                    onlineConfiguration = { error("local backup should not check online configuration") },
+                    localModelReadiness = { vendor -> vendor == AsrVendor.SenseVoice }
+                )
+            )
+        )
+
+        assertParallel(plan)
+        assertSame(AsrVendor.Volc, plan.primaryVendor)
+        assertSame(AsrVendor.SenseVoice, plan.backupVendor)
+    }
+
+    @Test
     fun localBackupReadinessIsDelegatedToPolicySeam() {
         val missingLocalPlan = factory.resolvePlan(
             backupPolicyInput = input(
@@ -96,7 +133,7 @@ class AsrParallelEngineFactoryTest {
         )
 
         assertPrimaryOnly(missingLocalPlan)
-        assertParallel(readyLocalPlan)
+        assertLazyLocalBackup(readyLocalPlan)
     }
 
     @Test
@@ -161,12 +198,21 @@ class AsrParallelEngineFactoryTest {
     private fun assertParallel(plan: AsrParallelEnginePlan) {
         assertSame(AsrParallelEngineDecision.UseParallel, plan.decision)
         assertTrue(plan.shouldUseParallel)
+        assertTrue(plan.shouldUseBackupWrapper)
         assertEquals("ParallelAsrEngine", plan.engineClassName)
+    }
+
+    private fun assertLazyLocalBackup(plan: AsrParallelEnginePlan) {
+        assertSame(AsrParallelEngineDecision.UseLazyLocalBackup, plan.decision)
+        assertFalse(plan.shouldUseParallel)
+        assertTrue(plan.shouldUseBackupWrapper)
+        assertEquals("LazyLocalBackupAsrEngine", plan.engineClassName)
     }
 
     private fun assertPrimaryOnly(plan: AsrParallelEnginePlan) {
         assertSame(AsrParallelEngineDecision.UsePrimaryOnly, plan.decision)
         assertFalse(plan.shouldUseParallel)
+        assertFalse(plan.shouldUseBackupWrapper)
         assertNull(plan.engineClassName)
     }
 
@@ -186,11 +232,13 @@ class AsrParallelEngineFactoryTest {
         backupEnabled: Boolean = true,
         primaryVendor: AsrVendor,
         backupVendor: AsrVendor,
+        localBackupResidency: BackupAsrLocalResidency = BackupAsrLocalResidency.OnDemand,
         availabilityChecks: AsrBackupAvailabilityChecks
     ): AsrBackupPolicyInput = AsrBackupPolicyInput(
         backupEnabled = backupEnabled,
         primaryVendor = primaryVendor,
         backupVendor = backupVendor,
+        localBackupResidency = localBackupResidency,
         availabilityChecks = availabilityChecks
     )
 

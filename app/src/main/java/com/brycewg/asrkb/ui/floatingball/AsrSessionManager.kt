@@ -21,6 +21,8 @@ import com.brycewg.asrkb.imebridge.ImeBridgeContract
 import com.brycewg.asrkb.imebridge.ImeBridgeResult
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
+import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.ui.AsrAccessibilityService.FocusContext
 import com.brycewg.asrkb.util.TextSanitizer
 import com.brycewg.asrkb.util.TypewriterTextAnimator
@@ -139,7 +141,8 @@ class AsrSessionManager(
 
     private fun isSessionActive(sessionToken: Long): Boolean = sessionToken != 0L && activeSessionToken == sessionToken
 
-    private fun createEngineListener(sessionToken: Long): StreamingAsrEngine.Listener = object : StreamingAsrEngine.Listener {
+    private fun createEngineListener(sessionToken: Long): StreamingAsrEngine.Listener = object : StreamingAsrEngine.Listener,
+        BackupAsrStatusListener {
         override fun onFinal(text: String) {
             this@AsrSessionManager.onFinal(sessionToken, text)
         }
@@ -154,6 +157,14 @@ class AsrSessionManager(
 
         override fun onStopped() {
             this@AsrSessionManager.onStopped(sessionToken)
+        }
+
+        override fun onBackupAsrLoading(backupVendor: AsrVendor) {
+            this@AsrSessionManager.onBackupAsrLoading(sessionToken)
+        }
+
+        override fun onBackupAsrRecognizing(backupVendor: AsrVendor) {
+            this@AsrSessionManager.onBackupAsrRecognizing(sessionToken)
         }
     }
 
@@ -502,7 +513,7 @@ class AsrSessionManager(
             beginAiPostProcessing(sessionToken, text)
         }
         lastFinalVendorForStats = when (val e = asrEngine) {
-            is ParallelAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
+            is BackupAwareAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
             else -> sessionPrimaryVendor
         }
         serviceScope.launch {
@@ -537,6 +548,12 @@ class AsrSessionManager(
                     sessionStartUptimeMs = 0L
                 }
             }
+            prefs.recordPrimaryAsrRuntimeRequestIfSuccessful(
+                engine = asrEngine,
+                fallbackPrimaryVendor = sessionPrimaryVendor,
+                audioMs = lastAudioMsForStats,
+                requestMs = lastRequestDurationMs
+            )
             if (!isSessionActive(sessionToken)) return@launch
 
             // 统一使用 AsrFinalFilters：含预修剪/LLM/后修剪/繁体转换
@@ -673,7 +690,7 @@ class AsrSessionManager(
             // 插入文本
             if (finalText.isNotEmpty()) {
                 val usedBackupEngine =
-                    (asrEngine as? ParallelAsrEngine)?.wasLastResultFromBackup() == true
+                    (asrEngine as? BackupAwareAsrEngine)?.wasLastResultFromBackup() == true
                 val success = insertTextToFocus(finalText)
                 if (!engineStillRunning) {
                     clearActiveSessionToken(sessionToken)
@@ -894,6 +911,28 @@ class AsrSessionManager(
         Log.d(TAG, "Request duration: ${adjusted}ms")
     }
 
+    private fun onBackupAsrLoading(sessionToken: Long) {
+        if (!isSessionActive(sessionToken)) return
+        listener.onSessionStateChanged(FloatingBallState.Processing)
+        showShortToast(context.getString(com.brycewg.asrkb.R.string.status_backup_asr_loading))
+    }
+
+    private fun onBackupAsrRecognizing(sessionToken: Long) {
+        if (!isSessionActive(sessionToken)) return
+        listener.onSessionStateChanged(FloatingBallState.Processing)
+        showShortToast(context.getString(com.brycewg.asrkb.R.string.status_backup_asr_recognizing))
+    }
+
+    private fun showShortToast(message: String) {
+        try {
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to show backup ASR status toast", t)
+        }
+    }
+
     private fun startProcessingTimeout(sessionToken: Long, audioMsOverride: Long? = null) {
         if (!isSessionActive(sessionToken)) return
         try {
@@ -902,13 +941,23 @@ class AsrSessionManager(
             Log.w(TAG, "Failed to cancel previous timeout job", e)
         }
         val audioMs = audioMsOverride ?: lastAudioMsForStats
-        val usingBackupEngine = asrEngine is ParallelAsrEngine
-        val baseTimeoutMs = AsrTimeoutCalculator.calculateTimeoutMs(audioMs, sessionPrimaryVendor)
-        val timeoutMs = if (usingBackupEngine) baseTimeoutMs + 2_000L else baseTimeoutMs
+        val backupEngine = asrEngine as? BackupAwareAsrEngine
+        val primaryVendor = backupEngine?.primaryVendor ?: sessionPrimaryVendor
+        val backupVendor = backupEngine?.backupVendor
+        val timeoutMs = AsrTimeoutCalculator.calculateBackupAwareProcessingTimeoutMs(
+            audioMs = audioMs,
+            primaryVendor = primaryVendor,
+            primaryStatsSnapshot = prefs.getAsrRuntimeStatsSnapshotOrNull(primaryVendor, audioMs),
+            backupStrategy = backupEngine?.backupStrategy,
+            backupVendor = backupVendor,
+            backupStatsSnapshot = prefs.getAsrRuntimeStatsSnapshotOrNull(backupVendor, audioMs),
+            sensitivityTier = safeBackupSensitivityTier(),
+            primaryStreaming = backupEngine?.primaryStreamingForSwitchPlan ?: true
+        )
         processingTimeoutJob = serviceScope.launch {
             if (!isSessionActive(sessionToken)) return@launch
             val shouldDeferForLocalModel = try {
-                !usingBackupEngine && isLocalAsrVendor(prefs.asrVendor)
+                backupEngine == null && isLocalAsrVendor(prefs.asrVendor)
             } catch (t: Throwable) {
                 Log.w(TAG, "Failed to determine local ASR vendor for timeout gating", t)
                 false
@@ -951,6 +1000,12 @@ class AsrSessionManager(
             }
         }
         Log.d(TAG, "Processing timeout scheduled: audioMs=$audioMs, timeoutMs=$timeoutMs")
+    }
+
+    private fun safeBackupSensitivityTier(): Int = try {
+        prefs.backupAsrTimeoutSensitivity
+    } catch (_: Throwable) {
+        1
     }
 
     private suspend fun handleProcessingTimeout(sessionToken: Long) {

@@ -19,6 +19,7 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrEngineConstructionSource
 import com.brycewg.asrkb.asr.AsrEngineInvocationMode
 import com.brycewg.asrkb.asr.AsrParallelEngineFactory
+import com.brycewg.asrkb.asr.AsrParallelEngineDecision
 import com.brycewg.asrkb.asr.AsrPushPcmEngineFactory
 import com.brycewg.asrkb.asr.AsrPushPcmEngineFamily
 import com.brycewg.asrkb.asr.AsrVendor
@@ -33,7 +34,6 @@ import com.brycewg.asrkb.asr.StreamingAsrEngine
 import com.brycewg.asrkb.asr.asrEngineModePreferencesSnapshot
 import com.brycewg.asrkb.asr.isAsrVendorConfigured
 import com.brycewg.asrkb.asr.preloadLocalAsrForImmediateUse
-import com.brycewg.asrkb.asr.shouldUseBackupAsr
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.PromptPreset
 import com.brycewg.asrkb.util.AsrFinalFilters
@@ -63,6 +63,7 @@ internal data class RecordingTestUiState(
     val isAiProcessing: Boolean = false,
     val currentAsrVendor: AsrVendor = AsrVendor.Volc,
     val backupAsrVendor: AsrVendor? = null,
+    val backupAsrStrategy: AsrParallelEngineDecision? = null,
     val asrMode: RecordingTestAsrMode = RecordingTestAsrMode.File,
     val selectedPromptId: String = "",
     val promptPresets: List<PromptPreset> = emptyList(),
@@ -94,10 +95,14 @@ internal class RecordingTestViewModel(
     private val appContext: Context,
     private val prefs: Prefs
 ) : ViewModel() {
+    private val parallelEngineFactory = AsrParallelEngineFactory()
+    private val pushPcmEngineFactory = AsrPushPcmEngineFactory()
+
     private val _uiState = MutableStateFlow(
         RecordingTestUiState(
             currentAsrVendor = prefs.asrVendor,
             backupAsrVendor = configuredBackupVendorOrNull(),
+            backupAsrStrategy = configuredBackupStrategyOrNull(),
             asrMode = configuredRecordingTestAsrMode(),
             selectedPromptId = prefs.activePromptId,
             promptPresets = prefs.getPromptPresets()
@@ -118,14 +123,12 @@ internal class RecordingTestViewModel(
     private var firstFrameUptimeMs: Long? = null
     private var recordingStartUptimeMs: Long = 0L
     private var peakAbs: Int = 0
-    private val parallelEngineFactory = AsrParallelEngineFactory()
-    private val pushPcmEngineFactory = AsrPushPcmEngineFactory()
-
     fun refreshConfiguredAsr() {
         _uiState.update {
             it.copy(
                 currentAsrVendor = prefs.asrVendor,
                 backupAsrVendor = configuredBackupVendorOrNull(),
+                backupAsrStrategy = configuredBackupStrategyOrNull(),
                 asrMode = configuredRecordingTestAsrMode(),
                 promptPresets = prefs.getPromptPresets(),
                 selectedPromptId = prefs.activePromptId.takeIf { id -> id.isNotBlank() } ?: it.selectedPromptId
@@ -309,6 +312,7 @@ internal class RecordingTestViewModel(
                     statusMessage = appContext.getString(R.string.recording_test_error_vendor_unavailable),
                     currentAsrVendor = prefs.asrVendor,
                     backupAsrVendor = configuredBackupVendorOrNull(),
+                    backupAsrStrategy = configuredBackupStrategyOrNull(),
                     asrMode = configuredRecordingTestAsrMode()
                 )
             }
@@ -326,6 +330,7 @@ internal class RecordingTestViewModel(
                 isTranscribing = false,
                 currentAsrVendor = prefs.asrVendor,
                 backupAsrVendor = configuredBackupVendorOrNull(),
+                backupAsrStrategy = configuredBackupStrategyOrNull(),
                 asrMode = configuredRecordingTestAsrMode(),
                 pressWallTimeMs = pressWallTime,
                 firstFrameWallTimeMs = null,
@@ -640,10 +645,20 @@ internal class RecordingTestViewModel(
     }
 
     private fun configuredBackupVendorOrNull(): AsrVendor? {
-        val primary = prefs.asrVendor
-        val backup = prefs.backupAsrVendor
-        return backup.takeIf { shouldUseBackupAsr(appContext, prefs, primary, backup) }
+        return configuredBackupPlanOrNull()?.backupVendor
     }
+
+    private fun configuredBackupStrategyOrNull(): AsrParallelEngineDecision? {
+        return configuredBackupPlanOrNull()?.decision
+    }
+
+    private fun configuredBackupPlanOrNull() = parallelEngineFactory.resolvePlan(
+        context = appContext,
+        prefs = prefs,
+        primaryVendor = prefs.asrVendor,
+        backupVendor = prefs.backupAsrVendor,
+        externalPcmInput = true
+    ).takeIf { it.shouldUseBackupWrapper }
 
     private fun configuredRecordingTestAsrMode(): RecordingTestAsrMode = if (configuredBackupVendorOrNull() != null || resolvesRecordingTestAsPushPcm(prefs.asrVendor)) {
         RecordingTestAsrMode.PushPcm

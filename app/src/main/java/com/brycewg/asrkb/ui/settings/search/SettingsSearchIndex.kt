@@ -160,6 +160,7 @@ object SettingsSearchIndex {
         item(R.string.label_asr_vendor, R.string.label_asr_vendor)
         item(R.string.label_backup_asr_vendor, R.string.label_backup_asr_engine)
         item(R.string.label_backup_asr_timeout_sensitivity, R.string.label_backup_asr_engine)
+        item(R.string.label_backup_asr_local_residency, R.string.label_backup_asr_engine)
     }
 
     private fun MutableList<DeclarativeEntry>.addAiEntries() {

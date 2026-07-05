@@ -2,6 +2,7 @@
 package com.brycewg.asrkb.asr
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -48,6 +49,55 @@ class AsrBackupPolicyTest {
         )
 
         assertTrue(shouldUse)
+    }
+
+    @Test
+    fun configuredOnlineBackupDecisionUsesParallel() {
+        val decision = resolveBackupAsrDecision(
+            input(
+                primaryVendor = AsrVendor.Volc,
+                backupVendor = AsrVendor.OpenAI,
+                availabilityChecks = availabilityChecks(
+                    onlineConfiguration = { vendor -> vendor == AsrVendor.OpenAI },
+                    localModelReadiness = { error("online backup should not check local model readiness") }
+                )
+            )
+        )
+
+        assertSame(AsrBackupPolicyDecision.UseParallel, decision)
+    }
+
+    @Test
+    fun readyLocalBackupDecisionUsesLazyLocalBackupByDefault() {
+        val decision = resolveBackupAsrDecision(
+            input(
+                primaryVendor = AsrVendor.Volc,
+                backupVendor = AsrVendor.SenseVoice,
+                availabilityChecks = availabilityChecks(
+                    onlineConfiguration = { error("local backup should not check online key fields") },
+                    localModelReadiness = { vendor -> vendor == AsrVendor.SenseVoice }
+                )
+            )
+        )
+
+        assertSame(AsrBackupPolicyDecision.UseLazyLocalBackup, decision)
+    }
+
+    @Test
+    fun readyLocalBackupDecisionUsesParallelWhenResidencyIsResident() {
+        val decision = resolveBackupAsrDecision(
+            input(
+                primaryVendor = AsrVendor.Volc,
+                backupVendor = AsrVendor.SenseVoice,
+                localBackupResidency = BackupAsrLocalResidency.Resident,
+                availabilityChecks = availabilityChecks(
+                    onlineConfiguration = { error("local backup should not check online key fields") },
+                    localModelReadiness = { vendor -> vendor == AsrVendor.SenseVoice }
+                )
+            )
+        )
+
+        assertSame(AsrBackupPolicyDecision.UseParallel, decision)
     }
 
     @Test
@@ -126,6 +176,22 @@ class AsrBackupPolicyTest {
     }
 
     @Test
+    fun unavailableLocalBackupDecisionUsesPrimaryOnly() {
+        val decision = resolveBackupAsrDecision(
+            input(
+                primaryVendor = AsrVendor.Volc,
+                backupVendor = AsrVendor.FunAsrNano,
+                availabilityChecks = availabilityChecks(
+                    onlineConfiguration = { error("local backup should not use online key fields") },
+                    localModelReadiness = { false }
+                )
+            )
+        )
+
+        assertSame(AsrBackupPolicyDecision.UsePrimaryOnly, decision)
+    }
+
+    @Test
     fun readyLocalModelBackupReturnsTrue() {
         val shouldUse = shouldUseBackupAsr(
             input(
@@ -158,11 +224,13 @@ class AsrBackupPolicyTest {
         backupEnabled: Boolean = true,
         primaryVendor: AsrVendor,
         backupVendor: AsrVendor,
+        localBackupResidency: BackupAsrLocalResidency = BackupAsrLocalResidency.OnDemand,
         availabilityChecks: AsrBackupAvailabilityChecks
     ): AsrBackupPolicyInput = AsrBackupPolicyInput(
         backupEnabled = backupEnabled,
         primaryVendor = primaryVendor,
         backupVendor = backupVendor,
+        localBackupResidency = localBackupResidency,
         availabilityChecks = availabilityChecks
     )
 

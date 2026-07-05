@@ -15,6 +15,8 @@
   <string name="status_listening">聴き取り中…</string>
   <string name="status_recognizing">認識中…</string>
   <string name="status_backup_asr_used">バックアップエンジンの結果を使用しました</string>
+  <string name="status_backup_asr_loading">ローカルバックアップ認識を起動中…</string>
+  <string name="status_backup_asr_recognizing">ローカルバックアップで認識中…</string>
   <string name="status_ai_processing">AI後処理中…</string>
   <string name="status_ai_edit_listening">編集指示を話してください…</string>
   <string name="status_ai_editing">AI編集中…</string>
@@ -104,11 +106,15 @@
   <string name="label_backup_asr_enabled">バックアップエンジンを有効にする</string>
   <string name="label_backup_asr_vendor">バックアッププロバイダー</string>
   <string name="label_backup_asr_timeout_sensitivity">タイムアウト感度</string>
+  <string name="label_backup_asr_local_residency">ローカルバックアップモード</string>
   <string name="hint_backup_asr_uses_existing_config">このページで設定済みのプロバイダー設定をそのまま使用します</string>
   <string name="hint_backup_asr_timeout_sensitivity">感度が高いほど、主エンジンが遅い場合にバックアップへ早く切り替えます</string>
+  <string name="hint_backup_asr_local_residency">オンデマンドではアイドル後にローカルバックアップモデルを解放します。常駐ではメモリを使い続けますが、最速でフォールバックできます。</string>
   <string name="option_backup_asr_timeout_sensitivity_relaxed">ゆるめ</string>
   <string name="option_backup_asr_timeout_sensitivity_balanced">バランス（おすすめ）</string>
   <string name="option_backup_asr_timeout_sensitivity_sensitive">敏感</string>
+  <string name="option_backup_asr_local_residency_on_demand">オンデマンド読み込み</string>
+  <string name="option_backup_asr_local_residency_resident">常駐を維持</string>
 
   <!-- ============================================== -->
   <!-- 自定义标点 -->
@@ -457,7 +463,9 @@
   <string name="recording_test_asr_summary">%1$s · %2$s%3$s</string>
   <string name="recording_test_asr_mode_push_pcm">現在のストリーミング/プッシュ経路</string>
   <string name="recording_test_asr_mode_file">現在のファイル経路</string>
-  <string name="recording_test_asr_backup_suffix"> · 予備 %1$s</string>
+  <string name="recording_test_asr_backup_suffix"> · 予備 %1$s · %2$s</string>
+  <string name="recording_test_backup_strategy_parallel">並行</string>
+  <string name="recording_test_backup_strategy_lazy">遅延読み込み直列</string>
   <string name="recording_test_auto_transcribe">自動文字起こし</string>
   <string name="recording_test_ai_label">AI</string>
   <string name="recording_test_prompt_summary">AI 後処理で使うプロンプトプリセットを選択</string>

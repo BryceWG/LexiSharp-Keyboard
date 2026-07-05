@@ -84,6 +84,7 @@ fun AsrSettingsScreen(
     var backupSensitivity by remember(context) {
         mutableIntStateOf(prefs.backupAsrTimeoutSensitivity.coerceIn(0, 2))
     }
+    var backupLocalResidency by remember(context) { mutableStateOf(prefs.backupAsrLocalResidency) }
     var choiceSheet by remember { mutableStateOf<SettingsChoiceSheetState?>(null) }
     var multiChoiceSheet by remember { mutableStateOf<SettingsMultiChoiceSheetState?>(null) }
     var downloadSourceRequest by remember { mutableStateOf<AsrLocalDownloadRequest?>(null) }
@@ -191,6 +192,7 @@ fun AsrSettingsScreen(
                 backupAsrEnabled = prefs.backupAsrEnabled
                 backupAsrVendor = prefs.backupAsrVendor
                 backupSensitivity = prefs.backupAsrTimeoutSensitivity.coerceIn(0, 2)
+                backupLocalResidency = prefs.backupAsrLocalResidency
                 onlineFields.refreshFromPrefs()
                 refreshLocalModelReady()
             }
@@ -251,6 +253,16 @@ fun AsrSettingsScreen(
         ) { selectedIdx ->
             backupSensitivity = selectedIdx.coerceIn(0, 2)
             prefs.backupAsrTimeoutSensitivity = backupSensitivity
+        }
+    }
+
+    fun showBackupLocalResidencyPicker() {
+        choiceSheet = backupLocalResidencyChoiceSheetState(
+            context = context,
+            selected = backupLocalResidency
+        ) { selected ->
+            backupLocalResidency = selected
+            prefs.backupAsrLocalResidency = selected
         }
     }
 
@@ -619,11 +631,13 @@ fun AsrSettingsScreen(
                 onEnabledChange = { backupAsrEnabled = it },
                 vendor = backupAsrVendor,
                 onVendorChange = { backupAsrVendor = it },
-                sensitivity = backupSensitivity
+                sensitivity = backupSensitivity,
+                localResidency = backupLocalResidency
             ),
             routeActions = AsrSettingsRouteActions(
                 showVendorPicker = ::showVendorPicker,
                 showBackupSensitivityPicker = ::showBackupSensitivityPicker,
+                showBackupLocalResidencyPicker = ::showBackupLocalResidencyPicker,
                 showSfFreeModelPicker = ::showSfFreeModelPicker,
                 showSfPaidModelPicker = ::showSfPaidModelPicker,
                 showDashModelPicker = ::showDashModelPicker,

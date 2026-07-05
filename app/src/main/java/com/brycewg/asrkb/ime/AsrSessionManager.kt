@@ -16,6 +16,7 @@ import android.util.Log
 import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
@@ -79,6 +80,10 @@ class AsrSessionManager(
          * 本地模型加载完成
          */
         fun onLocalModelLoadDone()
+
+        fun onBackupAsrLoading(backupVendor: AsrVendor) { /* default no-op */ }
+
+        fun onBackupAsrRecognizing(backupVendor: AsrVendor) { /* default no-op */ }
 
         /**
          * 实时音频振幅回调（用于波形动画）
@@ -145,7 +150,8 @@ class AsrSessionManager(
 
     private inner class SessionBoundEngineListener(
         initialSessionSeq: Long
-    ) : StreamingAsrEngine.Listener {
+    ) : StreamingAsrEngine.Listener,
+        BackupAsrStatusListener {
         private val boundSessionSeq = AtomicLong(initialSessionSeq)
 
         fun currentSessionSeq(): Long = boundSessionSeq.get()
@@ -173,6 +179,14 @@ class AsrSessionManager(
 
         override fun onAmplitude(amplitude: Float) {
             this@AsrSessionManager.onAmplitude(currentSessionSeq(), amplitude)
+        }
+
+        override fun onBackupAsrLoading(backupVendor: AsrVendor) {
+            this@AsrSessionManager.onBackupAsrLoading(currentSessionSeq(), backupVendor)
+        }
+
+        override fun onBackupAsrRecognizing(backupVendor: AsrVendor) {
+            this@AsrSessionManager.onBackupAsrRecognizing(currentSessionSeq(), backupVendor)
         }
     }
 
@@ -305,10 +319,11 @@ class AsrSessionManager(
             externalPcmInput = false
         )
         val current = asrEngine
-        val matched = if (parallelPlan.shouldUseParallel) {
+        val matched = if (parallelPlan.shouldUseBackupWrapper) {
             when (current) {
-                is ParallelAsrEngine -> if (current.primaryVendor == primaryVendor &&
-                    current.backupVendor == backupVendor
+                is BackupAwareAsrEngine -> if (current.primaryVendor == primaryVendor &&
+                    current.backupVendor == backupVendor &&
+                    current.backupStrategy == parallelPlan.decision
                 ) {
                     current
                 } else {
@@ -639,7 +654,7 @@ class AsrSessionManager(
         }
         Log.d(TAG, "onFinal: text='$text', state=$currentState")
         lastFinalVendorForStats = when (val e = asrEngine) {
-            is ParallelAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
+            is BackupAwareAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
             else -> sessionPrimaryVendor
         }
         // 若尚未收到 onStopped，则以当前时间近似计算一次时长
@@ -652,6 +667,12 @@ class AsrSessionManager(
                 Log.w(TAG, "Failed to compute audio duration on onFinal", t)
             }
         }
+        prefs.recordPrimaryAsrRuntimeRequestIfSuccessful(
+            engine = asrEngine,
+            fallbackPrimaryVendor = sessionPrimaryVendor,
+            audioMs = lastAudioMsForStats,
+            requestMs = lastRequestDurationMs
+        )
         try {
             DebugLogManager.log(
                 category = "asr",
@@ -756,6 +777,28 @@ class AsrSessionManager(
     private fun onAmplitude(seq: Long, amplitude: Float) {
         if (!isSessionActive(seq)) return
         listener?.onAmplitude(amplitude)
+    }
+
+    private fun onBackupAsrLoading(seq: Long, backupVendor: AsrVendor) {
+        if (!isSessionActive(seq)) return
+        try {
+            Handler(Looper.getMainLooper()).post {
+                listener?.onBackupAsrLoading(backupVendor)
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to deliver backup ASR loading to UI", t)
+        }
+    }
+
+    private fun onBackupAsrRecognizing(seq: Long, backupVendor: AsrVendor) {
+        if (!isSessionActive(seq)) return
+        try {
+            Handler(Looper.getMainLooper()).post {
+                listener?.onBackupAsrRecognizing(backupVendor)
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to deliver backup ASR recognizing to UI", t)
+        }
     }
 
     // ========== SenseVoiceFileAsrEngine.LocalModelLoadUi 实现 ==========

@@ -181,6 +181,8 @@ class AsrConstructionBaselineTest {
         assertFalse(source.contains("directMicrophoneEngineFactory.create("))
         assertTrue(source.contains("preferences = prefs.asrEngineModePreferencesSnapshot()"))
         assertTrue(source.contains("source = AsrEngineConstructionSource.SpeechRecognizer"))
+        assertTrue(source.contains("localModelReadyWaitMs.getAndSet(LOCAL_MODEL_READY_WAIT_CONSUMED)"))
+        assertTrue(source.contains("localModelReadyWaitMs.compareAndSet(0L, (readyAt - startMs).coerceAtLeast(0L))"))
         assertFalse(source.contains("private fun resolveStreamingBySettings("))
         assertFalse(source.contains("shouldUseBackupAsr("))
         assertFalse(source.contains("ParallelAsrEngine("))
@@ -316,6 +318,38 @@ class AsrConstructionBaselineTest {
                 source.contains(forbidden)
             )
         }
+    }
+
+    @Test
+    fun backupWrappersShareArbitrationAndFeedbackContracts() {
+        val parallelSource = projectFile(
+            "app/src/main/java/com/brycewg/asrkb/asr/ParallelAsrEngine.kt"
+        ).readText()
+        val lazySource = projectFile(
+            "app/src/main/java/com/brycewg/asrkb/asr/LazyLocalBackupAsrEngine.kt"
+        ).readText()
+        val coordinatorSource = projectFile(
+            "app/src/main/java/com/brycewg/asrkb/asr/BackupAsrTerminalCoordinator.kt"
+        ).readText()
+
+        listOf(parallelSource, lazySource).forEach { source ->
+            assertTrue(source.contains("BackupAwareAsrEngine"))
+            assertTrue(source.contains("BackupAsrTerminalCoordinator("))
+            assertTrue(source.contains("terminalCoordinator.dispatch("))
+            assertTrue(source.contains("AsrBackupArbitrationEvent.PrimaryFinal"))
+            assertTrue(source.contains("AsrBackupArbitrationEvent.PrimaryError"))
+            assertTrue(source.contains("AsrBackupArbitrationEvent.BackupFinal"))
+            assertTrue(source.contains("AsrBackupArbitrationEvent.BackupError"))
+            assertTrue(source.contains("AsrBackupArbitrationEvent.SwitchDeadlineReached"))
+            assertTrue(source.contains("override fun wasLastResultFromBackup()"))
+        }
+        assertTrue(coordinatorSource.contains("AsrBackupArbitrator("))
+        assertTrue(coordinatorSource.contains("AsrBackupArbitrationCommand.DeliverFinal"))
+        assertTrue(coordinatorSource.contains("AsrBackupArbitrationCommand.DeliverError"))
+        assertTrue(coordinatorSource.contains("lastFinalFromBackup = source == AsrBackupArbitrationSource.Backup"))
+        assertTrue(lazySource.contains("BackupAsrStatusListener"))
+        assertTrue(lazySource.contains("onBackupAsrLoading(backupVendor)"))
+        assertTrue(lazySource.contains("onBackupAsrRecognizing(backupVendor)"))
     }
 
     @Test

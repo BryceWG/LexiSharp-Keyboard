@@ -56,6 +56,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.AsrParallelEngineDecision
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.AsrVendorUi
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButton
@@ -510,9 +511,17 @@ private fun configuredAsrSummary(
         RecordingTestAsrMode.File -> stringResource(R.string.recording_test_asr_mode_file)
     }
     val backup = state.backupAsrVendor?.let { vendor ->
-        stringResource(R.string.recording_test_asr_backup_suffix, AsrVendorUi.name(context, vendor))
+        val strategy = state.backupAsrStrategy?.let { backupAsrStrategyLabel(it) }.orEmpty()
+        stringResource(R.string.recording_test_asr_backup_suffix, AsrVendorUi.name(context, vendor), strategy)
     } ?: ""
     return stringResource(R.string.recording_test_asr_summary, primary, mode, backup)
+}
+
+@Composable
+private fun backupAsrStrategyLabel(strategy: AsrParallelEngineDecision): String = when (strategy) {
+    AsrParallelEngineDecision.UseParallel -> stringResource(R.string.recording_test_backup_strategy_parallel)
+    AsrParallelEngineDecision.UseLazyLocalBackup -> stringResource(R.string.recording_test_backup_strategy_lazy)
+    AsrParallelEngineDecision.UsePrimaryOnly -> ""
 }
 
 @Composable

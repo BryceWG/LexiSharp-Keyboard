@@ -16,6 +16,8 @@
   <string name="status_listening">Listening…</string>
   <string name="status_recognizing">Recognizing…</string>
   <string name="status_backup_asr_used">Used backup engine result</string>
+  <string name="status_backup_asr_loading">Starting local backup recognition…</string>
+  <string name="status_backup_asr_recognizing">Recognizing with local backup…</string>
   <string name="status_ai_processing">AI post-processing…</string>
   <string name="status_ai_edit_listening">Speak your edit instruction…</string>
   <string name="status_ai_editing">AI editing…</string>
@@ -105,11 +107,15 @@
   <string name="label_backup_asr_enabled">Enable backup engine</string>
   <string name="label_backup_asr_vendor">Backup provider</string>
   <string name="label_backup_asr_timeout_sensitivity">Timeout sensitivity</string>
+  <string name="label_backup_asr_local_residency">Local backup mode</string>
   <string name="hint_backup_asr_uses_existing_config">Uses the provider settings already configured on this page</string>
   <string name="hint_backup_asr_timeout_sensitivity">Higher sensitivity switches to the backup result sooner when the primary engine is slow</string>
+  <string name="hint_backup_asr_local_residency">On-demand releases local backup models after idle time; resident keeps them loaded for the fastest fallback.</string>
   <string name="option_backup_asr_timeout_sensitivity_relaxed">Relaxed</string>
   <string name="option_backup_asr_timeout_sensitivity_balanced">Balanced (Recommended)</string>
   <string name="option_backup_asr_timeout_sensitivity_sensitive">Sensitive</string>
+  <string name="option_backup_asr_local_residency_on_demand">Load on demand</string>
+  <string name="option_backup_asr_local_residency_resident">Keep resident</string>
 
   <!-- ============================================== -->
   <!-- Custom Punctuation -->
@@ -458,7 +464,9 @@
   <string name="recording_test_asr_summary">%1$s · %2$s%3$s</string>
   <string name="recording_test_asr_mode_push_pcm">Current streaming/push channel</string>
   <string name="recording_test_asr_mode_file">Current file channel</string>
-  <string name="recording_test_asr_backup_suffix"> · Backup %1$s</string>
+  <string name="recording_test_asr_backup_suffix"> · Backup %1$s · %2$s</string>
+  <string name="recording_test_backup_strategy_parallel">Parallel</string>
+  <string name="recording_test_backup_strategy_lazy">Lazy serial</string>
   <string name="recording_test_auto_transcribe">Auto transcribe</string>
   <string name="recording_test_ai_label">AI</string>
   <string name="recording_test_prompt_summary">Choose the prompt preset used for AI post-processing</string>

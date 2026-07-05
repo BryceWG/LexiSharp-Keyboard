@@ -282,10 +282,12 @@ internal fun AsrSettingsRouteContent(
                     vendor = backupState.vendor,
                     vendorName = AsrVendorUi.name(context, backupState.vendor),
                     sensitivity = backupState.sensitivity,
+                    localResidency = backupState.localResidency,
                     onEnabledChange = backupState.onEnabledChange,
                     onVendorChange = backupState.onVendorChange,
                     showVendorPicker = showVendorPicker,
-                    showSensitivityPicker = showBackupSensitivityPicker
+                    showSensitivityPicker = showBackupSensitivityPicker,
+                    showLocalResidencyPicker = showBackupLocalResidencyPicker
                 )
             }
         }

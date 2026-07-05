@@ -12,6 +12,8 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.analytics.AnalyticsManager
 import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
+import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.util.TypewriterTextAnimator
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
@@ -58,7 +60,8 @@ internal class ExternalSpeechSession(
     private val context: Context,
     private val prefs: Prefs,
     private val callbacks: ExternalSpeechCallbacks
-) : StreamingAsrEngine.Listener {
+) : StreamingAsrEngine.Listener,
+    BackupAsrStatusListener {
     var engine: StreamingAsrEngine? = null
     private var autoStopSuppression: AutoCloseable? = null
 
@@ -202,7 +205,7 @@ internal class ExternalSpeechSession(
     private fun resolveFinalVendorForRecord(): AsrVendor {
         val e = engine
         return when (e) {
-            is ParallelAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
+            is BackupAwareAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
             else -> vendor ?: try {
                 prefs.asrVendor
             } catch (_: Throwable) {
@@ -213,14 +216,24 @@ internal class ExternalSpeechSession(
 
     private fun scheduleProcessingTimeoutIfNeeded() {
         val audioMs = lastAudioMsForStats
-        val baseTimeoutMs = AsrTimeoutCalculator.calculateTimeoutMs(audioMs, vendor)
-        val timeoutMs = if (engine is ParallelAsrEngine) baseTimeoutMs + 2_000L else baseTimeoutMs
+        val backupEngine = engine as? BackupAwareAsrEngine
+        val primaryVendor = backupEngine?.primaryVendor ?: vendor
+        val backupVendor = backupEngine?.backupVendor
+        val timeoutMs = AsrTimeoutCalculator.calculateBackupAwareProcessingTimeoutMs(
+            audioMs = audioMs,
+            primaryVendor = primaryVendor,
+            primaryStatsSnapshot = prefs.getAsrRuntimeStatsSnapshotOrNull(primaryVendor, audioMs),
+            backupStrategy = backupEngine?.backupStrategy,
+            backupVendor = backupVendor,
+            backupStatsSnapshot = prefs.getAsrRuntimeStatsSnapshotOrNull(backupVendor, audioMs),
+            sensitivityTier = safeBackupSensitivityTier(),
+            primaryStreaming = backupEngine?.primaryStreamingForSwitchPlan ?: true
+        )
         synchronized(processingTimeoutLock) {
             if (processingTimeoutJob != null) return
             processingTimeoutJob = sessionScope.launch {
-                val usingBackupEngine = engine is ParallelAsrEngine
                 val shouldDeferForLocalModel =
-                    !usingBackupEngine && (vendor?.let { isLocalAsrVendor(it) } ?: false)
+                    backupEngine == null && (vendor?.let { isLocalAsrVendor(it) } ?: false)
                 if (shouldDeferForLocalModel) {
                     // 本地模型：将超时计时起点推移到“模型加载完成”之后，避免首次加载期间误触发超时
                     val ok =
@@ -431,6 +444,12 @@ internal class ExternalSpeechSession(
                 Log.w(TAG, "Failed to compute audio duration on final", t)
             }
         }
+        prefs.recordPrimaryAsrRuntimeRequestIfSuccessful(
+            engine = engine,
+            fallbackPrimaryVendor = vendor ?: AsrVendor.Volc,
+            audioMs = lastAudioMsForStats,
+            requestMs = lastRequestDurationMs
+        )
         val doAi = try {
             prefs.postProcessEnabled && prefs.hasLlmKeys()
         } catch (
@@ -732,6 +751,28 @@ internal class ExternalSpeechSession(
     override fun onAmplitude(amplitude: Float) {
         if (canceled || finished) return
         safe { callbacks.onAmplitude(id, amplitude) }
+    }
+
+    override fun onBackupAsrLoading(backupVendor: AsrVendor) {
+        if (canceled || finished) return
+        safe { callbacks.onState(id, STATE_PROCESSING, context.getString(R.string.status_backup_asr_loading)) }
+    }
+
+    override fun onBackupAsrRecognizing(backupVendor: AsrVendor) {
+        if (canceled || finished) return
+        safe {
+            callbacks.onState(
+                id,
+                STATE_PROCESSING,
+                context.getString(R.string.status_backup_asr_recognizing)
+            )
+        }
+    }
+
+    private fun safeBackupSensitivityTier(): Int = try {
+        prefs.backupAsrTimeoutSensitivity
+    } catch (_: Throwable) {
+        1
     }
 }
 

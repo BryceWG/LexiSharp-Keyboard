@@ -8,6 +8,7 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 import android.content.Context
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.BackupAsrLocalResidency
 import com.brycewg.asrkb.asr.partitionAsrVendorsByConfigured
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.AsrVendorUi
@@ -79,6 +80,28 @@ internal fun backupSensitivityChoiceSheetState(
     selectedIndex = selectedIndex,
     onSelected = onSelected
 )
+
+internal fun backupLocalResidencyChoiceSheetState(
+    context: Context,
+    selected: BackupAsrLocalResidency,
+    onSelected: (BackupAsrLocalResidency) -> Unit
+): SettingsChoiceSheetState? {
+    val options = listOf(
+        BackupAsrLocalResidency.OnDemand,
+        BackupAsrLocalResidency.Resident
+    )
+    return asrSimpleChoiceSheetState(
+        context = context,
+        titleResId = R.string.label_backup_asr_local_residency,
+        items = listOf(
+            context.getString(R.string.option_backup_asr_local_residency_on_demand),
+            context.getString(R.string.option_backup_asr_local_residency_resident)
+        ),
+        selectedIndex = options.indexOf(selected).coerceAtLeast(0)
+    ) { selectedIdx ->
+        onSelected(options.getOrElse(selectedIdx) { BackupAsrLocalResidency.OnDemand })
+    }
+}
 
 internal fun sfFreeAsrModelChoiceSheetState(
     context: Context,

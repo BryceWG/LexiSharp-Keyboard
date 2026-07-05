@@ -14,6 +14,8 @@
   <string name="status_listening">正在聆聽…</string>
   <string name="status_recognizing">識別中…</string>
   <string name="status_backup_asr_used">使用備用引擎結果</string>
+  <string name="status_backup_asr_loading">正在啟動本地備用識別…</string>
+  <string name="status_backup_asr_recognizing">正在使用本地備用識別…</string>
   <string name="status_ai_processing">AI 後處理中…</string>
   <string name="status_ai_edit_listening">請說出編輯指令…</string>
   <string name="status_ai_editing">AI 編輯中…</string>
@@ -103,11 +105,15 @@
   <string name="label_backup_asr_enabled">啟用備用引擎</string>
   <string name="label_backup_asr_vendor">備用服務商</string>
   <string name="label_backup_asr_timeout_sensitivity">逾時閾值敏感度</string>
+  <string name="label_backup_asr_local_residency">本地備用模式</string>
   <string name="hint_backup_asr_uses_existing_config">直接使用本頁已有的服務商設定，無需額外設定</string>
   <string name="hint_backup_asr_timeout_sensitivity">敏感度越高，主引擎越容易被判定逾時並更快切換到備用結果</string>
+  <string name="hint_backup_asr_local_residency">按需載入會在閒置後釋放本地備用模型；保持常駐會繼續占用記憶體以換取最快兜底。</string>
   <string name="option_backup_asr_timeout_sensitivity_relaxed">寬鬆</string>
   <string name="option_backup_asr_timeout_sensitivity_balanced">均衡（推薦）</string>
   <string name="option_backup_asr_timeout_sensitivity_sensitive">敏感</string>
+  <string name="option_backup_asr_local_residency_on_demand">按需載入</string>
+  <string name="option_backup_asr_local_residency_resident">保持常駐</string>
 
   <!-- ============================================== -->
   <!-- 自定義標點 -->
@@ -456,7 +462,9 @@
   <string name="recording_test_asr_summary">%1$s · %2$s%3$s</string>
   <string name="recording_test_asr_mode_push_pcm">目前流式/推送通道</string>
   <string name="recording_test_asr_mode_file">目前檔案通道</string>
-  <string name="recording_test_asr_backup_suffix"> · 備用 %1$s</string>
+  <string name="recording_test_asr_backup_suffix"> · 備用 %1$s · %2$s</string>
+  <string name="recording_test_backup_strategy_parallel">並行</string>
+  <string name="recording_test_backup_strategy_lazy">懶載入串行</string>
   <string name="recording_test_auto_transcribe">自動轉錄</string>
   <string name="recording_test_ai_label">AI</string>
   <string name="recording_test_prompt_summary">選擇 AI 後處理使用的提示詞預設</string>

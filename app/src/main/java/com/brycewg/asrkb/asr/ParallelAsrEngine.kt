@@ -6,6 +6,7 @@ import android.os.SystemClock
 import android.util.Log
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -30,11 +31,12 @@ class ParallelAsrEngine(
     private val scope: CoroutineScope,
     private val prefs: Prefs,
     private val listener: StreamingAsrEngine.Listener,
-    val primaryVendor: AsrVendor,
-    val backupVendor: AsrVendor,
+    override val primaryVendor: AsrVendor,
+    override val backupVendor: AsrVendor,
     private val onPrimaryRequestDuration: ((Long) -> Unit)? = null,
     private val externalPcmInput: Boolean = false
 ) : StreamingAsrEngine,
+    BackupAwareAsrEngine,
     ExternalPcmConsumer,
     CancelableAsrEngine {
 
@@ -43,16 +45,6 @@ class ParallelAsrEngine(
         private const val SAMPLE_RATE = 16000
         private const val CHANNELS = 1
         private const val CHUNK_MS = 200
-        private const val PRIMARY_SWITCH_RATIO_BALANCED = 0.75
-        private const val PRIMARY_SWITCH_RATIO_SENSITIVE = 0.5
-        private const val PRIMARY_SWITCH_MIN_MS = 6_000L
-        private const val PRIMARY_SWITCH_MAX_MS = 15_000L
-        private const val PRIMARY_SWITCH_LOCAL_STREAM_MIN_MS = 8_000L
-        private const val PRIMARY_SWITCH_LOCAL_STREAM_MAX_MS = 30_000L
-        private const val PRIMARY_SWITCH_NONSTREAM_SOFT_MAX_BALANCED_MS = 25_000L
-        private const val PRIMARY_SWITCH_NONSTREAM_SOFT_MAX_SENSITIVE_MS = 18_000L
-        private const val PRIMARY_SWITCH_LOCAL_NONSTREAM_SOFT_MAX_BALANCED_MS = 75_000L
-        private const val PRIMARY_SWITCH_LOCAL_NONSTREAM_SOFT_MAX_SENSITIVE_MS = 55_000L
     }
 
     private enum class Source { PRIMARY, BACKUP }
@@ -67,27 +59,30 @@ class ParallelAsrEngine(
 
     private val running = AtomicBoolean(false)
     private val stopRequested = AtomicBoolean(false)
-    private val terminalDelivered = AtomicBoolean(false)
 
     private val stateLock = Any()
 
     private var audioJob: Job? = null
-    private var primaryTimeoutJob: Job? = null
+    private var switchDeadlineJob: Job? = null
 
     @Volatile private var startUptimeMs: Long = 0L
     private val audioBytes = AtomicLong(0L)
 
     @Volatile private var stoppedNotified: Boolean = false
 
-    @Volatile private var primaryTimedOut: Boolean = false
+    private val terminalCoordinator = BackupAsrTerminalCoordinator(
+        onFinal = ::deliverFinalFromCoordinator,
+        onError = ::deliverErrorFromCoordinator
+    )
 
-    @Volatile private var primaryTerminal: Terminal? = null
+    override val backupStrategy: AsrParallelEngineDecision =
+        AsrParallelEngineDecision.UseParallel
 
-    @Volatile private var backupTerminal: Terminal? = null
+    override val primaryStreamingForSwitchPlan: Boolean
+        get() = isPrimaryNativeOrLocalStreamForSwitch()
 
-    @Volatile private var lastFinalFromBackup: Boolean = false
-
-    fun wasLastResultFromBackup(): Boolean = lastFinalFromBackup
+    override fun wasLastResultFromBackup(): Boolean =
+        terminalCoordinator.wasLastResultFromBackup()
 
     private val primaryListener = EngineListener(Source.PRIMARY, forwardLocalModelUi = true)
     private val backupListener = EngineListener(Source.BACKUP, forwardLocalModelUi = false)
@@ -105,19 +100,14 @@ class ParallelAsrEngine(
         if (!running.compareAndSet(false, true)) return
 
         stopRequested.set(false)
-        terminalDelivered.set(false)
         stoppedNotified = false
-        primaryTimedOut = false
-        primaryTerminal = null
-        backupTerminal = null
-        lastFinalFromBackup = false
         audioBytes.set(0L)
         externalVadInputLeveler.reset()
         synchronized(deferredPcmLock) {
             deferredPcmBuffer.reset()
         }
-        primaryTimeoutJob?.cancel()
-        primaryTimeoutJob = null
+        switchDeadlineJob?.cancel()
+        switchDeadlineJob = null
 
         startUptimeMs = try {
             SystemClock.uptimeMillis()
@@ -125,12 +115,21 @@ class ParallelAsrEngine(
             0L
         }
 
-        primaryEngine = buildPushPcmEngine(
-            vendor = primaryVendor,
-            engineListener = primaryListener,
-            invocationMode = AsrEngineInvocationMode.ParallelPrimary,
-            onRequestDuration = onPrimaryRequestDuration
+        val primaryNetworkGateEvent = AsrPrimaryNetworkGate.preflightEvent(
+            primaryVendor = primaryVendor,
+            networkAvailable = AsrPrimaryNetworkGate.isNetworkAvailable(context),
+            message = context.getString(R.string.asr_error_network_unavailable)
         )
+        primaryEngine = if (primaryNetworkGateEvent == null) {
+            buildPushPcmEngine(
+                vendor = primaryVendor,
+                engineListener = primaryListener,
+                invocationMode = AsrEngineInvocationMode.ParallelPrimary,
+                onRequestDuration = onPrimaryRequestDuration
+            )
+        } else {
+            null
+        }
         backupEngine = buildPushPcmEngine(
             vendor = backupVendor,
             engineListener = backupListener,
@@ -139,8 +138,12 @@ class ParallelAsrEngine(
         )
         primaryConsumer = primaryEngine as? ExternalPcmConsumer
         backupConsumer = backupEngine as? ExternalPcmConsumer
+        terminalCoordinator.reset(
+            hasPrimary = primaryEngine != null || primaryNetworkGateEvent != null,
+            hasBackup = backupEngine != null
+        )
 
-        if (primaryEngine == null && backupEngine == null) {
+        if (primaryEngine == null && backupEngine == null && primaryNetworkGateEvent == null) {
             running.set(false)
             try {
                 listener.onError(
@@ -155,11 +158,24 @@ class ParallelAsrEngine(
             return
         }
 
-        try {
-            primaryEngine?.start()
-        } catch (t: Throwable) {
-            Log.e(TAG, "primary start failed", t)
-            onTerminal(Source.PRIMARY, Terminal.Error(t.message ?: "primary start failed"))
+        if (primaryNetworkGateEvent != null) {
+            val deliveredByGate = synchronized(stateLock) {
+                if (!terminalCoordinator.terminalDelivered) {
+                    terminalCoordinator.dispatch(primaryNetworkGateEvent)
+                }
+                terminalCoordinator.terminalDelivered
+            }
+            if (deliveredByGate) {
+                cleanupAfterTerminal()
+                return
+            }
+        } else {
+            try {
+                primaryEngine?.start()
+            } catch (t: Throwable) {
+                Log.e(TAG, "primary start failed", t)
+                onTerminal(Source.PRIMARY, Terminal.Error(t.message ?: "primary start failed"))
+            }
         }
         try {
             backupEngine?.start()
@@ -177,7 +193,7 @@ class ParallelAsrEngine(
         if (stopRequested.getAndSet(true)) return
 
         running.set(false)
-        if (!terminalDelivered.get()) {
+        if (!terminalCoordinator.terminalDelivered) {
             notifyStoppedIfNeeded()
         }
 
@@ -202,13 +218,13 @@ class ParallelAsrEngine(
             Log.w(TAG, "backup stop failed", t)
         }
 
-        schedulePrimaryTimeoutIfNeeded()
+        scheduleSwitchDeadlineIfNeeded()
     }
 
     override fun cancel() {
         stopRequested.set(true)
         running.set(false)
-        terminalDelivered.set(true)
+        terminalCoordinator.markTerminalDelivered()
         try {
             audioJob?.cancel()
         } catch (t: Throwable) {
@@ -217,11 +233,11 @@ class ParallelAsrEngine(
             audioJob = null
         }
         try {
-            primaryTimeoutJob?.cancel()
+            switchDeadlineJob?.cancel()
         } catch (t: Throwable) {
-            Log.w(TAG, "cancel primary timeout failed", t)
+            Log.w(TAG, "cancel switch deadline failed", t)
         } finally {
-            primaryTimeoutJob = null
+            switchDeadlineJob = null
         }
         synchronized(deferredPcmLock) {
             deferredPcmBuffer.reset()
@@ -250,7 +266,7 @@ class ParallelAsrEngine(
     override fun appendPcm(pcm: ByteArray, sampleRate: Int, channels: Int) {
         if (!externalPcmInput) return
         if (!running.get()) return
-        if (terminalDelivered.get()) return
+        if (terminalCoordinator.terminalDelivered) return
         if (sampleRate != SAMPLE_RATE || channels != CHANNELS) return
 
         audioBytes.addAndGet(pcm.size.toLong())
@@ -267,11 +283,11 @@ class ParallelAsrEngine(
         stopRequested.set(true)
         running.set(false)
         try {
-            primaryTimeoutJob?.cancel()
+            switchDeadlineJob?.cancel()
         } catch (t: Throwable) {
-            Log.w(TAG, "cancel primaryTimeoutJob failed in cleanupAfterTerminal", t)
+            Log.w(TAG, "cancel switchDeadlineJob failed in cleanupAfterTerminal", t)
         } finally {
-            primaryTimeoutJob = null
+            switchDeadlineJob = null
         }
         try {
             audioJob?.cancel()
@@ -333,7 +349,7 @@ class ParallelAsrEngine(
             try {
                 audioManager.startCapture().collect { chunk ->
                     if (!isActive || !running.get()) return@collect
-                    if (terminalDelivered.get()) return@collect
+                    if (terminalCoordinator.terminalDelivered) return@collect
 
                     val leveled = vadInputLeveler.process(chunk)
 
@@ -380,8 +396,20 @@ class ParallelAsrEngine(
     }
 
     private fun fatalCaptureError(message: String) {
-        onTerminal(Source.PRIMARY, Terminal.Error(message))
-        onTerminal(Source.BACKUP, Terminal.Error(message))
+        val shouldStopCapture = synchronized(stateLock) {
+            if (terminalCoordinator.terminalDelivered) return
+            terminalCoordinator.dispatch(
+                AsrBackupArbitrationEvent.PrimaryError(
+                    message = message,
+                    strategy = AsrPrimaryErrorStrategy.ImmediateFailover
+                )
+            )
+            terminalCoordinator.dispatch(AsrBackupArbitrationEvent.BackupError(message))
+            terminalCoordinator.terminalDelivered
+        }
+        if (shouldStopCapture) {
+            cleanupAfterTerminal()
+        }
     }
 
     private fun appendPcmToConsumers(pcm: ByteArray, sourceLabel: String) {
@@ -465,9 +493,9 @@ class ParallelAsrEngine(
         }
     }
 
-    private fun schedulePrimaryTimeoutIfNeeded() {
+    private fun scheduleSwitchDeadlineIfNeeded() {
         if (primaryEngine == null || backupEngine == null) return
-        if (terminalDelivered.get()) return
+        if (terminalCoordinator.terminalDelivered) return
 
         val bytesAudioMs = audioMsFromBytes(audioBytes.get())
         val audioMs = if (bytesAudioMs > 0L) {
@@ -482,41 +510,43 @@ class ParallelAsrEngine(
             if (t0 > 0L && t1 >= t0) (t1 - t0) else 0L
         }
 
-        val baseTimeoutMs = AsrTimeoutCalculator.calculateTimeoutMs(audioMs, primaryVendor)
         val sensitivityTier = try {
             prefs.backupAsrTimeoutSensitivity
         } catch (_: Throwable) {
             1
         }
-        val switchTimeoutMs =
-            calculatePrimarySwitchTimeoutMs(
-                baseTimeoutMs,
-                primaryVendor,
-                isPrimaryNativeOrLocalStreamForSwitch(),
-                sensitivityTier
-            )
+        val primaryStreaming = isPrimaryNativeOrLocalStreamForSwitch()
+        val switchPlan = AsrTimeoutCalculator.calculateBackupSwitchPlan(
+            audioMs = audioMs,
+            primaryVendor = primaryVendor,
+            primaryStreaming = primaryStreaming,
+            sensitivityTier = sensitivityTier,
+            primaryStatsSnapshot = prefs.getAsrRuntimeStatsSnapshotOrNull(primaryVendor, audioMs),
+            backupStrategy = AsrParallelEngineDecision.UseParallel
+        )
+        val switchDeadlineMs = switchPlan.switchDeadlineMs
 
         try {
-            primaryTimeoutJob?.cancel()
+            switchDeadlineJob?.cancel()
         } catch (t: Throwable) {
-            Log.w(TAG, "cancel primaryTimeoutJob failed", t)
+            Log.w(TAG, "cancel switchDeadlineJob failed", t)
         }
-        primaryTimeoutJob = scope.launch {
+        switchDeadlineJob = scope.launch {
             val countdownStartMs = try {
                 SystemClock.uptimeMillis()
             } catch (_: Throwable) {
                 0L
             }
-            val readyWaitBudgetMs = switchTimeoutMs.coerceAtMost(LOCAL_MODEL_READY_WAIT_MAX_MS)
+            val readyWaitBudgetMs = switchDeadlineMs.coerceAtMost(LOCAL_MODEL_READY_WAIT_MAX_MS)
             if (isLocalAsrVendor(primaryVendor)) {
                 val ok = awaitLocalAsrReady(prefs, maxWaitMs = readyWaitBudgetMs)
                 if (!ok) {
                     Log.w(
                         TAG,
-                        "Local model readiness wait timed out; continue countdown within switch budget"
+                        "Local model readiness wait timed out; continue countdown within switch deadline"
                     )
                 }
-                if (terminalDelivered.get()) return@launch
+                if (terminalCoordinator.terminalDelivered) return@launch
             }
             val elapsedMs = if (countdownStartMs > 0L) {
                 val now = try {
@@ -532,76 +562,21 @@ class ParallelAsrEngine(
             } else {
                 0L
             }
-            val remainingDelayMs = (switchTimeoutMs - elapsedMs).coerceAtLeast(0L)
+            val remainingDelayMs = (switchDeadlineMs - elapsedMs).coerceAtLeast(0L)
             delay(remainingDelayMs)
             synchronized(stateLock) {
-                if (terminalDelivered.get()) return@synchronized
-                if (primaryTerminal == null) {
-                    primaryTimedOut = true
-                    Log.w(
-                        TAG,
-                        "Primary timeout fired (audioMs=$audioMs, switchTimeoutMs=$switchTimeoutMs, elapsedMs=$elapsedMs)"
-                    )
-                }
-                tryResolveLocked()
+                if (terminalCoordinator.terminalDelivered) return@synchronized
+                Log.w(
+                    TAG,
+                    "Switch deadline reached (audioMs=$audioMs, switchDeadlineMs=$switchDeadlineMs, elapsedMs=$elapsedMs)"
+                )
+                terminalCoordinator.dispatch(AsrBackupArbitrationEvent.SwitchDeadlineReached)
             }
         }
         Log.d(
             TAG,
-            "Primary timeout scheduled: audioMs=$audioMs, baseTimeoutMs=$baseTimeoutMs, switchTimeoutMs=$switchTimeoutMs"
+            "Switch deadline scheduled: audioMs=$audioMs, switchDeadlineMs=$switchDeadlineMs, usedStaticFallback=${switchPlan.usedStaticFallback}, baselineMs=${switchPlan.baselineMs}, audioAdjustmentMs=${switchPlan.audioLengthAdjustmentMs}, modeAdjustmentMs=${switchPlan.primaryModeAdjustmentMs}"
         )
-    }
-
-    private fun calculatePrimarySwitchTimeoutMs(
-        baseTimeoutMs: Long,
-        primaryVendor: AsrVendor,
-        primaryStreaming: Boolean,
-        sensitivityTier: Int
-    ): Long {
-        val ratio = when (sensitivityTier.coerceIn(0, 2)) {
-            0 -> 1.0
-            2 -> PRIMARY_SWITCH_RATIO_SENSITIVE
-            else -> PRIMARY_SWITCH_RATIO_BALANCED
-        }
-
-        var timeoutMs = (baseTimeoutMs.toDouble() * ratio).toLong().coerceAtLeast(0L)
-        val localPrimary = isLocalAsrVendor(primaryVendor)
-
-        if (primaryStreaming) {
-            val minMs = if (localPrimary) {
-                PRIMARY_SWITCH_LOCAL_STREAM_MIN_MS
-            } else {
-                PRIMARY_SWITCH_MIN_MS
-            }
-            val maxMs = if (localPrimary) {
-                PRIMARY_SWITCH_LOCAL_STREAM_MAX_MS
-            } else {
-                PRIMARY_SWITCH_MAX_MS
-            }
-            timeoutMs = timeoutMs.coerceIn(minMs, maxMs)
-        } else {
-            val minMs = when (sensitivityTier.coerceIn(0, 2)) {
-                2 -> 5_000L
-                1 -> 6_000L
-                else -> 0L
-            }
-            val softMaxMs = when (sensitivityTier.coerceIn(0, 2)) {
-                2 -> if (localPrimary) {
-                    PRIMARY_SWITCH_LOCAL_NONSTREAM_SOFT_MAX_SENSITIVE_MS
-                } else {
-                    PRIMARY_SWITCH_NONSTREAM_SOFT_MAX_SENSITIVE_MS
-                }
-                1 -> if (localPrimary) {
-                    PRIMARY_SWITCH_LOCAL_NONSTREAM_SOFT_MAX_BALANCED_MS
-                } else {
-                    PRIMARY_SWITCH_NONSTREAM_SOFT_MAX_BALANCED_MS
-                }
-                else -> Long.MAX_VALUE
-            }
-            timeoutMs = timeoutMs.coerceAtLeast(minMs).coerceAtMost(softMaxMs)
-        }
-
-        return timeoutMs
     }
 
     private fun audioMsFromBytes(bytes: Long): Long {
@@ -626,103 +601,43 @@ class ParallelAsrEngine(
             AsrPushPcmEngineFamily.PseudoStream -> false
         }
     } catch (t: Throwable) {
-        Log.w(TAG, "Failed to resolve primary stream mode for switch timeout", t)
+        Log.w(TAG, "Failed to resolve primary stream mode for switch deadline", t)
         false
     }
 
     private fun onTerminal(source: Source, t: Terminal) {
         val shouldStopCapture = synchronized(stateLock) {
-            if (terminalDelivered.get()) return
-            when (source) {
-                Source.PRIMARY -> primaryTerminal = t
-                Source.BACKUP -> backupTerminal = t
-            }
-            tryResolveLocked()
-            terminalDelivered.get()
+            if (terminalCoordinator.terminalDelivered) return
+            terminalCoordinator.dispatch(t.toArbitrationEvent(source))
+            terminalCoordinator.terminalDelivered
         }
         if (shouldStopCapture) {
             cleanupAfterTerminal()
         }
     }
 
-    private fun tryResolveLocked() {
-        if (terminalDelivered.get()) return
-
-        val p = primaryTerminal
-        val b = backupTerminal
-        val hasPrimary = primaryEngine != null
-        val hasBackup = backupEngine != null
-
-        // 无主用：直接采用备用
-        if (!hasPrimary) {
-            when (b) {
-                is Terminal.Final -> deliverFinalLocked(b.text, Source.BACKUP)
-                is Terminal.Error -> deliverErrorLocked(b.message)
-                null -> Unit
+    private fun Terminal.toArbitrationEvent(source: Source): AsrBackupArbitrationEvent =
+        when (source) {
+            Source.PRIMARY -> when (this) {
+                is Terminal.Final -> AsrBackupArbitrationEvent.PrimaryFinal(text)
+                is Terminal.Error -> AsrBackupArbitrationEvent.PrimaryError(message)
             }
-            return
-        }
-
-        // 主用有结果（非空）直接采用
-        val pFinal = p as? Terminal.Final
-        if (pFinal != null && pFinal.text.isNotBlank()) {
-            deliverFinalLocked(pFinal.text, Source.PRIMARY)
-            return
-        }
-
-        // 没有备用：主用终止即交付
-        if (!hasBackup) {
-            when (p) {
-                is Terminal.Final -> deliverFinalLocked(p.text, Source.PRIMARY)
-                is Terminal.Error -> deliverErrorLocked(p.message)
-                null -> Unit
+            Source.BACKUP -> when (this) {
+                is Terminal.Final -> AsrBackupArbitrationEvent.BackupFinal(text)
+                is Terminal.Error -> AsrBackupArbitrationEvent.BackupError(message)
             }
-            return
         }
 
-        val pFailed = when (p) {
-            is Terminal.Error -> true
-            is Terminal.Final -> p.text.isBlank()
-            null -> false
-        }
-
-        // 主用失败：尽快尝试采用备用（无需等待主用超时阈值）
-        if (pFailed) {
-            val bFinal = b as? Terminal.Final
-            when {
-                bFinal != null && bFinal.text.isNotBlank() -> deliverFinalLocked(
-                    bFinal.text,
-                    Source.BACKUP
-                )
-                b is Terminal.Error -> deliverErrorLocked(b.message)
-                bFinal != null -> deliverFinalLocked(bFinal.text, Source.BACKUP)
-                else -> Unit
-            }
-            return
-        }
-
-        // 主用未终止但已超时：切换到备用
-        if (primaryTimedOut) {
-            when (b) {
-                is Terminal.Final -> deliverFinalLocked(b.text, Source.BACKUP)
-                is Terminal.Error -> deliverErrorLocked(b.message)
-                null -> Unit
-            }
-            return
-        }
-
-        // 否则：继续等待主用（备用结果缓存，不立即提交）
-    }
-
-    private fun deliverFinalLocked(text: String, from: Source) {
-        if (!terminalDelivered.compareAndSet(false, true)) return
-        lastFinalFromBackup = (from == Source.BACKUP)
+    private fun deliverFinalFromCoordinator(
+        text: String,
+        source: AsrBackupArbitrationSource
+    ) {
         try {
-            primaryTimeoutJob?.cancel()
+            switchDeadlineJob?.cancel()
         } catch (t: Throwable) {
-            Log.w(TAG, "cancel primaryTimeoutJob failed on deliverFinal", t)
+            Log.w(TAG, "cancel switchDeadlineJob failed on deliverFinal", t)
         } finally {
-            primaryTimeoutJob = null
+            switchDeadlineJob = null
         }
         try {
             listener.onFinal(text)
@@ -731,14 +646,13 @@ class ParallelAsrEngine(
         }
     }
 
-    private fun deliverErrorLocked(message: String) {
-        if (!terminalDelivered.compareAndSet(false, true)) return
+    private fun deliverErrorFromCoordinator(message: String) {
         try {
-            primaryTimeoutJob?.cancel()
+            switchDeadlineJob?.cancel()
         } catch (t: Throwable) {
-            Log.w(TAG, "cancel primaryTimeoutJob failed on deliverError", t)
+            Log.w(TAG, "cancel switchDeadlineJob failed on deliverError", t)
         } finally {
-            primaryTimeoutJob = null
+            switchDeadlineJob = null
         }
         try {
             listener.onError(message)

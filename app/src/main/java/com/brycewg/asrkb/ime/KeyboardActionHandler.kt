@@ -5,7 +5,9 @@ import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.BackupAwareAsrEngine
 import com.brycewg.asrkb.asr.LlmPostProcessor
+import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.VadAutoStopGuard
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
@@ -74,8 +76,8 @@ class KeyboardActionHandler(
         currentStateProvider = { currentState },
         opSeqProvider = { opSeq },
         audioMsProvider = { asrManager.peekLastAudioMsForStats() },
-        usingBackupEngineProvider = {
-            asrManager.getEngine() is com.brycewg.asrkb.asr.ParallelAsrEngine
+        backupEngineProvider = {
+            asrManager.getEngine() as? BackupAwareAsrEngine
         },
         onTimeout = { transitionToIdle() }
     )
@@ -996,6 +998,14 @@ class KeyboardActionHandler(
         } else {
             uiListener?.onStatusMessage(context.getString(R.string.sv_model_ready))
         }
+    }
+
+    override fun onBackupAsrLoading(backupVendor: AsrVendor) {
+        uiListener?.onStatusMessage(context.getString(R.string.status_backup_asr_loading))
+    }
+
+    override fun onBackupAsrRecognizing(backupVendor: AsrVendor) {
+        uiListener?.onStatusMessage(context.getString(R.string.status_backup_asr_recognizing))
     }
 
     override fun onAmplitude(amplitude: Float) {

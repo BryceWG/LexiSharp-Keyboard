@@ -6,6 +6,7 @@
 package com.brycewg.asrkb.ui.settings.compose.screens
 
 import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.BackupAsrLocalResidency
 import com.brycewg.asrkb.store.Prefs
 
 internal typealias AsrVendorPicker = (
@@ -133,7 +134,8 @@ internal data class AsrBackupSettingsRouteState(
     val onEnabledChange: (Boolean) -> Unit,
     val vendor: AsrVendor,
     val onVendorChange: (AsrVendor) -> Unit,
-    val sensitivity: Int
+    val sensitivity: Int,
+    val localResidency: BackupAsrLocalResidency
 )
 
 internal data class AsrLocalModelRouteState(
@@ -149,6 +151,7 @@ internal data class AsrLocalModelRouteState(
 internal data class AsrSettingsRouteActions(
     val showVendorPicker: AsrVendorPicker,
     val showBackupSensitivityPicker: () -> Unit,
+    val showBackupLocalResidencyPicker: () -> Unit,
     val showSfFreeModelPicker: () -> Unit,
     val showSfPaidModelPicker: () -> Unit,
     val showDashModelPicker: () -> Unit,

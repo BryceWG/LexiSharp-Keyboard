@@ -20,7 +20,10 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
+import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.util.TypewriterTextAnimator
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,6 +42,7 @@ class AsrRecognitionService : RecognitionService() {
     companion object {
         private const val TAG = "AsrRecognitionSvc"
         private const val EXTRA_USED_BACKUP_ASR = "com.brycewg.asrkb.extra.USED_BACKUP_ASR"
+        private const val LOCAL_MODEL_READY_WAIT_CONSUMED = -1L
     }
 
     private val prefs by lazy { Prefs(this) }
@@ -185,17 +189,19 @@ class AsrRecognitionService : RecognitionService() {
      */
     private fun buildEngine(
         engineContext: Context,
-        listener: StreamingAsrEngine.Listener
+        listener: RecognitionSession
     ): StreamingAsrEngine? {
         val vendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
+        val requestDurationCallback: (Long) -> Unit = { ms -> listener.onRequestDuration(ms) }
         parallelEngineFactory.createOrNull(
             context = engineContext,
             scope = serviceScope,
             prefs = prefs,
             listener = listener,
             primaryVendor = vendor,
-            backupVendor = backupVendor
+            backupVendor = backupVendor,
+            onPrimaryRequestDuration = requestDurationCallback
         )?.let { return it }
 
         return directMicrophoneEngineFactory.createOrNull(
@@ -205,7 +211,8 @@ class AsrRecognitionService : RecognitionService() {
             listener = listener,
             vendor = vendor,
             preferences = prefs.asrEngineModePreferencesSnapshot(),
-            source = AsrEngineConstructionSource.SpeechRecognizer
+            source = AsrEngineConstructionSource.SpeechRecognizer,
+            onRequestDuration = requestDurationCallback
         )
     }
 
@@ -273,6 +280,8 @@ class AsrRecognitionService : RecognitionService() {
 
         private var sessionStartUptimeMs: Long = 0L
         private var lastAudioMsForTimeout: Long = 0L
+        private var lastRequestDurationMs: Long? = null
+        private val localModelReadyWaitMs = AtomicLong(0L)
         private var processingTimeoutJob: Job? = null
         private var lastPostprocPreview: String? = null
 
@@ -304,6 +313,8 @@ class AsrRecognitionService : RecognitionService() {
             endOfSpeechDelivered = false
             sessionStartUptimeMs = SystemClock.uptimeMillis()
             lastAudioMsForTimeout = 0L
+            lastRequestDurationMs = null
+            localModelReadyWaitMs.set(0L)
             lastPostprocPreview = null
             cancelProcessingTimeout()
             ensureAutoStopSuppressed()
@@ -343,8 +354,15 @@ class AsrRecognitionService : RecognitionService() {
             finalReceived = true
             releaseAutoStopSuppression()
             cancelProcessingTimeout()
+            snapshotAudioMsForTimeoutIfNeeded()
 
-            val usedBackupResult = (engine as? ParallelAsrEngine)?.wasLastResultFromBackup() == true
+            val usedBackupResult = (engine as? BackupAwareAsrEngine)?.wasLastResultFromBackup() == true
+            prefs.recordPrimaryAsrRuntimeRequestIfSuccessful(
+                engine = engine,
+                fallbackPrimaryVendor = prefs.asrVendor,
+                audioMs = lastAudioMsForTimeout,
+                requestMs = lastRequestDurationMs
+            )
 
             val doAi = try {
                 prefs.postProcessEnabled && prefs.hasLlmKeys()
@@ -558,6 +576,13 @@ class AsrRecognitionService : RecognitionService() {
             }
         }
 
+        fun onRequestDuration(ms: Long) {
+            if (canceled || finished || finalReceived) return
+            if (ms <= 0L) return
+            val waitMs = localModelReadyWaitMs.getAndSet(LOCAL_MODEL_READY_WAIT_CONSUMED)
+            lastRequestDurationMs = if (waitMs > 0L && ms > waitMs) ms - waitMs else ms
+        }
+
         private fun snapshotAudioMsForTimeoutIfNeeded() {
             if (lastAudioMsForTimeout != 0L) return
             val t0 = sessionStartUptimeMs
@@ -590,17 +615,25 @@ class AsrRecognitionService : RecognitionService() {
             // stop->processing 后必须最终回调 results/error；否则会卡住 currentSession，导致后续 startListening 永久 BUSY。
             cancelProcessingTimeout()
             val audioMs = lastAudioMsForTimeout
-            val baseTimeoutMs = com.brycewg.asrkb.asr.AsrTimeoutCalculator.calculateTimeoutMs(
-                audioMs,
-                prefs.asrVendor
+            val backupEngine = engine as? BackupAwareAsrEngine
+            val primaryVendor = backupEngine?.primaryVendor ?: prefs.asrVendor
+            val backupVendor = backupEngine?.backupVendor
+            val timeoutMs = AsrTimeoutCalculator.calculateBackupAwareProcessingTimeoutMs(
+                audioMs = audioMs,
+                primaryVendor = primaryVendor,
+                primaryStatsSnapshot = prefs.getAsrRuntimeStatsSnapshotOrNull(primaryVendor, audioMs),
+                backupStrategy = backupEngine?.backupStrategy,
+                backupVendor = backupVendor,
+                backupStatsSnapshot = prefs.getAsrRuntimeStatsSnapshotOrNull(backupVendor, audioMs),
+                sensitivityTier = safeBackupSensitivityTier(),
+                primaryStreaming = backupEngine?.primaryStreamingForSwitchPlan ?: true
             )
-            val timeoutMs = if (engine is ParallelAsrEngine) baseTimeoutMs + 2_000L else baseTimeoutMs
             processingTimeoutJob = serviceScope.launch {
-                val usingBackupEngine = engine is ParallelAsrEngine
                 val shouldDeferForLocalModel =
-                    !usingBackupEngine && isLocalAsrVendor(prefs.asrVendor)
+                    backupEngine == null && isLocalAsrVendor(prefs.asrVendor)
                 if (shouldDeferForLocalModel) {
                     // 本地模型：将超时计时起点推移到“模型加载完成”之后，避免首次加载期间误触发超时
+                    val startMs = SystemClock.uptimeMillis()
                     val ok = awaitLocalAsrReady(prefs, maxWaitMs = LOCAL_MODEL_READY_WAIT_MAX_MS)
                     if (!ok) {
                         // 读取配置失败等异常场景：回退为原有策略（不阻塞、继续计时）
@@ -608,6 +641,10 @@ class AsrRecognitionService : RecognitionService() {
                             TAG,
                             "awaitLocalAsrReady returned false, fallback to immediate timeout countdown"
                         )
+                    }
+                    val readyAt = SystemClock.uptimeMillis()
+                    if (ok && readyAt >= startMs) {
+                        localModelReadyWaitMs.compareAndSet(0L, (readyAt - startMs).coerceAtLeast(0L))
                     }
                     if (canceled || finished) return@launch
                     if (currentSession !== this@RecognitionSession) return@launch
@@ -637,6 +674,12 @@ class AsrRecognitionService : RecognitionService() {
                     }
                 }
             }
+        }
+
+        private fun safeBackupSensitivityTier(): Int = try {
+            prefs.backupAsrTimeoutSensitivity
+        } catch (_: Throwable) {
+            1
         }
 
         private fun deliverPartialResults(text: String) {

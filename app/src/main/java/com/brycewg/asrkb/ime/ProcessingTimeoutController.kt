@@ -2,10 +2,12 @@ package com.brycewg.asrkb.ime
 
 import android.util.Log
 import com.brycewg.asrkb.asr.AsrTimeoutCalculator
+import com.brycewg.asrkb.asr.BackupAwareAsrEngine
 import com.brycewg.asrkb.asr.LOCAL_MODEL_READY_WAIT_MAX_MS
 import com.brycewg.asrkb.asr.awaitLocalAsrReady
 import com.brycewg.asrkb.asr.isLocalAsrVendor
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -19,7 +21,7 @@ internal class ProcessingTimeoutController(
     private val currentStateProvider: () -> KeyboardState,
     private val opSeqProvider: () -> Long,
     private val audioMsProvider: () -> Long,
-    private val usingBackupEngineProvider: () -> Boolean,
+    private val backupEngineProvider: () -> BackupAwareAsrEngine?,
     private val onTimeout: () -> Unit
 ) {
     private var job: Job? = null
@@ -38,11 +40,23 @@ internal class ProcessingTimeoutController(
         cancel()
 
         val audioMs = audioMsOverride ?: safeAudioMs()
-        val usingBackupEngine = safeUsingBackupEngine()
-        val baseTimeoutMs = AsrTimeoutCalculator.calculateTimeoutMs(audioMs, safePrimaryVendor())
-        val timeoutMs = if (usingBackupEngine) baseTimeoutMs + 2_000L else baseTimeoutMs
+        val backupEngine = safeBackupEngine()
+        val primaryVendor = backupEngine?.primaryVendor ?: safePrimaryVendor()
+        val backupVendor = backupEngine?.backupVendor
+        val primarySnapshot = prefs.getAsrRuntimeStatsSnapshotOrNull(primaryVendor, audioMs)
+        val backupSnapshot = prefs.getAsrRuntimeStatsSnapshotOrNull(backupVendor, audioMs)
+        val timeoutMs = AsrTimeoutCalculator.calculateBackupAwareProcessingTimeoutMs(
+            audioMs = audioMs,
+            primaryVendor = primaryVendor,
+            primaryStatsSnapshot = primarySnapshot,
+            backupStrategy = backupEngine?.backupStrategy,
+            backupVendor = backupVendor,
+            backupStatsSnapshot = backupSnapshot,
+            sensitivityTier = safeBackupSensitivityTier(),
+            primaryStreaming = backupEngine?.primaryStreamingForSwitchPlan ?: true
+        )
 
-        val shouldDeferForLocalModel = shouldDeferForLocalModel(usingBackupEngine)
+        val shouldDeferForLocalModel = shouldDeferForLocalModel(backupEngine != null)
         job = scope.launch {
             if (shouldDeferForLocalModel) {
                 // 本地模型：将超时计时起点推移到“模型加载完成”之后，避免首次加载期间误触发超时
@@ -83,16 +97,22 @@ internal class ProcessingTimeoutController(
         0L
     }
 
-    private fun safeUsingBackupEngine(): Boolean = try {
-        usingBackupEngineProvider()
+    private fun safeBackupEngine(): BackupAwareAsrEngine? = try {
+        backupEngineProvider()
     } catch (_: Throwable) {
-        false
+        null
     }
 
     private fun safePrimaryVendor(): com.brycewg.asrkb.asr.AsrVendor? = try {
         prefs.asrVendor
     } catch (_: Throwable) {
         null
+    }
+
+    private fun safeBackupSensitivityTier(): Int = try {
+        prefs.backupAsrTimeoutSensitivity
+    } catch (_: Throwable) {
+        1
     }
 
     private fun shouldDeferForLocalModel(usingBackupEngine: Boolean): Boolean = try {

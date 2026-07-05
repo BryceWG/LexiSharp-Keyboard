@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.BackupAwareAsrEngine
 import com.brycewg.asrkb.store.Prefs
 
 internal class DictationUseCase(
@@ -119,7 +120,7 @@ internal class DictationUseCase(
         }
 
         val usedBackupResult =
-            (asrManager.getEngine() as? com.brycewg.asrkb.asr.ParallelAsrEngine)
+            (asrManager.getEngine() as? BackupAwareAsrEngine)
                 ?.wasLastResultFromBackup() == true
         if (!autoEnterSent && finalOut.isNotEmpty() && finalOut != rawText) {
             transitionToIdle(true)
@@ -200,7 +201,7 @@ internal class DictationUseCase(
         }
 
         val usedBackupResult =
-            (asrManager.getEngine() as? com.brycewg.asrkb.asr.ParallelAsrEngine)
+            (asrManager.getEngine() as? BackupAwareAsrEngine)
                 ?.wasLastResultFromBackup() == true
         transitionToState(KeyboardState.Processing)
         scheduleProcessingTimeout(null)

@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:ignore="MissingPermission" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- 存储权限：用于剪贴板文件下载到 Download/BiBi 目录 -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />

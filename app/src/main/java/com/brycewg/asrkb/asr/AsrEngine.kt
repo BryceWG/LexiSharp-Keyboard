@@ -44,3 +44,16 @@ interface StreamingAsrEngine : AsrEngine {
         fun onAmplitude(amplitude: Float) { /* default no-op */ }
     }
 }
+
+internal interface BackupAwareAsrEngine : StreamingAsrEngine {
+    val primaryVendor: AsrVendor
+
+    val backupVendor: AsrVendor
+
+    val backupStrategy: AsrParallelEngineDecision
+
+    val primaryStreamingForSwitchPlan: Boolean
+        get() = true
+
+    fun wasLastResultFromBackup(): Boolean
+}

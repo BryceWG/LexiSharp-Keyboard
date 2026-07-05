@@ -14,6 +14,8 @@
   <string name="status_listening">正在聆听…</string>
   <string name="status_recognizing">识别中…</string>
   <string name="status_backup_asr_used">使用备用引擎结果</string>
+  <string name="status_backup_asr_loading">正在启动本地备用识别…</string>
+  <string name="status_backup_asr_recognizing">正在使用本地备用识别…</string>
   <string name="status_ai_processing">AI后处理中…</string>
   <string name="status_ai_edit_listening">请说出编辑指令…</string>
   <string name="status_ai_editing">AI编辑中…</string>
@@ -103,11 +105,15 @@
   <string name="label_backup_asr_enabled">启用备用引擎</string>
   <string name="label_backup_asr_vendor">备用服务商</string>
   <string name="label_backup_asr_timeout_sensitivity">超时阈值敏感度</string>
+  <string name="label_backup_asr_local_residency">本地备用模式</string>
   <string name="hint_backup_asr_uses_existing_config">直接使用本页已有的服务商配置，无需额外设置</string>
   <string name="hint_backup_asr_timeout_sensitivity">敏感度越高，主引擎越容易被判定超时并更快切换到备用结果</string>
+  <string name="hint_backup_asr_local_residency">按需加载会在空闲后释放本地备用模型；保持常驻会继续占用内存以换取最快兜底。</string>
   <string name="option_backup_asr_timeout_sensitivity_relaxed">宽松</string>
   <string name="option_backup_asr_timeout_sensitivity_balanced">均衡（推荐）</string>
   <string name="option_backup_asr_timeout_sensitivity_sensitive">敏感</string>
+  <string name="option_backup_asr_local_residency_on_demand">按需加载</string>
+  <string name="option_backup_asr_local_residency_resident">保持常驻</string>
 
   <!-- ============================================== -->
   <!-- 自定义标点 -->
@@ -456,7 +462,9 @@
   <string name="recording_test_asr_summary">%1$s · %2$s%3$s</string>
   <string name="recording_test_asr_mode_push_pcm">当前流式/推送通道</string>
   <string name="recording_test_asr_mode_file">当前文件通道</string>
-  <string name="recording_test_asr_backup_suffix"> · 备用 %1$s</string>
+  <string name="recording_test_asr_backup_suffix"> · 备用 %1$s · %2$s</string>
+  <string name="recording_test_backup_strategy_parallel">并行</string>
+  <string name="recording_test_backup_strategy_lazy">懒加载串行</string>
   <string name="recording_test_auto_transcribe">自动转录</string>
   <string name="recording_test_ai_label">AI</string>
   <string name="recording_test_prompt_summary">选择 AI 后处理使用的提示词预设</string>

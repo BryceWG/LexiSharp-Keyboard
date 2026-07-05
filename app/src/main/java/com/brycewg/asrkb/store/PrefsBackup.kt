@@ -124,6 +124,7 @@ internal object PrefsBackup {
         o.put(KEY_BACKUP_ASR_ENABLED, backupAsrEnabled)
         o.put(KEY_BACKUP_ASR_VENDOR, backupAsrVendor.id)
         o.put(KEY_BACKUP_ASR_TIMEOUT_SENSITIVITY, backupAsrTimeoutSensitivity)
+        o.put(KEY_BACKUP_ASR_LOCAL_RESIDENCY, backupAsrLocalResidency.id)
         // 遍历所有供应商字段，统一导出，避免逐个硬编码
         PrefsAsrVendorFields.exportToJson(asVendorFieldStore(), o)
         // 自定义标点
@@ -415,6 +416,9 @@ internal object PrefsBackup {
             optBool(KEY_BACKUP_ASR_ENABLED)?.let { backupAsrEnabled = it }
             optString(KEY_BACKUP_ASR_VENDOR)?.let { backupAsrVendor = AsrVendor.fromId(it) }
             optInt(KEY_BACKUP_ASR_TIMEOUT_SENSITIVITY)?.let { backupAsrTimeoutSensitivity = it }
+            optString(KEY_BACKUP_ASR_LOCAL_RESIDENCY)?.let {
+                backupAsrLocalResidency = com.brycewg.asrkb.asr.BackupAsrLocalResidency.fromId(it)
+            }
             // 供应商设置（通用导入）
             // OpenRouter ASR 字符串字段（endpoint/apiKey/model）在这里随 vendorFields 导入。
             PrefsAsrVendorFields.importFromJson(asVendorFieldStore(), o)

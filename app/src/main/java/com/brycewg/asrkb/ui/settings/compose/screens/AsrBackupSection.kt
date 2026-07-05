@@ -10,6 +10,7 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.BackupAsrLocalResidency
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 
 @Composable
@@ -18,12 +19,14 @@ internal fun AsrBackupSection(
     enabled: Boolean,
     vendorName: String,
     sensitivity: Int,
+    localResidency: BackupAsrLocalResidency,
     onEnabledChange: (Boolean) -> Unit,
     onVendorClick: () -> Unit,
-    onSensitivityClick: () -> Unit
+    onSensitivityClick: () -> Unit,
+    onLocalResidencyClick: () -> Unit
 ) {
     AsrSection(uiMode = uiMode, titleRes = R.string.label_backup_asr_engine) {
-        val itemCount = if (enabled) 3 else 1
+        val itemCount = if (enabled) 4 else 1
         AsrSwitchPreference(
             id = "backup_asr_enabled",
             titleRes = R.string.label_backup_asr_enabled,
@@ -49,6 +52,14 @@ internal fun AsrBackupSection(
                 count = itemCount,
                 onClick = onSensitivityClick
             )
+            AsrValuePreference(
+                titleRes = R.string.label_backup_asr_local_residency,
+                value = backupLocalResidencyLabel(localResidency),
+                uiMode = uiMode,
+                index = 3,
+                count = itemCount,
+                onClick = onLocalResidencyClick
+            )
             AsrBodyText(
                 uiMode = uiMode,
                 textRes = R.string.hint_backup_asr_uses_existing_config
@@ -56,6 +67,10 @@ internal fun AsrBackupSection(
             AsrBodyText(
                 uiMode = uiMode,
                 textRes = R.string.hint_backup_asr_timeout_sensitivity
+            )
+            AsrBodyText(
+                uiMode = uiMode,
+                textRes = R.string.hint_backup_asr_local_residency
             )
         }
     }
@@ -66,4 +81,10 @@ private fun backupTimeoutSensitivityLabel(value: Int): String = when (value.coer
     0 -> stringResource(R.string.option_backup_asr_timeout_sensitivity_relaxed)
     2 -> stringResource(R.string.option_backup_asr_timeout_sensitivity_sensitive)
     else -> stringResource(R.string.option_backup_asr_timeout_sensitivity_balanced)
+}
+
+@Composable
+private fun backupLocalResidencyLabel(value: BackupAsrLocalResidency): String = when (value) {
+    BackupAsrLocalResidency.OnDemand -> stringResource(R.string.option_backup_asr_local_residency_on_demand)
+    BackupAsrLocalResidency.Resident -> stringResource(R.string.option_backup_asr_local_residency_resident)
 }

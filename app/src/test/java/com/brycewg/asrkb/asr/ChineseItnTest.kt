@@ -69,7 +69,7 @@ class ChineseItnTest {
     }
 
     private fun loadChineseItnReferenceCases(): List<Pair<String, String>> {
-        val file = findRepoFile("references/Chinese-ITN/test_cases.txt")
+        val file = findRepoFile("references/OSS/Chinese-ITN/test_cases.txt")
         return file.readLines(Charsets.UTF_8)
             .asSequence()
             .map { it.trimEnd() }

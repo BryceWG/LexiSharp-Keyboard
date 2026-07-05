@@ -14,6 +14,7 @@ import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.BackupAsrLocalResidency
 import com.brycewg.asrkb.asr.LlmVendor
 import kotlin.reflect.KProperty
 import kotlinx.serialization.Serializable
@@ -1286,6 +1287,13 @@ class Prefs(context: Context) {
         }
         set(value) = sp.edit { putInt(KEY_BACKUP_ASR_TIMEOUT_SENSITIVITY, value.coerceIn(0, 2)) }
 
+    // 本地备用 ASR：按需加载（默认）或保持常驻
+    var backupAsrLocalResidency: BackupAsrLocalResidency
+        get() = BackupAsrLocalResidency.fromId(
+            sp.getString(KEY_BACKUP_ASR_LOCAL_RESIDENCY, BackupAsrLocalResidency.OnDemand.id)
+        )
+        set(value) = sp.edit { putString(KEY_BACKUP_ASR_LOCAL_RESIDENCY, value.id) }
+
     // ElevenLabs：语言代码（空=自动识别）
     var elevenLanguageCode: String
         get() = sp.getString(KEY_ELEVEN_LANGUAGE_CODE, "") ?: ""
@@ -1719,6 +1727,29 @@ class Prefs(context: Context) {
     ) = UsageStatsStore.recordUsageCommit(this, json, source, vendor, audioMs, chars, procMs)
 
     fun getDaysSinceFirstUse(): Long = UsageStatsStore.getDaysSinceFirstUse(this)
+
+    // ===== ASR 运行耗时统计（设备本地，不参与备份/上传） =====
+
+    internal fun recordAsrRuntimeRequest(
+        vendor: AsrVendor,
+        audioMs: Long,
+        requestMs: Long,
+        timestampMs: Long = System.currentTimeMillis()
+    ) = AsrRuntimeStatsStore.recordRequest(this, json, vendor, audioMs, requestMs, timestampMs)
+
+    internal fun recordAsrRuntimeLoad(
+        vendor: AsrVendor,
+        loadMs: Long,
+        timestampMs: Long = System.currentTimeMillis()
+    ) = AsrRuntimeStatsStore.recordLoad(this, json, vendor, loadMs, timestampMs)
+
+    internal fun getAsrRuntimeStatsSnapshot(
+        vendor: AsrVendor,
+        targetAudioMs: Long
+    ): AsrRuntimeVendorSnapshot =
+        AsrRuntimeStatsStore.snapshot(this, json, vendor, targetAudioMs)
+
+    internal fun resetAsrRuntimeStats() = AsrRuntimeStatsStore.clear(this)
 
     // ---- SyncClipboard 偏好项 ----
     var syncClipboardEnabled: Boolean

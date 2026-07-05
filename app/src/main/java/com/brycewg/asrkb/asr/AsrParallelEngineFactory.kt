@@ -25,13 +25,24 @@ internal data class AsrParallelEnginePlan(
     val shouldUseParallel: Boolean
         get() = decision == AsrParallelEngineDecision.UseParallel
 
+    val shouldUseLazyLocalBackup: Boolean
+        get() = decision == AsrParallelEngineDecision.UseLazyLocalBackup
+
+    val shouldUseBackupWrapper: Boolean
+        get() = decision != AsrParallelEngineDecision.UsePrimaryOnly
+
     val engineClassName: String?
-        get() = if (shouldUseParallel) "ParallelAsrEngine" else null
+        get() = when (decision) {
+            AsrParallelEngineDecision.UseParallel -> "ParallelAsrEngine"
+            AsrParallelEngineDecision.UseLazyLocalBackup -> "LazyLocalBackupAsrEngine"
+            AsrParallelEngineDecision.UsePrimaryOnly -> null
+        }
 }
 
-internal enum class AsrParallelEngineDecision {
+enum class AsrParallelEngineDecision {
     UseParallel,
-    UsePrimaryOnly
+    UsePrimaryOnly,
+    UseLazyLocalBackup
 }
 
 internal class AsrParallelEngineFactory(
@@ -41,16 +52,30 @@ internal class AsrParallelEngineFactory(
     fun createOrNull(request: AsrParallelEngineRequest): StreamingAsrEngine? {
         val plan = resolvePlan(request)
         return createPlanned(plan) {
-            ParallelAsrEngine(
-                context = request.context,
-                scope = request.scope,
-                prefs = request.prefs,
-                listener = request.listener,
-                primaryVendor = plan.primaryVendor,
-                backupVendor = plan.backupVendor,
-                onPrimaryRequestDuration = request.onPrimaryRequestDuration,
-                externalPcmInput = plan.externalPcmInput
-            )
+            when (plan.decision) {
+                AsrParallelEngineDecision.UseParallel -> ParallelAsrEngine(
+                    context = request.context,
+                    scope = request.scope,
+                    prefs = request.prefs,
+                    listener = request.listener,
+                    primaryVendor = plan.primaryVendor,
+                    backupVendor = plan.backupVendor,
+                    onPrimaryRequestDuration = request.onPrimaryRequestDuration,
+                    externalPcmInput = plan.externalPcmInput
+                )
+                AsrParallelEngineDecision.UseLazyLocalBackup -> LazyLocalBackupAsrEngine(
+                    context = request.context,
+                    scope = request.scope,
+                    prefs = request.prefs,
+                    listener = request.listener,
+                    primaryVendor = plan.primaryVendor,
+                    backupVendor = plan.backupVendor,
+                    onPrimaryRequestDuration = request.onPrimaryRequestDuration,
+                    externalPcmInput = plan.externalPcmInput
+                )
+                AsrParallelEngineDecision.UsePrimaryOnly ->
+                    error("Primary-only plan cannot construct a backup wrapper")
+            }
         }
     }
 
@@ -80,7 +105,7 @@ internal class AsrParallelEngineFactory(
         plan: AsrParallelEnginePlan,
         engineFactory: () -> StreamingAsrEngine
     ): StreamingAsrEngine? {
-        if (!plan.shouldUseParallel) return null
+        if (!plan.shouldUseBackupWrapper) return null
         return constructors.create(plan, engineFactory)
     }
 
@@ -103,7 +128,7 @@ internal class AsrParallelEngineFactory(
         primaryVendor = primaryVendor,
         backupVendor = backupVendor,
         externalPcmInput = externalPcmInput,
-        shouldUseParallel = shouldUseBackupAsr(
+        decision = resolveBackupAsrDecision(
             context = context,
             prefs = prefs,
             primaryVendor = primaryVendor,
@@ -118,25 +143,28 @@ internal class AsrParallelEngineFactory(
         primaryVendor = backupPolicyInput.primaryVendor,
         backupVendor = backupPolicyInput.backupVendor,
         externalPcmInput = externalPcmInput,
-        shouldUseParallel = shouldUseBackupAsr(backupPolicyInput)
+        decision = resolveBackupAsrDecision(backupPolicyInput)
     )
 
     private fun planFor(
         primaryVendor: AsrVendor,
         backupVendor: AsrVendor,
         externalPcmInput: Boolean,
-        shouldUseParallel: Boolean
+        decision: AsrBackupPolicyDecision
     ): AsrParallelEnginePlan = AsrParallelEnginePlan(
-        decision = if (shouldUseParallel) {
-            AsrParallelEngineDecision.UseParallel
-        } else {
-            AsrParallelEngineDecision.UsePrimaryOnly
-        },
+        decision = decision.toParallelEngineDecision(),
         primaryVendor = primaryVendor,
         backupVendor = backupVendor,
         externalPcmInput = externalPcmInput
     )
 }
+
+private fun AsrBackupPolicyDecision.toParallelEngineDecision(): AsrParallelEngineDecision =
+    when (this) {
+        AsrBackupPolicyDecision.UsePrimaryOnly -> AsrParallelEngineDecision.UsePrimaryOnly
+        AsrBackupPolicyDecision.UseParallel -> AsrParallelEngineDecision.UseParallel
+        AsrBackupPolicyDecision.UseLazyLocalBackup -> AsrParallelEngineDecision.UseLazyLocalBackup
+    }
 
 internal fun interface AsrParallelEngineConstructorTable {
     fun create(
@@ -150,8 +178,8 @@ internal object RealAsrParallelEngineConstructorTable : AsrParallelEngineConstru
         plan: AsrParallelEnginePlan,
         engineFactory: () -> StreamingAsrEngine
     ): StreamingAsrEngine {
-        require(plan.shouldUseParallel) {
-            "ParallelAsrEngine can only be constructed from an approved parallel plan"
+        require(plan.shouldUseBackupWrapper) {
+            "Backup ASR wrapper can only be constructed from an approved backup plan"
         }
         return engineFactory()
     }
