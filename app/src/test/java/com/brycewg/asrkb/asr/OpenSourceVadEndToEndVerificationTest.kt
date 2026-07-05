@@ -112,11 +112,15 @@ class OpenSourceVadEndToEndVerificationTest {
         val recognition = mainSource("api/AsrRecognitionService.kt")
         val externalSession = mainSource("api/ExternalSpeechSession.kt")
         val externalService = mainSource("api/ExternalSpeechService.kt")
+        val floatingSession = mainSource("ui/floatingball/AsrSessionManager.kt")
+        val floatingController = mainSource("ui/floating/FloatingAsrInteractionController.kt")
 
         assertTrue(recognition.contains("recognitionServiceRmsFromAmplitude(amplitude)"))
         assertTrue(recognition.contains("callback.rmsChanged(rms)"))
         assertTrue(externalSession.contains("callbacks.onAmplitude(id, amplitude)"))
         assertTrue(externalService.contains("data.writeFloat(amp)"))
+        assertTrue(floatingSession.contains("listener.onAmplitude(amplitude)"))
+        assertTrue(floatingController.contains("viewManager.updateAmplitude(nextAmplitude)"))
     }
 
     @Test

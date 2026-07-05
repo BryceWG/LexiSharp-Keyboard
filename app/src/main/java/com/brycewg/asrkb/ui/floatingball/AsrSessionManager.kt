@@ -57,6 +57,7 @@ class AsrSessionManager(
         fun onSessionStateChanged(state: FloatingBallState)
         fun onResultCommitted(text: String, success: Boolean)
         fun onError(message: String)
+        fun onAmplitude(amplitude: Float) { /* default no-op */ }
     }
 
     private var asrEngine: StreamingAsrEngine? = null
@@ -157,6 +158,10 @@ class AsrSessionManager(
 
         override fun onStopped() {
             this@AsrSessionManager.onStopped(sessionToken)
+        }
+
+        override fun onAmplitude(amplitude: Float) {
+            this@AsrSessionManager.onAmplitude(sessionToken, amplitude)
         }
 
         override fun onBackupAsrLoading(backupVendor: AsrVendor) {
@@ -808,6 +813,11 @@ class AsrSessionManager(
             return
         }
         updatePreviewText(text)
+    }
+
+    private fun onAmplitude(sessionToken: Long, amplitude: Float) {
+        if (!isSessionActive(sessionToken)) return
+        listener.onAmplitude(amplitude)
     }
 
     private fun onError(sessionToken: Long, message: String) {

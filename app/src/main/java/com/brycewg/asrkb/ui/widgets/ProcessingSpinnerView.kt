@@ -23,6 +23,9 @@ class ProcessingSpinnerView @JvmOverloads constructor(
     }
 
     private var sweepAngle: Float = 90f
+    private var secondarySweepAngle: Float = 40f
+    private var secondaryArcAlpha: Float = 0.4f
+    private var secondaryArcEnabled: Boolean = false
     private var rotationDeg: Float = 0f
     private var animator: ValueAnimator? = null
     private var shouldAnimate: Boolean = false
@@ -39,6 +42,21 @@ class ProcessingSpinnerView @JvmOverloads constructor(
 
     fun setSweepAngle(deg: Float) {
         sweepAngle = deg
+        invalidate()
+    }
+
+    fun setSecondaryArcEnabled(enabled: Boolean) {
+        secondaryArcEnabled = enabled
+        invalidate()
+    }
+
+    fun setSecondarySweepAngle(deg: Float) {
+        secondarySweepAngle = deg
+        invalidate()
+    }
+
+    fun setSecondaryArcAlpha(alpha: Float) {
+        secondaryArcAlpha = alpha.coerceIn(0f, 1f)
         invalidate()
     }
 
@@ -119,6 +137,17 @@ class ProcessingSpinnerView @JvmOverloads constructor(
         canvas.rotate(rotationDeg, cx, cy)
         // 以 -90 度为起点（顶部），绘制一段弧形
         canvas.drawArc(left, top, right, bottom, -90f, sweepAngle, false, paint)
+        if (secondaryArcEnabled) {
+            val originalColor = paint.color
+            paint.color = applyAlpha(originalColor, secondaryArcAlpha)
+            canvas.drawArc(left, top, right, bottom, 90f, secondarySweepAngle, false, paint)
+            paint.color = originalColor
+        }
         canvas.restore()
+    }
+
+    private fun applyAlpha(color: Int, alpha: Float): Int {
+        val a = (alpha * 255).toInt().coerceIn(0, 255)
+        return (a shl 24) or (color and 0x00FFFFFF)
     }
 }

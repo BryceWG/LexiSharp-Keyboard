@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.view.View
@@ -45,6 +46,7 @@ internal class FloatingAsrInteractionController(
     FloatingBallTouchHandler.TouchEventListener {
     companion object {
         private const val EDGE_HANDLE_AUTO_HIDE_DELAY_MS = 2500L
+        private const val AMPLITUDE_DISPATCH_INTERVAL_MS = 32L
     }
 
     lateinit var asrSessionManager: AsrSessionManager
@@ -58,6 +60,9 @@ internal class FloatingAsrInteractionController(
     private var postErrorPartialHideRunnable: Runnable? = null
     private var postErrorResetStateRunnable: Runnable? = null
     private var volumeKeySessionActive: Boolean = false
+    private var pendingAmplitude: Float? = null
+    private var amplitudeDispatchRunnable: Runnable? = null
+    private var lastAmplitudeDispatchUptimeMs: Long = 0L
 
     fun isForceVisibleActive(): Boolean = menuController.isForceVisibleMenuActive() ||
         stateMachine.isMoveMode ||
@@ -68,6 +73,7 @@ internal class FloatingAsrInteractionController(
         cancelPostCommitPartialHide()
         cancelPostErrorPartialHide()
         cancelPostErrorResetState()
+        cancelAmplitudeDispatch()
         stopRecordingForeground()
         try {
             menuController.hideAll()
@@ -250,6 +256,37 @@ internal class FloatingAsrInteractionController(
             cancelDelayedRunnable(postErrorResetStateRunnable, "post-error reset state")
     }
 
+    private fun cancelAmplitudeDispatch() {
+        amplitudeDispatchRunnable =
+            cancelDelayedRunnable(amplitudeDispatchRunnable, "amplitude dispatch")
+        pendingAmplitude = null
+    }
+
+    private fun enqueueAmplitude(amplitude: Float) {
+        pendingAmplitude = amplitude.coerceIn(0f, 1f)
+        if (amplitudeDispatchRunnable != null) return
+
+        val now = SystemClock.uptimeMillis()
+        val elapsed = now - lastAmplitudeDispatchUptimeMs
+        val delay = (AMPLITUDE_DISPATCH_INTERVAL_MS - elapsed).coerceAtLeast(0L)
+        val runnable = Runnable {
+            amplitudeDispatchRunnable = null
+            lastAmplitudeDispatchUptimeMs = SystemClock.uptimeMillis()
+            val nextAmplitude = pendingAmplitude ?: return@Runnable
+            pendingAmplitude = null
+            if (stateMachine.isRecording) {
+                viewManager.updateAmplitude(nextAmplitude)
+            }
+        }
+        amplitudeDispatchRunnable = runnable
+        try {
+            handler.postDelayed(runnable, delay)
+        } catch (e: Throwable) {
+            amplitudeDispatchRunnable = null
+            Log.w(tag, "Failed to schedule amplitude dispatch", e)
+        }
+    }
+
     private fun schedulePostCommitPartialHide() {
         cancelPostCommitPartialHide()
         val runnable = Runnable {
@@ -360,6 +397,7 @@ internal class FloatingAsrInteractionController(
     override fun onSessionStateChanged(state: FloatingBallState) {
         stateMachine.transitionTo(state)
         if (state !is FloatingBallState.Recording) {
+            cancelAmplitudeDispatch()
             stopRecordingForeground()
         }
         handler.post {
@@ -472,6 +510,7 @@ internal class FloatingAsrInteractionController(
     override fun onError(message: String) {
         volumeKeySessionActive = false
         stopRecordingForeground()
+        cancelAmplitudeDispatch()
         handler.post {
             val mapped = AsrErrorMessageMapper.map(context, message)
             if (mapped != null) {
@@ -482,6 +521,16 @@ internal class FloatingAsrInteractionController(
 
             schedulePostErrorPartialHide()
             schedulePostErrorResetState()
+        }
+    }
+
+    override fun onAmplitude(amplitude: Float) {
+        try {
+            handler.post {
+                enqueueAmplitude(amplitude)
+            }
+        } catch (e: Throwable) {
+            Log.w(tag, "Failed to post amplitude update", e)
         }
     }
 

@@ -81,14 +81,14 @@ class FloatingBallTouchHandler(
     /** 创建触摸监听器 */
     fun createTouchListener(isMoveMode: () -> Boolean): View.OnTouchListener {
         return View.OnTouchListener { v, e ->
-            val lp = viewManager.getLayoutParams() ?: return@OnTouchListener false
+            viewManager.getLayoutParams() ?: return@OnTouchListener false
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    handleActionDown(lp, e, isMoveMode())
+                    handleActionDown(e, isMoveMode())
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    handleActionMove(v, lp, e)
+                    handleActionMove(v, e)
                 }
                 MotionEvent.ACTION_UP -> handleActionUp(v, e)
                 MotionEvent.ACTION_CANCEL -> handleActionCancel()
@@ -129,7 +129,6 @@ class FloatingBallTouchHandler(
     // ==================== 私有处理方法 ====================
 
     private fun handleActionDown(
-        lp: WindowManager.LayoutParams,
         e: MotionEvent,
         isMoveMode: Boolean
     ) {
@@ -145,8 +144,9 @@ class FloatingBallTouchHandler(
         dragScreenH = screen.second
         downX = e.rawX
         downY = e.rawY
-        startX = lp.x
-        startY = lp.y
+        val logicalPosition = viewManager.getLogicalBallPositionSnapshot()
+        startX = logicalPosition.first
+        startY = logicalPosition.second
 
         // 移动模式下不触发长按
         if (!isMoveMode && !longPressPosted) {
@@ -163,7 +163,7 @@ class FloatingBallTouchHandler(
         }
     }
 
-    private fun handleActionMove(v: View, lp: WindowManager.LayoutParams, e: MotionEvent): Boolean {
+    private fun handleActionMove(v: View, e: MotionEvent): Boolean {
         val dx = (e.rawX - downX).toInt()
         val dy = (e.rawY - downY).toInt()
         val moveSlop = activeMoveSlop
@@ -221,19 +221,18 @@ class FloatingBallTouchHandler(
         } else {
             getUsableScreenSize()
         }
-        val root = viewManager.getBallView() ?: v
-        val vw = if (root.width > 0) root.width else lp.width
-        val vh = if (root.height > 0) root.height else lp.height
+        val ballSidePx = viewManager.getLogicalBallSizeSnapshotPx()
+        val vw = ballSidePx
+        val vh = ballSidePx
         val maxX = (screenW - vw).coerceAtLeast(0)
         val maxY = (screenH - vh).coerceAtLeast(0)
         val nx = (startX + dx).coerceIn(0, maxX)
         val ny = (startY + dy).coerceIn(0, maxY)
-        if (lp.x == nx && lp.y == ny) {
+        val currentLogicalPosition = viewManager.getLogicalBallPositionSnapshot()
+        if (currentLogicalPosition.first == nx && currentLogicalPosition.second == ny) {
             return true
         }
-        lp.x = nx
-        lp.y = ny
-        viewManager.updateViewLayout(root, lp)
+        viewManager.updateLogicalBallPosition(v, nx, ny)
         return true
     }
 

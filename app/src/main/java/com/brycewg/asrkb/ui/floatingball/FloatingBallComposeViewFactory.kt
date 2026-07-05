@@ -22,7 +22,8 @@ internal object FloatingBallComposeViewFactory {
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         )
-        addView(createBallContainer(context))
+        val ballSizePx = dp(context, readBallSizeDp(prefs))
+        addView(createBallContainer(context, ballSizePx))
         applyTheme(this, prefs)
     }
 
@@ -35,38 +36,15 @@ internal object FloatingBallComposeViewFactory {
             ColorStateList.valueOf(theme.floatingIcon)
     }
 
-    private fun createBallContainer(context: Context): View = FrameLayout(context).apply {
+    private fun createBallContainer(context: Context, ballSizePx: Int): View = FrameLayout(context).apply {
         id = R.id.ballContainer
         layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        )
-        addView(createRippleClip(context))
-        addView(createEdgeHandleIcon(context))
-        addView(createBallIcon(context))
-    }
-
-    private fun createRippleClip(context: Context): View = FrameLayout(context).apply {
-        id = R.id.rippleClip
-        clipToOutline = true
-        layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        )
-        addView(createRippleView(context, R.id.ripple1))
-        addView(createRippleView(context, R.id.ripple2))
-        addView(createRippleView(context, R.id.ripple3))
-    }
-
-    private fun createRippleView(context: Context, viewId: Int): View = View(context).apply {
-        id = viewId
-        alpha = 0f
-        visibility = View.INVISIBLE
-        layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT,
+            ballSizePx,
+            ballSizePx,
             Gravity.CENTER
         )
+        addView(createEdgeHandleIcon(context))
+        addView(createBallIcon(context))
     }
 
     private fun createEdgeHandleIcon(context: Context): View = ImageView(context).apply {
@@ -95,4 +73,10 @@ internal object FloatingBallComposeViewFactory {
     }
 
     private fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density + 0.5f).toInt()
+
+    private fun readBallSizeDp(prefs: Prefs): Int = try {
+        prefs.floatingBallSizeDp
+    } catch (_: Throwable) {
+        56
+    }
 }
