@@ -101,6 +101,14 @@ internal object PrefsAsrVendorFields {
         ),
         AsrVendor.StepAudio to listOf(
             VendorField.credential(KEY_STEPAUDIO_API_KEY),
+            VendorField.endpoint(
+                KEY_STEPAUDIO_ENDPOINT,
+                default = Prefs.DEFAULT_STEPAUDIO_ASR_ENDPOINT
+            ),
+            VendorField(
+                KEY_STEPAUDIO_ENDPOINT_PRESET,
+                default = Prefs.STEPAUDIO_ENDPOINT_PRESET_PAYGO
+            ),
             VendorField.model(KEY_STEPAUDIO_MODEL, required = true, default = Prefs.DEFAULT_STEPAUDIO_ASR_MODEL),
             VendorField.language(KEY_STEPAUDIO_LANGUAGE, default = "zh"),
             VendorField.boolean(KEY_STEPAUDIO_USE_ITN, default = true)

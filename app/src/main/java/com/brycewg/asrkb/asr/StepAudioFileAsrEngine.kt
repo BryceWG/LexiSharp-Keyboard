@@ -93,7 +93,7 @@ class StepAudioFileAsrEngine(
 
     private fun requestRecognition(body: String) {
         val request = Request.Builder()
-            .url(Prefs.STEPAUDIO_ASR_ENDPOINT)
+            .url(prefs.getEffectiveStepAudioAsrEndpoint())
             .tag(
                 ApiLogMeta::class.java,
                 ApiLogRecorder.meta(

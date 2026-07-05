@@ -2,6 +2,11 @@
     <string name="vendor_stepaudio">StepAudio</string>
     <string name="stepaudio_section_title">StepAudio API Settings</string>
     <string name="label_stepaudio_api_key">StepFun API Key</string>
+    <string name="label_stepaudio_endpoint">StepAudio Endpoint</string>
+    <string name="label_stepaudio_endpoint_preset">Endpoint</string>
+    <string name="stepaudio_endpoint_paygo">Pay-as-you-go</string>
+    <string name="stepaudio_endpoint_coding_plan">Coding Plan</string>
+    <string name="stepaudio_endpoint_custom">Custom</string>
     <string name="label_stepaudio_model">Model</string>
     <string name="stepaudio_model_25_asr">stepaudio-2.5-asr</string>
     <string name="label_stepaudio_language">Recognition language</string>

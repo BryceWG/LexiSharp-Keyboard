@@ -4,6 +4,7 @@ package com.brycewg.asrkb.store
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.brycewg.asrkb.asr.AsrVendor
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -80,6 +81,38 @@ class PrefsHasVendorKeysTest {
         prefs.mimoAsrEndpoint = "https://example.test/v1/chat/completions"
 
         assertTrue(prefs.hasVendorKeys(AsrVendor.MiMo))
+    }
+
+    @Test
+    fun stepAudioEndpointPresetResolvesEffectiveEndpoint() {
+        prefs.stepAudioEndpointPreset = Prefs.STEPAUDIO_ENDPOINT_PRESET_PAYGO
+
+        assertEquals(Prefs.DEFAULT_STEPAUDIO_ASR_ENDPOINT, prefs.getEffectiveStepAudioAsrEndpoint())
+
+        prefs.stepAudioEndpointPreset = Prefs.STEPAUDIO_ENDPOINT_PRESET_CODING_PLAN
+
+        assertEquals(
+            Prefs.STEPAUDIO_ENDPOINT_PRESETS[Prefs.STEPAUDIO_ENDPOINT_PRESET_CODING_PLAN],
+            prefs.getEffectiveStepAudioAsrEndpoint()
+        )
+
+        prefs.stepAudioEndpointPreset = Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM
+        prefs.stepAudioEndpoint = "https://example.test/v1/audio/asr/sse"
+
+        assertEquals("https://example.test/v1/audio/asr/sse", prefs.getEffectiveStepAudioAsrEndpoint())
+    }
+
+    @Test
+    fun stepAudioCustomPresetRequiresEffectiveEndpoint() {
+        prefs.stepAudioApiKey = "step-key"
+        prefs.stepAudioEndpointPreset = Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM
+        prefs.stepAudioEndpoint = ""
+
+        assertFalse(prefs.hasVendorKeys(AsrVendor.StepAudio))
+
+        prefs.stepAudioEndpoint = "https://example.test/v1/audio/asr/sse"
+
+        assertTrue(prefs.hasVendorKeys(AsrVendor.StepAudio))
     }
 
     @Test

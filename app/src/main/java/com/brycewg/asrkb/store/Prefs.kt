@@ -1183,6 +1183,16 @@ class Prefs(context: Context) {
     // StepAudio（阶跃星辰）在线 ASR
     var stepAudioApiKey: String by stringPref(KEY_STEPAUDIO_API_KEY, "")
 
+    var stepAudioEndpoint: String by stringPref(
+        KEY_STEPAUDIO_ENDPOINT,
+        DEFAULT_STEPAUDIO_ASR_ENDPOINT
+    )
+
+    var stepAudioEndpointPreset: String by stringPref(
+        KEY_STEPAUDIO_ENDPOINT_PRESET,
+        STEPAUDIO_ENDPOINT_PRESET_PAYGO
+    )
+
     var stepAudioModel: String by stringPref(
         KEY_STEPAUDIO_MODEL,
         DEFAULT_STEPAUDIO_ASR_MODEL
@@ -1193,6 +1203,15 @@ class Prefs(context: Context) {
     var stepAudioUseItn: Boolean
         get() = sp.getBoolean(KEY_STEPAUDIO_USE_ITN, true)
         set(value) = sp.edit { putBoolean(KEY_STEPAUDIO_USE_ITN, value) }
+
+    fun getEffectiveStepAudioAsrEndpoint(): String {
+        val preset = stepAudioEndpointPreset
+        return if (preset == STEPAUDIO_ENDPOINT_PRESET_CUSTOM) {
+            stepAudioEndpoint.trim()
+        } else {
+            STEPAUDIO_ENDPOINT_PRESETS[preset] ?: stepAudioEndpoint.trim()
+        }
+    }
 
     // 智谱 GLM ASR
     var zhipuApiKey: String by stringPref(KEY_ZHIPU_API_KEY, "")
@@ -1514,6 +1533,9 @@ class Prefs(context: Context) {
         }
         if (v == AsrVendor.MiMo) {
             return mimoAsrApiKey.isNotBlank() && getEffectiveMimoAsrEndpoint().isNotBlank()
+        }
+        if (v == AsrVendor.StepAudio) {
+            return stepAudioApiKey.isNotBlank() && getEffectiveStepAudioAsrEndpoint().isNotBlank()
         }
         val fields = PrefsAsrVendorFields.requiredStringFieldsForValidation(v)
         if (fields.isEmpty() && !vendorFields.containsKey(v)) return false
@@ -1887,7 +1909,20 @@ class Prefs(context: Context) {
         const val DEFAULT_ZHIPU_TEMPERATURE = 0.95f
 
         // StepAudio ASR 默认
-        const val STEPAUDIO_ASR_ENDPOINT = "https://api.stepfun.com/v1/audio/asr/sse"
+        const val STEPAUDIO_ENDPOINT_PRESET_PAYGO = "paygo"
+        const val STEPAUDIO_ENDPOINT_PRESET_CODING_PLAN = "coding_plan"
+        const val STEPAUDIO_ENDPOINT_PRESET_CUSTOM = "custom"
+
+        const val DEFAULT_STEPAUDIO_ASR_ENDPOINT = "https://api.stepfun.com/v1/audio/asr/sse"
+        const val STEPAUDIO_ASR_ENDPOINT = DEFAULT_STEPAUDIO_ASR_ENDPOINT
+
+        val STEPAUDIO_ENDPOINT_PRESETS: Map<String, String> = mapOf(
+            STEPAUDIO_ENDPOINT_PRESET_PAYGO to DEFAULT_STEPAUDIO_ASR_ENDPOINT,
+            STEPAUDIO_ENDPOINT_PRESET_CODING_PLAN to
+                "https://api.stepfun.com/step_plan/v1/audio/asr/sse",
+            STEPAUDIO_ENDPOINT_PRESET_CUSTOM to ""
+        )
+
         const val DEFAULT_STEPAUDIO_ASR_MODEL = "stepaudio-2.5-asr"
         val STEPAUDIO_ASR_MODELS: List<String> = listOf(DEFAULT_STEPAUDIO_ASR_MODEL)
 

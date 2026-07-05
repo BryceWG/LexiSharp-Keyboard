@@ -33,6 +33,8 @@ internal class AsrOnlineSettingsFields(
     var elevenStreaming by mutableStateOf(prefs.elevenStreamingEnabled)
     var elevenLanguageCode by mutableStateOf(prefs.elevenLanguageCode)
     var stepAudioApiKey by mutableStateOf(prefs.stepAudioApiKey)
+    var stepAudioEndpoint by mutableStateOf(prefs.getEffectiveStepAudioAsrEndpoint())
+    var stepAudioEndpointPreset by mutableStateOf(prefs.stepAudioEndpointPreset)
     var stepAudioModel by mutableStateOf(displayStepAudioModel(prefs))
     var stepAudioLanguage by mutableStateOf(prefs.stepAudioLanguage.trim())
     var stepAudioUseItn by mutableStateOf(prefs.stepAudioUseItn)
@@ -93,6 +95,8 @@ internal class AsrOnlineSettingsFields(
         elevenStreaming = prefs.elevenStreamingEnabled
         elevenLanguageCode = prefs.elevenLanguageCode
         stepAudioApiKey = prefs.stepAudioApiKey
+        stepAudioEndpoint = prefs.getEffectiveStepAudioAsrEndpoint()
+        stepAudioEndpointPreset = prefs.stepAudioEndpointPreset
         stepAudioModel = displayStepAudioModel(prefs)
         stepAudioLanguage = prefs.stepAudioLanguage.trim()
         stepAudioUseItn = prefs.stepAudioUseItn
@@ -213,6 +217,24 @@ internal class AsrOnlineSettingsFields(
         onStepAudioApiKeyChange = { value ->
             stepAudioApiKey = value
             prefs.stepAudioApiKey = value
+        },
+        stepAudioEndpoint = stepAudioEndpoint,
+        onStepAudioEndpointChange = { value ->
+            stepAudioEndpoint = value
+            prefs.stepAudioEndpoint = value
+        },
+        stepAudioEndpointPreset = stepAudioEndpointPreset,
+        onStepAudioEndpointPresetChange = { value ->
+            stepAudioEndpointPreset = value
+            prefs.stepAudioEndpointPreset = value
+            val presetUrl = Prefs.STEPAUDIO_ENDPOINT_PRESETS[value]
+            if (value != Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM && presetUrl != null) {
+                stepAudioEndpoint = presetUrl
+                prefs.stepAudioEndpoint = presetUrl
+            } else {
+                stepAudioEndpoint = ""
+                prefs.stepAudioEndpoint = ""
+            }
         },
         stepAudioModel = stepAudioModel,
         stepAudioLanguage = stepAudioLanguage,

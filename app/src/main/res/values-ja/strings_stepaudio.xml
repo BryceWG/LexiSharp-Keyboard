@@ -2,6 +2,11 @@
     <string name="vendor_stepaudio">StepAudio</string>
     <string name="stepaudio_section_title">StepAudio API 設定</string>
     <string name="label_stepaudio_api_key">StepFun API Key</string>
+    <string name="label_stepaudio_endpoint">StepAudio Endpoint</string>
+    <string name="label_stepaudio_endpoint_preset">エンドポイント</string>
+    <string name="stepaudio_endpoint_paygo">従量課金</string>
+    <string name="stepaudio_endpoint_coding_plan">Coding Plan</string>
+    <string name="stepaudio_endpoint_custom">カスタム</string>
     <string name="label_stepaudio_model">モデル</string>
     <string name="stepaudio_model_25_asr">stepaudio-2.5-asr</string>
     <string name="label_stepaudio_language">認識言語</string>

@@ -51,6 +51,10 @@ internal fun CurrentAsrVendorConfig(
     onElevenLanguageSelected: (String) -> Unit,
     stepAudioApiKey: String,
     onStepAudioApiKeyChange: (String) -> Unit,
+    stepAudioEndpoint: String,
+    onStepAudioEndpointChange: (String) -> Unit,
+    stepAudioEndpointPreset: String,
+    onStepAudioEndpointPresetChange: (String) -> Unit,
     stepAudioModel: String,
     onChooseStepAudioModel: () -> Unit,
     stepAudioLanguage: String,
@@ -219,7 +223,41 @@ internal fun CurrentAsrVendorConfig(
 
         AsrVendor.StepAudio -> {
             var itemIndex = primaryIndexOffset
-            val itemCount = primaryGroupCount ?: 5
+            val showCustomEndpoint = stepAudioEndpointPreset == Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM
+            val itemCount = primaryGroupCount ?: stepAudioPrimaryItemCount(
+                customEndpointVisible = showCustomEndpoint
+            )
+            AsrDropdownPreference(
+                titleRes = R.string.label_stepaudio_endpoint_preset,
+                options = listOf(
+                    DropdownOption(
+                        Prefs.STEPAUDIO_ENDPOINT_PRESET_PAYGO,
+                        context.getString(R.string.stepaudio_endpoint_paygo)
+                    ),
+                    DropdownOption(
+                        Prefs.STEPAUDIO_ENDPOINT_PRESET_CODING_PLAN,
+                        context.getString(R.string.stepaudio_endpoint_coding_plan)
+                    ),
+                    DropdownOption(
+                        Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM,
+                        context.getString(R.string.stepaudio_endpoint_custom)
+                    )
+                ),
+                selectedOptionId = stepAudioEndpointPreset,
+                index = itemIndex++,
+                count = itemCount,
+                onSelectedOptionChange = onStepAudioEndpointPresetChange
+            )
+            if (showCustomEndpoint) {
+                AsrTextField(
+                    uiMode = uiMode,
+                    value = stepAudioEndpoint,
+                    onValueChange = onStepAudioEndpointChange,
+                    label = stringResource(R.string.label_stepaudio_endpoint),
+                    index = itemIndex++,
+                    count = itemCount
+                )
+            }
             AsrTextField(
                 uiMode = uiMode,
                 value = stepAudioApiKey,
@@ -898,11 +936,14 @@ internal fun currentOnlineAsrPrimaryItemCount(
     openAiUsePrompt: Boolean,
     openAiUseCompletions: Boolean = false,
     mimoCustomEndpointVisible: Boolean = false,
-    mimoPromptVisible: Boolean = false
+    mimoPromptVisible: Boolean = false,
+    stepAudioCustomEndpointVisible: Boolean = false
 ): Int = when (selectedVendor) {
     AsrVendor.SiliconFlow -> 1
     AsrVendor.ElevenLabs -> 4
-    AsrVendor.StepAudio -> 5
+    AsrVendor.StepAudio -> stepAudioPrimaryItemCount(
+        customEndpointVisible = stepAudioCustomEndpointVisible
+    )
     AsrVendor.Zhipu -> 2
     AsrVendor.Gemini -> 6
     AsrVendor.OpenRouter -> 4
@@ -935,6 +976,9 @@ private fun mimoPrimaryItemCount(
     customEndpointVisible: Boolean,
     promptVisible: Boolean
 ): Int = 5 + (if (customEndpointVisible) 1 else 0) + (if (promptVisible) 2 else 0)
+
+private fun stepAudioPrimaryItemCount(customEndpointVisible: Boolean): Int =
+    6 + (if (customEndpointVisible) 1 else 0)
 
 private fun mimoGuideUrl(endpointPreset: String): String = if (
     endpointPreset == Prefs.MIMO_ENDPOINT_PRESET_PAYGO ||

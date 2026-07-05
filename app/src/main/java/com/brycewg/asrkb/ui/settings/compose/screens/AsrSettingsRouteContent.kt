@@ -173,6 +173,10 @@ internal fun AsrSettingsRouteContent(
                         },
                         stepAudioApiKey = onlineState.stepAudioApiKey,
                         onStepAudioApiKeyChange = onlineState.onStepAudioApiKeyChange,
+                        stepAudioEndpoint = onlineState.stepAudioEndpoint,
+                        onStepAudioEndpointChange = onlineState.onStepAudioEndpointChange,
+                        stepAudioEndpointPreset = onlineState.stepAudioEndpointPreset,
+                        onStepAudioEndpointPresetChange = onlineState.onStepAudioEndpointPresetChange,
                         stepAudioModel = onlineState.stepAudioModel,
                         onChooseStepAudioModel = {
                             showStepAudioModelPicker()
@@ -327,7 +331,9 @@ private fun currentAsrVendorPrimaryItemCount(
         openAiUsePrompt = onlineState.openAiUsePrompt,
         openAiUseCompletions = onlineState.openAiUseCompletions,
         mimoCustomEndpointVisible = onlineState.mimoEndpointPreset == Prefs.MIMO_ENDPOINT_PRESET_CUSTOM,
-        mimoPromptVisible = onlineState.mimoPromptEnabled
+        mimoPromptVisible = onlineState.mimoPromptEnabled,
+        stepAudioCustomEndpointVisible =
+            onlineState.stepAudioEndpointPreset == Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM
     )
 
     else -> localAsrPrimaryItemCount(selectedVendor)
