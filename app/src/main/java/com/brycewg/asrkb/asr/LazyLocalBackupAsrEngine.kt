@@ -569,7 +569,7 @@ internal class LazyLocalBackupAsrEngine(
 
     private fun Terminal.shouldTriggerBackup(): Boolean =
         when (this) {
-            is Terminal.Final -> text.isBlank()
+            is Terminal.Final -> false
             is Terminal.Error ->
                 AsrPrimaryErrorClassifier.classifyMessage(message) ==
                     AsrPrimaryErrorStrategy.ImmediateFailover
@@ -579,7 +579,12 @@ internal class LazyLocalBackupAsrEngine(
         when (source) {
             Source.PRIMARY -> when (this) {
                 is Terminal.Final -> AsrBackupArbitrationEvent.PrimaryFinal(text)
-                is Terminal.Error -> AsrBackupArbitrationEvent.PrimaryError(message)
+                is Terminal.Error ->
+                    if (AsrErrorMessageMapper.isEmptyResult(context, message)) {
+                        AsrBackupArbitrationEvent.PrimaryFinal("")
+                    } else {
+                        AsrBackupArbitrationEvent.PrimaryError(message)
+                    }
             }
             Source.BACKUP -> when (this) {
                 is Terminal.Final -> AsrBackupArbitrationEvent.BackupFinal(text)

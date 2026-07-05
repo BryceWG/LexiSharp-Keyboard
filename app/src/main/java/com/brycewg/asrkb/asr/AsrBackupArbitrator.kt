@@ -59,7 +59,7 @@ internal class AsrBackupArbitrator(
             }
         }
 
-        if (primary is Terminal.Final && primary.text.isNotBlank()) {
+        if (primary is Terminal.Final) {
             return deliverFinal(primary.text, AsrBackupArbitrationSource.Primary)
         }
 
@@ -71,11 +71,9 @@ internal class AsrBackupArbitrator(
             }
         }
 
-        val primaryFailed = when (primary) {
-            is Terminal.Error -> primary.strategy == AsrPrimaryErrorStrategy.ImmediateFailover
-            is Terminal.Final -> primary.text.isBlank()
-            null -> false
-        }
+        val primaryFailed =
+            primary is Terminal.Error &&
+                primary.strategy == AsrPrimaryErrorStrategy.ImmediateFailover
 
         if (primaryFailed) {
             return deliverBackupTerminal(primary, backup, allowBackupErrorWithoutPrimary = true)

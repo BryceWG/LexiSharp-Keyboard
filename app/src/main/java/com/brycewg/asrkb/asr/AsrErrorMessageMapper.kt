@@ -11,16 +11,7 @@ internal object AsrErrorMessageMapper {
 
         val lower = raw.lowercase(Locale.ROOT)
 
-        // 空结果
-        val emptyHints = listOf(
-            context.getString(R.string.error_asr_empty_result),
-            context.getString(R.string.error_audio_empty),
-            "empty asr result",
-            "empty audio",
-            "识别返回为空",
-            "空音频"
-        )
-        if (containsAny(lower, emptyHints)) {
+        if (isEmptyResult(context, raw) || isEmptyAudio(context, raw)) {
             return context.getString(R.string.asr_error_empty_result)
         }
 
@@ -93,6 +84,32 @@ internal object AsrErrorMessageMapper {
         }
 
         return null
+    }
+
+    fun isEmptyResult(context: Context, raw: String): Boolean {
+        val lower = raw.lowercase(Locale.ROOT)
+        return containsAny(
+            lower,
+            listOf(
+                context.getString(R.string.error_asr_empty_result),
+                context.getString(R.string.asr_error_empty_result),
+                "empty asr result",
+                "empty asr",
+                "识别返回为空"
+            )
+        )
+    }
+
+    private fun isEmptyAudio(context: Context, raw: String): Boolean {
+        val lower = raw.lowercase(Locale.ROOT)
+        return containsAny(
+            lower,
+            listOf(
+                context.getString(R.string.error_audio_empty),
+                "empty audio",
+                "空音频"
+            )
+        )
     }
 
     private fun containsAny(lower: String, hints: List<String>): Boolean = hints.any { hint ->

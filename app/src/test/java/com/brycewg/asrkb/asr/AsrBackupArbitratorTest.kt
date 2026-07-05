@@ -48,7 +48,7 @@ class AsrBackupArbitratorTest {
     }
 
     @Test
-    fun blankPrimaryFinalUsesCachedBackupFinal() {
+    fun blankPrimaryFinalWinsOverCachedBackupFinal() {
         val arbitrator = AsrBackupArbitrator(
             hasPrimary = true,
             hasBackup = true
@@ -59,7 +59,7 @@ class AsrBackupArbitratorTest {
         val commands = arbitrator.onEvent(AsrBackupArbitrationEvent.PrimaryFinal(""))
 
         assertEquals(
-            listOf(AsrBackupArbitrationCommand.DeliverFinal("backup", AsrBackupArbitrationSource.Backup)),
+            listOf(AsrBackupArbitrationCommand.DeliverFinal("", AsrBackupArbitrationSource.Primary)),
             commands
         )
     }

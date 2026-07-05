@@ -23,8 +23,8 @@ import kotlinx.coroutines.launch
  * - 录音只采集一次（AudioCaptureManager）
  * - 同步推送 PCM 给主用与备用两个引擎（均以 externalPcmMode/Push-PCM 方式构建）
  * - 以“主用是否在阈值内产生终止事件（onFinal/onError）”作为切换依据：
- *   - 主用先给出非空 onFinal：直接采用主用
- *   - 主用超时或失败（onError/空 onFinal）：尝试采用备用结果
+ *   - 主用先给出 onFinal：直接采用主用，即使结果为空
+ *   - 主用超时或失败（onError）：尝试采用备用结果
  */
 class ParallelAsrEngine(
     private val context: Context,
@@ -620,7 +620,12 @@ class ParallelAsrEngine(
         when (source) {
             Source.PRIMARY -> when (this) {
                 is Terminal.Final -> AsrBackupArbitrationEvent.PrimaryFinal(text)
-                is Terminal.Error -> AsrBackupArbitrationEvent.PrimaryError(message)
+                is Terminal.Error ->
+                    if (AsrErrorMessageMapper.isEmptyResult(context, message)) {
+                        AsrBackupArbitrationEvent.PrimaryFinal("")
+                    } else {
+                        AsrBackupArbitrationEvent.PrimaryError(message)
+                    }
             }
             Source.BACKUP -> when (this) {
                 is Terminal.Final -> AsrBackupArbitrationEvent.BackupFinal(text)

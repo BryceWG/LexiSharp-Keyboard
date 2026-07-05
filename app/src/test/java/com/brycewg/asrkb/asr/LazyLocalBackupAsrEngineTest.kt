@@ -3,6 +3,7 @@ package com.brycewg.asrkb.asr
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CoroutineScope
@@ -339,6 +340,86 @@ class LazyLocalBackupAsrEngineTest {
 
         assertEquals(0, harness.preloadCount)
         assertEquals(listOf("primary text"), listener.finals)
+        assertFalse(engine.wasLastResultFromBackup())
+    }
+
+    @Test
+    fun blankPrimaryFinalDoesNotPreloadOrStartLazyBackup() {
+        val primary = FakeStreamingPcmEngine()
+        val backup = FakeStreamingPcmEngine(finalOnStop = "backup text")
+        val listener = RecordingListener()
+        val harness = Harness(
+            primary = primary,
+            backup = backup,
+            listener = listener,
+            backupReady = true,
+            completePreloadImmediately = true
+        )
+        val engine = harness.createEngine()
+
+        engine.start()
+        primary.listener?.onFinal("")
+
+        assertEquals(0, harness.preloadCount)
+        assertFalse(backup.started)
+        assertEquals(listOf(""), listener.finals)
+        assertTrue(listener.errors.isEmpty())
+        assertFalse(engine.wasLastResultFromBackup())
+    }
+
+    @Test
+    fun primaryEmptyResultErrorCompletesAsBlankFinalWithoutStartingLazyBackup() {
+        val primary = FakeStreamingPcmEngine()
+        val backup = FakeStreamingPcmEngine(finalOnStop = "backup text")
+        val listener = RecordingListener()
+        val harness = Harness(
+            primary = primary,
+            backup = backup,
+            listener = listener,
+            backupReady = true,
+            completePreloadImmediately = true,
+            backupStartAtMs = 0L,
+            switchDeadlineMs = 0L
+        )
+        val engine = harness.createEngine()
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        engine.start()
+        primary.listener?.onError(context.getString(R.string.error_asr_empty_result))
+        Thread.sleep(80)
+
+        assertEquals(0, harness.preloadCount)
+        assertFalse(backup.started)
+        assertEquals(listOf(""), listener.finals)
+        assertTrue(listener.errors.isEmpty())
+        assertFalse(engine.wasLastResultFromBackup())
+    }
+
+    @Test
+    fun primaryEmptyAudioSkippedErrorIsNotConvertedToBlankFinal() {
+        val primary = FakeStreamingPcmEngine()
+        val backup = FakeStreamingPcmEngine(finalOnStop = "backup text")
+        val listener = RecordingListener()
+        val harness = Harness(
+            primary = primary,
+            backup = backup,
+            listener = listener,
+            backupReady = true,
+            completePreloadImmediately = true,
+            backupStartAtMs = 0L,
+            switchDeadlineMs = 0L
+        )
+        val engine = harness.createEngine()
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        engine.start()
+        primary.listener?.onError(context.getString(R.string.error_audio_empty_skipped))
+        Thread.sleep(80)
+
+        assertEquals(0, harness.preloadCount)
+        assertFalse(backup.started)
+        assertTrue(listener.finals.isEmpty())
+        assertTrue(listener.errors.isEmpty())
         assertFalse(engine.wasLastResultFromBackup())
     }
 

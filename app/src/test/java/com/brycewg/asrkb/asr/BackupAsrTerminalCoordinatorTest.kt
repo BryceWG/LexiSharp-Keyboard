@@ -68,6 +68,20 @@ class BackupAsrTerminalCoordinatorTest {
         assertFalse(coordinator.wasLastResultFromBackup())
     }
 
+    @Test
+    fun blankPrimaryFinalDeliversOnceAndIgnoresLateBackupFinal() {
+        val recorder = Recorder()
+        val coordinator = recorder.createCoordinator(hasPrimary = true, hasBackup = true)
+
+        coordinator.dispatch(AsrBackupArbitrationEvent.PrimaryFinal(""))
+        coordinator.dispatch(AsrBackupArbitrationEvent.BackupFinal("late backup"))
+
+        assertEquals(listOf("" to AsrBackupArbitrationSource.Primary), recorder.finals)
+        assertTrue(recorder.errors.isEmpty())
+        assertTrue(coordinator.terminalDelivered)
+        assertFalse(coordinator.wasLastResultFromBackup())
+    }
+
     private class Recorder {
         val finals = mutableListOf<Pair<String, AsrBackupArbitrationSource>>()
         val errors = mutableListOf<String>()
