@@ -1,5 +1,28 @@
 # Changelog
 
+## v4.1.0 (2026-07-05)
+
+### New Features
+
+- **StepAudio Endpoint Configuration**: Added endpoint presets for StepAudio, supporting pay-as-you-go, Coding Plan, and custom endpoints
+- **MiMo / StepAudio Per-Endpoint API Keys**: MiMo and StepAudio now support saving API keys separately for each endpoint preset
+- **Local Backup Residency Mode**: Added local backup residency settings to choose between on-demand loading and resident mode
+- **[Pro] Floating Ball Continuous Talk**: Pro floating ball now supports continuous talk mode for persistent listening and segmented recognition
+- **[Pro] IME Bridge Input Context**: Pro floating ball recording with IME bridge enabled can now use input box context for AI post-processing
+
+### Improvements
+
+- **Floating Ball Recording Visual Feedback**: Shows halo and peak ripple effects based on audio levels during recording; enhanced processing visuals
+- **Backup ASR Strategy Refactor**: Refactored backup ASR arbitration and timeout logic with lazy serial local backup support, plus loading/recognition status indicators for a smoother experience
+- **VAD Auto-Stop Optimization**: Input volume normalization for better VAD performance across engines; clearer auto-stop setting labels
+- **One-Click Setup Accessibility Detection**: Improved accessibility requirement detection to better reflect floating ball, volume key, and IME bridge settings
+
+### Bug Fixes
+
+- **Debug Log Cleanup**: Fixed debug log cleanup not working when exporting logs from the About page
+
+---
+
 ## v4.0.3 (2026-07-02)
 
 ### New Features
