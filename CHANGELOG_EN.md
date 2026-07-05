@@ -20,6 +20,7 @@
 ### Bug Fixes
 
 - **Debug Log Cleanup**: Fixed debug log cleanup not working when exporting logs from the About page
+- **Backup Engine Tolerance**: Empty results are no longer considered as call failures, improving the fault tolerance of backup engine switching logic
 
 ---
 
