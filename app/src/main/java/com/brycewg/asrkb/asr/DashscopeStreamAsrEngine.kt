@@ -109,7 +109,7 @@ class DashscopeStreamAsrEngine(
             return
         }
 
-        useFunAsrModel = prefs.dashAsrModel.startsWith("fun-asr", ignoreCase = true)
+        useFunAsrModel = prefs.dashAsrModel.equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true)
 
         running.set(true)
         externalVadInputLeveler.reset()

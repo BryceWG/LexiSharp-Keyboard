@@ -7,6 +7,7 @@
     <string name="label_dash_api_key">DashScope API Key (Bearer)</string>
     <string name="label_dash_model">ASR Model</string>
     <string name="dash_model_qwen_file">Qwen3-ASR-Flash (non-streaming)</string>
+    <string name="dash_model_fun_flash">Fun-ASR-Flash (non-streaming)</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash (non-streaming)</string>
     <string name="dash_model_qwen35_omni_plus">Qwen3.5-Omni-Plus (non-streaming)</string>
     <string name="dash_model_qwen_realtime">Qwen3-ASR-Flash-Realtime (streaming)</string>
@@ -14,7 +15,7 @@
     <string name="label_dash_prompt">Custom prompt / context (optional)</string>
     <string name="label_dash_language">Recognition language</string>
     <string name="label_dash_streaming">Streaming recognition</string>
-    <string name="dash_streaming_note">Model selection determines streaming behavior. Qwen3 and Qwen3.5-Omni models support custom prompt / context. Qwen3.5-Omni does not support language selection, and Fun-ASR-Realtime does not support custom prompt.</string>
+    <string name="dash_streaming_note">Model selection determines streaming behavior. Qwen3 and Qwen3.5-Omni models support custom prompt / context. Qwen3.5-Omni and Fun-ASR-Flash do not support language selection, and Fun-ASR models do not support custom prompt.</string>
     <string name="label_dash_fun_asr">Use Fun-ASR model (fun-asr-realtime)</string>
     <string name="label_dash_funasr_semantic_punct">Use semantic segmentation (Fun-ASR)</string>
     <string name="dash_lang_auto">Auto detect</string>

@@ -913,10 +913,12 @@ class Prefs(context: Context) {
         dashRegion
     )
 
+    fun getDashMultimodalGenerationEndpoint(): String = DashScopePrefsCompat.getDashMultimodalGenerationEndpoint(
+        dashRegion
+    )
+
     private fun isDashStreamingModelId(modelId: String): Boolean {
-        // DashScope realtime/streaming 模型的 ID 不保证以 "-realtime" 结尾：
-        // 例如 qwen3-asr-flash-realtime-2026-02-10。
-        return modelId.contains("-realtime", ignoreCase = true)
+        return DashScopePrefsCompat.normalizeDashAsrModel(modelId).contains("-realtime", ignoreCase = true)
     }
 
     fun isDashOmniModelId(modelId: String): Boolean = modelId.equals(
@@ -928,15 +930,30 @@ class Prefs(context: Context) {
             ignoreCase = true
         )
 
+    fun isDashFunAsrFlashModelId(modelId: String): Boolean =
+        DashScopePrefsCompat.normalizeDashAsrModel(modelId)
+            .equals(DASH_MODEL_FUN_ASR_FLASH, ignoreCase = true)
+
     // DashScope：ASR 模型选择（用于替代“流式开关 + Fun-ASR 开关”的组合）
     // - qwen3-asr-flash：非流式
+    // - fun-asr-flash-2026-06-15：非流式
     // - qwen3.5-omni-flash / qwen3.5-omni-plus：非流式多模态转写
     // - qwen3-asr-flash-realtime：流式（Qwen3）
     // - fun-asr-realtime：流式（Fun-ASR）
     var dashAsrModel: String
         get() {
             val v = (sp.getString(KEY_DASH_ASR_MODEL, "") ?: "").trim()
-            if (v.isNotBlank()) return v
+            if (v.isNotBlank()) {
+                val normalized = DashScopePrefsCompat.normalizeDashAsrModel(v)
+                if (normalized != v) {
+                    try {
+                        sp.edit { putString(KEY_DASH_ASR_MODEL, normalized) }
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to normalize DashScope model", t)
+                    }
+                }
+                return normalized
+            }
 
             val derived = DashScopePrefsCompat.deriveDashAsrModelFromLegacyFlags(sp)
             // 迁移：写回新 key，后续直接读取
@@ -948,7 +965,7 @@ class Prefs(context: Context) {
             return derived
         }
         set(value) {
-            val model = value.trim().ifBlank { DEFAULT_DASH_MODEL }
+            val model = DashScopePrefsCompat.normalizeDashAsrModel(value)
             sp.edit {
                 putString(KEY_DASH_ASR_MODEL, model)
                 // 同步旧开关，便于兼容旧版本导入/导出
@@ -956,7 +973,7 @@ class Prefs(context: Context) {
                     KEY_DASH_STREAMING_ENABLED,
                     isDashStreamingModelId(model)
                 )
-                putBoolean(KEY_DASH_FUNASR_ENABLED, model.startsWith("fun-asr", ignoreCase = true))
+                putBoolean(KEY_DASH_FUNASR_ENABLED, model.equals(DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true))
             }
         }
 
@@ -964,9 +981,11 @@ class Prefs(context: Context) {
 
     fun isDashOmniModelSelected(): Boolean = isDashOmniModelId(dashAsrModel)
 
-    fun isDashPromptSupportedByModel(): Boolean = !dashAsrModel.startsWith("fun-asr", ignoreCase = true)
+    fun isDashPromptSupportedByModel(): Boolean =
+        !dashAsrModel.startsWith("fun-asr", ignoreCase = true)
 
-    fun isDashLanguageSupportedByModel(): Boolean = !isDashOmniModelId(dashAsrModel)
+    fun isDashLanguageSupportedByModel(): Boolean =
+        !isDashOmniModelId(dashAsrModel) && !isDashFunAsrFlashModelId(dashAsrModel)
 
     // DashScope: streaming toggle（legacy，已由 dashAsrModel 替代）
     var dashStreamingEnabled: Boolean
@@ -1936,7 +1955,8 @@ class Prefs(context: Context) {
         const val DEFAULT_DASH_MODEL = "qwen3-asr-flash"
         const val DASH_MODEL_QWEN35_OMNI_FLASH = "qwen3.5-omni-flash"
         const val DASH_MODEL_QWEN35_OMNI_PLUS = "qwen3.5-omni-plus"
-        const val DASH_MODEL_QWEN3_REALTIME = "qwen3-asr-flash-realtime-2026-02-10"
+        const val DASH_MODEL_FUN_ASR_FLASH = "fun-asr-flash-2026-06-15"
+        const val DASH_MODEL_QWEN3_REALTIME = "qwen3-asr-flash-realtime"
         const val DASH_MODEL_FUN_ASR_REALTIME = "fun-asr-realtime"
 
         // Gemini 默认

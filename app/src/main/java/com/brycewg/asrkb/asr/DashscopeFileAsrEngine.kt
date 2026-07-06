@@ -31,6 +31,7 @@ import org.json.JSONObject
 /**
  * 使用阿里云百炼（DashScope）的非流式 ASR 引擎。
  * - 旧版 Qwen3-ASR-Flash 继续走 DashScope Java SDK 文件上传。
+ * - Fun-ASR-Flash 走 DashScope REST multimodal-generation + WAV Base64。
  * - Qwen3.5-Omni 非实时模型走 OpenAI 兼容 chat/completions + Base64 音频输入。
  */
 class DashscopeFileAsrEngine(
@@ -75,43 +76,45 @@ class DashscopeFileAsrEngine(
 
     override suspend fun recognize(pcm: ByteArray) {
         val model = prefs.dashAsrModel.trim().ifBlank { Prefs.DEFAULT_DASH_MODEL }
-        if (prefs.isDashOmniModelId(model)) {
-            val audio = encodePcmForUploadIfEnabled(pcm, model)
-            recognizeWithOmni(audio, model)
-        } else {
-            val audio = encodePcmForUploadIfEnabled(pcm, model)
-            recognizeWithLegacySdk(audio, model)
+        val audio = encodePcmForUploadIfEnabled(pcm, model)
+        when {
+            prefs.isDashFunAsrFlashModelId(model) -> recognizeWithFunAsrFlash(audio, model)
+            prefs.isDashOmniModelId(model) -> recognizeWithOmni(audio, model)
+            else -> recognizeWithLegacySdk(audio, model)
         }
     }
 
     override suspend fun recognizeEncoded(audio: UploadAudioData) {
         val model = prefs.dashAsrModel.trim().ifBlank { Prefs.DEFAULT_DASH_MODEL }
-        if (prefs.isDashOmniModelId(model)) {
-            recognizeWithOmni(audio, model)
-            return
+        when {
+            prefs.isDashFunAsrFlashModelId(model) -> recognizeWithFunAsrFlash(audio, model)
+            prefs.isDashOmniModelId(model) -> recognizeWithOmni(audio, model)
+            else -> recognizeWithLegacySdk(audio, model)
         }
-        recognizeWithLegacySdk(audio, model)
     }
 
     override suspend fun recognizeFromPcm(pcm: ByteArray) {
         recognize(pcm)
     }
 
-    private fun uploadAudioEncodingSpecForModel(model: String): UploadAudioEncodingSpec = if (prefs.isDashOmniModelId(model)) {
-        UploadAudioEncodingSpec.AAC_ADTS
-    } else {
-        UploadAudioEncodingSpec.M4A_AAC_LC
+    private fun uploadAudioEncodingSpecForModel(model: String): UploadAudioEncodingSpec? = when {
+        prefs.isDashFunAsrFlashModelId(model) -> null
+        prefs.isDashOmniModelId(model) -> UploadAudioEncodingSpec.AAC_ADTS
+        else -> UploadAudioEncodingSpec.M4A_AAC_LC
     }
 
-    private fun encodePcmForUploadIfEnabled(pcm: ByteArray, model: String): UploadAudioData = if (prefs.uploadAudioCompressionEnabled) {
-        encodePcmForUpload(
-            context,
-            pcm,
-            sampleRate,
-            uploadAudioEncodingSpecForModel(model)
-        )
-    } else {
-        pcmToWavUploadAudio(pcm)
+    private fun encodePcmForUploadIfEnabled(pcm: ByteArray, model: String): UploadAudioData {
+        val encodingSpec = uploadAudioEncodingSpecForModel(model)
+        return if (prefs.uploadAudioCompressionEnabled && encodingSpec != null) {
+            encodePcmForUpload(
+                context,
+                pcm,
+                sampleRate,
+                encodingSpec
+            )
+        } else {
+            pcmToWavUploadAudio(pcm)
+        }
     }
 
     /**
@@ -185,6 +188,52 @@ class DashscopeFileAsrEngine(
     }
 
     /**
+     * Fun-ASR-Flash 非流式 REST 路径。开源版不发送文本上下文增强。
+     */
+    private fun recognizeWithFunAsrFlash(audio: UploadAudioData, model: String) {
+        try {
+            val base64Audio = Base64.encodeToString(audio.bytes, Base64.NO_WRAP)
+            val body = buildDashFunAsrFlashRequestBody(model, base64Audio, audio)
+            val request = Request.Builder()
+                .url(prefs.getDashMultimodalGenerationEndpoint())
+                .tag(
+                    ApiLogMeta::class.java,
+                    ApiLogRecorder.meta(
+                        category = "ASR",
+                        vendor = "dashscope",
+                        model = model,
+                        requestStructure = "json object keys=model,input,parameters; messages=input_audio"
+                    )
+                )
+                .addHeader("Authorization", "Bearer ${prefs.dashApiKey}")
+                .addHeader("Content-Type", "application/json; charset=utf-8")
+                .addHeader("X-DashScope-SSE", "disable")
+                .post(body.toRequestBody("application/json; charset=utf-8".toMediaType()))
+                .build()
+
+            val t0 = System.nanoTime()
+            val response = http.newCall(request).execute()
+            response.use { r ->
+                val bodyStr = r.body.string().orEmpty()
+                if (!r.isSuccessful) {
+                    val detail = formatHttpDetail(r.message, extractErrorHint(bodyStr))
+                    listener.onError(
+                        context.getString(R.string.error_request_failed_http, r.code, detail)
+                    )
+                    return
+                }
+
+                dispatchFinalText(parseDashscopeGenerationText(bodyStr), t0)
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "DashScope Fun-ASR-Flash recognition failed", t)
+            listener.onError(
+                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
+            )
+        }
+    }
+
+    /**
      * Qwen3.5-Omni 非实时识别路径。
      */
     private fun recognizeWithOmni(audio: UploadAudioData, model: String) {
@@ -238,6 +287,46 @@ class DashscopeFileAsrEngine(
                 context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
             )
         }
+    }
+
+    private fun buildDashFunAsrFlashRequestBody(
+        model: String,
+        base64Audio: String,
+        audio: UploadAudioData
+    ): String {
+        val userMessage = JSONObject().apply {
+            put("role", "user")
+            put(
+                "content",
+                JSONArray().put(
+                    JSONObject().apply {
+                        put("type", "input_audio")
+                        put(
+                            "input_audio",
+                            JSONObject().apply {
+                                put("data", "data:${audio.mimeType};base64,$base64Audio")
+                            }
+                        )
+                    }
+                )
+            )
+        }
+        return JSONObject().apply {
+            put("model", model)
+            put(
+                "input",
+                JSONObject().apply {
+                    put("messages", JSONArray().put(userMessage))
+                }
+            )
+            put(
+                "parameters",
+                JSONObject().apply {
+                    put("format", audio.format)
+                    put("sample_rate", sampleRate.toString())
+                }
+            )
+        }.toString()
     }
 
     private fun buildDashOmniRequestBody(
@@ -306,6 +395,31 @@ class DashscopeFileAsrEngine(
             Log.w(TAG, "Failed to dispatch duration", t)
         }
         listener.onFinal(text)
+    }
+
+    private fun parseDashscopeGenerationText(body: String): String {
+        val sdkText = parseDashscopeSdkText(body)
+        if (sdkText.isNotBlank()) return sdkText
+        if (body.isBlank()) return ""
+        return try {
+            val obj = JSONObject(body)
+            val output = obj.optJSONObject("output")
+            firstNonBlank(
+                output?.optString("text"),
+                output?.optString("sentence"),
+                output?.optString("transcript"),
+                output?.optString("transcription"),
+                output?.optString("result"),
+                obj.optString("text"),
+                obj.optString("sentence"),
+                obj.optString("transcript"),
+                obj.optString("transcription"),
+                obj.optString("result")
+            )
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to parse DashScope generation response", t)
+            ""
+        }
     }
 
     /**
@@ -404,6 +518,14 @@ class DashscopeFileAsrEngine(
             Log.e(TAG, "Failed to parse DashScope Omni chat response", t)
             ""
         }
+    }
+
+    private fun firstNonBlank(vararg values: String?): String {
+        for (value in values) {
+            val trimmed = value?.trim().orEmpty()
+            if (trimmed.isNotEmpty()) return trimmed
+        }
+        return ""
     }
 
     private fun appendChatDeltaContent(delta: JSONObject?, builder: StringBuilder) {

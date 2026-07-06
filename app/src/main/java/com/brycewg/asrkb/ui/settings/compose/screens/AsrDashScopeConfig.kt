@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.store.DashScopePrefsCompat
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.model.DropdownOption
@@ -126,6 +127,7 @@ internal fun dashScopePrimaryItemCount(
 
 internal fun dashModelOptions(context: Context): List<DashChoice> = listOf(
     DashChoice(Prefs.DEFAULT_DASH_MODEL, context.getString(R.string.dash_model_qwen_file)),
+    DashChoice(Prefs.DASH_MODEL_FUN_ASR_FLASH, context.getString(R.string.dash_model_fun_flash)),
     DashChoice(
         Prefs.DASH_MODEL_QWEN35_OMNI_FLASH,
         context.getString(R.string.dash_model_qwen35_omni_flash)
@@ -176,9 +178,7 @@ internal fun dashRegionLabel(context: Context, region: String): String {
         ?: context.getString(R.string.dash_region_cn)
 }
 
-internal fun normalizeDashModel(model: String): String = model.trim().ifBlank {
-    Prefs.DEFAULT_DASH_MODEL
-}
+internal fun normalizeDashModel(model: String): String = DashScopePrefsCompat.normalizeDashAsrModel(model)
 
 internal fun normalizeDashRegion(region: String): String = if (region.equals("intl", ignoreCase = true)) {
     "intl"
@@ -189,6 +189,12 @@ internal fun normalizeDashRegion(region: String): String = if (region.equals("in
 internal fun isDashFunAsrModel(model: String): Boolean = normalizeDashModel(model)
     .startsWith("fun-asr", ignoreCase = true)
 
+internal fun isDashFunAsrRealtimeModel(model: String): Boolean = normalizeDashModel(model)
+    .equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true)
+
+internal fun isDashFunAsrFlashModel(model: String): Boolean = normalizeDashModel(model)
+    .equals(Prefs.DASH_MODEL_FUN_ASR_FLASH, ignoreCase = true)
+
 internal fun isDashOmniModel(model: String): Boolean {
     val normalized = normalizeDashModel(model)
     return normalized.equals(Prefs.DASH_MODEL_QWEN35_OMNI_FLASH, ignoreCase = true) ||
@@ -197,7 +203,8 @@ internal fun isDashOmniModel(model: String): Boolean {
 
 internal fun isDashPromptSupported(model: String): Boolean = !isDashFunAsrModel(model)
 
-internal fun isDashLanguageSupported(model: String): Boolean = !isDashOmniModel(model)
+internal fun isDashLanguageSupported(model: String): Boolean =
+    !isDashOmniModel(model) && !isDashFunAsrFlashModel(model)
 
 internal const val DASH_SCOPE_ASR_GUIDE_URL: String =
     "https://bibidocs.brycewg.com/getting-started/asr-providers.html#%E9%98%BF%E9%87%8C%E4%BA%91%E7%99%BE%E7%82%BC-dashscope-qwen"
