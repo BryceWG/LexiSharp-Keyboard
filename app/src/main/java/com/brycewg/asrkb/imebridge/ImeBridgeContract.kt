@@ -33,6 +33,7 @@ internal object ImeBridgeContract {
     const val EXTRA_SUPPORTS_COMPOSING_PREVIEW: String = "supports_composing_preview"
     const val EXTRA_SUPPORTS_FINISH_COMPOSING_TEXT: String = "supports_finish_composing_text"
     const val EXTRA_SUPPORTS_SESSIONS: String = "supports_sessions"
+    const val EXTRA_SUPPORTS_PCM_RECORDING: String = "supports_pcm_recording"
     const val EXTRA_ACTIVE_SESSION_ID: String = "active_session_id"
     const val EXTRA_LAST_OPERATION: String = "last_operation"
     const val EXTRA_LAST_RESULT_CODE: String = "last_result_code"

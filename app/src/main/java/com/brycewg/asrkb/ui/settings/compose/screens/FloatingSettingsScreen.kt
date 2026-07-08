@@ -197,30 +197,17 @@ fun FloatingSettingsScreen(
             imeBridgeEnabled = uiState.imeBridgeEnabled
         )
 
-    fun formatImeBridgeStatus(result: com.brycewg.asrkb.imebridge.ImeBridgeResult): String {
-        val target = result.targetPackage ?: context.getString(R.string.status_floating_ime_bridge_unknown_target)
-        return when {
-            result.isSuccess && result.isSensitiveField ->
-                context.getString(R.string.status_floating_ime_bridge_sensitive, target)
-            result.isSuccess && result.hasInputConnection ->
-                context.getString(R.string.status_floating_ime_bridge_ready, target)
-            result.isSuccess && !result.isImeWindowVisible ->
-                context.getString(R.string.status_floating_ime_bridge_hidden, target)
-            result.isSuccess ->
-                context.getString(R.string.status_floating_ime_bridge_waiting, target)
-            !result.isBridgePresent ->
-                context.getString(R.string.status_floating_ime_bridge_not_found, target)
-            else ->
-                context.getString(R.string.status_floating_ime_bridge_error, target, result.message)
-        }
-    }
-
     fun refreshImeBridgeStatus() {
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 imeBridgeClient.queryStatus()
             }
-            imeBridgeStatusText = formatImeBridgeStatus(result)
+            imeBridgeStatusText = formatImeBridgeStatus(
+                context = context,
+                result = result,
+                textInsertionEnabled = uiState.imeBridgeEnabled,
+                pcmRecordingEnabled = uiState.imeBridgePcmRecordingEnabled
+            )
         }
     }
 
@@ -229,6 +216,7 @@ fun FloatingSettingsScreen(
         uiState.asrEnabled,
         uiState.volumeKeyRecordingEnabled,
         uiState.imeBridgeEnabled,
+        uiState.imeBridgePcmRecordingEnabled,
         uiState.onlyWhenImeVisible
     ) {
         if (!settingsLoaded || autoAccessibilityRequested) return@LaunchedEffect
@@ -238,9 +226,9 @@ fun FloatingSettingsScreen(
         }
     }
 
-    LaunchedEffect(settingsLoaded, uiState.imeBridgeEnabled) {
+    LaunchedEffect(settingsLoaded, uiState.imeBridgeEnabled, uiState.imeBridgePcmRecordingEnabled) {
         if (!settingsLoaded) return@LaunchedEffect
-        if (uiState.imeBridgeEnabled) {
+        if (shouldQueryImeBridgeStatus(uiState.imeBridgeEnabled, uiState.imeBridgePcmRecordingEnabled)) {
             refreshImeBridgeStatus()
         } else {
             imeBridgeStatusText = context.getString(R.string.status_floating_ime_bridge_disabled)
@@ -653,7 +641,7 @@ fun FloatingSettingsScreen(
                                 preferenceKey = "floating_ime_bridge_explained"
                             ) {
                                 prefs.floatingImeBridgeEnabled = it
-                                if (it) {
+                                if (shouldQueryImeBridgeStatus(it, uiState.imeBridgePcmRecordingEnabled)) {
                                     refreshImeBridgeStatus()
                                 } else {
                                     imeBridgeStatusText =
@@ -662,7 +650,32 @@ fun FloatingSettingsScreen(
                             }
                         },
                         index = 0,
-                        count = 2
+                        count = 3
+                    )
+                    FloatingExplainedSwitch(
+                        id = "ime_bridge_pcm_recording",
+                        titleRes = R.string.label_ime_bridge_pcm_recording,
+                        checked = uiState.imeBridgePcmRecordingEnabled,
+                        onToggle = { target ->
+                            applyExplainedSwitch(
+                                current = uiState.imeBridgePcmRecordingEnabled,
+                                target = target,
+                                titleRes = R.string.label_ime_bridge_pcm_recording,
+                                offDescRes = R.string.feature_ime_bridge_pcm_recording_off_desc,
+                                onDescRes = R.string.feature_ime_bridge_pcm_recording_on_desc,
+                                preferenceKey = "ime_bridge_pcm_recording_explained"
+                            ) {
+                                prefs.imeBridgePcmRecordingEnabled = it
+                                if (shouldQueryImeBridgeStatus(uiState.imeBridgeEnabled, it)) {
+                                    refreshImeBridgeStatus()
+                                } else {
+                                    imeBridgeStatusText =
+                                        context.getString(R.string.status_floating_ime_bridge_disabled)
+                                }
+                            }
+                        },
+                        index = 1,
+                        count = 3
                     )
                     FloatingValuePreference(
                         titleRes = R.string.label_floating_ime_bridge_status,
@@ -672,9 +685,20 @@ fun FloatingSettingsScreen(
                             imeBridgeStatusText
                         },
                         uiMode = uiMode,
-                        index = 1,
-                        count = 2,
-                        onClick = { refreshImeBridgeStatus() }
+                        index = 2,
+                        count = 3,
+                        onClick = {
+                            if (shouldQueryImeBridgeStatus(
+                                    uiState.imeBridgeEnabled,
+                                    uiState.imeBridgePcmRecordingEnabled
+                                )
+                            ) {
+                                refreshImeBridgeStatus()
+                            } else {
+                                imeBridgeStatusText =
+                                    context.getString(R.string.status_floating_ime_bridge_disabled)
+                            }
+                        }
                     )
                     FloatingSubsectionGap()
                     FloatingExplainedSwitch(

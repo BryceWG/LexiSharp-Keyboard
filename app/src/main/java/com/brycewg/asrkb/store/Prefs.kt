@@ -551,6 +551,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_FLOATING_IME_BRIDGE_ENABLED, false)
         set(value) = sp.edit { putBoolean(KEY_FLOATING_IME_BRIDGE_ENABLED, value) }
 
+    // 输入法桥接：允许被 Hook 的当前默认输入法向主 app 推送 PCM，默认关闭
+    var imeBridgePcmRecordingEnabled: Boolean
+        get() = sp.getBoolean(KEY_IME_BRIDGE_PCM_RECORDING_ENABLED, false)
+        set(value) = sp.edit { putBoolean(KEY_IME_BRIDGE_PCM_RECORDING_ENABLED, value) }
+
     // LLM后处理设置（旧版单一字段；当存在多配置且已选择活动项时仅作回退）
     var postProcessEnabled: Boolean
         get() = sp.getBoolean(KEY_POSTPROC_ENABLED, false)

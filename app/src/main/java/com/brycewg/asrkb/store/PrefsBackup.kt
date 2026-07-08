@@ -168,6 +168,7 @@ internal object PrefsBackup {
         o.put(KEY_FLOATING_WRITE_PASTE_ENABLED, floatingWriteTextPasteEnabled)
         o.put(KEY_FLOATING_WRITE_PASTE_PACKAGES, floatingWritePastePackages)
         o.put(KEY_FLOATING_IME_BRIDGE_ENABLED, floatingImeBridgeEnabled)
+        o.put(KEY_IME_BRIDGE_PCM_RECORDING_ENABLED, imeBridgePcmRecordingEnabled)
         // 允许外部输入法联动（AIDL）
         o.put(KEY_EXTERNAL_AIDL_ENABLED, externalAidlEnabled)
         // FireRedASR（本地 ASR）
@@ -347,6 +348,9 @@ internal object PrefsBackup {
             optBool(KEY_FLOATING_WRITE_PASTE_ENABLED)?.let { floatingWriteTextPasteEnabled = it }
             optString(KEY_FLOATING_WRITE_PASTE_PACKAGES)?.let { floatingWritePastePackages = it }
             optBool(KEY_FLOATING_IME_BRIDGE_ENABLED)?.let { floatingImeBridgeEnabled = it }
+            optBool(KEY_IME_BRIDGE_PCM_RECORDING_ENABLED)?.let {
+                imeBridgePcmRecordingEnabled = it
+            }
 
             optString(KEY_LLM_ENDPOINT)?.let {
                 llmEndpoint =

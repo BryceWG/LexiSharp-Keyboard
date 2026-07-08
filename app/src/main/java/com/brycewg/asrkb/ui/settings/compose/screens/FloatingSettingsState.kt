@@ -9,6 +9,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.provider.Settings
 import android.util.Log
+import com.brycewg.asrkb.R
+import com.brycewg.asrkb.imebridge.ImeBridgeClient
+import com.brycewg.asrkb.imebridge.ImeBridgeContract
+import com.brycewg.asrkb.imebridge.ImeBridgeResult
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.AsrAccessibilityService
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
@@ -27,7 +31,8 @@ internal data class FloatingSettingsUiState(
     val volumeKeyStopOnImeHidden: Boolean,
     val writeCompatEnabled: Boolean,
     val writePasteEnabled: Boolean,
-    val imeBridgeEnabled: Boolean
+    val imeBridgeEnabled: Boolean,
+    val imeBridgePcmRecordingEnabled: Boolean
 ) {
     companion object {
         val placeholder: FloatingSettingsUiState = FloatingSettingsUiState(
@@ -42,7 +47,8 @@ internal data class FloatingSettingsUiState(
             volumeKeyStopOnImeHidden = true,
             writeCompatEnabled = false,
             writePasteEnabled = false,
-            imeBridgeEnabled = false
+            imeBridgeEnabled = false,
+            imeBridgePcmRecordingEnabled = false
         )
 
         fun fromPrefs(prefs: Prefs): FloatingSettingsUiState = FloatingSettingsUiState(
@@ -57,10 +63,129 @@ internal data class FloatingSettingsUiState(
             volumeKeyStopOnImeHidden = prefs.volumeKeyStopOnImeHidden,
             writeCompatEnabled = prefs.floatingWriteTextCompatEnabled,
             writePasteEnabled = prefs.floatingWriteTextPasteEnabled,
-            imeBridgeEnabled = prefs.floatingImeBridgeEnabled
+            imeBridgeEnabled = prefs.floatingImeBridgeEnabled,
+            imeBridgePcmRecordingEnabled = prefs.imeBridgePcmRecordingEnabled
         )
     }
 }
+
+internal enum class ImeBridgeFailureKind {
+    MicrophonePermission,
+    InjectionUnsupported,
+    Other
+}
+
+internal fun shouldQueryImeBridgeStatus(
+    textInsertionEnabled: Boolean,
+    pcmRecordingEnabled: Boolean
+): Boolean = textInsertionEnabled || pcmRecordingEnabled
+
+internal fun classifyImeBridgeRecordingFailure(lastError: String?): ImeBridgeFailureKind {
+    val normalized = lastError?.lowercase().orEmpty()
+    return when {
+        normalized.contains("permission") ||
+            normalized.contains("record_audio") ||
+            normalized.contains("audio record failed") ->
+            ImeBridgeFailureKind.MicrophonePermission
+
+        normalized.contains("unsupported ime window root") ||
+            normalized.contains("ime window not ready") ||
+            normalized.contains("no input method service") ||
+            normalized.contains("not attached") ||
+            normalized.contains("attach failed") ->
+            ImeBridgeFailureKind.InjectionUnsupported
+
+        else -> ImeBridgeFailureKind.Other
+    }
+}
+
+internal fun formatImeBridgeStatus(
+    context: Context,
+    result: ImeBridgeResult?,
+    textInsertionEnabled: Boolean,
+    pcmRecordingEnabled: Boolean
+): String {
+    if (!shouldQueryImeBridgeStatus(textInsertionEnabled, pcmRecordingEnabled)) {
+        return context.getString(R.string.status_floating_ime_bridge_disabled)
+    }
+    if (result == null) return context.getString(R.string.status_floating_ime_bridge_unknown)
+
+    val target = result.targetPackage
+        ?: ImeBridgeClient.resolveCurrentImePackage(context)
+        ?: context.getString(R.string.status_floating_ime_bridge_unknown_target)
+    val headline = when {
+        result.code == ImeBridgeContract.RESULT_NO_CURRENT_IME ||
+            result.code == ImeBridgeContract.RESULT_NO_ACTIVE_IME ->
+            context.getString(R.string.status_floating_ime_bridge_no_active_ime)
+
+        result.code == ImeBridgeContract.RESULT_NO_INPUT_CONNECTION ->
+            context.getString(R.string.status_floating_ime_bridge_no_input_connection, target)
+
+        result.code == ImeBridgeContract.RESULT_SENSITIVE_FIELD || result.isSensitiveField ->
+            context.getString(R.string.status_floating_ime_bridge_sensitive, target)
+
+        !result.isBridgePresent ->
+            context.getString(R.string.status_floating_ime_bridge_not_found, target)
+
+        pcmRecordingEnabled && result.isSuccess && !result.supportsPcmRecording ->
+            context.getString(R.string.status_floating_ime_bridge_pcm_unsupported, target)
+
+        !result.isImeWindowVisible ->
+            context.getString(R.string.status_floating_ime_bridge_hidden, target)
+
+        !result.hasInputConnection ->
+            context.getString(R.string.status_floating_ime_bridge_no_input_connection, target)
+
+        result.isSuccess ->
+            context.getString(R.string.status_floating_ime_bridge_ready, target)
+
+        else ->
+            context.getString(R.string.status_floating_ime_bridge_error, target, result.message)
+    }
+    val moduleText = context.getString(
+        R.string.status_floating_ime_bridge_module_summary,
+        result.moduleVersion ?: context.getString(R.string.status_floating_ime_bridge_module_unknown),
+        context.getString(
+            if (result.supportsPcmRecording) {
+                R.string.status_floating_ime_bridge_pcm_supported
+            } else {
+                R.string.status_floating_ime_bridge_pcm_not_supported
+            }
+        )
+    )
+    val inputText = context.getString(
+        R.string.status_floating_ime_bridge_input_summary,
+        context.yesNo(result.isImeWindowVisible),
+        context.yesNo(result.hasInputConnection),
+        context.yesNo(result.isSensitiveField)
+    )
+    val recordingText = if (pcmRecordingEnabled) {
+        context.getString(R.string.status_floating_ime_bridge_recording_enabled)
+    } else {
+        context.getString(R.string.status_floating_ime_bridge_recording_disabled)
+    }
+    val lastFailure = formatImeBridgeLastFailure(context, result.lastError)
+    return listOfNotNull(headline, recordingText, moduleText, inputText, lastFailure).joinToString("\n")
+}
+
+private fun formatImeBridgeLastFailure(context: Context, lastError: String?): String? {
+    val trimmed = lastError?.trim().takeUnless { it.isNullOrEmpty() } ?: return null
+    val summaryRes = when (classifyImeBridgeRecordingFailure(trimmed)) {
+        ImeBridgeFailureKind.MicrophonePermission ->
+            R.string.status_floating_ime_bridge_last_failure_mic_permission
+
+        ImeBridgeFailureKind.InjectionUnsupported ->
+            R.string.status_floating_ime_bridge_last_failure_injection_unsupported
+
+        ImeBridgeFailureKind.Other ->
+            R.string.status_floating_ime_bridge_last_failure
+    }
+    return context.getString(summaryRes, trimmed)
+}
+
+private fun Context.yesNo(value: Boolean): String = getString(
+    if (value) R.string.status_floating_ime_bridge_yes else R.string.status_floating_ime_bridge_no
+)
 
 internal data class FloatingSettingsPrefsSnapshot(
     val uiState: FloatingSettingsUiState,

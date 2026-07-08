@@ -31,6 +31,7 @@ data class ImeBridgeResult(
     val supportsComposingPreview: Boolean = false,
     val supportsFinishComposingText: Boolean = false,
     val supportsSessions: Boolean = false,
+    val supportsPcmRecording: Boolean = false,
     val activeSessionId: String? = null,
     val lastOperation: String? = null,
     val lastResultCode: Int = 0,
@@ -185,6 +186,10 @@ class ImeBridgeClient(private val context: Context) {
                         ImeBridgeContract.EXTRA_SUPPORTS_SESSIONS,
                         false
                     ) == true,
+                    supportsPcmRecording = extras?.getBoolean(
+                        ImeBridgeContract.EXTRA_SUPPORTS_PCM_RECORDING,
+                        false
+                    ) == true,
                     activeSessionId = extras?.getString(ImeBridgeContract.EXTRA_ACTIVE_SESSION_ID),
                     lastOperation = extras?.getString(ImeBridgeContract.EXTRA_LAST_OPERATION),
                     lastResultCode = extras?.getInt(ImeBridgeContract.EXTRA_LAST_RESULT_CODE, 0) ?: 0,
@@ -296,6 +301,7 @@ class ImeBridgeClient(private val context: Context) {
                     append("; supportsInsert=").append(result.supportsInsertText)
                     append("; supportsPreview=").append(result.supportsComposingPreview)
                     append("; supportsSessions=").append(result.supportsSessions)
+                    append("; supportsPcmRecording=").append(result.supportsPcmRecording)
                 },
                 success = result.isSuccess,
                 durationMs = durationMs,

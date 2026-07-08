@@ -114,6 +114,14 @@
             </intent-filter>
         </receiver>
 
+        <service
+            android:name=".imebridge.ImeBridgePcmSessionService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.brycewg.asrkb.imebridge.action.BIND_PCM_SESSION_SERVICE" />
+            </intent-filter>
+        </service>
+
         <!-- 悬浮球前台保活服务 -->
         <service
             android:name=".ui.floating.FloatingKeepAliveService"

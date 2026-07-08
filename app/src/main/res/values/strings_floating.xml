@@ -15,7 +15,8 @@
     <string name="label_floating_keep_alive_foreground">Keep alive with a foreground service</string>
     <string name="label_floating_keep_alive_privileged">Keep alive via Shizuku / root</string>
     <string name="label_request_battery_whitelist">Request battery optimization whitelist</string>
-    <string name="label_floating_ime_bridge">输入法桥接模式</string>
+    <string name="label_floating_ime_bridge">IME bridge text insertion</string>
+    <string name="label_ime_bridge_pcm_recording">Record inside bridged IME</string>
     <string name="label_floating_ime_bridge_status">IME bridge status</string>
     <string name="status_floating_ime_bridge_unknown">Tap to refresh</string>
     <string name="status_floating_ime_bridge_unknown_target">current keyboard</string>
@@ -23,9 +24,24 @@
     <string name="status_floating_ime_bridge_ready">Ready: %1$s</string>
     <string name="status_floating_ime_bridge_hidden">Detected, keyboard hidden: %1$s</string>
     <string name="status_floating_ime_bridge_waiting">Detected, waiting for input field: %1$s</string>
+    <string name="status_floating_ime_bridge_no_active_ime">No active keyboard. Select and open a bridged keyboard first.</string>
+    <string name="status_floating_ime_bridge_no_input_connection">No active input connection: %1$s. Tap a text field and keep the keyboard open.</string>
+    <string name="status_floating_ime_bridge_pcm_unsupported">This bridge module does not report PCM recording support: %1$s. Update the LSPosed/LSPatch module.</string>
     <string name="status_floating_ime_bridge_not_found">No bridge response: %1$s</string>
     <string name="status_floating_ime_bridge_sensitive">Sensitive field blocked: %1$s</string>
     <string name="status_floating_ime_bridge_error">Bridge error in %1$s: %2$s</string>
+    <string name="status_floating_ime_bridge_recording_enabled">IME-side recording: enabled</string>
+    <string name="status_floating_ime_bridge_recording_disabled">IME-side recording: disabled. Bridge text insertion can still stay enabled.</string>
+    <string name="status_floating_ime_bridge_module_summary">Module: %1$s · PCM: %2$s</string>
+    <string name="status_floating_ime_bridge_module_unknown">unknown version</string>
+    <string name="status_floating_ime_bridge_pcm_supported">supported</string>
+    <string name="status_floating_ime_bridge_pcm_not_supported">not supported</string>
+    <string name="status_floating_ime_bridge_input_summary">IME visible: %1$s · input connection: %2$s · sensitive field: %3$s</string>
+    <string name="status_floating_ime_bridge_yes">yes</string>
+    <string name="status_floating_ime_bridge_no">no</string>
+    <string name="status_floating_ime_bridge_last_failure">Last failure: %1$s</string>
+    <string name="status_floating_ime_bridge_last_failure_mic_permission">Last failure: target keyboard cannot record audio. Check its microphone permission. (%1$s)</string>
+    <string name="status_floating_ime_bridge_last_failure_injection_unsupported">Last failure: this keyboard window does not support the generic bottom trigger. (%1$s)</string>
     <string name="floating_ime_bridge_sensitive_field">Sensitive input field blocked. Text was not inserted.</string>
     <string name="floating_ime_bridge_insert_failed">IME bridge insertion failed: %1$s</string>
     <string name="label_floating_write_compat">Accessibility write compatibility optimization</string>
@@ -118,6 +134,8 @@
     <!-- Floating write compatibility mode -->
     <string name="feature_floating_ime_bridge_off_desc">Floating results use the existing Accessibility insertion path or clipboard fallback.</string>
     <string name="feature_floating_ime_bridge_on_desc">When a compatible LSPosed or LSPatch bridge is active in the current third-party keyboard, final recognition text is inserted through that keyboard\'s InputConnection, and keyboard panel visibility is reported by the keyboard itself. This is an advanced option and does not read existing input text.</string>
+    <string name="feature_ime_bridge_pcm_recording_off_desc">The bridge may still insert final text, but long-press recording inside the third-party keyboard will not be available.</string>
+    <string name="feature_ime_bridge_pcm_recording_on_desc">Allows a compatible bridge module in the current default keyboard to start recording with that keyboard\'s microphone permission and push PCM audio to BiBi Keyboard. It does not start floating-ball or main-app microphone recording as a fallback.</string>
     <string name="feature_floating_write_compat_off_desc">Uses standard Accessibility API to insert text. Works for most apps.</string>
     <string name="feature_floating_write_compat_on_desc">For target apps, uses Select-All + Paste method to avoid background placeholder text contamination. The clipboard may be temporarily used (best-effort restore). Useful for apps like Telegram and Douyin.</string>
 

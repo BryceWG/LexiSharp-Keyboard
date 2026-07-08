@@ -16,7 +16,8 @@
     <string name="label_floating_keep_alive_foreground">フォアグラウンドサービスで保活する</string>
     <string name="label_floating_keep_alive_privileged">Shizuku / root で保活する</string>
     <string name="label_request_battery_whitelist">電池最適化の除外を申請</string>
-    <string name="label_floating_ime_bridge">输入法桥接模式</string>
+    <string name="label_floating_ime_bridge">IMEブリッジのテキスト挿入</string>
+    <string name="label_ime_bridge_pcm_recording">ブリッジIME内で録音</string>
     <string name="label_floating_ime_bridge_status">IMEブリッジの状態</string>
     <string name="status_floating_ime_bridge_unknown">タップして更新</string>
     <string name="status_floating_ime_bridge_unknown_target">現在のキーボード</string>
@@ -24,9 +25,24 @@
     <string name="status_floating_ime_bridge_ready">準備完了：%1$s</string>
     <string name="status_floating_ime_bridge_hidden">検出済み、キーボードは非表示：%1$s</string>
     <string name="status_floating_ime_bridge_waiting">検出済み、入力欄を待機中：%1$s</string>
+    <string name="status_floating_ime_bridge_no_active_ime">有効なキーボードがありません。ブリッジ済みキーボードを選択して開いてください。</string>
+    <string name="status_floating_ime_bridge_no_input_connection">有効な入力接続がありません：%1$s。テキスト欄をタップし、キーボードを開いたままにしてください。</string>
+    <string name="status_floating_ime_bridge_pcm_unsupported">このブリッジモジュールは PCM 録音対応を報告していません：%1$s。LSPosed/LSPatch モジュールを更新してください。</string>
     <string name="status_floating_ime_bridge_not_found">ブリッジ応答なし：%1$s</string>
     <string name="status_floating_ime_bridge_sensitive">機密入力欄をブロック：%1$s</string>
     <string name="status_floating_ime_bridge_error">%1$s のブリッジエラー：%2$s</string>
+    <string name="status_floating_ime_bridge_recording_enabled">IME内録音：有効</string>
+    <string name="status_floating_ime_bridge_recording_disabled">IME内録音：無効。ブリッジのテキスト挿入は有効のままにできます。</string>
+    <string name="status_floating_ime_bridge_module_summary">モジュール：%1$s・PCM：%2$s</string>
+    <string name="status_floating_ime_bridge_module_unknown">不明なバージョン</string>
+    <string name="status_floating_ime_bridge_pcm_supported">対応</string>
+    <string name="status_floating_ime_bridge_pcm_not_supported">非対応</string>
+    <string name="status_floating_ime_bridge_input_summary">IME表示：%1$s・入力接続：%2$s・機密入力欄：%3$s</string>
+    <string name="status_floating_ime_bridge_yes">はい</string>
+    <string name="status_floating_ime_bridge_no">いいえ</string>
+    <string name="status_floating_ime_bridge_last_failure">直近の失敗：%1$s</string>
+    <string name="status_floating_ime_bridge_last_failure_mic_permission">直近の失敗：対象キーボードで録音できません。マイク権限を確認してください。（%1$s）</string>
+    <string name="status_floating_ime_bridge_last_failure_injection_unsupported">直近の失敗：このキーボードウィンドウは汎用の下部トリガーに対応していません。（%1$s）</string>
     <string name="floating_ime_bridge_sensitive_field">機密入力欄のため挿入をブロックしました。</string>
     <string name="floating_ime_bridge_insert_failed">IMEブリッジで挿入できませんでした：%1$s</string>
     <string name="label_floating_write_compat">アクセシビリティ書き込み互換性の最適化</string>
@@ -119,6 +135,8 @@
     <!-- フローティング書き込み互換モード -->
     <string name="feature_floating_ime_bridge_off_desc">フローティング結果は既存のアクセシビリティ挿入経路、またはクリップボードのフォールバックを使用します。</string>
     <string name="feature_floating_ime_bridge_on_desc">現在のサードパーティ製キーボードで互換性のある LSPosed または LSPatch ブリッジが有効な場合、最終認識テキストはそのキーボード自身の InputConnection で挿入され、キーボードパネルの表示状態もキーボード自身から報告されます。これは上級者向けオプションで、既存の入力内容は読み取りません。</string>
+    <string name="feature_ime_bridge_pcm_recording_off_desc">ブリッジは最終テキストの挿入には使えますが、サードパーティ製キーボード内の長押し録音入口は利用できません。</string>
+    <string name="feature_ime_bridge_pcm_recording_on_desc">現在の既定キーボード内の互換ブリッジモジュールが、そのキーボード自身のマイク権限で録音し、PCM 音声を BiBi Keyboard に送信することを許可します。失敗時にフローティングボールやメインアプリのマイク録音へフォールバックしません。</string>
     <string name="feature_floating_write_compat_off_desc">標準のアクセシビリティAPIを使用してテキストを挿入します。ほとんどのアプリで動作します。</string>
     <string name="feature_floating_write_compat_on_desc">対象アプリでは、背景プレースホルダーテキストの混入を避けるために「全選択+貼り付け」方式を使用します。クリップボードが一時的に使用される場合があります（最善努力で復元）。TelegramやDouyinなどのアプリに役立ちます。</string>
 
