@@ -412,7 +412,7 @@
   <!-- Pro 版宣传 -->
   <!-- ============================================== -->
   <string name="pro_promo_title">说点啥 Pro 版已上线 Play 商店！</string>
-  <string name="pro_promo_price">4.49 美元买断制。也可以加入 TG 群联系作者，以 32 元购入激活码。权限跟随账户，不限制使用设备数量。</string>
+  <string name="pro_promo_price">5.49 美元买断制。也可以加入 TG 群联系作者，以 36 元购入激活码。权限跟随账户，不限制使用设备数量。</string>
   <string name="pro_promo_features_title">Pro 专属功能：</string>
   <string name="pro_promo_features">1. 多供应商统一热词管理（暂不支持离线模型和 ElevenLabs）\n2. WebDAV 自动备份\n3. 个性化 UI 取色\n4. 全向光标滑动\n5. 离线繁体结果转换\n6. 正则后处理</string>
   <string name="pro_promo_future">后续将持续更新…</string>
@@ -425,7 +425,7 @@
 
   <!-- 付款码弹窗 -->
   <string name="payment_qr_title">通过付款码购买 Pro</string>
-    <string name="payment_qr_instruction">您可以通过微信或支付宝向作者直接付款（32 元），然后将付款截图和备注信息（包含订单号）发送到作者邮箱。作者会回复 Play 商店「说点啥 Pro」的商品兑换码（激活码），需要手机可正常使用 Play 商店进行兑换。最晚 1-2 天内回复。</string>
+    <string name="payment_qr_instruction">您可以通过微信或支付宝向作者直接付款（36 元），然后将付款截图和备注信息（包含订单号）发送到作者邮箱。作者会回复 Play 商店「说点啥 Pro」的商品兑换码（激活码），需要手机可正常使用 Play 商店进行兑换。最晚 1-2 天内回复。</string>
   <string name="payment_qr_wechat">微信</string>
   <string name="payment_qr_alipay">支付宝</string>
   <string name="payment_qr_save">保存</string>

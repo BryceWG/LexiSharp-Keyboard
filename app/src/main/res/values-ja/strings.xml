@@ -413,7 +413,7 @@
   <!-- Pro版プロモーション -->
   <!-- ============================================== -->
   <string name="pro_promo_title">说点啥 Pro 版が Play ストアで公開中！</string>
-  <string name="pro_promo_price">4.49ドルの買い切り。ライセンスはアカウントに紐づき、デバイス数制限なし。</string>
+  <string name="pro_promo_price">5.49ドルの買い切り。ライセンスはアカウントに紐づき、デバイス数制限なし。</string>
   <string name="pro_promo_features_title">Pro 限定機能：</string>
   <string name="pro_promo_features">1. 複数ベンダー統一ホットワード管理（オフラインモデルと ElevenLabs を除く）\n2. WebDAV 自動バックアップ\n3. カスタム UI カラー\n4. 全方向カーソルスライド\n5. オフライン繁体字変換\n6. 正規表現ポストプロセス</string>
   <string name="pro_promo_future">今後も継続的にアップデート予定…</string>
@@ -426,7 +426,7 @@
 
   <!-- 支払いQRコードダイアログ -->
   <string name="payment_qr_title">QRコードで Pro を購入</string>
-  <string name="payment_qr_instruction">WeChatまたはAlipayで作者に直接お支払い（32元）いただき、支払いスクリーンショットと注文番号を含む備考を作者のメールアドレスに送信してください。作者からは Play ストアの「说点啥 Pro」商品引き換えコード（アクティベーションコード）が返信されます。引き換えには Play ストアを利用できる端末が必要です。最長1〜2日以内に返信します。</string>
+  <string name="payment_qr_instruction">WeChatまたはAlipayで作者に直接お支払い（36元）いただき、支払いスクリーンショットと注文番号を含む備考を作者のメールアドレスに送信してください。作者からは Play ストアの「说点啥 Pro」商品引き換えコード（アクティベーションコード）が返信されます。引き換えには Play ストアを利用できる端末が必要です。最長1〜2日以内に返信します。</string>
   <string name="payment_qr_wechat">WeChat</string>
   <string name="payment_qr_alipay">Alipay</string>
   <string name="payment_qr_save">保存</string>

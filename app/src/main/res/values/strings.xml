@@ -414,7 +414,7 @@
   <!-- Pro Version Promo -->
   <!-- ============================================== -->
   <string name="pro_promo_title">BiBi Keyboard Pro is Now on Play Store!</string>
-  <string name="pro_promo_price">$4.49 one-time purchase. License follows your account with unlimited devices.</string>
+  <string name="pro_promo_price">$5.49 one-time purchase. License follows your account with unlimited devices.</string>
   <string name="pro_promo_features_title">Pro Exclusive Features:</string>
   <string name="pro_promo_features">1. Unified hotword management across vendors (except offline models and ElevenLabs)\n2. WebDAV auto backup\n3. Custom UI color picking\n4. Omni-directional cursor sliding\n5. Offline Traditional Chinese conversion\n6. Regex post-processing</string>
   <string name="pro_promo_future">More features coming soon…</string>
@@ -427,7 +427,7 @@
 
   <!-- Payment QR Dialog -->
   <string name="payment_qr_title">Purchase Pro via QR Code</string>
-  <string name="payment_qr_instruction">Pay the author directly via WeChat or Alipay (¥32 CNY), then send the payment screenshot with your order number to the author email. The author will reply with a Play Store redemption code for "说点啥 Pro" (activation code). Your phone must be able to use the Play Store to redeem it. The reply will arrive within 1-2 days at most.</string>
+  <string name="payment_qr_instruction">Pay the author directly via WeChat or Alipay (¥36 CNY), then send the payment screenshot with your order number to the author email. The author will reply with a Play Store redemption code for "说点啥 Pro" (activation code). Your phone must be able to use the Play Store to redeem it. The reply will arrive within 1-2 days at most.</string>
   <string name="payment_qr_wechat">WeChat</string>
   <string name="payment_qr_alipay">Alipay</string>
   <string name="payment_qr_save">Save</string>

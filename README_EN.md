@@ -24,7 +24,7 @@ English | [简体中文](README.md)
 
 ## 🌟 Pro Version Released
 
-> 💎 **BiBi Keyboard Pro** is now officially available on the Play Store for a one-time purchase of just $4.49!
+> 💎 **BiBi Keyboard Pro** is now officially available on the Play Store for a one-time purchase of just $5.49!
 
 The Pro version offers more advanced features and a better user experience.
 You can learn more in "About - Learn about Pro" in BiBi Keyboard v3.9.0+, or in the [Pro Features](https://bibidocs.brycewg.com/en/pro/features.html) documentation. We welcome your feedback to help us polish a better product!

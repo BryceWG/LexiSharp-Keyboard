@@ -1,5 +1,11 @@
 # Changelog
 
+## v4.1.1 (2026-07-08)
+
+### Information Update
+
+- **Pro Price Adjustment**: The price of Pro has been adjusted from $4.49 to $5.49
+
 ## v4.1.0 (2026-07-05)
 
 ### New Features
