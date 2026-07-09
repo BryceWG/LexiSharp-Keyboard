@@ -19,6 +19,7 @@ internal class AsrOnlineSettingsFields(
 ) {
     var volcAppKey by mutableStateOf(prefs.appKey)
     var volcAccessKey by mutableStateOf(prefs.accessKey)
+    var volcApiKey by mutableStateOf(prefs.volcApiKey)
     var dashApiKey by mutableStateOf(prefs.dashApiKey)
     var dashModel by mutableStateOf(normalizeDashModel(prefs.dashAsrModel))
     var dashPrompt by mutableStateOf(prefs.dashPrompt)
@@ -81,6 +82,7 @@ internal class AsrOnlineSettingsFields(
     fun refreshFromPrefs() {
         volcAppKey = prefs.appKey
         volcAccessKey = prefs.accessKey
+        volcApiKey = prefs.volcApiKey
         dashApiKey = prefs.dashApiKey
         dashModel = normalizeDashModel(prefs.dashAsrModel)
         dashPrompt = prefs.dashPrompt
@@ -163,6 +165,11 @@ internal class AsrOnlineSettingsFields(
         onVolcAccessKeyChange = { value ->
             volcAccessKey = value
             prefs.accessKey = value
+        },
+        volcApiKey = volcApiKey,
+        onVolcApiKeyChange = { value ->
+            volcApiKey = value
+            prefs.volcApiKey = value
         },
         dashApiKey = dashApiKey,
         onDashApiKeyChange = { value ->

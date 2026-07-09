@@ -155,4 +155,31 @@ class PrefsHasVendorKeysTest {
 
         assertTrue(prefs.hasVendorKeys(AsrVendor.SiliconFlow))
     }
+
+    @Test
+    fun volcOldAuthRequiresAppKeyAndAccessKey() {
+        prefs.volcUseNewAuth = false
+        prefs.appKey = "app-key"
+        prefs.accessKey = ""
+
+        assertFalse(prefs.hasVendorKeys(AsrVendor.Volc))
+
+        prefs.accessKey = "access-key"
+
+        assertTrue(prefs.hasVendorKeys(AsrVendor.Volc))
+    }
+
+    @Test
+    fun volcNewAuthRequiresOnlyApiKey() {
+        prefs.volcUseNewAuth = true
+        prefs.volcApiKey = ""
+        prefs.appKey = ""
+        prefs.accessKey = "legacy-access-key"
+
+        assertFalse(prefs.hasVendorKeys(AsrVendor.Volc))
+
+        prefs.volcApiKey = "api-key"
+
+        assertTrue(prefs.hasVendorKeys(AsrVendor.Volc))
+    }
 }

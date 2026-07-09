@@ -101,11 +101,14 @@ internal fun AsrSettingsRouteContent(
                             uiState = uiState,
                             appKey = onlineState.volcAppKey,
                             accessKey = onlineState.volcAccessKey,
+                            apiKey = onlineState.volcApiKey,
                             onAppKeyChange = onlineState.onVolcAppKeyChange,
                             onAccessKeyChange = onlineState.onVolcAccessKeyChange,
+                            onApiKeyChange = onlineState.onVolcApiKeyChange,
                             onUpdateStreaming = viewModel::updateVolcStreaming,
                             onUpdateFileStandard = viewModel::updateVolcFileStandard,
                             onUpdateModelV2 = viewModel::updateVolcModelV2,
+                            onUpdateUseNewAuth = viewModel::updateVolcUseNewAuth,
                             onUpdateNonstream = viewModel::updateVolcNonstream,
                             onUpdateDdc = viewModel::updateVolcDdc,
                             onUpdateVad = viewModel::updateVolcVad,
@@ -308,7 +311,8 @@ private fun currentAsrVendorPrimaryItemCount(
 ): Int = when (selectedVendor) {
     AsrVendor.Volc -> volcenginePrimaryItemCount(
         streaming = uiState.volcStreamingEnabled,
-        fileStandard = uiState.volcFileStandardEnabled
+        fileStandard = uiState.volcFileStandardEnabled,
+        useNewAuth = uiState.volcUseNewAuth
     )
 
     AsrVendor.DashScope -> dashScopePrimaryItemCount(

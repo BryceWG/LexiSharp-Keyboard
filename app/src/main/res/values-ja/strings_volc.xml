@@ -11,6 +11,8 @@
     <string name="label_volc_vad">VADセグメンテーションを有効化（実験的）</string>
     <string name="label_volc_nonstream">2パス認識を有効化（実験的）</string>
     <string name="label_volc_language">認識言語</string>
+    <string name="label_volc_use_new_auth">新しい認証方式を使用</string>
+    <string name="label_volc_api_key">X-Api-Key</string>
 
     <!-- Volc modes hint -->
     <string name="volc_modes_hint">モード説明：\n

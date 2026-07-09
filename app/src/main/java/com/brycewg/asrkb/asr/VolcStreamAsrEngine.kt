@@ -23,7 +23,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -192,16 +191,10 @@ class VolcStreamAsrEngine(
         val req = Request.Builder()
             .url(WS_ENDPOINT_BIDI_ASYNC)
             .headers(
-                Headers.headersOf(
-                    "X-Api-App-Key",
-                    prefs.appKey,
-                    "X-Api-Access-Key",
-                    prefs.accessKey,
-                    // 使用小时版资源（可根据需要切换并发版）
-                    "X-Api-Resource-Id",
-                    streamResource,
-                    "X-Api-Connect-Id",
-                    connectId
+                volcHeaders(
+                    auth = prefs.volcAuthValues(),
+                    resourceId = streamResource,
+                    connectId = connectId
                 )
             )
             .tag(ApiLogMeta::class.java, meta)

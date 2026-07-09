@@ -87,11 +87,7 @@ class VolcStandardFileAsrEngine(
                         requestStructure = "json object keys=audio, request, user; audio.data=base64 omitted"
                     )
                 )
-                .addHeader("X-Api-App-Key", prefs.appKey)
-                .addHeader("X-Api-Access-Key", prefs.accessKey)
-                .addHeader("X-Api-Resource-Id", resourceId)
-                .addHeader("X-Api-Request-Id", requestId)
-                .addHeader("X-Api-Sequence", "-1")
+                .volcHeaders(prefs, resourceId, requestId)
                 .post(submitJson.toRequestBody("application/json; charset=utf-8".toMediaType()))
                 .build()
             http.newCall(submitReq).execute().use { resp ->
@@ -195,11 +191,7 @@ class VolcStandardFileAsrEngine(
                         requestStructure = "json object keys=empty"
                     )
                 )
-                .addHeader("X-Api-App-Key", prefs.appKey)
-                .addHeader("X-Api-Access-Key", prefs.accessKey)
-                .addHeader("X-Api-Resource-Id", resourceId)
-                .addHeader("X-Api-Request-Id", requestId)
-                .addHeader("X-Api-Sequence", "-1")
+                .volcHeaders(prefs, resourceId, requestId)
                 .post("{}".toRequestBody("application/json; charset=utf-8".toMediaType()))
                 .build()
             http.newCall(queryReq).execute().use { resp ->

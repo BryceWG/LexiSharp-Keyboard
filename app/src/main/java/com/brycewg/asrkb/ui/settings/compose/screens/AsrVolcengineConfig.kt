@@ -22,6 +22,10 @@ internal fun VolcengineConfig(
     onAppKeyChange: (String) -> Unit,
     accessKey: String,
     onAccessKeyChange: (String) -> Unit,
+    apiKey: String,
+    onApiKeyChange: (String) -> Unit,
+    useNewAuth: Boolean,
+    onUseNewAuthChange: (Boolean) -> Unit,
     streaming: Boolean,
     onStreamingChange: (Boolean) -> Unit,
     fileStandard: Boolean,
@@ -42,25 +46,37 @@ internal fun VolcengineConfig(
     var itemIndex = primaryIndexOffset
     val itemCount = primaryGroupCount ?: volcenginePrimaryItemCount(
         streaming = streaming,
-        fileStandard = fileStandard
+        fileStandard = fileStandard,
+        useNewAuth = useNewAuth
+    )
+    AsrSwitchPreference(
+        id = "volc_use_new_auth",
+        titleRes = R.string.label_volc_use_new_auth,
+        checked = useNewAuth,
+        index = itemIndex++,
+        count = itemCount,
+        onCheckedChange = onUseNewAuthChange
     )
     AsrTextField(
         uiMode = uiMode,
-        value = appKey,
-        onValueChange = onAppKeyChange,
-        label = stringResource(R.string.label_app_key),
+        value = if (useNewAuth) apiKey else appKey,
+        onValueChange = if (useNewAuth) onApiKeyChange else onAppKeyChange,
+        label = stringResource(if (useNewAuth) R.string.label_volc_api_key else R.string.label_app_key),
+        password = useNewAuth,
         index = itemIndex++,
         count = itemCount
     )
-    AsrTextField(
-        uiMode = uiMode,
-        value = accessKey,
-        onValueChange = onAccessKeyChange,
-        label = stringResource(R.string.label_access_key),
-        password = true,
-        index = itemIndex++,
-        count = itemCount
-    )
+    if (!useNewAuth) {
+        AsrTextField(
+            uiMode = uiMode,
+            value = accessKey,
+            onValueChange = onAccessKeyChange,
+            label = stringResource(R.string.label_access_key),
+            password = true,
+            index = itemIndex++,
+            count = itemCount
+        )
+    }
     AsrSwitchPreference(
         id = "volc_streaming",
         titleRes = R.string.label_volc_streaming,
@@ -129,8 +145,10 @@ internal fun VolcengineConfig(
 
 internal fun volcenginePrimaryItemCount(
     streaming: Boolean,
-    fileStandard: Boolean
-): Int = 2 +
+    fileStandard: Boolean,
+    useNewAuth: Boolean
+): Int = 1 +
+    (if (useNewAuth) 1 else 2) +
     2 +
     (if (!streaming) 1 else 0) +
     (if (streaming || fileStandard) 1 else 0) +

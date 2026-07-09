@@ -11,6 +11,8 @@
     <string name="label_volc_vad">啟用 VAD 分句（實驗性）</string>
     <string name="label_volc_nonstream">啟用二遍識別（實驗性）</string>
     <string name="label_volc_language">識別語言</string>
+    <string name="label_volc_use_new_auth">使用新版鑑權方式</string>
+    <string name="label_volc_api_key">X-Api-Key</string>
 
     <!-- Volc modes hint -->
     <string name="volc_modes_hint">模式說明：\n

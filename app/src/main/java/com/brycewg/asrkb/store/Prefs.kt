@@ -129,6 +129,8 @@ class Prefs(context: Context) {
 
     var accessKey: String by stringPref(KEY_ACCESS_KEY, "")
 
+    var volcApiKey: String by stringPref(KEY_VOLC_API_KEY, "")
+
     var trimFinalTrailingPunct: Boolean
         get() = sp.getBoolean(KEY_TRIM_FINAL_TRAILING_PUNCT, true)
         set(value) = sp.edit { putBoolean(KEY_TRIM_FINAL_TRAILING_PUNCT, value) }
@@ -1325,6 +1327,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_VOLC_MODEL_V2_ENABLED, true)
         set(value) = sp.edit { putBoolean(KEY_VOLC_MODEL_V2_ENABLED, value) }
 
+    // 火山引擎：新版控制台鉴权只需要 X-Api-Key，默认保留旧版双参数鉴权
+    var volcUseNewAuth: Boolean
+        get() = sp.getBoolean(KEY_VOLC_USE_NEW_AUTH, false)
+        set(value) = sp.edit { putBoolean(KEY_VOLC_USE_NEW_AUTH, value) }
+
     // 选中的ASR供应商（默认使用 SiliconFlow 免费服务）
     var asrVendor: AsrVendor
         get() = AsrVendor.fromId(sp.getString(KEY_ASR_VENDOR, AsrVendor.SiliconFlow.id))
@@ -1598,6 +1605,13 @@ class Prefs(context: Context) {
         }
         if (v == AsrVendor.StepAudio) {
             return stepAudioApiKey.isNotBlank() && getEffectiveStepAudioAsrEndpoint().isNotBlank()
+        }
+        if (v == AsrVendor.Volc) {
+            return if (volcUseNewAuth) {
+                volcApiKey.isNotBlank()
+            } else {
+                appKey.isNotBlank() && accessKey.isNotBlank()
+            }
         }
         val fields = PrefsAsrVendorFields.requiredStringFieldsForValidation(v)
         if (fields.isEmpty() && !vendorFields.containsKey(v)) return false

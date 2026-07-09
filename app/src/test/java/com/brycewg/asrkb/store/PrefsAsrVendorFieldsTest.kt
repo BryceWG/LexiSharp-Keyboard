@@ -87,6 +87,8 @@ class PrefsAsrVendorFieldsTest {
 
         assertTrue(KEY_SF_FREE_ASR_ENABLED in keys)
         assertTrue(KEY_VOLC_STREAMING_ENABLED in keys)
+        assertTrue(KEY_VOLC_USE_NEW_AUTH in keys)
+        assertTrue(KEY_VOLC_API_KEY in keys)
         assertTrue(KEY_SONIOX_ENDPOINT_SENSITIVITY_LEVEL in keys)
         assertTrue(KEY_SV_MODEL_VARIANT in keys)
         assertTrue(KEY_FN_USER_PROMPT in keys)
@@ -166,10 +168,13 @@ class PrefsAsrVendorFieldsTest {
             .first { it.key == KEY_MIMO_ASR_LANGUAGE }
         val volcStreaming = PrefsAsrVendorFields.fieldsByRole(AsrVendor.Volc, VendorFieldRole.StreamingToggle)
             .first { it.key == KEY_VOLC_STREAMING_ENABLED }
+        val volcNewAuth = PrefsAsrVendorFields.fieldsFor(AsrVendor.Volc)
+            .first { it.key == KEY_VOLC_USE_NEW_AUTH }
 
         assertEquals(Prefs.DEFAULT_SF_MODEL, sfModel.readFrom(store))
         assertEquals(Prefs.DEFAULT_MIMO_ASR_LANGUAGE, mimoLanguage.readFrom(store))
         assertEquals(true, volcStreaming.readFrom(store))
+        assertEquals(false, volcNewAuth.readFrom(store))
     }
 
     @Test

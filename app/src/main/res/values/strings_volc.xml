@@ -11,6 +11,8 @@
     <string name="label_volc_vad">Enable VAD segmentation (experimental)</string>
     <string name="label_volc_nonstream">Enable two-pass recognition (experimental)</string>
     <string name="label_volc_language">Recognition language</string>
+    <string name="label_volc_use_new_auth">Use new authentication method</string>
+    <string name="label_volc_api_key">X-Api-Key</string>
 
     <!-- Volc modes hint -->
     <string name="volc_modes_hint">Modes:\n

@@ -15,13 +15,15 @@ internal object PrefsAsrVendorFields {
         AsrVendor.Volc to listOf(
             VendorField.credential(KEY_APP_KEY),
             VendorField.credential(KEY_ACCESS_KEY),
+            VendorField.credential(KEY_VOLC_API_KEY, required = false),
             VendorField.streamingToggle(KEY_VOLC_STREAMING_ENABLED, default = true),
             VendorField.boolean(KEY_VOLC_DDC_ENABLED, default = true),
             VendorField.boolean(KEY_VOLC_VAD_ENABLED, default = false),
             VendorField.streamingToggle(KEY_VOLC_NONSTREAM_ENABLED, default = true),
             VendorField.language(KEY_VOLC_LANGUAGE),
             VendorField.boolean(KEY_VOLC_FILE_STANDARD_ENABLED, default = true),
-            VendorField.boolean(KEY_VOLC_MODEL_V2_ENABLED, default = true)
+            VendorField.boolean(KEY_VOLC_MODEL_V2_ENABLED, default = true),
+            VendorField.boolean(KEY_VOLC_USE_NEW_AUTH, default = false)
         ),
         // SiliconFlow：免费服务启用时无需 API Key
         AsrVendor.SiliconFlow to listOf(

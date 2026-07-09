@@ -83,11 +83,7 @@ class VolcFileAsrEngine(
                         requestStructure = "json object keys=audio, request, user; audio.data=base64 omitted"
                     )
                 )
-                .addHeader("X-Api-App-Key", prefs.appKey)
-                .addHeader("X-Api-Access-Key", prefs.accessKey)
-                .addHeader("X-Api-Resource-Id", fileResource)
-                .addHeader("X-Api-Request-Id", UUID.randomUUID().toString())
-                .addHeader("X-Api-Sequence", "-1")
+                .volcHeaders(prefs, fileResource, UUID.randomUUID().toString())
                 .post(reqBody)
                 .build()
             val t0 = System.nanoTime()

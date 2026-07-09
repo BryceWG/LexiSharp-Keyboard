@@ -74,6 +74,7 @@ class AsrSettingsViewModel : ViewModel() {
             volcNonstreamEnabled = prefs.volcNonstreamEnabled,
             volcFileStandardEnabled = prefs.volcFileStandardEnabled,
             volcModelV2Enabled = prefs.volcModelV2Enabled,
+            volcUseNewAuth = prefs.volcUseNewAuth,
             volcLanguage = prefs.volcLanguage,
             // SiliconFlow settings
             sfUseOmni = isQwenOmniModel(
@@ -333,6 +334,11 @@ class AsrSettingsViewModel : ViewModel() {
     fun updateVolcModelV2(enabled: Boolean) {
         prefs.volcModelV2Enabled = enabled
         _uiState.value = _uiState.value.copy(volcModelV2Enabled = enabled)
+    }
+
+    fun updateVolcUseNewAuth(enabled: Boolean) {
+        prefs.volcUseNewAuth = enabled
+        _uiState.value = _uiState.value.copy(volcUseNewAuth = enabled)
     }
 
     fun updateVolcLanguage(language: String) {
@@ -944,6 +950,7 @@ data class AsrSettingsUiState(
     val volcNonstreamEnabled: Boolean = false,
     val volcFileStandardEnabled: Boolean = true,
     val volcModelV2Enabled: Boolean = true,
+    val volcUseNewAuth: Boolean = false,
     val volcLanguage: String = "",
     // SiliconFlow settings
     val sfUseOmni: Boolean = false,

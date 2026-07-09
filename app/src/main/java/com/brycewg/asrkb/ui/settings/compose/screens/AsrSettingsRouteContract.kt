@@ -30,6 +30,8 @@ internal data class AsrOnlineSettingsRouteState(
     val onVolcAppKeyChange: (String) -> Unit,
     val volcAccessKey: String,
     val onVolcAccessKeyChange: (String) -> Unit,
+    val volcApiKey: String,
+    val onVolcApiKeyChange: (String) -> Unit,
     val dashApiKey: String,
     val onDashApiKeyChange: (String) -> Unit,
     val dashModel: String,
