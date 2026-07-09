@@ -2,6 +2,10 @@
 
 ## v4.1.1 (2026-07-08)
 
+### New Features
+
+- **Fun-ASR-Flash Support**: Added support for Fun-ASR-Flash, an Alibaba Cloud Bailing speech recognition model
+
 ### Information Update
 
 - **Pro Price Adjustment**: The price of Pro has been adjusted from $4.49 to $5.49
