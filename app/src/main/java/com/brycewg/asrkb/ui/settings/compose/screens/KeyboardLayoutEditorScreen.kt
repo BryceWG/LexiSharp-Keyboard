@@ -1607,6 +1607,7 @@ private val trayKeyOrder = listOf(
     "hide_keyboard",
     "silence_autostop_toggle",
     "mic_tap_toggle",
+    "auto_enter_after_asr_toggle",
     "gesture_cancel",
     "gesture_send"
 )

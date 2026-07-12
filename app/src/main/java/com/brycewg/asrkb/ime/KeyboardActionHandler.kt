@@ -1178,12 +1178,18 @@ class KeyboardActionHandler(
 
     private fun getCurrentEditorInfo(): EditorInfo? = currentEditorInfoProvider?.invoke()
 
+    /**
+     * 是否在本次最终结果提交后自动回车。
+     * 优先消费手势「右滑发送」等会话一次性标记；否则遵循全局设置 [Prefs.autoEnterAfterAsrEnabled]。
+     */
     private fun consumeAutoEnterOnce(): Boolean {
-        if (!autoEnterOnce) return false
-        autoEnterOnce = false
-        return true
+        if (autoEnterOnce) {
+            autoEnterOnce = false
+            return true
+        }
+        return prefs.autoEnterAfterAsrEnabled
     }
 
-    // 会话一次性标记：最终结果提交后是否自动发送回车
+    // 会话一次性标记：最终结果提交后是否自动发送回车（如右滑发送手势）
     private var autoEnterOnce: Boolean = false
 }

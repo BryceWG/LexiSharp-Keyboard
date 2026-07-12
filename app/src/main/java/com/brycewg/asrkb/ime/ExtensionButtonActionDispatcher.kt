@@ -40,6 +40,7 @@ internal class ExtensionButtonActionDispatcher(
         ExtensionButtonAction.SILENCE_AUTOSTOP_TOGGLE -> toggleSilenceAutoStop()
         ExtensionButtonAction.MIC_TAP_TOGGLE -> toggleMicTapMode()
         ExtensionButtonAction.FLOATING_KEYBOARD_TOGGLE -> toggleFloatingKeyboard()
+        ExtensionButtonAction.AUTO_ENTER_AFTER_ASR_TOGGLE -> toggleAutoEnterAfterAsr()
         ExtensionButtonAction.UNDO -> undo(ic)
         ExtensionButtonAction.HIDE_KEYBOARD -> KeyboardActionHandler.ExtensionButtonActionResult.NEED_HIDE_KEYBOARD
     }
@@ -166,6 +167,18 @@ internal class ExtensionButtonActionDispatcher(
                 setPackage(context.packageName)
             }
         )
+        return KeyboardActionHandler.ExtensionButtonActionResult.SUCCESS
+    }
+
+    private fun toggleAutoEnterAfterAsr(): KeyboardActionHandler.ExtensionButtonActionResult {
+        val newValue = !prefs.autoEnterAfterAsrEnabled
+        prefs.autoEnterAfterAsrEnabled = newValue
+        val msgRes = if (newValue) {
+            R.string.toast_auto_enter_after_asr_on
+        } else {
+            R.string.toast_auto_enter_after_asr_off
+        }
+        uiListenerProvider()?.onStatusMessage(context.getString(msgRes))
         return KeyboardActionHandler.ExtensionButtonActionResult.SUCCESS
     }
 

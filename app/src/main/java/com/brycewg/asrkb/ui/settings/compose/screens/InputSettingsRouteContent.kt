@@ -62,7 +62,7 @@ internal fun InputSettingsRouteContent(
     val languageOptions = context.languageOptions().mapIndexed { index, label ->
         DropdownOption(languageTagForIndex(index), label)
     }
-    val behaviorItemCount = if (uiState.trimTrailingPunct) 9 else 8
+    val behaviorItemCount = if (uiState.trimTrailingPunct) 10 else 9
     val behaviorTrimThresholdOffset = if (uiState.trimTrailingPunct) 1 else 0
 
     SettingsLazyColumn(
@@ -188,6 +188,25 @@ internal fun InputSettingsRouteContent(
                     count = behaviorItemCount
                 )
                 InputExplainedSwitch(
+                    id = "auto_enter_after_asr",
+                    titleRes = R.string.label_auto_enter_after_asr,
+                    checked = uiState.autoEnterAfterAsr,
+                    onToggle = { target ->
+                        onApplyExplainedSwitch(
+                            uiState.autoEnterAfterAsr,
+                            target,
+                            R.string.label_auto_enter_after_asr,
+                            R.string.feature_auto_enter_after_asr_off_desc,
+                            R.string.feature_auto_enter_after_asr_on_desc,
+                            "auto_enter_after_asr_explained",
+                            null,
+                            null
+                        ) { prefs.autoEnterAfterAsrEnabled = it }
+                    },
+                    index = 4 + behaviorTrimThresholdOffset,
+                    count = behaviorItemCount
+                )
+                InputExplainedSwitch(
                     id = "hide_recent_task_card",
                     titleRes = R.string.label_hide_recent_task_card,
                     checked = uiState.hideRecentTasks,
@@ -203,7 +222,7 @@ internal fun InputSettingsRouteContent(
                             { applyExcludeFromRecents(context, it) }
                         ) { prefs.hideRecentTaskCard = it }
                     },
-                    index = 4 + behaviorTrimThresholdOffset,
+                    index = 5 + behaviorTrimThresholdOffset,
                     count = behaviorItemCount
                 )
                 InputExplainedSwitch(
@@ -222,7 +241,7 @@ internal fun InputSettingsRouteContent(
                             null
                         ) { prefs.fcitx5ReturnOnImeSwitch = it }
                     },
-                    index = 5 + behaviorTrimThresholdOffset,
+                    index = 6 + behaviorTrimThresholdOffset,
                     count = behaviorItemCount
                 )
                 InputExplainedSwitch(
@@ -241,7 +260,7 @@ internal fun InputSettingsRouteContent(
                             null
                         ) { prefs.returnPrevImeOnHide = it }
                     },
-                    index = 6 + behaviorTrimThresholdOffset,
+                    index = 7 + behaviorTrimThresholdOffset,
                     count = behaviorItemCount
                 )
                 SettingsPreference(
@@ -257,7 +276,7 @@ internal fun InputSettingsRouteContent(
                             onRefreshState()
                         }
                     ),
-                    index = 7 + behaviorTrimThresholdOffset,
+                    index = 8 + behaviorTrimThresholdOffset,
                     count = behaviorItemCount
                 )
             }

@@ -197,6 +197,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_AUTO_START_RECORDING_ON_SHOW, false)
         set(value) = sp.edit { putBoolean(KEY_AUTO_START_RECORDING_ON_SHOW, value) }
 
+    // 语音识别（含 AI 后处理）完成后自动回车发送，默认关闭
+    var autoEnterAfterAsrEnabled: Boolean
+        get() = sp.getBoolean(KEY_AUTO_ENTER_AFTER_ASR, false)
+        set(value) = sp.edit { putBoolean(KEY_AUTO_ENTER_AFTER_ASR, value) }
+
     // 键盘/悬浮球可见期间预先热启动麦克风采集，默认关闭
     var continuousCaptureEnabled: Boolean
         get() = sp.getBoolean(KEY_CONTINUOUS_CAPTURE_ENABLED, false)

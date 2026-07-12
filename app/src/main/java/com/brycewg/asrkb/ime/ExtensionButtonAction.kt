@@ -102,6 +102,15 @@ enum class ExtensionButtonAction(val id: String, val titleResId: Int, val iconRe
     ),
 
     /**
+     * 输入完成后自动回车开关
+     */
+    AUTO_ENTER_AFTER_ASR_TOGGLE(
+        id = "auto_enter_after_asr_toggle",
+        titleResId = R.string.ext_btn_auto_enter_after_asr,
+        iconResId = R.drawable.arrow_square_up
+    ),
+
+    /**
      * 光标左移一位（长按连发）
      */
     CURSOR_LEFT(
