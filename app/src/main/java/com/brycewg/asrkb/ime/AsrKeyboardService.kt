@@ -12,6 +12,7 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.inputmethodservice.InputMethodService
 import android.view.ContextThemeWrapper
+import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -90,6 +91,8 @@ class AsrKeyboardService :
     companion object {
         const val ACTION_REFRESH_IME_UI = "com.brycewg.asrkb.action.REFRESH_IME_UI"
         private val INSETS_WARMUP_DELAYS_MS = longArrayOf(32L, 96L, 220L)
+        /** 收起后切换输入法时，异步重试拉起软键盘的延迟序列 */
+        private val RESHOW_SOFT_INPUT_DELAYS_MS = longArrayOf(32L, 120L, 280L)
     }
 
     override fun attachBaseContext(newBase: android.content.Context?) {
@@ -425,18 +428,42 @@ class AsrKeyboardService :
         }
         ContinuousCaptureCoordinator.release(ContinuousCaptureOwner.Ime)
 
-        // 如开启：键盘收起后自动切回上一个输入法
+        // 如开启：键盘收起后自动切回上一个输入法。
+        // 注意：若已在 requestHideSelf/返回键路径完成「显示中交接」，此处会被 suppress 跳过。
+        // 对系统直接 hide（手势返回等）只能事后切换；输入连接仍在时再尝试拉起目标 IME 面板。
         if (prefs.returnPrevImeOnHide) {
             if (suppressReturnPrevImeOnHideOnce) {
                 // 清除一次性抑制标记，避免连环切换
                 suppressReturnPrevImeOnHideOnce = false
             } else {
+                val shouldTryReshow = !finishingInput
                 val switched = switchToConfiguredImeOrPrevious()
-                if (!switched) {
-                    // 若系统未允许切回，不做额外操作
+                if (switched && shouldTryReshow) {
+                    scheduleReshowSoftInputAfterImeSwitch()
                 }
             }
         }
+    }
+
+    override fun requestHideSelf(flags: Int) {
+        // 在仍显示时交接给目标 IME，使其接管同一输入会话并保持面板可见。
+        // 若先 hide 再 switch，系统已清除 show 请求，目标 IME 只会成为当前输入法而不会自动弹出。
+        if (tryHandOffToConfiguredImeWhileShown(reason = "request_hide_self")) {
+            return
+        }
+        super.requestHideSelf(flags)
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        // 实体/导航返回：在仍显示时交接，避免「先收起再切换」导致目标面板不出现
+        if (keyCode == KeyEvent.KEYCODE_BACK && event?.repeatCount == 0) {
+            if (isInputViewShown || imeViewVisible) {
+                if (tryHandOffToConfiguredImeWhileShown(reason = "key_back")) {
+                    return true
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
@@ -813,6 +840,7 @@ class AsrKeyboardService :
             asrManager.stopRecording()
         }
         uiRenderer?.render(KeyboardState.Idle)
+        // 开启「收起后切换」时，由 requestHideSelf 在显示中交接目标 IME（并拉起其面板）
         try {
             requestHideSelf(0)
         } catch (e: Exception) {
@@ -828,13 +856,68 @@ class AsrKeyboardService :
     private fun handleImeSwitchClick() {
         if (prefs.fcitx5ReturnOnImeSwitch) {
             if (asrManager.isRunning()) asrManager.stopRecording()
+            // 显示中主动切换：目标 IME 会接管面板，无需事后 re-show
             suppressReturnPrevImeOnHideOnce = true
             val switched = switchToConfiguredImeOrPrevious()
             if (!switched) {
+                suppressReturnPrevImeOnHideOnce = false
                 showImePicker()
             }
         } else {
             showImePicker()
+        }
+    }
+
+    /**
+     * 在输入视图仍可见时切换到配置的目标/上一输入法，让对方接管当前输入会话并保持软键盘显示。
+     *
+     * @return true 表示已发起交接（调用方应中止本 IME 的 hide 流程）
+     */
+    private fun tryHandOffToConfiguredImeWhileShown(reason: String): Boolean {
+        if (!prefs.returnPrevImeOnHide) return false
+        if (suppressReturnPrevImeOnHideOnce) return false
+        if (!isInputViewShown && !imeViewVisible) return false
+
+        suppressReturnPrevImeOnHideOnce = true
+        val switched = switchToConfiguredImeOrPrevious()
+        if (!switched) {
+            suppressReturnPrevImeOnHideOnce = false
+            return false
+        }
+        DebugLogManager.log(
+            category = "ime",
+            event = "ime_handoff_while_shown",
+            data = mapOf("reason" to reason)
+        )
+        // 显示中 switch 通常会让目标 IME 直接接管面板；此处不再强制 re-show，避免与目标 IME 抢状态。
+        return true
+    }
+
+    /**
+     * 键盘已被系统收起后的兜底：切换 IME 完成后尝试再次请求显示软键盘。
+     * 成功率依赖机型与是否仍有焦点输入框；显示中交接路径不依赖此兜底。
+     */
+    private fun scheduleReshowSoftInputAfterImeSwitch() {
+        val decor = window?.window?.decorView ?: return
+        // 分几次重试，等待 setInputMethod / switchToPrevious 完成绑定
+        for (delayMs in RESHOW_SOFT_INPUT_DELAYS_MS) {
+            decor.postDelayed({ tryReshowSoftInputAfterImeSwitch() }, delayMs)
+        }
+    }
+
+    private fun tryReshowSoftInputAfterImeSwitch() {
+        // 若本 IME 仍在显示，说明交接未真正完成或用户又切了回来，勿干扰
+        if (isInputViewShown) return
+        try {
+            // InputMethodService 公开 API：系统会把 show 请求与当前输入会话协调，
+            // 无需也无法从 IME 进程取得宿主应用的 served View。
+            requestShowSelf(0)
+        } catch (t: Throwable) {
+            android.util.Log.w(
+                "AsrKeyboardService",
+                "requestShowSelf after IME switch failed",
+                t
+            )
         }
     }
 
