@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.core.net.toUri
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.analytics.AnalyticsManager
+import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
 import com.brycewg.asrkb.clipboard.SyncClipboardManager
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
@@ -83,6 +84,27 @@ internal fun clearUsageStats(context: Context, prefs: Prefs, showMessage: (Int) 
         showMessage(R.string.toast_cleared_stats)
     } catch (e: Throwable) {
         Log.e(OTHER_ACTION_TAG, "Failed to reset usage stats", e)
+    }
+}
+
+internal fun clearClipboardHistory(
+    context: Context,
+    prefs: Prefs,
+    scope: CoroutineScope,
+    showMessage: (Int) -> Unit
+) {
+    scope.launch(Dispatchers.IO) {
+        try {
+            ClipboardHistoryStore(context, prefs).clearAll()
+            withContext(Dispatchers.Main) {
+                showMessage(R.string.toast_cleared_clipboard_history)
+            }
+        } catch (e: Throwable) {
+            Log.e(OTHER_ACTION_TAG, "Failed to clear clipboard history", e)
+            withContext(Dispatchers.Main) {
+                showMessage(R.string.toast_clear_clipboard_history_failed)
+            }
+        }
     }
 }
 

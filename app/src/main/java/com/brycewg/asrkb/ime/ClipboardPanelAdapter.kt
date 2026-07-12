@@ -52,7 +52,7 @@ class ClipboardPanelAdapter(private val onItemClick: (ClipboardHistoryStore.Entr
 
         fun bind(e: ClipboardHistoryStore.Entry, onClick: (ClipboardHistoryStore.Entry) -> Unit) {
             // 文本与文件统一使用 Entry 自带的展示文案，文件为「EXT-名称」形式
-            tv.text = e.getDisplayLabel()
+            tv.text = clipboardTextPreview(e.getDisplayLabel())
             itemView.setOnClickListener { onClick(e) }
             pin?.visibility = if (e.pinned) View.VISIBLE else View.GONE
         }

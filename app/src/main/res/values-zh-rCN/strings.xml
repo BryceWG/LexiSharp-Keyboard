@@ -310,6 +310,11 @@
   <string name="btn_confirm">确认</string>
   <string name="btn_skip_guide">暂时跳过，稍后配置</string>
   <string name="toast_cleared_history">已清除识别历史</string>
+  <string name="btn_clear_clipboard_history">清除剪贴板记录</string>
+  <string name="dialog_clear_clipboard_history_title">清除剪贴板记录？</string>
+  <string name="dialog_clear_clipboard_history_message">这会删除应用保存的全部剪贴板记录，包括置顶内容；不会影响系统当前剪贴板。</string>
+  <string name="toast_cleared_clipboard_history">已清除剪贴板记录</string>
+  <string name="toast_clear_clipboard_history_failed">清除剪贴板记录失败</string>
   <string name="toast_cleared_stats">已清除统计数据</string>
 
   <!-- ============================================== -->

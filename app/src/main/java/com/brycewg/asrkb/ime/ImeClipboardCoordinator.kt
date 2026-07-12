@@ -16,6 +16,9 @@ import java.security.MessageDigest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 internal class ImeClipboardCoordinator(
     private val context: Context,
@@ -32,6 +35,7 @@ internal class ImeClipboardCoordinator(
     private var clipboardChangeListener: ClipboardManager.OnPrimaryClipChangedListener? = null
 
     @Volatile private var lastShownClipboardHash: String? = null
+    private val clipboardWorkMutex = Mutex()
 
     private var syncClipboardManager: SyncClipboardManager? = null
 
@@ -218,15 +222,22 @@ internal class ImeClipboardCoordinator(
         }
         if (clipboardChangeListener == null) {
             clipboardChangeListener = ClipboardManager.OnPrimaryClipChangedListener {
-                val text = readClipboardText() ?: return@OnPrimaryClipChangedListener
-                val h = sha256Hex(text)
-                if (h == lastShownClipboardHash) return@OnPrimaryClipChangedListener
-                lastShownClipboardHash = h
-                // 写入历史
-                clipStoreProvider()?.addFromClipboard(text)
-                // 若当前面板打开，同步刷新
-                if (isClipboardPanelVisible()) refreshClipboardPanelList()
-                rootViewProvider()?.post { actionHandler.showClipboardPreview(text) }
+                val clipSnapshot = clipboardManager?.primaryClip
+                    ?: return@OnPrimaryClipChangedListener
+                serviceScope.launch(Dispatchers.Default) {
+                    val text = clipboardWorkMutex.withLock {
+                        val currentText = readClipboardText(clipSnapshot) ?: return@withLock null
+                        val h = sha256Hex(currentText)
+                        if (h == lastShownClipboardHash) return@withLock null
+                        lastShownClipboardHash = h
+                        clipStoreProvider()?.addFromClipboard(currentText)
+                        currentText
+                    } ?: return@launch
+                    withContext(Dispatchers.Main) {
+                        if (isClipboardPanelVisible()) refreshClipboardPanelList()
+                        actionHandler.showClipboardPreview(text)
+                    }
+                }
             }
         }
         clipboardManager?.addPrimaryClipChangedListener(clipboardChangeListener!!)
@@ -249,9 +260,7 @@ internal class ImeClipboardCoordinator(
         false
     }
 
-    private fun readClipboardText(): String? {
-        val cm = clipboardManager ?: return null
-        val clip = cm.primaryClip ?: return null
+    private fun readClipboardText(clip: ClipData): String? {
         if (clip.itemCount <= 0) return null
         val item = clip.getItemAt(0)
         return item.coerceToText(context)?.toString()?.takeIf { it.isNotEmpty() }

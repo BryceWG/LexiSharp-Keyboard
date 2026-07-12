@@ -13,10 +13,15 @@ import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
 import com.brycewg.asrkb.clipboard.DownloadStatus
 import com.brycewg.asrkb.clipboard.EntryType
 import com.brycewg.asrkb.store.Prefs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 internal class ClipboardPanelController(
     private val context: Context,
     private val prefs: Prefs,
+    private val serviceScope: CoroutineScope,
     private val views: ImeViewRefs,
     private val themeStyler: ImeThemeStyler,
     private val performKeyHaptic: (View?) -> Unit,
@@ -31,6 +36,7 @@ internal class ClipboardPanelController(
         private set
 
     private var adapter: ClipboardPanelAdapter? = null
+    private var refreshGeneration: Long = 0
 
     fun bindListeners() {
         views.clipBtnBack?.setOnClickListener { v ->
@@ -81,20 +87,26 @@ internal class ClipboardPanelController(
     }
 
     fun refreshList() {
-        val all = store.getAll()
-        var fileSeen = false
-        val filtered = all.filter { entry ->
-            if (entry.type == EntryType.TEXT) {
-                true
-            } else if (!fileSeen) {
-                fileSeen = true
-                true
-            } else {
-                false
+        val generation = ++refreshGeneration
+        serviceScope.launch {
+            val filtered = withContext(Dispatchers.Default) {
+                var fileSeen = false
+                store.getAll().filter { entry ->
+                    if (entry.type == EntryType.TEXT) {
+                        true
+                    } else if (!fileSeen) {
+                        fileSeen = true
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }
+            if (generation == refreshGeneration) {
+                adapter?.submitList(filtered)
+                views.clipTxtCount?.text = context.getString(R.string.clip_count_format, filtered.size)
             }
         }
-        adapter?.submitList(filtered)
-        views.clipTxtCount?.text = context.getString(R.string.clip_count_format, filtered.size)
     }
 
     fun onPulledFileMaybeRefresh() {

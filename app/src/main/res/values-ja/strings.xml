@@ -311,6 +311,11 @@
   <string name="btn_confirm">確認</string>
   <string name="btn_skip_guide">今はスキップ、後で設定</string>
   <string name="toast_cleared_history">履歴を削除しました</string>
+  <string name="btn_clear_clipboard_history">クリップボード履歴を削除</string>
+  <string name="dialog_clear_clipboard_history_title">クリップボード履歴を削除しますか？</string>
+  <string name="dialog_clear_clipboard_history_message">固定項目を含む、アプリに保存されたすべてのクリップボード履歴を削除します。現在のシステムクリップボードには影響しません。</string>
+  <string name="toast_cleared_clipboard_history">クリップボード履歴を削除しました</string>
+  <string name="toast_clear_clipboard_history_failed">クリップボード履歴を削除できませんでした</string>
   <string name="toast_cleared_stats">統計を削除しました</string>
 
   <!-- ============================================== -->

@@ -321,6 +321,19 @@ fun OtherSettingsScreen(
                     }
                 ) { prefs.dataCollectionEnabled = it }
             },
+            onClearClipboardHistory = {
+                messageDialog = SettingsMessageDialogState(
+                    title = context.getString(R.string.dialog_clear_clipboard_history_title),
+                    message = context.getString(R.string.dialog_clear_clipboard_history_message),
+                    confirmText = context.getString(R.string.btn_confirm),
+                    dismissText = context.getString(R.string.btn_cancel),
+                    onConfirm = {
+                        clearClipboardHistory(context, prefs, coroutineScope) {
+                            showOtherMessageAfterCurrentDialog(it)
+                        }
+                    }
+                )
+            },
             onPunct1Change = { punct1 = it.take(3) },
             onPunct2Change = { punct2 = it.take(3) },
             onPunct3Change = { punct3 = it.take(3) },

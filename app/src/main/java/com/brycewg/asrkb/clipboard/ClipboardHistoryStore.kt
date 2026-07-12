@@ -86,9 +86,13 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
         private const val TAG = "ClipboardHistoryStore"
         private const val MAX_HISTORY = 200
         private const val MAX_PINNED = 200
+        internal const val MAX_STORED_TEXT_CHARS = 32 * 1024
         private const val KEY_CLIP_HISTORY_JSON = "clip_history"
         private const val KEY_CLIP_PINNED_JSON = "clip_pinned"
+        private val STORE_LOCK = Any()
     }
+
+    private inline fun <T> withStoreLock(action: () -> T): T = synchronized(STORE_LOCK, action)
 
     fun getAll(): List<Entry> = getPinned() + getHistory()
 
@@ -118,7 +122,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
      * 清除所有非固定文件 / 图片条目，仅保留文本条目。
      * 用于保证「最新文件唯一」的历史记录语义。
      */
-    fun clearFileEntries() {
+    fun clearFileEntries() = withStoreLock {
         try {
             val history = getHistory().toMutableList()
             val filtered = history.filter { it.type == EntryType.TEXT }
@@ -132,8 +136,8 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
      * 将当前剪贴板文本追加到历史（作为非固定项）。
      * 若与最新的一条非固定记录相同，则跳过。
      */
-    fun addFromClipboard(text: String) {
-        val trimmed = text.trim()
+    fun addFromClipboard(text: String): Unit = withStoreLock {
+        val trimmed = normalizeClipboardHistoryText(text)
         if (trimmed.isEmpty()) return
         try {
             val his = getHistory().toMutableList()
@@ -162,7 +166,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
      * 切换固定状态（根据 id）。返回新的固定状态。
      * 若该条在历史中，则移入/移出固定集合；保持两个集合各自有序（按时间倒序）。
      */
-    fun togglePin(id: String): Boolean {
+    fun togglePin(id: String): Boolean = withStoreLock {
         val pinned = getPinned().toMutableList()
         val history = getHistory().toMutableList()
         // 先在历史里找
@@ -197,7 +201,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
     }
 
     /** 删除指定时间之前的非固定记录（不影响固定）。返回删除数量。 */
-    fun deleteHistoryBefore(cutoffEpochMs: Long): Int {
+    fun deleteHistoryBefore(cutoffEpochMs: Long): Int = withStoreLock {
         val history = getHistory().toMutableList()
         val beforeSize = history.size
         val remain = history.filter { it.ts >= cutoffEpochMs }
@@ -206,10 +210,18 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
     }
 
     /** 清空所有非固定记录 */
-    fun clearAllNonPinned(): Int {
+    fun clearAllNonPinned(): Int = withStoreLock {
         val sz = getHistory().size
         sp.edit().remove(KEY_CLIP_HISTORY_JSON).apply()
         return sz
+    }
+
+    /** 清空本应用保存的全部剪贴板记录（含置顶），不修改系统当前剪贴板。 */
+    fun clearAll() = withStoreLock {
+        sp.edit()
+            .remove(KEY_CLIP_HISTORY_JSON)
+            .remove(KEY_CLIP_PINNED_JSON)
+            .apply()
     }
 
     private fun persist(pinned: List<Entry>, history: List<Entry>) {
@@ -238,19 +250,21 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
     }
 
     /** 从非固定历史中删除指定ID的记录 */
-    fun deleteHistoryById(id: String): Boolean = try {
-        val history = getHistory().toMutableList()
-        val idx = history.indexOfFirst { it.id == id }
-        if (idx >= 0) {
-            history.removeAt(idx)
-            sp.edit().putString(KEY_CLIP_HISTORY_JSON, json.encodeToString(history)).apply()
-            true
-        } else {
+    fun deleteHistoryById(id: String): Boolean = withStoreLock {
+        try {
+            val history = getHistory().toMutableList()
+            val idx = history.indexOfFirst { it.id == id }
+            if (idx >= 0) {
+                history.removeAt(idx)
+                sp.edit().putString(KEY_CLIP_HISTORY_JSON, json.encodeToString(history)).apply()
+                true
+            } else {
+                false
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "deleteHistoryById failed", t)
             false
         }
-    } catch (t: Throwable) {
-        Log.e(TAG, "deleteHistoryById failed", t)
-        false
     }
 
     /**
@@ -284,7 +298,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
         mimeType: String? = null,
         localFilePath: String? = null,
         downloadStatus: DownloadStatus = DownloadStatus.NONE
-    ): Boolean {
+    ): Boolean = withStoreLock {
         try {
             // 先清理旧的文件条目，保证「最多一个文件记录」
             clearFileEntries()
@@ -325,7 +339,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
         id: String,
         localFilePath: String?,
         downloadStatus: DownloadStatus
-    ): Boolean {
+    ): Boolean = withStoreLock {
         try {
             val history = getHistory().toMutableList()
             val idx = history.indexOfFirst { it.id == id }
@@ -364,3 +378,6 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
      */
     fun getEntryById(id: String): Entry? = getAll().firstOrNull { it.id == id }
 }
+
+internal fun normalizeClipboardHistoryText(text: String): String =
+    text.trim().take(ClipboardHistoryStore.MAX_STORED_TEXT_CHARS)

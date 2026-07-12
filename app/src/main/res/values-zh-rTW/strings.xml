@@ -310,6 +310,11 @@
   <string name="btn_confirm">確認</string>
   <string name="btn_skip_guide">暫時跳過，稍後設定</string>
   <string name="toast_cleared_history">已清除識別歷史</string>
+  <string name="btn_clear_clipboard_history">清除剪貼簿記錄</string>
+  <string name="dialog_clear_clipboard_history_title">清除剪貼簿記錄？</string>
+  <string name="dialog_clear_clipboard_history_message">這會刪除應用程式儲存的全部剪貼簿記錄，包括置頂內容；不會影響系統目前的剪貼簿。</string>
+  <string name="toast_cleared_clipboard_history">已清除剪貼簿記錄</string>
+  <string name="toast_clear_clipboard_history_failed">清除剪貼簿記錄失敗</string>
   <string name="toast_cleared_stats">已清除統計資料</string>
 
   <!-- ============================================== -->

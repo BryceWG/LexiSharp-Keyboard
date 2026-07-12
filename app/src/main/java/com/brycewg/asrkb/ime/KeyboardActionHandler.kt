@@ -694,8 +694,8 @@ class KeyboardActionHandler(
      * 显示剪贴板预览
      */
     fun showClipboardPreview(fullText: String) {
-        // 不预截断，交由 UI TextView 的 ellipsize 控制单行显示范围
-        val preview = ClipboardPreview(fullText, fullText, ClipboardPreviewType.TEXT, null)
+        val displaySnippet = clipboardTextPreview(fullText)
+        val preview = ClipboardPreview(fullText, displaySnippet, ClipboardPreviewType.TEXT, null)
         sessionContext = sessionContext.copy(clipboardPreview = preview)
         uiListener?.onShowClipboardPreview(preview)
     }

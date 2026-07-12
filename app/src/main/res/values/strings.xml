@@ -312,6 +312,11 @@
   <string name="btn_confirm">Confirm</string>
   <string name="btn_skip_guide">Skip for now, I\'ll configure later</string>
   <string name="toast_cleared_history">History cleared</string>
+  <string name="btn_clear_clipboard_history">Clear clipboard history</string>
+  <string name="dialog_clear_clipboard_history_title">Clear clipboard history?</string>
+  <string name="dialog_clear_clipboard_history_message">This deletes all clipboard history saved by the app, including pinned items. The current system clipboard is not affected.</string>
+  <string name="toast_cleared_clipboard_history">Clipboard history cleared</string>
+  <string name="toast_clear_clipboard_history_failed">Couldn’t clear clipboard history</string>
   <string name="toast_cleared_stats">Statistics cleared</string>
 
   <!-- ============================================== -->

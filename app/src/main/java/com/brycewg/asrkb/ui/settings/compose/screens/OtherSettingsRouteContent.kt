@@ -42,6 +42,7 @@ internal fun OtherSettingsRouteContent(
     onDisableAsrHistoryToggle: (Boolean) -> Unit,
     onDisableUsageStatsToggle: (Boolean) -> Unit,
     onDataCollectionToggle: (Boolean) -> Unit,
+    onClearClipboardHistory: () -> Unit,
     onPunct1Change: (String) -> Unit,
     onPunct2Change: (String) -> Unit,
     onPunct3Change: (String) -> Unit,
@@ -99,7 +100,8 @@ internal fun OtherSettingsRouteContent(
                 uiState = uiState,
                 onDisableAsrHistoryToggle = onDisableAsrHistoryToggle,
                 onDisableUsageStatsToggle = onDisableUsageStatsToggle,
-                onDataCollectionToggle = onDataCollectionToggle
+                onDataCollectionToggle = onDataCollectionToggle,
+                onClearClipboardHistory = onClearClipboardHistory
             )
         }
 
@@ -151,7 +153,8 @@ private fun OtherPrivacySection(
     uiState: OtherSettingsUiState,
     onDisableAsrHistoryToggle: (Boolean) -> Unit,
     onDisableUsageStatsToggle: (Boolean) -> Unit,
-    onDataCollectionToggle: (Boolean) -> Unit
+    onDataCollectionToggle: (Boolean) -> Unit,
+    onClearClipboardHistory: () -> Unit
 ) {
     OtherSection(uiMode = uiMode, titleRes = R.string.section_data_retention) {
         OtherExplainedSwitch(
@@ -177,6 +180,11 @@ private fun OtherPrivacySection(
             onToggle = onDataCollectionToggle,
             index = 2,
             count = 3
+        )
+        OtherButton(
+            text = stringResource(R.string.btn_clear_clipboard_history),
+            uiMode = uiMode,
+            onClick = onClearClipboardHistory
         )
     }
 }

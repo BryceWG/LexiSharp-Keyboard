@@ -583,6 +583,7 @@ class AsrKeyboardService :
         clipboardPanelController = ClipboardPanelController(
             context = this,
             prefs = prefs,
+            serviceScope = serviceScope,
             views = refs,
             themeStyler = themeStyler,
             performKeyHaptic = ::performKeyHaptic,
