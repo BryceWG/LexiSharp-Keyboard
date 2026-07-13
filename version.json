@@ -1,11 +1,11 @@
 {
-  "version": "4.1.1",
-  "version_code": 163,
-  "download_url": "https://github.com/BryceWG/BiBi-Keyboard/releases/tag/v4.1.1",
-  "release_notes": "### 信息更新\n\n- **Pro 版调价**：Pro 版价格从 4.49 美元调整为 5.49 美元",
-  "release_notes_en": "### Information Update\n\n- **Pro Price Adjustment**: The price of Pro has been adjusted from $4.49 to $5.49",
+  "version": "4.1.2",
+  "version_code": 164,
+  "download_url": "https://github.com/BryceWG/BiBi-Keyboard/releases/tag/v4.1.2",
+  "release_notes": "### 新增功能\n\n- **输入完成后自动回车**：新增开关与扩展按键，识别（或 AI 后处理）完成后自动回车或触发发送，便于聊天应用直接发送\n- **火山引擎新版鉴权**：火山引擎 ASR 支持使用新版 API Key 鉴权方式\n- **清除剪贴板记录**：其他设置支持一键清除应用内全部剪贴板历史（含置顶项）\n\n### 改进优化\n\n- **收起后切换输入法**：开启「收起后切换」时，切回后的键盘会尝试自动弹出\n- **剪贴板预览**：剪贴板预览改为有限行数展示，并优化性能\n- **ASR 设置文案**：优化静音自动停止、备用引擎、ITN 等相关说明，表述更清晰",
+  "release_notes_en": "### New Features\n\n- **Auto Enter After Input**: Added a toggle and extension button to automatically press Enter / trigger the editor Send action after recognition (or after AI post-processing ), making it easier to send in chat apps\n- **Volcengine New Authentication**: Volcengine ASR now supports the new API Key authentication method\n- **Clear Clipboard History**: Other settings can clear all in-app clipboard history at once (including pinned items)\n\n### Improvements\n\n- **Switch IME on Hide**: When “switch IME when hidden” is enabled, the keyboard will try to reappear after switching to the target IME\n- **Clipboard Preview**: Clipboard preview is now a limited number of lines display with more stable text normalization and truncation\n- **ASR Settings Copy**: Clarified descriptions for silence auto-stop, backup engine, ITN, and related settings",
   "important_notice": "1. 4.0.0 版本将迎来大量重构和众多更新，欢迎下载尝鲜\n2. BiBi Keyboard Pro版本已上架，欢迎在3.8.6后版本-关于页面中了解详情。\n3. 官方网站和使用文档均已上线,网址分别为: bibi.brycewg.com bibidocs.brycewg.com",
   "notice_level": "info",
   "min_supported_version": "2.6.5",
-  "update_time": "2026-07-08T12:37:44Z"
+  "update_time": "2026-07-13T13:15:56Z"
 }
