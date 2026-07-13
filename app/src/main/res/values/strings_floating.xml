@@ -112,8 +112,8 @@
     <!-- ============================================== -->
 
     <!-- Floating ASR -->
-    <string name="feature_floating_asr_off_desc">The floating ball will not be displayed. Voice recognition can only be accessed through the keyboard.</string>
-    <string name="feature_floating_asr_on_desc">Enables the floating ball for voice recognition. You can use voice input from anywhere, even when the keyboard is hidden. Requires display overlay permission. Accessibility is still required for volume-key recording, and for Accessibility insertion when the IME bridge is not active.</string>
+    <string name="feature_floating_asr_off_desc">The floating ball is hidden. You can still use voice input from BiBi Keyboard.</string>
+    <string name="feature_floating_asr_on_desc">Shows a voice-input floating ball over other apps, so recognition can start while the keyboard is hidden. Overlay permission is required; volume-key control and some text-entry methods also need Accessibility or the IME bridge.</string>
 
     <!-- Floating only when IME visible -->
     <string name="feature_floating_only_when_ime_visible_off_desc">The floating ball remains visible even when the keyboard is hidden.</string>
@@ -132,20 +132,20 @@
     <string name="feature_volume_key_stop_on_ime_hidden_on_desc">If the keyboard disappears while volume-key recording is active, recording stops automatically.</string>
 
     <!-- Floating write compatibility mode -->
-    <string name="feature_floating_ime_bridge_off_desc">Floating results use the existing Accessibility insertion path or clipboard fallback.</string>
-    <string name="feature_floating_ime_bridge_on_desc">When a compatible LSPosed or LSPatch bridge is active in the current third-party keyboard, final recognition text is inserted through that keyboard\'s InputConnection, and keyboard panel visibility is reported by the keyboard itself. This is an advanced option and does not read existing input text.</string>
-    <string name="feature_ime_bridge_pcm_recording_off_desc">The bridge may still insert final text, but long-press recording inside the third-party keyboard will not be available.</string>
-    <string name="feature_ime_bridge_pcm_recording_on_desc">Allows a compatible bridge module in the current default keyboard to start recording with that keyboard\'s microphone permission and push PCM audio to BiBi Keyboard. It does not start floating-ball or main-app microphone recording as a fallback.</string>
-    <string name="feature_floating_write_compat_off_desc">Uses standard Accessibility API to insert text. Works for most apps.</string>
-    <string name="feature_floating_write_compat_on_desc">For target apps, uses Select-All + Paste method to avoid background placeholder text contamination. The clipboard may be temporarily used (best-effort restore). Useful for apps like Telegram and Douyin.</string>
+    <string name="feature_floating_ime_bridge_off_desc">Floating-ball results are entered using Accessibility. If direct entry fails, the result can fall back to the clipboard.</string>
+    <string name="feature_floating_ime_bridge_on_desc">With a compatible LSPosed or LSPatch bridge installed, floating-ball results are entered directly by your current third-party keyboard. This can improve compatibility and keyboard visibility detection. It does not read text you have already entered.</string>
+    <string name="feature_ime_bridge_pcm_recording_off_desc">The bridge can still enter recognition results, but long-press recording inside a third-party keyboard is unavailable.</string>
+    <string name="feature_ime_bridge_pcm_recording_on_desc">You can long-press to record in a compatible third-party keyboard and send the recording to BiBi Keyboard for recognition. If recording fails, it does not automatically switch to the floating ball or this app\'s microphone.</string>
+    <string name="feature_floating_write_compat_off_desc">Recognition results are entered directly into the text field. This works for most apps.</string>
+    <string name="feature_floating_write_compat_on_desc">In apps you select, the current text is selected before the result is pasted to avoid including placeholder text. The clipboard is used temporarily, and the app attempts to restore its previous contents afterward.</string>
 
     <!-- Floating write paste -->
-    <string name="feature_floating_write_paste_off_desc">Recognition results are inserted directly into the input field via Accessibility API.</string>
-    <string name="feature_floating_write_paste_on_desc">For target packages, recognition results are copied to clipboard only, without automatic insertion. Useful for apps where direct insertion doesn\'t work properly.</string>
+    <string name="feature_floating_write_paste_off_desc">Recognition results are entered automatically into the current text field.</string>
+    <string name="feature_floating_write_paste_on_desc">In apps you select, recognition results are only copied to the clipboard and are not entered automatically. You need to paste them yourself.</string>
 
     <!-- Floating keep alive -->
-    <string name="feature_floating_keep_alive_off_desc">No foreground service is kept. The system may reclaim the app more aggressively in background.</string>
-    <string name="feature_floating_keep_alive_on_desc">Starts a foreground service with a persistent notification to strengthen background keep-alive.</string>
-    <string name="feature_floating_keep_alive_privileged_off_desc">Starts the foreground keep-alive service normally. Some systems may block background restarts.</string>
-    <string name="feature_floating_keep_alive_privileged_on_desc">Uses Shizuku (or root) to periodically start the foreground keep-alive service with shell privileges to improve reliability. Requires Shizuku authorization or root.</string>
+    <string name="feature_floating_keep_alive_off_desc">The app is more likely to be stopped after running in the background for a while, so floating-ball and volume-key features may become unavailable.</string>
+    <string name="feature_floating_keep_alive_on_desc">Shows an ongoing notification to help keep floating-ball and volume-key features available in the background. Some phones may still require battery settings changes.</string>
+    <string name="feature_floating_keep_alive_privileged_off_desc">Uses only the standard method to stay active in the background. Some phones may still stop floating-ball or volume-key features.</string>
+    <string name="feature_floating_keep_alive_privileged_on_desc">Uses Shizuku or root to periodically restore the background service, reducing interruptions to floating-ball or volume-key features. Shizuku or root permission is required.</string>
 </resources>

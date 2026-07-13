@@ -8,8 +8,8 @@
     <string name="label_qw_threads">執行緒數（1-8）</string>
     <string name="label_qw_preload">積極載入模型</string>
     <string name="label_qw_use_itn">啟用 ITN（數字智慧識別）</string>
-    <string name="feature_qw_use_itn_off_desc">輸出口語化文字，如「一千二百三十四」。</string>
-    <string name="feature_qw_use_itn_on_desc">使用本機規則反向文字正規化，將支援的中文口語數字、日期、時間轉換為書面形式。</string>
+    <string name="feature_qw_use_itn_off_desc">保留口語寫法，例如「一千二百三十四」。</string>
+    <string name="feature_qw_use_itn_on_desc">自動將支援的中文數字、日期與時間改成常用書面寫法，例如將「一千二百三十四」寫成「1234」。</string>
     <string name="label_qw_keep_alive">模型卸載策略</string>
     <string name="btn_qw_download_model">一鍵下載模型</string>
     <string name="btn_qw_import_model">從本機匯入模型</string>

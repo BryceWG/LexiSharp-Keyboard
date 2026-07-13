@@ -380,22 +380,22 @@
   <string name="feature_hide_recent_tasks_on_desc">The app card is hidden from the recent tasks overview for a cleaner multitasking view. May reduce background keep-alive capability.</string>
 
   <!-- Duck media on record -->
-  <string name="feature_duck_media_on_record_off_desc">Media playback volume remains unchanged during recording.</string>
-  <string name="feature_duck_media_on_record_on_desc">Automatically pauses media playback during recording to reduce interference and improve recognition accuracy.</string>
+  <string name="feature_duck_media_on_record_off_desc">The app does not ask other apps to lower their volume or pause during recording, so media audio may be picked up by the microphone.</string>
+  <string name="feature_duck_media_on_record_on_desc">During recording, the app asks other apps to temporarily lower their volume or pause to reduce media interference. The result depends on the system and the media app.</string>
 
   <!-- Offline denoise -->
   <string name="feature_auto_cancel_empty_audio_input_off_desc">Non-streaming recognition requests are sent even when the recording contains no detected speech.</string>
-  <string name="feature_auto_cancel_empty_audio_input_on_desc">Uses the local VAD model before non-streaming recognition. If no speech is detected, the audio is not sent to the recognition provider.</string>
+  <string name="feature_auto_cancel_empty_audio_input_on_desc">Before sending a completed recording, the app checks it on your device. If it contains no speech, the recording is discarded instead of being sent to the recognition provider.</string>
   <string name="feature_auto_filter_silent_audio_segments_off_desc">Non-streaming recognition uses the original recording, including silent pauses.</string>
-  <string name="feature_auto_filter_silent_audio_segments_on_desc">Uses the local VAD model to remove silent parts before non-streaming recognition, reducing audio length and upload time.</string>
+  <string name="feature_auto_filter_silent_audio_segments_on_desc">Before recognition, the app removes silent parts of a completed recording on your device. This shortens the audio and can reduce upload time.</string>
 
   <!-- Offline denoise -->
   <string name="feature_offline_denoise_off_desc">Raw audio is used without model-based denoise.</string>
   <string name="feature_offline_denoise_on_desc">Applies model-based denoise before non-streaming upload or offline recognition. Limited improvement for low-volume speech.</string>
 
   <!-- Upload audio compression -->
-  <string name="feature_upload_audio_compression_off_desc">Non-streaming online recognition uploads uncompressed WAV audio. This can increase transfer size but avoids upload encoding work.</string>
-  <string name="feature_upload_audio_compression_on_desc">Compresses audio before non-streaming online upload when the selected provider supports it, reducing transfer size and network time.</string>
+  <string name="feature_upload_audio_compression_off_desc">Completed recordings are uploaded in their original uncompressed format. Uploads use more data, but no extra compression is performed first.</string>
+  <string name="feature_upload_audio_compression_on_desc">When supported by the recognition provider, completed recordings are compressed before upload. This uses less data and may upload faster.</string>
 
   <!-- Headset mic priority -->
   <string name="feature_headset_mic_priority_off_desc">Uses the device\'s built-in microphone for recording.</string>

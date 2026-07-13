@@ -48,12 +48,12 @@
     <string name="feature_volc_ddc_on_desc">啟用語義順滑，自動最佳化識別結果的表達和格式。實驗性功能。</string>
 
     <!-- 火山引擎 - VAD 分句 -->
-    <string name="feature_volc_vad_off_desc">整段音訊作為一個句子識別。</string>
-    <string name="feature_volc_vad_on_desc">使用語音活動偵測自動將長語音分成多個句子識別。效果有待測試。</string>
+    <string name="feature_volc_vad_off_desc">整段錄音會連續辨識，不根據說話與停頓自動分段。</string>
+    <string name="feature_volc_vad_on_desc">會根據說話與停頓自動分段，長錄音可能更容易閱讀；實際效果取決於音訊與服務端。</string>
 
     <!-- 火山引擎 - 二遍識別 -->
-    <string name="feature_volc_nonstream_off_desc">普通的串流識別精度。</string>
-    <string name="feature_volc_nonstream_on_desc">串流識別過程中即時最佳化轉錄結果。</string>
+    <string name="feature_volc_nonstream_off_desc">只使用串流辨識的第一遍結果，文字回傳較直接，但不會再進行第二次修正。</string>
+    <string name="feature_volc_nonstream_on_desc">服務端會對串流辨識結果再進行一次修正，最終文字可能更準確，但中間結果可能發生變化。</string>
 
     <!-- 火山引擎 - 檔案識別普通版 -->
     <string name="feature_volc_file_standard_off_desc">錄音完成後使用檔案識別（極速版）。速度更快，但不支援豆包語音識別2.0版本。</string>

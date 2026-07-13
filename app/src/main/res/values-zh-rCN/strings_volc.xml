@@ -49,12 +49,12 @@
     <string name="feature_volc_ddc_on_desc">启用语义顺滑，自动优化识别结果的表达和格式。实验性功能。</string>
 
     <!-- VAD 分句 - VAD sentence segmentation -->
-    <string name="feature_volc_vad_off_desc">整段音频作为一个句子识别。</string>
-    <string name="feature_volc_vad_on_desc">使用语音活动检测自动将长语音分成多个句子识别。效果有待测试。</string>
+    <string name="feature_volc_vad_off_desc">整段录音会连续识别，不根据说话和停顿自动分段。</string>
+    <string name="feature_volc_vad_on_desc">会根据说话和停顿自动分段，长录音可能更容易阅读；实际效果取决于音频和服务端。</string>
 
     <!-- 二遍识别 - Non-streaming optimization -->
-    <string name="feature_volc_nonstream_off_desc">普通的流式识别精度。</string>
-    <string name="feature_volc_nonstream_on_desc">流式识别过程中实时优化转录结果。</string>
+    <string name="feature_volc_nonstream_off_desc">只使用流式识别的第一遍结果，文字返回更直接，但不会再进行二次修正。</string>
+    <string name="feature_volc_nonstream_on_desc">服务端会对流式识别结果再进行一次修正，最终文字可能更准确，但中间结果可能发生变化。</string>
 
   <!-- 文件识别普通版 - File recognition (standard mode) -->
     <string name="feature_volc_file_standard_off_desc">录音完成后使用文件识别（极速版）。速度更快，但不支持豆包语音识别2.0版本。</string>

@@ -49,6 +49,6 @@
     <string name="feature_dash_fun_asr_on_desc">串流識別使用 Fun-ASR-Realtime。</string>
 
     <!-- Fun-ASR 語義斷句 -->
-    <string name="feature_dash_funasr_semantic_punct_off_desc">使用 VAD（語音活動偵測）斷句。延遲較低。</string>
-    <string name="feature_dash_funasr_semantic_punct_on_desc">使用 LLM 語義斷句。準確性更高。</string>
+    <string name="feature_dash_funasr_semantic_punct_off_desc">主要根據說話停頓斷句，通常回傳更快。</string>
+    <string name="feature_dash_funasr_semantic_punct_on_desc">結合語句含義判斷斷句，標點可能更自然，但回傳可能稍慢。</string>
 </resources>

@@ -38,8 +38,8 @@
 
     <!-- FireRedASR V2 - Use ITN -->
     <string name="label_fr_use_itn">Enable ITN (smart number recognition)</string>
-    <string name="feature_fr_use_itn_off_desc">Outputs spoken-form text, such as \"one thousand two hundred thirty-four\".</string>
-    <string name="feature_fr_use_itn_on_desc">Uses Inverse Text Normalization to automatically convert to written form, such as \"1234\".</string>
+    <string name="feature_fr_use_itn_off_desc">Keeps spoken forms, such as “one thousand two hundred thirty-four”.</string>
+    <string name="feature_fr_use_itn_on_desc">Converts supported Chinese numbers, dates, and times to common written forms, such as “1234”.</string>
 
     <!-- FireRedASR V2 - Pseudo streaming -->
     <string name="label_fr_pseudo_stream">Enable pseudo streaming preview (fixed-length segments)</string>

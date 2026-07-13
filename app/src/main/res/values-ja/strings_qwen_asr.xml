@@ -8,8 +8,8 @@
     <string name="label_qw_threads">スレッド数（1-8）</string>
     <string name="label_qw_preload">積極的にモデルを読み込む</string>
     <string name="label_qw_use_itn">ITNを有効化（数字スマート認識）</string>
-    <string name="feature_qw_use_itn_off_desc">「千二百三十四」のような話し言葉のまま出力します。</string>
-    <string name="feature_qw_use_itn_on_desc">ローカルのルールベース逆テキスト正規化を適用し、対応する中国語の口語数字、日付、時刻を書面形式に変換します。</string>
+    <string name="feature_qw_use_itn_off_desc">「千二百三十四」のような話し言葉の表記を保ちます。</string>
+    <string name="feature_qw_use_itn_on_desc">対応する中国語の数字、日付、時刻を「1234」のような一般的な書面表記に変換します。</string>
     <string name="label_qw_keep_alive">モデルアンロード方針</string>
     <string name="btn_qw_download_model">モデルをワンクリックでダウンロード</string>
     <string name="btn_qw_import_model">ローカルファイルからモデルをインポート</string>

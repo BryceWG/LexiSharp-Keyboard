@@ -113,8 +113,8 @@
     <!-- ============================================== -->
 
     <!-- フローティングASR -->
-    <string name="feature_floating_asr_off_desc">フローティングボールは表示されません。音声認識はキーボードからのみアクセスできます。</string>
-    <string name="feature_floating_asr_on_desc">音声認識用のフローティングボールを有効にします。キーボードが非表示の状態でも、どこからでも音声入力を使用できます。オーバーレイ権限が必要です。アクセシビリティは音量キー録音で引き続き必要で、IME ブリッジが有効でない場合はアクセシビリティ挿入にも使用されます。</string>
+    <string name="feature_floating_asr_off_desc">フローティングボールは表示されません。BiBi Keyboard からは引き続き音声入力を利用できます。</string>
+    <string name="feature_floating_asr_on_desc">他のアプリの上に音声入力用フローティングボールを表示し、キーボードが非表示でも認識を開始できます。オーバーレイ権限が必要で、音量キー操作と一部の文字入力方式にはアクセシビリティまたは IME ブリッジも必要です。</string>
 
     <!-- キーボード表示時のみフローティングボールを表示 -->
     <string name="feature_floating_only_when_ime_visible_off_desc">キーボードが非表示でもフローティングボールは表示されたままになります。</string>
@@ -133,20 +133,20 @@
     <string name="feature_volume_key_stop_on_ime_hidden_on_desc">音量キー録音中にキーボードが消えると、自動的に録音を停止します。</string>
 
     <!-- フローティング書き込み互換モード -->
-    <string name="feature_floating_ime_bridge_off_desc">フローティング結果は既存のアクセシビリティ挿入経路、またはクリップボードのフォールバックを使用します。</string>
-    <string name="feature_floating_ime_bridge_on_desc">現在のサードパーティ製キーボードで互換性のある LSPosed または LSPatch ブリッジが有効な場合、最終認識テキストはそのキーボード自身の InputConnection で挿入され、キーボードパネルの表示状態もキーボード自身から報告されます。これは上級者向けオプションで、既存の入力内容は読み取りません。</string>
-    <string name="feature_ime_bridge_pcm_recording_off_desc">ブリッジは最終テキストの挿入には使えますが、サードパーティ製キーボード内の長押し録音入口は利用できません。</string>
-    <string name="feature_ime_bridge_pcm_recording_on_desc">現在の既定キーボード内の互換ブリッジモジュールが、そのキーボード自身のマイク権限で録音し、PCM 音声を BiBi Keyboard に送信することを許可します。失敗時にフローティングボールやメインアプリのマイク録音へフォールバックしません。</string>
-    <string name="feature_floating_write_compat_off_desc">標準のアクセシビリティAPIを使用してテキストを挿入します。ほとんどのアプリで動作します。</string>
-    <string name="feature_floating_write_compat_on_desc">対象アプリでは、背景プレースホルダーテキストの混入を避けるために「全選択+貼り付け」方式を使用します。クリップボードが一時的に使用される場合があります（最善努力で復元）。TelegramやDouyinなどのアプリに役立ちます。</string>
+    <string name="feature_floating_ime_bridge_off_desc">フローティングボールの結果はアクセシビリティで入力します。直接入力に失敗した場合は、クリップボード方式に切り替えられます。</string>
+    <string name="feature_floating_ime_bridge_on_desc">対応する LSPosed または LSPatch ブリッジを導入すると、現在の他社製キーボードから結果を直接入力できます。入力の互換性とキーボード表示の検出が改善します。入力済みの文字は読み取りません。</string>
+    <string name="feature_ime_bridge_pcm_recording_off_desc">ブリッジで認識結果を入力できますが、他社製キーボード内での長押し録音は利用できません。</string>
+    <string name="feature_ime_bridge_pcm_recording_on_desc">対応する他社製キーボード内で長押し録音し、BiBi Keyboard に認識させられます。録音に失敗しても、フローティングボールや本アプリのマイクには自動で切り替わりません。</string>
+    <string name="feature_floating_write_compat_off_desc">認識結果を入力欄へ直接入力します。ほとんどのアプリで利用できます。</string>
+    <string name="feature_floating_write_compat_on_desc">指定した対応アプリでは、入力欄の内容を選択してから結果を貼り付け、ヒント文字の混入を防ぎます。クリップボードを一時使用し、完了後に元の内容の復元を試みます。</string>
 
     <!-- フローティング書き込み貼り付け -->
-    <string name="feature_floating_write_paste_off_desc">認識結果はアクセシビリティAPI経由で入力フィールドに直接挿入されます。</string>
-    <string name="feature_floating_write_paste_on_desc">対象パッケージでは、認識結果はクリップボードにのみコピーされ、自動挿入されません。直接挿入が正しく機能しないアプリに役立ちます。</string>
+    <string name="feature_floating_write_paste_off_desc">認識結果を現在の入力欄へ自動入力します。</string>
+    <string name="feature_floating_write_paste_on_desc">指定したアプリでは、認識結果をクリップボードへコピーするだけで自動入力しません。自分で貼り付ける必要があります。</string>
 
     <!-- フローティング保活 -->
-    <string name="feature_floating_keep_alive_off_desc">フォアグラウンドサービスを保持しません。バックグラウンドで停止されやすくなります。</string>
-    <string name="feature_floating_keep_alive_on_desc">常駐通知付きでフォアグラウンドサービスを起動し、バックグラウンド保活を強化します。</string>
-    <string name="feature_floating_keep_alive_privileged_off_desc">通常の方法でフォアグラウンド保活サービスを起動します。端末によってはバックグラウンド再起動が制限される場合があります。</string>
-    <string name="feature_floating_keep_alive_privileged_on_desc">Shizuku（または root）で shell 権限を用いて定期的にフォアグラウンド保活サービスを起動し、安定性を向上させます。Shizuku の許可または root が必要です。</string>
+    <string name="feature_floating_keep_alive_off_desc">バックグラウンドでしばらく動作すると、アプリが停止されやすくなり、フローティングボールや音量キー機能が使えなくなる場合があります。</string>
+    <string name="feature_floating_keep_alive_on_desc">常駐通知を表示し、フローティングボールや音量キー機能をバックグラウンドでも利用しやすくします。端末によっては電池設定の変更も必要です。</string>
+    <string name="feature_floating_keep_alive_privileged_off_desc">通常の方法だけでバックグラウンド動作を維持します。端末によってはフローティングボールや音量キー機能が停止する場合があります。</string>
+    <string name="feature_floating_keep_alive_privileged_on_desc">Shizuku または root を使ってバックグラウンドサービスを定期的に復帰させ、機能の中断を減らします。Shizuku または root 権限が必要です。</string>
 </resources>

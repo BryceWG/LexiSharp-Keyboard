@@ -26,7 +26,7 @@
 
     <!-- 使用提示词 - Use prompt -->
     <string name="feature_openai_use_prompt_off_desc">直接转写音频，不使用引导。</string>
-    <string name="feature_openai_use_prompt_on_desc">使用提示词引导识别结果，可以提高特定术语或场景的识别准确率。</string>
+    <string name="feature_openai_use_prompt_on_desc">将提示词随识别请求发送，用来提示专有名词或上下文。是否生效以及效果取决于所选模型和服务商。</string>
 
     <!-- 流式识别 - Streaming -->
     <string name="feature_openai_streaming_off_desc">关闭时使用文件上传识别，停止录音后返回结果。</string>

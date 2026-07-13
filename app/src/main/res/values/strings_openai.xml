@@ -25,7 +25,7 @@
 
     <!-- OpenAI - Use prompt -->
     <string name="feature_openai_use_prompt_off_desc">Transcribes audio directly without guidance.</string>
-    <string name="feature_openai_use_prompt_on_desc">Uses a prompt to guide the recognition results, which can improve accuracy for specific terminology or contexts.</string>
+    <string name="feature_openai_use_prompt_on_desc">Sends the prompt with the recognition request to suggest terminology or context. Support and results depend on the selected model and provider.</string>
 
     <!-- OpenAI - Streaming -->
     <string name="feature_openai_streaming_off_desc">Uses file upload transcription. Results are returned after recording stops.</string>

@@ -38,8 +38,8 @@
 
     <!-- FireRedASR V2 - 使用 ITN -->
     <string name="label_fr_use_itn">啟用 ITN（數字智慧識別）</string>
-    <string name="feature_fr_use_itn_off_desc">輸出口語化文字，如「一千二百三十四」。</string>
-    <string name="feature_fr_use_itn_on_desc">使用逆文字正規化，自動轉換為書面形式，如「1234」。</string>
+    <string name="feature_fr_use_itn_off_desc">保留口語寫法，例如「一千二百三十四」。</string>
+    <string name="feature_fr_use_itn_on_desc">自動將支援的中文數字、日期與時間改成常用書面寫法，例如將「一千二百三十四」寫成「1234」。</string>
 
     <!-- FireRedASR V2 - 偽串流模式 -->
     <string name="label_fr_pseudo_stream">啟用偽串流預覽（固定時長分句）</string>

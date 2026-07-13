@@ -60,8 +60,8 @@
     <!-- ============================================== -->
 
     <!-- 使用 ITN - Use ITN -->
-    <string name="feature_sv_use_itn_off_desc">输出口语化文本，如"一千二百三十四"。</string>
-    <string name="feature_sv_use_itn_on_desc">使用逆文本归一化，自动转换为书面形式，如"1234"。</string>
+    <string name="feature_sv_use_itn_off_desc">保留口语写法，例如“一千二百三十四”。</string>
+    <string name="feature_sv_use_itn_on_desc">自动把支持的中文数字、日期和时间改成常用书面写法，例如将“一千二百三十四”写成“1234”。</string>
 
     <!-- 预加载模型 - Preload model -->
     <string name="feature_sv_preload_off_desc">仅在需要时加载模型，首次使用可能有延迟。</string>

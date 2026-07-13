@@ -112,8 +112,8 @@
     <!-- ============================================== -->
 
     <!-- 使用悬浮球进行语音识别 -->
-    <string name="feature_floating_asr_off_desc">悬浮球将不会显示。语音识别只能通过键盘访问。</string>
-    <string name="feature_floating_asr_on_desc">启用语音识别悬浮球。你可以在任何地方使用语音输入，即使键盘处于隐藏状态。需要悬浮窗权限；无障碍仍用于音量键录音，未启用输入法桥接时也用于无障碍写入。</string>
+    <string name="feature_floating_asr_off_desc">不显示悬浮球，仍可从说点啥键盘使用语音输入。</string>
+    <string name="feature_floating_asr_on_desc">在其他应用上方显示语音输入悬浮球，即使键盘未显示也可开始识别。需要悬浮窗权限；音量键控制和部分文字输入方式还需要无障碍服务或输入法桥接。</string>
 
     <!-- 仅在键盘显示时显示悬浮球 -->
     <string name="feature_floating_only_when_ime_visible_off_desc">即使键盘隐藏，悬浮球仍保持可见。</string>
@@ -132,20 +132,20 @@
     <string name="feature_volume_key_stop_on_ime_hidden_on_desc">音量键录音期间如果键盘消失，会自动停止录音。</string>
 
     <!-- 悬浮球写入文字兼容性模式 -->
-    <string name="feature_floating_ime_bridge_off_desc">悬浮球结果将使用现有无障碍写入路径或剪贴板兜底。</string>
-    <string name="feature_floating_ime_bridge_on_desc">当当前第三方输入法中存在兼容的 LSPosed 或 LSPatch 桥接模块时，最终识别文本会通过该输入法自己的 InputConnection 写入，并由输入法自身报告键盘面板是否显示。这是高级选项，不读取已有输入内容。</string>
-    <string name="feature_ime_bridge_pcm_recording_off_desc">桥接模块仍可用于回填最终文字，但第三方输入法内长按录音入口不可用。</string>
-    <string name="feature_ime_bridge_pcm_recording_on_desc">允许当前默认输入法中的兼容桥接模块使用该输入法自己的麦克风权限录音，并把 PCM 音频推送给说点啥处理。失败时不会切换到悬浮球或主应用麦克风录音兜底。</string>
-    <string name="feature_floating_write_compat_off_desc">使用标准无障碍 API 插入文本。适用于大多数应用。</string>
-    <string name="feature_floating_write_compat_on_desc">针对目标应用，使用"全选+粘贴"方法来避免背景占位符文本污染。可能会临时使用剪贴板（尽力恢复）。适用于 Telegram 和抖音等应用。</string>
+    <string name="feature_floating_ime_bridge_off_desc">悬浮球会通过无障碍服务输入识别结果；直接输入失败时，可退回到剪贴板方式。</string>
+    <string name="feature_floating_ime_bridge_on_desc">安装兼容的 LSPosed 或 LSPatch 桥接模块后，悬浮球结果会由当前第三方输入法直接输入，可改善输入兼容性和键盘显示状态检测。此功能不会读取你已经输入的文字。</string>
+    <string name="feature_ime_bridge_pcm_recording_off_desc">桥接模块仍可输入识别结果，但无法在第三方键盘中长按录音。</string>
+    <string name="feature_ime_bridge_pcm_recording_on_desc">可在兼容的第三方键盘中长按录音，并将录音交给说点啥识别。录音失败时不会自动改用悬浮球或本应用的麦克风。</string>
+    <string name="feature_floating_write_compat_off_desc">识别结果会直接写入输入框，适用于大多数应用。</string>
+    <string name="feature_floating_write_compat_on_desc">在你指定的兼容应用中，会先选中输入框内容，再通过粘贴写入识别结果，以避免混入提示文字。期间会暂时使用剪贴板，并在完成后尝试恢复原内容。</string>
 
     <!-- 悬浮球识别结果仅写入粘贴板 -->
-    <string name="feature_floating_write_paste_off_desc">识别结果通过无障碍 API 直接插入到输入字段中。</string>
-    <string name="feature_floating_write_paste_on_desc">针对目标包名，识别结果仅复制到剪贴板，不自动插入。适用于直接插入无法正常工作的应用。</string>
+    <string name="feature_floating_write_paste_off_desc">识别结果会自动输入到当前输入框。</string>
+    <string name="feature_floating_write_paste_on_desc">在你指定的应用中，识别结果只会复制到剪贴板，不会自动输入；你需要在输入框中手动粘贴。</string>
 
     <!-- 前台保活 -->
-    <string name="feature_floating_keep_alive_off_desc">不开启前台服务，系统可能更容易回收后台进程。</string>
-    <string name="feature_floating_keep_alive_on_desc">启动前台服务并显示常驻通知，强化后台保活能力。</string>
-    <string name="feature_floating_keep_alive_privileged_off_desc">仍按常规方式启动前台保活服务，部分系统可能限制后台拉起。</string>
-    <string name="feature_floating_keep_alive_privileged_on_desc">通过 Shizuku 或 root 定期以 shell 权限拉起前台保活服务，提高稳定性。需要 Shizuku 授权或 root。</string>
+    <string name="feature_floating_keep_alive_off_desc">应用在后台运行一段时间后更容易被系统停止，悬浮球和音量键功能可能因此失效。</string>
+    <string name="feature_floating_keep_alive_on_desc">显示一条常驻通知，帮助悬浮球和音量键功能在后台持续可用。部分手机仍需调整电池设置。</string>
+    <string name="feature_floating_keep_alive_privileged_off_desc">只使用普通方式维持后台运行，部分手机可能仍会停止悬浮球或音量键功能。</string>
+    <string name="feature_floating_keep_alive_privileged_on_desc">使用 Shizuku 或 root 定期恢复后台服务，减少悬浮球或音量键功能失效。需要先授予 Shizuku 权限或 root 权限。</string>
 </resources>

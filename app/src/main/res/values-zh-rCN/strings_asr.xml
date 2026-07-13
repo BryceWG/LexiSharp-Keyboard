@@ -9,11 +9,11 @@
 
     <!-- 无人说话自动停止录音 - Auto-stop on silence -->
     <string name="feature_auto_stop_silence_off_desc">录音会持续到你手动停止。适合录制较长的语音或者停顿是内容的一部分的场景。</string>
-    <string name="feature_auto_stop_silence_on_desc">检测到指定时长的无人声时自动停止录音，节省时间和流量。你可以调整判停等待窗口和判停灵敏度。</string>
+    <string name="feature_auto_stop_silence_on_desc">连续一段时间没有检测到说话声时自动停止录音，免去手动停止。你可以调整等待时间和检测灵敏度。</string>
 
     <!-- 备用语音识别引擎 -->
     <string name="feature_backup_asr_off_desc">关闭时仅使用主引擎进行识别。</string>
-    <string name="feature_backup_asr_on_desc">开启后，每次语音输入会同时请求主用与备用引擎；当主引擎超时时，会优先使用备用引擎结果。</string>
+    <string name="feature_backup_asr_on_desc">主服务不可用、识别失败或等待过久时，可改用备用服务。根据备用设置，它可能与主服务同时开始，也可能等到需要时才启动。</string>
 
     <!-- 服务商标签（用于选择器展示） -->
     <string name="asr_vendor_tag_streaming">流式</string>

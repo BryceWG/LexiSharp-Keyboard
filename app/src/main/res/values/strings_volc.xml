@@ -48,12 +48,12 @@
     <string name="feature_volc_ddc_on_desc">Enables semantic smoothing to automatically optimize expression and formatting of recognition results. Experimental feature.</string>
 
     <!-- Volcengine - VAD segmentation -->
-    <string name="feature_volc_vad_off_desc">The entire audio is treated as one sentence for recognition.</string>
-    <string name="feature_volc_vad_on_desc">Uses Voice Activity Detection to automatically segment long audio into multiple sentences. Effect needs further testing.</string>
+    <string name="feature_volc_vad_off_desc">The recording is recognized continuously without automatic segmentation based on speech and pauses.</string>
+    <string name="feature_volc_vad_on_desc">The recording is automatically segmented based on speech and pauses, which may make long results easier to read. Results depend on the audio and provider.</string>
 
     <!-- Volcengine - Two-pass recognition -->
-    <string name="feature_volc_nonstream_off_desc">Standard streaming recognition accuracy.</string>
-    <string name="feature_volc_nonstream_on_desc">Real-time optimization of transcription results during streaming recognition.</string>
+    <string name="feature_volc_nonstream_off_desc">Uses only the first-pass streaming result. Text returns directly, without a second correction pass.</string>
+    <string name="feature_volc_nonstream_on_desc">The provider performs a second correction pass on the streaming result. Final text may improve, but interim text may change.</string>
 
     <!-- Volcengine - File recognition (standard mode) -->
     <string name="feature_volc_file_standard_off_desc">Uses file recognition (flash mode) after recording completion. Faster speed but does not support Doubao ASR 2.0.</string>

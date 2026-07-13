@@ -42,6 +42,6 @@
     <string name="feature_x_asr_preload_on_desc">Preloads the model when the keyboard appears to reduce first-use latency.</string>
 
     <!-- X-ASR - Use ITN -->
-    <string name="feature_x_asr_use_itn_off_desc">Outputs spoken-form text, such as \"one thousand two hundred thirty-four\".</string>
-    <string name="feature_x_asr_use_itn_on_desc">Uses Inverse Text Normalization to automatically convert to written form, such as \"1234\".</string>
+    <string name="feature_x_asr_use_itn_off_desc">Keeps spoken forms, such as “one thousand two hundred thirty-four”.</string>
+    <string name="feature_x_asr_use_itn_on_desc">Converts supported Chinese numbers, dates, and times to common written forms, such as “1234”.</string>
 </resources>

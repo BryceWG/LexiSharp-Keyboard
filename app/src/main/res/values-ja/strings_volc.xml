@@ -48,12 +48,12 @@
     <string name="feature_volc_ddc_on_desc">意味スムージングを有効にして、認識結果の表現と書式設定を自動的に最適化します。実験的機能です。</string>
 
     <!-- 火山引擎 - VADセグメンテーション -->
-    <string name="feature_volc_vad_off_desc">音声全体が1つの文として認識されます。</string>
-    <string name="feature_volc_vad_on_desc">音声活動検出を使用して、長い音声を自動的に複数の文にセグメント化します。効果は今後の検証が必要です。</string>
+    <string name="feature_volc_vad_off_desc">録音全体を連続して認識し、発話と間に基づく自動分割は行いません。</string>
+    <string name="feature_volc_vad_on_desc">発話と間に基づいて自動分割します。長い結果が読みやすくなる場合がありますが、効果は音声とサービス側によって異なります。</string>
 
     <!-- 火山引擎 - 二重パス認識 -->
-    <string name="feature_volc_nonstream_off_desc">標準的なストリーミング認識精度です。</string>
-    <string name="feature_volc_nonstream_on_desc">ストリーミング認識中にリアルタイムで文字起こし結果を最適化します。</string>
+    <string name="feature_volc_nonstream_off_desc">ストリーミング認識の1回目の結果のみを使用し、2回目の修正は行いません。</string>
+    <string name="feature_volc_nonstream_on_desc">サービス側がストリーミング結果をもう一度修正します。最終結果が改善する場合がありますが、途中の文字は変わることがあります。</string>
 
     <!-- 火山引擎 - ファイル認識（標準版） -->
     <string name="feature_volc_file_standard_off_desc">録音完了後にファイル認識（高速版）を使用します。速度は速いですが、Doubao ASR 2.0をサポートしません。</string>

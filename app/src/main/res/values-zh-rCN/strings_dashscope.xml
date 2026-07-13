@@ -50,6 +50,6 @@
     <string name="feature_dash_fun_asr_on_desc">流式识别使用 Fun-ASR-Realtime。</string>
 
     <!-- Fun-ASR 语义断句 -->
-    <string name="feature_dash_funasr_semantic_punct_off_desc">使用 VAD（语音活动检测）断句。延迟较低。</string>
-    <string name="feature_dash_funasr_semantic_punct_on_desc">使用 LLM 语义断句。准确性更高。</string>
+    <string name="feature_dash_funasr_semantic_punct_off_desc">主要根据说话停顿断句，通常返回更快。</string>
+    <string name="feature_dash_funasr_semantic_punct_on_desc">结合语句含义判断断句，标点可能更自然，但返回可能稍慢。</string>
 </resources>

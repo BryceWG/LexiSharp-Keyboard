@@ -378,22 +378,22 @@
   <string name="feature_hide_recent_tasks_on_desc">應用程式卡片在最近任務清單中隱藏，多工介面更清爽。可能會降低後臺保活能力。</string>
 
   <!-- 錄音時音訊避讓 -->
-  <string name="feature_duck_media_on_record_off_desc">錄音時媒體播放音量保持不變。</string>
-  <string name="feature_duck_media_on_record_on_desc">錄音時自動暫停媒體播放，減少干擾提高識別準確率。</string>
+  <string name="feature_duck_media_on_record_off_desc">錄音時不主動要求其他應用程式降低音量或暫停播放，媒體聲音可能會被麥克風錄入。</string>
+  <string name="feature_duck_media_on_record_on_desc">錄音時要求其他應用程式暫時降低音量或暫停播放，以減少媒體聲音干擾。實際效果取決於系統與播放應用程式。</string>
 
   <!-- 空白音訊偵測與靜音過濾 -->
   <string name="feature_auto_cancel_empty_audio_input_off_desc">非串流辨識會照常送出錄音，即使錄音中沒有偵測到人聲。</string>
-  <string name="feature_auto_cancel_empty_audio_input_on_desc">非串流辨識前使用本機 VAD 模型偵測人聲。沒有偵測到人聲時，不向辨識服務商送出本次音訊。</string>
+  <string name="feature_auto_cancel_empty_audio_input_on_desc">錄音結束後，應用程式會先在裝置上檢查是否有人聲。若沒有偵測到人聲，本次錄音會直接捨棄，不會傳送給辨識服務商。</string>
   <string name="feature_auto_filter_silent_audio_segments_off_desc">非串流辨識使用原始錄音，包含中間停頓和靜音片段。</string>
-  <string name="feature_auto_filter_silent_audio_segments_on_desc">非串流辨識前使用本機 VAD 模型移除靜音片段，縮短音訊長度並減少上傳時間。</string>
+  <string name="feature_auto_filter_silent_audio_segments_on_desc">辨識前，應用程式會在裝置上刪除錄音中的靜音片段，縮短音訊長度，並可能減少上傳時間。</string>
 
   <!-- 非串流降噪 -->
   <string name="feature_offline_denoise_off_desc">非串流上傳或離線辨識前不進行模型降噪。</string>
   <string name="feature_offline_denoise_on_desc">在非串流上傳或離線辨識前進行模型降噪，對低聲說話改善有限。</string>
 
   <!-- 上傳音訊壓縮 -->
-  <string name="feature_upload_audio_compression_off_desc">線上非串流辨識會上傳未壓縮 WAV 音訊，傳輸體積會增加，但不會進行上傳前編碼。</string>
-  <string name="feature_upload_audio_compression_on_desc">在服務商支援時，線上非串流辨識會在上傳前壓縮音訊，減少傳輸體積和網路耗時。</string>
+  <string name="feature_upload_audio_compression_off_desc">錄音結束後直接上傳未壓縮的原始音訊。使用的流量較多，但上傳前無需額外壓縮。</string>
+  <string name="feature_upload_audio_compression_on_desc">辨識服務商支援時，錄音結束後會先壓縮再上傳，減少流量，並可能加快上傳速度。</string>
 
   <!-- 耳機麥克風優先 -->
   <string name="feature_headset_mic_priority_off_desc">使用裝置內建麥克風進行錄音。</string>

@@ -43,6 +43,6 @@
     <string name="feature_x_asr_preload_on_desc">键盘显示时预加载模型，减少首次使用延迟。</string>
 
     <!-- 使用 ITN - Use ITN -->
-    <string name="feature_x_asr_use_itn_off_desc">输出口语化文本，如"一千二百三十四"。</string>
-    <string name="feature_x_asr_use_itn_on_desc">使用逆文本归一化，自动转换为书面形式，如"1234"。</string>
+    <string name="feature_x_asr_use_itn_off_desc">保留口语写法，例如“一千二百三十四”。</string>
+    <string name="feature_x_asr_use_itn_on_desc">自动把支持的中文数字、日期和时间改成常用书面写法，例如将“一千二百三十四”写成“1234”。</string>
 </resources>

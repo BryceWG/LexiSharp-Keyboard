@@ -378,22 +378,22 @@
   <string name="feature_hide_recent_tasks_on_desc">应用卡片在最近任务列表中隐藏，多任务界面更清爽。可能会降低后台保活能力。</string>
 
   <!-- 录音时音频避让 -->
-  <string name="feature_duck_media_on_record_off_desc">录音时媒体播放音量保持不变。</string>
-  <string name="feature_duck_media_on_record_on_desc">录音时自动暂停媒体播放，减少干扰提高识别准确率。</string>
+  <string name="feature_duck_media_on_record_off_desc">录音时不主动请求其他应用降低音量或暂停播放，媒体声音可能会被麦克风录入。</string>
+  <string name="feature_duck_media_on_record_on_desc">录音时请求其他应用暂时降低音量或暂停播放，以减少媒体声音干扰。实际效果取决于系统和播放应用。</string>
 
   <!-- 空音频检测与静音过滤 -->
   <string name="feature_auto_cancel_empty_audio_input_off_desc">非流式识别会照常发送录音，即使录音中没有检测到人声。</string>
-  <string name="feature_auto_cancel_empty_audio_input_on_desc">非流式识别前使用本地 VAD 模型检测人声。没有检测到人声时，不向识别服务商发送本次音频。</string>
+  <string name="feature_auto_cancel_empty_audio_input_on_desc">录音结束后，应用会先在本机检查其中是否有人声。若没有检测到人声，本次录音会直接丢弃，不会发送给识别服务商。</string>
   <string name="feature_auto_filter_silent_audio_segments_off_desc">非流式识别使用原始录音，包含中间停顿和静音片段。</string>
-  <string name="feature_auto_filter_silent_audio_segments_on_desc">非流式识别前使用本地 VAD 模型移除静音片段，缩短音频长度并减少上传时间。</string>
+  <string name="feature_auto_filter_silent_audio_segments_on_desc">识别前，应用会在本机删除录音中的静音片段，缩短音频长度，并可能减少上传时间。</string>
 
   <!-- 非流式降噪 -->
   <string name="feature_offline_denoise_off_desc">非流式上传或离线识别前不进行模型降噪。</string>
   <string name="feature_offline_denoise_on_desc">在非流式上传或离线识别前进行模型降噪，对低声说话改善有限。</string>
 
   <!-- 上传音频压缩 -->
-  <string name="feature_upload_audio_compression_off_desc">在线非流式识别上传未压缩 WAV 音频，传输体积会增大，但不会进行上传前编码。</string>
-  <string name="feature_upload_audio_compression_on_desc">在服务商支持时，在线非流式识别会在上传前压缩音频，减少传输体积和网络耗时。</string>
+  <string name="feature_upload_audio_compression_off_desc">录音结束后直接上传未压缩的原始音频。使用的流量更多，但上传前无需额外压缩。</string>
+  <string name="feature_upload_audio_compression_on_desc">识别服务商支持时，录音结束后会先压缩再上传，减少流量，并可能加快上传速度。</string>
 
   <!-- 耳机麦克风优先 -->
   <string name="feature_headset_mic_priority_off_desc">使用设备内置麦克风进行录音。</string>

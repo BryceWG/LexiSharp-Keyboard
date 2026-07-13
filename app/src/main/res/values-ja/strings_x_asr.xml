@@ -42,6 +42,6 @@
     <string name="feature_x_asr_preload_on_desc">キーボードが表示されたときにモデルを事前読み込みし、初回使用の遅延を減らします。</string>
 
     <!-- X-ASR - ITNを使用 -->
-    <string name="feature_x_asr_use_itn_off_desc">「千二百三十四」のような音声形式のテキストを出力します。</string>
-    <string name="feature_x_asr_use_itn_on_desc">逆テキスト正規化を使用して、「1234」のような書面形式に自動変換します。</string>
+    <string name="feature_x_asr_use_itn_off_desc">「千二百三十四」のような話し言葉の表記を保ちます。</string>
+    <string name="feature_x_asr_use_itn_on_desc">対応する中国語の数字、日付、時刻を「1234」のような一般的な書面表記に変換します。</string>
 </resources>

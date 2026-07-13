@@ -8,8 +8,8 @@
     <string name="label_qw_threads">Threads (1-8)</string>
     <string name="label_qw_preload">Aggressive model loading</string>
     <string name="label_qw_use_itn">Enable ITN (smart number recognition)</string>
-    <string name="feature_qw_use_itn_off_desc">Outputs spoken-form text, such as \"one thousand two hundred thirty-four\".</string>
-    <string name="feature_qw_use_itn_on_desc">Applies local rule-based inverse text normalization to convert supported Chinese spoken-form numbers, dates, and times into written form.</string>
+    <string name="feature_qw_use_itn_off_desc">Keeps spoken forms, such as “one thousand two hundred thirty-four”.</string>
+    <string name="feature_qw_use_itn_on_desc">Converts supported Chinese numbers, dates, and times to common written forms, such as “1234”.</string>
     <string name="label_qw_keep_alive">Model unload policy</string>
     <string name="btn_qw_download_model">One-click download model</string>
     <string name="btn_qw_import_model">Import model from local file</string>

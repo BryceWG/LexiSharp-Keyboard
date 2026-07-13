@@ -49,6 +49,6 @@
     <string name="feature_dash_fun_asr_on_desc">ストリーミングは Fun-ASR-Realtime を使用し。</string>
 
     <!-- Fun-ASR セマンティック区切り -->
-    <string name="feature_dash_funasr_semantic_punct_off_desc">VAD（音声アクティビティ検出）による区切りを使用します。遅延が少なく。</string>
-    <string name="feature_dash_funasr_semantic_punct_on_desc">LLMベースのセマンティック区切りを使用します。精度が高く。</string>
+    <string name="feature_dash_funasr_semantic_punct_off_desc">主に発話の間で区切るため、通常は結果が速く返ります。</string>
+    <string name="feature_dash_funasr_semantic_punct_on_desc">文の意味も考慮して区切ります。句読点が自然になる場合がありますが、返答が少し遅くなることがあります。</string>
 </resources>

@@ -38,8 +38,8 @@
 
     <!-- FireRedASR V2 - Use ITN -->
     <string name="label_fr_use_itn">ITNを有効化（数字スマート認識）</string>
-    <string name="feature_fr_use_itn_off_desc">「千二百三十四」のような話し言葉のまま出力します。</string>
-    <string name="feature_fr_use_itn_on_desc">逆テキスト正規化を使って「1234」のような表記に自動変換します。</string>
+    <string name="feature_fr_use_itn_off_desc">「千二百三十四」のような話し言葉の表記を保ちます。</string>
+    <string name="feature_fr_use_itn_on_desc">対応する中国語の数字、日付、時刻を「1234」のような一般的な書面表記に変換します。</string>
 
     <!-- FireRedASR V2 - Pseudo streaming -->
     <string name="label_fr_pseudo_stream">疑似ストリーミングプレビューを有効にする（固定時間で分割）</string>

@@ -25,7 +25,7 @@
 
     <!-- OpenAI - 使用提示詞 -->
     <string name="feature_openai_use_prompt_off_desc">直接轉寫音訊，不使用引導。</string>
-    <string name="feature_openai_use_prompt_on_desc">使用提示詞引導識別結果，可以提高特定術語或場景的識別準確率。</string>
+    <string name="feature_openai_use_prompt_on_desc">將提示詞隨辨識請求傳送，用來提示專有名詞或上下文。是否生效及效果取決於所選模型與服務商。</string>
 
     <!-- OpenAI - 串流識別 -->
     <string name="feature_openai_streaming_off_desc">關閉時使用檔案上傳識別，停止錄音後回傳結果。</string>

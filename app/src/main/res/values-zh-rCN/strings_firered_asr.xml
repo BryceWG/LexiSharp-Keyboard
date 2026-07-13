@@ -38,8 +38,8 @@
 
     <!-- FireRedASR V2 - 使用 ITN -->
     <string name="label_fr_use_itn">启用 ITN（数字智能识别）</string>
-    <string name="feature_fr_use_itn_off_desc">输出口语化文本，如“一千二百三十四”。</string>
-    <string name="feature_fr_use_itn_on_desc">使用逆文本归一化，自动转换为书面形式，如“1234”。</string>
+    <string name="feature_fr_use_itn_off_desc">保留口语写法，例如“一千二百三十四”。</string>
+    <string name="feature_fr_use_itn_on_desc">自动把支持的中文数字、日期和时间改成常用书面写法，例如将“一千二百三十四”写成“1234”。</string>
 
     <!-- FireRedASR V2 - 伪流式模式 -->
     <string name="label_fr_pseudo_stream">启用伪流式预览（固定时长分句）</string>
