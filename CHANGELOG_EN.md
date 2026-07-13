@@ -5,6 +5,7 @@
 ### New Features
 
 - **Auto Enter After Input**: Added a toggle and extension button to automatically press Enter / trigger the editor Send action after recognition (or after AI post-processing ), making it easier to send in chat apps
+- **IME Bridge In-IME Recording**: Long-press to record inside a compatible third-party keyboard and send audio to BiBi Keyboard for recognition (requires an updated LSPosed/LSPatch bridge module)
 - **Volcengine New Authentication**: Volcengine ASR now supports the new API Key authentication method
 - **Clear Clipboard History**: Other settings can clear all in-app clipboard history at once (including pinned items)
 
