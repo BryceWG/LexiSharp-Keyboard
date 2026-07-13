@@ -1,5 +1,21 @@
 # Changelog
 
+## v4.1.2 (2026-07-13)
+
+### New Features
+
+- **Auto Enter After Input**: Added a toggle and extension button to automatically press Enter / trigger the editor Send action after recognition (or after AI post-processing ), making it easier to send in chat apps
+- **Volcengine New Authentication**: Volcengine ASR now supports the new API Key authentication method
+- **Clear Clipboard History**: Other settings can clear all in-app clipboard history at once (including pinned items)
+
+### Improvements
+
+- **Switch IME on Hide**: When “switch IME when hidden” is enabled, the keyboard will try to reappear after switching to the target IME
+- **Clipboard Preview**: Clipboard preview is now a limited number of lines display with more stable text normalization and truncation
+- **ASR Settings Copy**: Clarified descriptions for silence auto-stop, backup engine, ITN, and related settings
+
+---
+
 ## v4.1.1 (2026-07-08)
 
 ### New Features
