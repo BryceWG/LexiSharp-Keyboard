@@ -7,10 +7,7 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 
 import android.content.Context
 import android.media.AudioAttributes
-import android.media.AudioFocusRequest
-import android.media.AudioManager
 import android.media.MediaPlayer
-import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -30,6 +27,8 @@ import com.brycewg.asrkb.asr.ExternalPcmConsumer
 import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.asr.OfflineSpeechDenoiserManager
 import com.brycewg.asrkb.asr.RecordedAudioVoiceFilter
+import com.brycewg.asrkb.asr.RecordingAudioFocusController
+import com.brycewg.asrkb.asr.RecordingAudioFocusLoss
 import com.brycewg.asrkb.asr.StreamingAsrEngine
 import com.brycewg.asrkb.asr.asrEngineModePreferencesSnapshot
 import com.brycewg.asrkb.asr.isAsrVendorConfigured
@@ -111,7 +110,9 @@ internal class RecordingTestViewModel(
     val uiState: StateFlow<RecordingTestUiState> = _uiState.asStateFlow()
 
     private var captureJob: Job? = null
-    private var audioFocusRequest: AudioFocusRequest? = null
+    private val recordingAudioFocusController = RecordingAudioFocusController(appContext) { loss ->
+        onRecordingAudioFocusLost(loss)
+    }
     private var player: MediaPlayer? = null
     private var aiJob: Job? = null
     private var recognitionTimeoutJob: Job? = null
@@ -368,7 +369,7 @@ internal class RecordingTestViewModel(
         }
 
         if (prefs.duckMediaOnRecordEnabled) {
-            requestTransientAudioFocus()
+            recordingAudioFocusController.acquire()
         }
         try {
             BluetoothRouteManager.onRecordingStarted(appContext)
@@ -685,52 +686,22 @@ internal class RecordingTestViewModel(
         false
     }
 
-    private fun requestTransientAudioFocus() {
-        val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                    .setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build()
-                    )
-                    .setOnAudioFocusChangeListener { }
-                    .build()
-                audioFocusRequest = request
-                audioManager.requestAudioFocus(request)
-            } else {
-                @Suppress("DEPRECATION")
-                audioManager.requestAudioFocus(
-                    null,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
-                )
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to request recording test audio focus", t)
-        }
-    }
 
     private fun releaseRecordingResources() {
-        try {
-            val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
-            } else {
-                @Suppress("DEPRECATION")
-                audioManager.abandonAudioFocus(null)
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to abandon recording test audio focus", t)
-        } finally {
-            audioFocusRequest = null
-        }
+        recordingAudioFocusController.release()
         try {
             BluetoothRouteManager.onRecordingStopped(appContext)
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to release recording test Bluetooth route", t)
+        }
+    }
+
+    private fun onRecordingAudioFocusLost(loss: RecordingAudioFocusLoss) {
+        Log.w(TAG, "Recording test audio focus lost: $loss")
+        viewModelScope.launch {
+            if (_uiState.value.isRecording) {
+                stopRecording()
+            }
         }
     }
 

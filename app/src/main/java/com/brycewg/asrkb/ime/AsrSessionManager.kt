@@ -6,9 +6,6 @@
 package com.brycewg.asrkb.ime
 
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
-import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -101,8 +98,9 @@ class AsrSessionManager(
     // 当前会话状态
     private var currentState: KeyboardState = KeyboardState.Idle
 
-    // 音频焦点请求句柄
-    private var audioFocusRequest: AudioFocusRequest? = null
+    private val recordingAudioFocusController = RecordingAudioFocusController(context) { loss ->
+        onRecordingAudioFocusLost(loss)
+    }
 
     // ASR 请求耗时记录
     private var lastRequestDurationMs: Long? = null
@@ -121,6 +119,7 @@ class AsrSessionManager(
     private var sessionSeq: Long = 0L
     private var engineSessionSeq: Long = 0L
     private var engineListenerBridge: SessionBoundEngineListener? = null
+    private val stoppedSessionGate = AsrStoppedSessionGate()
     private var localModelWaitStartUptimeMs: Long = 0L
     private val localModelReadyWaitMs = AtomicLong(0L)
     private var localModelReadyWaitJob: Job? = null
@@ -452,12 +451,6 @@ class AsrSessionManager(
                 )
             )
         } catch (_: Throwable) { }
-        // 开始录音前根据设置决定是否请求短时独占音频焦点（音频避让）
-        if (prefs.duckMediaOnRecordEnabled) {
-            requestTransientAudioFocus()
-        } else {
-            Log.d(TAG, "Audio ducking disabled by user; skip audio focus request")
-        }
         // 本地模型在录音开始时后台预热，让加载耗时尽量与录音阶段重叠。
         try {
             preloadLocalAsrForImmediateUse(
@@ -468,6 +461,12 @@ class AsrSessionManager(
             )
         } catch (t: Throwable) {
             Log.e(TAG, "Local model preload guard failed", t)
+        }
+        // 在引擎已就绪、真正开始采集前请求焦点，避免初始化阶段无谓占用媒体焦点。
+        if (prefs.duckMediaOnRecordEnabled) {
+            recordingAudioFocusController.acquire()
+        } else {
+            Log.d(TAG, "Audio ducking disabled by user; skip audio focus request")
         }
         asrEngine?.let { engine ->
             ContinuousCaptureCoordinator.beginSession(activeSeq)
@@ -513,12 +512,7 @@ class AsrSessionManager(
                 )
             )
         } catch (_: Throwable) { }
-        // 归还音频焦点
-        try {
-            abandonAudioFocusIfNeeded()
-        } catch (t: Throwable) {
-            Log.w(TAG, "abandonAudioFocusIfNeeded failed on stopRecording", t)
-        }
+        recordingAudioFocusController.release()
         // 若无键盘可见，录音结束后可撤销预热
         try {
             BluetoothRouteManager.onRecordingStopped(context)
@@ -590,6 +584,7 @@ class AsrSessionManager(
      * 清理资源
      */
     fun cleanup() {
+        recordingAudioFocusController.release()
         clearActiveSession()
         ContinuousCaptureCoordinator.endAnySession()
         asrEngine?.stop()
@@ -728,6 +723,7 @@ class AsrSessionManager(
                 )
             )
         } catch (_: Throwable) { }
+        recordingAudioFocusController.release()
         clearActiveSession(seq)
         listener?.onAsrError(friendlyMessage ?: message)
     }
@@ -735,6 +731,10 @@ class AsrSessionManager(
     private fun onStopped(seq: Long) {
         if (!isSessionActive(seq)) {
             Log.d(TAG, "onStopped ignored for stale sessionSeq=$seq")
+            return
+        }
+        if (!stoppedSessionGate.tryDeliver(seq)) {
+            Log.d(TAG, "onStopped ignored for already delivered sessionSeq=$seq")
             return
         }
         Log.d(TAG, "onStopped: state=$currentState")
@@ -754,11 +754,7 @@ class AsrSessionManager(
             }
         }
         // 确保归还音频焦点（覆盖静音判停等路径）
-        try {
-            abandonAudioFocusIfNeeded()
-        } catch (t: Throwable) {
-            Log.w(TAG, "abandonAudioFocusIfNeeded failed on onStopped", t)
-        }
+        recordingAudioFocusController.release()
         try {
             val ms = lastAudioMsForStats
             DebugLogManager.log(
@@ -898,57 +894,12 @@ class AsrSessionManager(
         Log.d(TAG, "Request duration: ${adjusted}ms")
     }
 
-    // ========== 音频焦点控制 ==========
-
-    /**
-     * 请求短时独占音频焦点，促使其他媒体暂停或静音。
-     */
-    private fun requestTransientAudioFocus(): Boolean {
-        try {
-            val am = context.getSystemService(AudioManager::class.java)
-            if (am == null) {
-                Log.w(TAG, "AudioManager is null, skip audio focus")
-                return false
-            }
-            val attrs = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANT)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build()
-            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                .setAudioAttributes(attrs)
-                .setOnAudioFocusChangeListener({ /* no-op */ })
-                .build()
-            val granted = am.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-            if (granted) {
-                audioFocusRequest = req
-                Log.d(TAG, "Audio focus granted (TRANSIENT_EXCLUSIVE)")
-            } else {
-                Log.w(TAG, "Audio focus not granted")
-            }
-            return granted
-        } catch (t: Throwable) {
-            Log.e(TAG, "requestTransientAudioFocus exception", t)
-            return false
-        }
-    }
-
-    /**
-     * 归还之前请求的音频焦点。
-     */
-    private fun abandonAudioFocusIfNeeded() {
-        val req = audioFocusRequest ?: return
-        try {
-            val am = context.getSystemService(AudioManager::class.java)
-            if (am == null) {
-                Log.w(TAG, "AudioManager is null when abandoning focus")
-                return
-            }
-            am.abandonAudioFocusRequest(req)
-            Log.d(TAG, "Audio focus abandoned")
-        } catch (t: Throwable) {
-            Log.w(TAG, "abandonAudioFocusRequest exception", t)
-        } finally {
-            audioFocusRequest = null
-        }
+    private fun onRecordingAudioFocusLost(loss: RecordingAudioFocusLoss) {
+        Log.w(TAG, "Recording audio focus lost: $loss")
+        val seq = sessionSeq
+        if (seq == 0L) return
+        stopRecording()
+        // 部分流式引擎显式 stop() 不立即回调 onStopped；主动补齐并由 gate 去重。
+        onStopped(seq)
     }
 }

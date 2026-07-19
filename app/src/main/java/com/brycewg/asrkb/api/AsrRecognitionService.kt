@@ -261,6 +261,11 @@ class AsrRecognitionService : RecognitionService() {
 
         private var engine: StreamingAsrEngine? = null
         private var autoStopSuppression: AutoCloseable? = null
+        private val recordingAudioFocusController = RecordingAudioFocusController(
+            this@AsrRecognitionService
+        ) { loss ->
+            onRecordingAudioFocusLost(loss)
+        }
 
         @Volatile
         var isActive: Boolean = false
@@ -318,6 +323,9 @@ class AsrRecognitionService : RecognitionService() {
             lastPostprocPreview = null
             cancelProcessingTimeout()
             ensureAutoStopSuppressed()
+            if (prefs.duckMediaOnRecordEnabled) {
+                recordingAudioFocusController.acquire()
+            }
             engine?.let { startedEngine ->
                 preloadLocalAsrForImmediateUse(this@AsrRecognitionService, prefs)
                 startedEngine.start()
@@ -331,7 +339,11 @@ class AsrRecognitionService : RecognitionService() {
             snapshotAudioMsForTimeoutIfNeeded()
             deliverEndOfSpeechIfNeeded()
             scheduleProcessingTimeoutIfNeeded()
-            engine?.stop()
+            try {
+                engine?.stop()
+            } finally {
+                recordingAudioFocusController.release()
+            }
         }
 
         fun cancel() {
@@ -344,6 +356,8 @@ class AsrRecognitionService : RecognitionService() {
                 engine?.stop()
             } catch (t: Throwable) {
                 Log.w(TAG, "Engine stop failed on cancel", t)
+            } finally {
+                recordingAudioFocusController.release()
             }
         }
 
@@ -352,6 +366,7 @@ class AsrRecognitionService : RecognitionService() {
             Log.d(TAG, "onFinal: $text")
             isActive = false
             finalReceived = true
+            recordingAudioFocusController.release()
             releaseAutoStopSuppression()
             cancelProcessingTimeout()
             snapshotAudioMsForTimeoutIfNeeded()
@@ -538,6 +553,7 @@ class AsrRecognitionService : RecognitionService() {
             Log.e(TAG, "onError: $message")
             isActive = false
             finished = true
+            recordingAudioFocusController.release()
             releaseAutoStopSuppression()
             cancelProcessingTimeout()
 
@@ -559,6 +575,7 @@ class AsrRecognitionService : RecognitionService() {
             Log.d(TAG, "onStopped")
             // 保底将会话标记为非活动，避免仅收到 onStopped 时长期占用 BUSY 状态
             isActive = false
+            recordingAudioFocusController.release()
             releaseAutoStopSuppression()
             snapshotAudioMsForTimeoutIfNeeded()
             deliverEndOfSpeechIfNeeded()
@@ -581,6 +598,12 @@ class AsrRecognitionService : RecognitionService() {
             if (ms <= 0L) return
             val waitMs = localModelReadyWaitMs.getAndSet(LOCAL_MODEL_READY_WAIT_CONSUMED)
             lastRequestDurationMs = if (waitMs > 0L && ms > waitMs) ms - waitMs else ms
+        }
+
+        private fun onRecordingAudioFocusLost(loss: RecordingAudioFocusLoss) {
+            Log.w(TAG, "Recognition service audio focus lost: $loss")
+            if (!isActive || canceled || finished) return
+            stop()
         }
 
         private fun snapshotAudioMsForTimeoutIfNeeded() {
