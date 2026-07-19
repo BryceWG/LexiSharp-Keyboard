@@ -112,7 +112,7 @@
     <!-- Common buttons -->
     <string name="btn_get_api_key">Get API Key</string>
     <string name="label_custom_model_id">Custom Model ID</string>
-    <string name="option_custom_model">Custom…</string>
+    <string name="option_custom_model">Custom</string>
 
     <!-- Built-in prompt localization -->
     <string name="prompt_default_sf_omni">Please transcribe the following audio verbatim into text. Do not output explanations, prefixes, or suffixes. The input language may be Chinese, English, or other languages.</string>

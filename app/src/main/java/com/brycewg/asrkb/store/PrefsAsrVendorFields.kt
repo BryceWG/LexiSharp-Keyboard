@@ -120,6 +120,18 @@ internal object PrefsAsrVendorFields {
         AsrVendor.Zhipu to listOf(
             VendorField.credential(KEY_ZHIPU_API_KEY)
         ),
+        AsrVendor.Cohere to listOf(
+            VendorField.credential(KEY_COHERE_API_KEY),
+            VendorField.model(
+                KEY_COHERE_ASR_MODEL,
+                required = true,
+                default = Prefs.DEFAULT_COHERE_ASR_MODEL
+            ),
+            VendorField.language(
+                KEY_COHERE_ASR_LANGUAGE,
+                default = Prefs.DEFAULT_COHERE_ASR_LANGUAGE
+            )
+        ),
         // 本地 SenseVoice（sherpa-onnx）无需鉴权
         AsrVendor.SenseVoice to listOf(
             VendorField.localModel(KEY_SV_MODEL_DIR),

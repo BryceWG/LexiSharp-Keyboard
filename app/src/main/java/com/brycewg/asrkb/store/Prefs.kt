@@ -1298,6 +1298,14 @@ class Prefs(context: Context) {
     // 智谱 GLM：上下文提示（prompt），用于长文本场景的前文上下文，建议小于8000字
     var zhipuPrompt: String by stringPref(KEY_ZHIPU_PROMPT, "")
 
+    // Cohere Transcribe
+    var cohereApiKey: String by stringPref(KEY_COHERE_API_KEY, "")
+    var cohereAsrModel: String by stringPref(KEY_COHERE_ASR_MODEL, DEFAULT_COHERE_ASR_MODEL)
+    var cohereAsrLanguage: String by stringPref(
+        KEY_COHERE_ASR_LANGUAGE,
+        DEFAULT_COHERE_ASR_LANGUAGE
+    )
+
     fun getSonioxLanguages(): List<String> = SonioxLanguagesStore.getSonioxLanguages(this, json)
 
     fun setSonioxLanguages(list: List<String>) = SonioxLanguagesStore.setSonioxLanguages(this, json, list)
@@ -1657,6 +1665,7 @@ class Prefs(context: Context) {
     fun hasSonioxKeys(): Boolean = hasVendorKeys(AsrVendor.Soniox)
     fun hasStepAudioKeys(): Boolean = hasVendorKeys(AsrVendor.StepAudio)
     fun hasZhipuKeys(): Boolean = hasVendorKeys(AsrVendor.Zhipu)
+    fun hasCohereKeys(): Boolean = hasVendorKeys(AsrVendor.Cohere)
     fun hasAsrKeys(): Boolean = hasVendorKeys(asrVendor)
     fun hasLlmKeys(): Boolean {
         // 使用新的 getEffectiveLlmConfig 检查配置有效性
@@ -2012,6 +2021,13 @@ class Prefs(context: Context) {
 
         const val DEFAULT_STEPAUDIO_ASR_MODEL = "stepaudio-2.5-asr"
         val STEPAUDIO_ASR_MODELS: List<String> = listOf(DEFAULT_STEPAUDIO_ASR_MODEL)
+        const val DEFAULT_COHERE_ASR_MODEL = "cohere-transcribe-03-2026"
+        const val COHERE_ARABIC_ASR_MODEL = "cohere-transcribe-arabic-07-2026"
+        const val DEFAULT_COHERE_ASR_LANGUAGE = "zh"
+        val COHERE_ASR_MODELS: List<String> = listOf(
+            DEFAULT_COHERE_ASR_MODEL,
+            COHERE_ARABIC_ASR_MODEL
+        )
 
         // 合理的OpenAI格式默认值
         const val DEFAULT_LLM_ENDPOINT = "https://api.openai.com/v1"

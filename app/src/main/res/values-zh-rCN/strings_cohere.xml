@@ -1,0 +1,5 @@
+<resources>
+    <string name="vendor_cohere">Cohere</string><string name="label_cohere_api_key">Cohere API Key</string><string name="label_cohere_model">模型 ID</string><string name="label_cohere_language">识别语言</string>
+    <string name="error_missing_cohere_key">未配置 Cohere API Key</string><string name="error_missing_cohere_model">未配置 Cohere 模型 ID</string>
+    <string name="cohere_lang_en">英语</string><string name="cohere_lang_de">德语</string><string name="cohere_lang_fr">法语</string><string name="cohere_lang_it">意大利语</string><string name="cohere_lang_es">西班牙语</string><string name="cohere_lang_pt">葡萄牙语</string><string name="cohere_lang_el">希腊语</string><string name="cohere_lang_nl">荷兰语</string><string name="cohere_lang_pl">波兰语</string><string name="cohere_lang_vi">越南语</string><string name="cohere_lang_zh">中文</string><string name="cohere_lang_ar">阿拉伯语</string><string name="cohere_lang_ja">日语</string><string name="cohere_lang_ko">韩语</string>
+</resources>

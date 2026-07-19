@@ -34,6 +34,7 @@ internal enum class AsrFileRecognizerKey(
     SonioxFile("SonioxFileAsrEngine", AsrFileRecognizerFamily.File),
     StepAudioFile("StepAudioFileAsrEngine", AsrFileRecognizerFamily.File),
     ZhipuFile("ZhipuFileAsrEngine", AsrFileRecognizerFamily.File),
+    CohereFile("CohereFileAsrEngine", AsrFileRecognizerFamily.File),
     SenseVoiceFile("SenseVoiceFileAsrEngine", AsrFileRecognizerFamily.LocalFile),
     FunAsrNanoFile("FunAsrNanoFileAsrEngine", AsrFileRecognizerFamily.LocalFile),
     Qwen3AsrFile("Qwen3AsrFileAsrEngine", AsrFileRecognizerFamily.LocalFile),
@@ -59,6 +60,7 @@ internal fun fileRecognizerKeyFor(
     AsrVendor.Soniox -> AsrFileRecognizerKey.SonioxFile
     AsrVendor.StepAudio -> AsrFileRecognizerKey.StepAudioFile
     AsrVendor.Zhipu -> AsrFileRecognizerKey.ZhipuFile
+    AsrVendor.Cohere -> AsrFileRecognizerKey.CohereFile
     AsrVendor.SenseVoice -> AsrFileRecognizerKey.SenseVoiceFile
     AsrVendor.FunAsrNano -> AsrFileRecognizerKey.FunAsrNanoFile
     AsrVendor.Qwen3Asr -> AsrFileRecognizerKey.Qwen3AsrFile
@@ -103,6 +105,8 @@ internal object RealAsrFileRecognizerConstructorTable : AsrFileRecognizerConstru
             StepAudioFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
         AsrFileRecognizerKey.ZhipuFile ->
             ZhipuFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
+        AsrFileRecognizerKey.CohereFile ->
+            CohereFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
         AsrFileRecognizerKey.SenseVoiceFile ->
             SenseVoiceFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
         AsrFileRecognizerKey.FunAsrNanoFile ->

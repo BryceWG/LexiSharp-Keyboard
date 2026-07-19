@@ -113,7 +113,7 @@
     <!-- 共通ボタン -->
     <string name="btn_get_api_key">APIキーを取得</string>
     <string name="label_custom_model_id">カスタムモデルID</string>
-    <string name="option_custom_model">カスタム…</string>
+    <string name="option_custom_model">カスタム</string>
 
     <!-- 組み込みプロンプトのローカライズ -->
     <string name="prompt_default_sf_omni">以下の音声を文字起こししてください。説明や前後の文言は出力しないでください。入力言語は中国語・英語・その他の言語の可能性があります。</string>

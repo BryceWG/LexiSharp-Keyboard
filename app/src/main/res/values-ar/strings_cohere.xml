@@ -1,0 +1,5 @@
+<resources>
+    <string name="vendor_cohere">Cohere</string><string name="label_cohere_api_key">مفتاح Cohere API</string><string name="label_cohere_model">معرّف النموذج</string><string name="label_cohere_language">لغة التعرّف</string>
+    <string name="error_missing_cohere_key">مفتاح Cohere API غير مضبوط</string><string name="error_missing_cohere_model">معرّف نموذج Cohere غير مضبوط</string>
+    <string name="cohere_lang_en">الإنجليزية</string><string name="cohere_lang_de">الألمانية</string><string name="cohere_lang_fr">الفرنسية</string><string name="cohere_lang_it">الإيطالية</string><string name="cohere_lang_es">الإسبانية</string><string name="cohere_lang_pt">البرتغالية</string><string name="cohere_lang_el">اليونانية</string><string name="cohere_lang_nl">الهولندية</string><string name="cohere_lang_pl">البولندية</string><string name="cohere_lang_vi">الفيتنامية</string><string name="cohere_lang_zh">الصينية</string><string name="cohere_lang_ar">العربية</string><string name="cohere_lang_ja">اليابانية</string><string name="cohere_lang_ko">الكورية</string>
+</resources>

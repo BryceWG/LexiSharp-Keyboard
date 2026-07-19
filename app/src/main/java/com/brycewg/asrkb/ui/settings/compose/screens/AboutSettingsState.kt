@@ -226,6 +226,7 @@ private fun resolveOnlineAsrVendor(rawId: String): AsrVendor? = when (rawId.trim
     "soniox" -> AsrVendor.Soniox
     "stepaudio", "step_audio", "stepfun" -> AsrVendor.StepAudio
     "zhipu" -> AsrVendor.Zhipu
+    "cohere" -> AsrVendor.Cohere
     else -> null
 }
 

@@ -106,7 +106,7 @@ private fun formatLocalSource(context: Context, source: String): String = when (
     else -> source.ifBlank { context.getString(R.string.api_log_unknown) }
 }
 
-private fun formatApiLogVendorName(vendor: String): String = when (vendor.lowercase(Locale.US)) {
+internal fun formatApiLogVendorName(vendor: String): String = when (vendor.lowercase(Locale.US)) {
     "sf_free", "siliconflow_free" -> "SiliconFlow Free"
     "siliconflow" -> "SiliconFlow"
     "openai" -> "OpenAI"
@@ -116,6 +116,7 @@ private fun formatApiLogVendorName(vendor: String): String = when (vendor.lowerc
     "soniox" -> "Soniox"
     "stepaudio" -> "StepAudio"
     "zhipu" -> "Zhipu"
+    "cohere" -> "Cohere"
     "volcengine" -> "Volcengine"
     "elevenlabs" -> "ElevenLabs"
     "deepseek" -> "DeepSeek"

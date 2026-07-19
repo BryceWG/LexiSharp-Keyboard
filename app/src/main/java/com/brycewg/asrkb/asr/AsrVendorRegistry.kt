@@ -202,9 +202,21 @@ internal object AsrVendorRegistry {
             capabilities = onlineFileCapabilities()
         ),
         descriptor(
+            vendor = AsrVendor.Cohere,
+            displayNameResId = R.string.vendor_cohere,
+            pickerOrder = 11,
+            tags = listOf(
+                AsrVendorDisplayTag.Online,
+                AsrVendorDisplayTag.NonStreaming,
+                AsrVendorDisplayTag.Accurate,
+                AsrVendorDisplayTag.Custom
+            ),
+            capabilities = onlineFileCapabilities()
+        ),
+        descriptor(
             vendor = AsrVendor.SenseVoice,
             displayNameResId = R.string.vendor_sensevoice,
-            pickerOrder = 11,
+            pickerOrder = 12,
             tags = listOf(
                 AsrVendorDisplayTag.Local,
                 AsrVendorDisplayTag.NonStreaming,
@@ -216,7 +228,7 @@ internal object AsrVendorRegistry {
             vendor = AsrVendor.FunAsrNano,
             legacyIds = setOf("funasr"),
             displayNameResId = R.string.vendor_funasr_nano,
-            pickerOrder = 12,
+            pickerOrder = 13,
             tags = listOf(
                 AsrVendorDisplayTag.Local,
                 AsrVendorDisplayTag.NonStreaming,
@@ -229,7 +241,7 @@ internal object AsrVendorRegistry {
             vendor = AsrVendor.Qwen3Asr,
             legacyIds = setOf("qwen_asr", "qwen3asr"),
             displayNameResId = R.string.vendor_qwen3_asr,
-            pickerOrder = 13,
+            pickerOrder = 14,
             tags = listOf(
                 AsrVendorDisplayTag.Local,
                 AsrVendorDisplayTag.NonStreaming,
@@ -242,7 +254,7 @@ internal object AsrVendorRegistry {
             vendor = AsrVendor.Parakeet,
             legacyIds = setOf("nemo_parakeet"),
             displayNameResId = R.string.vendor_parakeet,
-            pickerOrder = 14,
+            pickerOrder = 15,
             tags = listOf(
                 AsrVendorDisplayTag.Local,
                 AsrVendorDisplayTag.NonStreaming
@@ -253,7 +265,7 @@ internal object AsrVendorRegistry {
             vendor = AsrVendor.FireRedAsr,
             legacyIds = setOf("telespeech"),
             displayNameResId = R.string.vendor_firered_asr,
-            pickerOrder = 15,
+            pickerOrder = 16,
             tags = listOf(
                 AsrVendorDisplayTag.Local,
                 AsrVendorDisplayTag.NonStreaming,
@@ -265,7 +277,7 @@ internal object AsrVendorRegistry {
             vendor = AsrVendor.XAsr,
             legacyIds = setOf("x-asr", LEGACY_X_ASR_VENDOR_ID),
             displayNameResId = R.string.vendor_x_asr,
-            pickerOrder = 16,
+            pickerOrder = 17,
             tags = listOf(
                 AsrVendorDisplayTag.Local,
                 AsrVendorDisplayTag.Streaming,

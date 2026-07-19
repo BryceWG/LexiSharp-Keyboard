@@ -182,4 +182,17 @@ class PrefsHasVendorKeysTest {
 
         assertTrue(prefs.hasVendorKeys(AsrVendor.Volc))
     }
+
+    @Test
+    fun cohereRequiresApiKeyAndModelButUsesSchemaDefaults() {
+        assertEquals(Prefs.DEFAULT_COHERE_ASR_MODEL, prefs.cohereAsrModel)
+        assertEquals(Prefs.DEFAULT_COHERE_ASR_LANGUAGE, prefs.cohereAsrLanguage)
+        assertFalse(prefs.hasVendorKeys(AsrVendor.Cohere))
+
+        prefs.cohereApiKey = "cohere-key"
+        assertTrue(prefs.hasVendorKeys(AsrVendor.Cohere))
+
+        prefs.cohereAsrModel = ""
+        assertFalse(prefs.hasVendorKeys(AsrVendor.Cohere))
+    }
 }

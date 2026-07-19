@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.brycewg.asrkb.asr.normalizeCohereLanguageForModel
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsViewModel
 import java.util.UUID
@@ -41,6 +42,13 @@ internal class AsrOnlineSettingsFields(
     var stepAudioUseItn by mutableStateOf(prefs.stepAudioUseItn)
     var zhipuApiKey by mutableStateOf(prefs.zhipuApiKey)
     var zhipuTemperature by mutableStateOf(prefs.zhipuTemperature.coerceIn(0f, 1f))
+    var cohereApiKey by mutableStateOf(prefs.cohereApiKey)
+    var cohereModel by mutableStateOf(prefs.cohereAsrModel)
+    var cohereCustomModelVisible by mutableStateOf(isCohereCustomModel(cohereModel))
+    var cohereCustomModelDraft by mutableStateOf(
+        cohereModel.takeIf(::isCohereCustomModel).orEmpty()
+    )
+    var cohereLanguage by mutableStateOf(readAndPersistNormalizedCohereLanguage())
     var geminiApiKey by mutableStateOf(prefs.gemApiKey)
     var geminiEndpoint by mutableStateOf(prefs.gemEndpoint.ifBlank { Prefs.DEFAULT_GEM_ENDPOINT })
     var geminiModel by mutableStateOf(prefs.gemModel)
@@ -104,6 +112,11 @@ internal class AsrOnlineSettingsFields(
         stepAudioUseItn = prefs.stepAudioUseItn
         zhipuApiKey = prefs.zhipuApiKey
         zhipuTemperature = prefs.zhipuTemperature.coerceIn(0f, 1f)
+        cohereApiKey = prefs.cohereApiKey
+        cohereModel = prefs.cohereAsrModel
+        cohereCustomModelVisible = isCohereCustomModel(cohereModel)
+        cohereCustomModelDraft = cohereModel.takeIf(::isCohereCustomModel).orEmpty()
+        cohereLanguage = readAndPersistNormalizedCohereLanguage()
         geminiApiKey = prefs.gemApiKey
         geminiEndpoint = prefs.gemEndpoint.ifBlank { Prefs.DEFAULT_GEM_ENDPOINT }
         geminiModel = prefs.gemModel
@@ -131,6 +144,17 @@ internal class AsrOnlineSettingsFields(
         sonioxLanguageStrict = prefs.sonioxLanguageHintsStrict
     }
 
+    private fun readAndPersistNormalizedCohereLanguage(): String {
+        val normalized = normalizeCohereLanguageForModel(
+            prefs.cohereAsrModel,
+            prefs.cohereAsrLanguage
+        )
+        if (normalized != prefs.cohereAsrLanguage) {
+            prefs.cohereAsrLanguage = normalized
+        }
+        return normalized
+    }
+
     private fun refreshOpenAiFromPrefs() {
         openAiProviders = prefs.getOpenAiAsrProviders()
         openAiActiveProviderId = prefs.activeOpenAiAsrProviderId
@@ -143,6 +167,19 @@ internal class AsrOnlineSettingsFields(
         openAiUsePrompt = prefs.oaAsrUsePrompt
         openAiPrompt = prefs.oaAsrPrompt
         openAiLanguage = prefs.oaAsrLanguage
+    }
+
+    fun showCohereCustomModelInput() {
+        cohereCustomModelVisible = true
+        cohereCustomModelDraft = cohereModel.takeIf(::isCohereCustomModel).orEmpty()
+    }
+
+    fun updateCohereCustomModelDraft(value: String) {
+        cohereCustomModelDraft = value
+        if (value.isNotBlank()) {
+            cohereModel = value
+            prefs.cohereAsrModel = value
+        }
     }
 
     fun toRouteState(
@@ -265,6 +302,27 @@ internal class AsrOnlineSettingsFields(
             val next = value.coerceIn(0f, 1f)
             zhipuTemperature = next
             prefs.zhipuTemperature = next
+        },
+        cohereApiKey = cohereApiKey,
+        onCohereApiKeyChange = { value ->
+            val key = value.removeBearerPrefix()
+            cohereApiKey = key
+            prefs.cohereApiKey = key
+        },
+        cohereModel = cohereModel,
+        onCohereModelChange = { value ->
+            cohereModel = value
+            prefs.cohereAsrModel = value
+            cohereCustomModelVisible = isCohereCustomModel(value)
+        },
+        cohereCustomModelVisible = cohereCustomModelVisible,
+        onCohereCustomModelSelected = ::showCohereCustomModelInput,
+        cohereCustomModelDraft = cohereCustomModelDraft,
+        onCohereCustomModelDraftChange = ::updateCohereCustomModelDraft,
+        cohereLanguage = cohereLanguage,
+        onCohereLanguageChange = { value ->
+            cohereLanguage = value
+            prefs.cohereAsrLanguage = value
         },
         geminiApiKey = geminiApiKey,
         onGeminiApiKeyChange = { value ->

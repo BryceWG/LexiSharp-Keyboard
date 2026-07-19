@@ -14,6 +14,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.cohereSupportedLanguageCodes
+import com.brycewg.asrkb.asr.normalizeCohereLanguageForModel
 import com.brycewg.asrkb.store.KEY_GEM_API_KEY
 import com.brycewg.asrkb.store.KEY_GEM_ENDPOINT
 import com.brycewg.asrkb.store.KEY_GEM_MODEL
@@ -66,6 +68,16 @@ internal fun CurrentAsrVendorConfig(
     zhipuTemperature: Float,
     onZhipuTemperatureChange: (Float) -> Unit,
     onZhipuTemperatureFinished: () -> Unit,
+    cohereApiKey: String,
+    onCohereApiKeyChange: (String) -> Unit,
+    cohereModel: String,
+    onCohereModelChange: (String) -> Unit,
+    cohereCustomModelVisible: Boolean,
+    onCohereCustomModelSelected: () -> Unit,
+    cohereCustomModelDraft: String,
+    onCohereCustomModelDraftChange: (String) -> Unit,
+    cohereLanguage: String,
+    onCohereLanguageSelected: (String) -> Unit,
     geminiApiKey: String,
     onGeminiApiKeyChange: (String) -> Unit,
     geminiEndpoint: String,
@@ -327,6 +339,74 @@ internal fun CurrentAsrVendorConfig(
                 onValueChangeFinished = onZhipuTemperatureFinished
             )
             AsrBodyText(uiMode = uiMode, textRes = R.string.zhipu_temperature_hint)
+        }
+
+        AsrVendor.Cohere -> {
+            var itemIndex = primaryIndexOffset
+            val itemCount = primaryGroupCount ?: coherePrimaryItemCount(cohereCustomModelVisible)
+            AsrTextField(
+                uiMode = uiMode,
+                value = cohereApiKey,
+                onValueChange = onCohereApiKeyChange,
+                label = stringResource(R.string.label_cohere_api_key),
+                password = true,
+                index = itemIndex++,
+                count = itemCount
+            )
+            AsrDropdownPreference(
+                titleRes = R.string.label_cohere_model,
+                options = cohereModelOptions(context).map { option ->
+                    DropdownOption(option.value, option.label)
+                },
+                selectedOptionId = if (cohereCustomModelVisible) {
+                    COHERE_CUSTOM_MODEL_OPTION_ID
+                } else {
+                    cohereModelSelection(cohereModel)
+                },
+                index = itemIndex++,
+                count = itemCount,
+                onSelectedOptionChange = { selected ->
+                    if (selected == COHERE_CUSTOM_MODEL_OPTION_ID) {
+                        onCohereCustomModelSelected()
+                    } else {
+                        onCohereModelChange(selected)
+                        val normalizedLanguage = normalizeCohereLanguageForModel(
+                            selected,
+                            cohereLanguage
+                        )
+                        if (normalizedLanguage != cohereLanguage) {
+                            onCohereLanguageSelected(normalizedLanguage)
+                        }
+                    }
+                }
+            )
+            if (cohereCustomModelVisible) {
+                AsrTextField(
+                    uiMode = uiMode,
+                    value = cohereCustomModelDraft,
+                    onValueChange = onCohereCustomModelDraftChange,
+                    label = stringResource(R.string.label_custom_model_id),
+                    index = itemIndex++,
+                    count = itemCount
+                )
+            }
+            AsrDropdownPreference(
+                titleRes = R.string.label_cohere_language,
+                options = cohereLanguageOptions(context, cohereModel).map { option ->
+                    DropdownOption(option.value, option.label)
+                },
+                selectedOptionId = normalizeCohereLanguageForModel(cohereModel, cohereLanguage),
+                index = itemIndex++,
+                count = itemCount,
+                onSelectedOptionChange = onCohereLanguageSelected
+            )
+            AsrActionPreference(
+                id = "cohere_get_key_guide",
+                titleRes = R.string.btn_get_api_key_guide,
+                index = itemIndex,
+                count = itemCount,
+                onClick = { onOpenGuide(COHERE_DASHBOARD_URL) }
+            )
         }
 
         AsrVendor.Gemini -> {
@@ -937,7 +1017,8 @@ internal fun currentOnlineAsrPrimaryItemCount(
     openAiUseCompletions: Boolean = false,
     mimoCustomEndpointVisible: Boolean = false,
     mimoPromptVisible: Boolean = false,
-    stepAudioCustomEndpointVisible: Boolean = false
+    stepAudioCustomEndpointVisible: Boolean = false,
+    cohereCustomModelVisible: Boolean = false
 ): Int = when (selectedVendor) {
     AsrVendor.SiliconFlow -> 1
     AsrVendor.ElevenLabs -> 4
@@ -945,6 +1026,7 @@ internal fun currentOnlineAsrPrimaryItemCount(
         customEndpointVisible = stepAudioCustomEndpointVisible
     )
     AsrVendor.Zhipu -> 2
+    AsrVendor.Cohere -> coherePrimaryItemCount(cohereCustomModelVisible)
     AsrVendor.Gemini -> 6
     AsrVendor.OpenRouter -> 4
     AsrVendor.MiMo -> mimoPrimaryItemCount(
@@ -1030,6 +1112,46 @@ internal fun stepAudioLanguageLabel(context: Context, language: String): String 
         ?: context.getString(R.string.stepaudio_lang_zh)
 }
 
+internal fun cohereLanguageOptions(
+    context: Context,
+    model: String
+): List<OnlineVendorChoice> {
+    val labels = mapOf(
+        "zh" to R.string.cohere_lang_zh,
+        "en" to R.string.cohere_lang_en,
+        "ar" to R.string.cohere_lang_ar,
+        "ja" to R.string.cohere_lang_ja,
+        "ko" to R.string.cohere_lang_ko,
+        "de" to R.string.cohere_lang_de,
+        "fr" to R.string.cohere_lang_fr,
+        "it" to R.string.cohere_lang_it,
+        "es" to R.string.cohere_lang_es,
+        "pt" to R.string.cohere_lang_pt,
+        "el" to R.string.cohere_lang_el,
+        "nl" to R.string.cohere_lang_nl,
+        "pl" to R.string.cohere_lang_pl,
+        "vi" to R.string.cohere_lang_vi
+    )
+    val codes = cohereSupportedLanguageCodes(model) ?: labels.keys.toList()
+    return codes.map { code -> OnlineVendorChoice(code, context.getString(labels.getValue(code))) }
+}
+
+internal fun cohereModelOptions(context: Context): List<OnlineVendorChoice> =
+    Prefs.COHERE_ASR_MODELS.map { model -> OnlineVendorChoice(model, model) } +
+        OnlineVendorChoice(
+            COHERE_CUSTOM_MODEL_OPTION_ID,
+            context.getString(R.string.option_custom_model)
+        )
+
+internal fun cohereModelSelection(model: String): String =
+    model.takeIf { it in Prefs.COHERE_ASR_MODELS } ?: COHERE_CUSTOM_MODEL_OPTION_ID
+
+internal fun isCohereCustomModel(model: String): Boolean =
+    cohereModelSelection(model) == COHERE_CUSTOM_MODEL_OPTION_ID
+
+private fun coherePrimaryItemCount(customModelVisible: Boolean): Int =
+    4 + if (customModelVisible) 1 else 0
+
 internal fun displaySfFreeAsrModel(prefs: Prefs): String = prefs.sfFreeAsrModel.ifBlank {
     Prefs.DEFAULT_SF_FREE_ASR_MODEL
 }
@@ -1064,6 +1186,8 @@ private const val GEMINI_ASR_GUIDE_URL =
     "https://bibidocs.brycewg.com/getting-started/asr-providers.html#gemini"
 private const val ELEVEN_ASR_GUIDE_URL =
     "https://bibidocs.brycewg.com/getting-started/asr-providers.html#elevenlabs"
+private const val COHERE_DASHBOARD_URL = "https://dashboard.cohere.com/api-keys"
+internal const val COHERE_CUSTOM_MODEL_OPTION_ID = "__custom__"
 private const val OPENROUTER_KEY_URL = "https://openrouter.ai/settings/keys"
 private const val STEPAUDIO_KEY_URL = "https://platform.stepfun.com"
 

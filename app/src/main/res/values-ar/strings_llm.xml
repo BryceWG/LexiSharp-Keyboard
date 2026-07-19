@@ -112,7 +112,7 @@
     <!-- Common buttons -->
     <string name="btn_get_api_key">الحصول على مفتاح API</string>
     <string name="label_custom_model_id">معرّف نموذج مخصص</string>
-    <string name="option_custom_model">مخصص…</string>
+    <string name="option_custom_model">مخصص</string>
 
     <!-- Built-in prompt localization -->
     <string name="prompt_default_sf_omni">يرجى نسخ الصوت التالي حرفياً إلى نص. لا تُخرج شروحات أو بادئات أو لاحقات. قد تكون لغة الإدخال صينية أو إنجليزية أو غيرها.</string>

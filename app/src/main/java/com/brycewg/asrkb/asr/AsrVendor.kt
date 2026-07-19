@@ -14,6 +14,7 @@ enum class AsrVendor(val id: String) {
     Soniox("soniox"),
     StepAudio("stepaudio"),
     Zhipu("zhipu"),
+    Cohere("cohere"),
     SenseVoice("sensevoice"),
     FunAsrNano("funasr_nano"),
     Qwen3Asr("qwen3_asr"),

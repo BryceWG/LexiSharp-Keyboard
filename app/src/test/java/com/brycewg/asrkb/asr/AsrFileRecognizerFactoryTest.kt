@@ -219,6 +219,7 @@ class AsrFileRecognizerFactoryTest {
             fileCase(AsrVendor.MiMo),
             fileCase(AsrVendor.StepAudio),
             fileCase(AsrVendor.Zhipu),
+            fileCase(AsrVendor.Cohere),
             fileCase(AsrVendor.FunAsrNano),
             fileCase(AsrVendor.Qwen3Asr),
             fileCase(AsrVendor.Parakeet),

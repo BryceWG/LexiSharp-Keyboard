@@ -195,6 +195,16 @@ internal fun AsrSettingsRouteContent(
                         zhipuTemperature = onlineState.zhipuTemperature,
                         onZhipuTemperatureChange = onlineState.onZhipuTemperatureChange,
                         onZhipuTemperatureFinished = {},
+                        cohereApiKey = onlineState.cohereApiKey,
+                        onCohereApiKeyChange = onlineState.onCohereApiKeyChange,
+                        cohereModel = onlineState.cohereModel,
+                        onCohereModelChange = onlineState.onCohereModelChange,
+                        cohereCustomModelVisible = onlineState.cohereCustomModelVisible,
+                        onCohereCustomModelSelected = onlineState.onCohereCustomModelSelected,
+                        cohereCustomModelDraft = onlineState.cohereCustomModelDraft,
+                        onCohereCustomModelDraftChange = onlineState.onCohereCustomModelDraftChange,
+                        cohereLanguage = onlineState.cohereLanguage,
+                        onCohereLanguageSelected = onlineState.onCohereLanguageChange,
                         geminiApiKey = onlineState.geminiApiKey,
                         onGeminiApiKeyChange = onlineState.onGeminiApiKeyChange,
                         geminiEndpoint = onlineState.geminiEndpoint,
@@ -325,6 +335,7 @@ private fun currentAsrVendorPrimaryItemCount(
     AsrVendor.ElevenLabs,
     AsrVendor.StepAudio,
     AsrVendor.Zhipu,
+    AsrVendor.Cohere,
     AsrVendor.Gemini,
     AsrVendor.OpenRouter,
     AsrVendor.MiMo,
@@ -337,7 +348,8 @@ private fun currentAsrVendorPrimaryItemCount(
         mimoCustomEndpointVisible = onlineState.mimoEndpointPreset == Prefs.MIMO_ENDPOINT_PRESET_CUSTOM,
         mimoPromptVisible = onlineState.mimoPromptEnabled,
         stepAudioCustomEndpointVisible =
-            onlineState.stepAudioEndpointPreset == Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM
+            onlineState.stepAudioEndpointPreset == Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM,
+        cohereCustomModelVisible = onlineState.cohereCustomModelVisible
     )
 
     else -> localAsrPrimaryItemCount(selectedVendor)

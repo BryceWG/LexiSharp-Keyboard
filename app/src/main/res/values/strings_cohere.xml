@@ -1,0 +1,9 @@
+<resources>
+    <string name="vendor_cohere">Cohere</string>
+    <string name="label_cohere_api_key">Cohere API Key</string>
+    <string name="label_cohere_model">Model ID</string>
+    <string name="label_cohere_language">Recognition language</string>
+    <string name="error_missing_cohere_key">Cohere API Key not set</string>
+    <string name="error_missing_cohere_model">Cohere model ID not set</string>
+    <string name="cohere_lang_en">English</string><string name="cohere_lang_de">German</string><string name="cohere_lang_fr">French</string><string name="cohere_lang_it">Italian</string><string name="cohere_lang_es">Spanish</string><string name="cohere_lang_pt">Portuguese</string><string name="cohere_lang_el">Greek</string><string name="cohere_lang_nl">Dutch</string><string name="cohere_lang_pl">Polish</string><string name="cohere_lang_vi">Vietnamese</string><string name="cohere_lang_zh">Chinese</string><string name="cohere_lang_ar">Arabic</string><string name="cohere_lang_ja">Japanese</string><string name="cohere_lang_ko">Korean</string>
+</resources>

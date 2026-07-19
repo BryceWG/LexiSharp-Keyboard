@@ -94,6 +94,9 @@ class PrefsAsrVendorFieldsTest {
         assertTrue(KEY_FN_USER_PROMPT in keys)
         assertTrue(KEY_QW_USE_ITN in keys)
         assertTrue(KEY_PK_KEEP_ALIVE_MINUTES in keys)
+        assertTrue(KEY_COHERE_API_KEY in keys)
+        assertTrue(KEY_COHERE_ASR_MODEL in keys)
+        assertTrue(KEY_COHERE_ASR_LANGUAGE in keys)
 
         assertFalse(KEY_OA_ASR_PROVIDERS in keys)
         assertFalse(KEY_OA_ASR_ACTIVE_ID in keys)
@@ -131,6 +134,7 @@ class PrefsAsrVendorFieldsTest {
             AsrVendor.SenseVoice,
             VendorFieldRole.LocalModel
         ).map { it.key }
+        val cohereFields = PrefsAsrVendorFields.fieldsFor(AsrVendor.Cohere)
 
         assertEquals(listOf(KEY_APP_KEY, KEY_ACCESS_KEY), volcCredentials)
         assertEquals(listOf(KEY_OPENROUTER_ASR_ENDPOINT), openRouterEndpoints)
@@ -140,6 +144,10 @@ class PrefsAsrVendorFieldsTest {
         assertTrue(KEY_SV_MODEL_DIR in senseVoiceLocal)
         assertTrue(KEY_SV_MODEL_VARIANT in senseVoiceLocal)
         assertTrue(KEY_SV_NUM_THREADS in senseVoiceLocal)
+        assertEquals(
+            listOf(VendorFieldRole.Credential, VendorFieldRole.Model, VendorFieldRole.Language),
+            cohereFields.map { it.role }
+        )
     }
 
     @Test

@@ -131,5 +131,38 @@ class OnlineAsrTextFieldSchemaTest {
                 openAiUsePrompt = false
             )
         )
+        assertEquals(
+            4,
+            currentOnlineAsrPrimaryItemCount(
+                selectedVendor = AsrVendor.Cohere,
+                openAiProviders = profiles,
+                openAiUsePrompt = false
+            )
+        )
+        assertEquals(
+            5,
+            currentOnlineAsrPrimaryItemCount(
+                selectedVendor = AsrVendor.Cohere,
+                openAiProviders = profiles,
+                openAiUsePrompt = false,
+                cohereCustomModelVisible = true
+            )
+        )
+    }
+
+    @Test
+    fun cohereModelSelectionUsesBuiltInsAndCustomFallback() {
+        assertEquals(
+            Prefs.DEFAULT_COHERE_ASR_MODEL,
+            cohereModelSelection(Prefs.DEFAULT_COHERE_ASR_MODEL)
+        )
+        assertEquals(
+            Prefs.COHERE_ARABIC_ASR_MODEL,
+            cohereModelSelection(Prefs.COHERE_ARABIC_ASR_MODEL)
+        )
+        assertEquals(COHERE_CUSTOM_MODEL_OPTION_ID, cohereModelSelection("private-model"))
+        assertEquals(COHERE_CUSTOM_MODEL_OPTION_ID, cohereModelSelection(""))
+        assertFalse(isCohereCustomModel(Prefs.DEFAULT_COHERE_ASR_MODEL))
+        assertTrue(isCohereCustomModel("private-model"))
     }
 }

@@ -113,7 +113,7 @@
     <!-- 通用按钮 -->
     <string name="btn_get_api_key">去获取 Key</string>
     <string name="label_custom_model_id">自定义模型 ID</string>
-    <string name="option_custom_model">自定义…</string>
+    <string name="option_custom_model">自定义</string>
 
     <!-- 内置提示词多语言 -->
     <string name="prompt_default_sf_omni">请将以下音频逐字转写为文本，不要输出解释或前后缀。输入语言可能是中文、英文或其他语言。</string>

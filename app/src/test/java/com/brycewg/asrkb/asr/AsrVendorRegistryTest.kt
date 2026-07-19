@@ -59,6 +59,7 @@ class AsrVendorRegistryTest {
                 AsrVendor.Soniox,
                 AsrVendor.StepAudio,
                 AsrVendor.Zhipu,
+                AsrVendor.Cohere,
                 AsrVendor.SenseVoice,
                 AsrVendor.FunAsrNano,
                 AsrVendor.Qwen3Asr,
@@ -168,6 +169,13 @@ class AsrVendorRegistryTest {
                 AsrVendorDisplayTag.Online,
                 AsrVendorDisplayTag.NonStreaming,
                 AsrVendorDisplayTag.ChineseDialect
+            ),
+            AsrVendor.Cohere to metadata(
+                R.string.vendor_cohere,
+                AsrVendorDisplayTag.Online,
+                AsrVendorDisplayTag.NonStreaming,
+                AsrVendorDisplayTag.Accurate,
+                AsrVendorDisplayTag.Custom
             ),
             AsrVendor.SenseVoice to metadata(
                 R.string.vendor_sensevoice,
@@ -337,11 +345,22 @@ class AsrVendorRegistryTest {
                 AsrVendorCapability.PseudoStreamingRecognition in capabilities,
                 AsrVendorDisplayTag.PseudoStreaming in tags
             )
-            assertEquals(
-                "custom endpoint tag for ${descriptor.vendor}",
-                AsrVendorCapability.CustomEndpoint in capabilities,
-                AsrVendorDisplayTag.Custom in tags
-            )
+            if (AsrVendorCapability.CustomEndpoint in capabilities) {
+                assertTrue(
+                    "custom endpoint tag for ${descriptor.vendor}",
+                    AsrVendorDisplayTag.Custom in tags
+                )
+            }
+            if (
+                AsrVendorDisplayTag.Custom in tags &&
+                AsrVendorCapability.CustomEndpoint !in capabilities
+            ) {
+                assertSame(
+                    "Cohere is the named custom-model-only tag exception",
+                    AsrVendor.Cohere,
+                    descriptor.vendor
+                )
+            }
         }
     }
 
@@ -361,6 +380,7 @@ class AsrVendorRegistryTest {
             "step_audio" to AsrVendor.StepAudio,
             "stepfun" to AsrVendor.StepAudio,
             "zhipu" to AsrVendor.Zhipu,
+            "cohere" to AsrVendor.Cohere,
             "sensevoice" to AsrVendor.SenseVoice,
             "funasr_nano" to AsrVendor.FunAsrNano,
             "funasr" to AsrVendor.FunAsrNano,
