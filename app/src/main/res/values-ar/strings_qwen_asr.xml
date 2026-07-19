@@ -1,0 +1,31 @@
+<resources>
+    <!-- Qwen3-ASR local ASR configuration strings -->
+    <string name="qwen3_asr_section_title">Qwen3-ASR ASR محلي</string>
+    <string name="vendor_qwen3_asr">Qwen3-ASR</string>
+
+    <string name="label_qw_model_variant">إصدار النموذج</string>
+    <string name="qw_model_qwen3_06b_int8">Qwen3-ASR 0.6B Int8 (806MB)</string>
+    <string name="label_qw_threads">عدد الخيوط (1-8)</string>
+    <string name="label_qw_preload">تحميل النموذج بقوة</string>
+    <string name="label_qw_use_itn">تفعيل ITN (تعرّف ذكي على الأرقام)</string>
+    <string name="feature_qw_use_itn_off_desc">يحتفظ بالصيغ المنطوقة، مثل «ألف ومئتان وأربعة وثلاثون».</string>
+    <string name="feature_qw_use_itn_on_desc">يحوّل الأرقام والتواريخ والأوقات الصينية المدعومة إلى صيغ مكتوبة شائعة، مثل «1234».</string>
+    <string name="label_qw_keep_alive">سياسة إلغاء تحميل النموذج</string>
+    <string name="btn_qw_download_model">تنزيل النموذج بنقرة</string>
+    <string name="btn_qw_import_model">استيراد النموذج من ملف محلي</string>
+    <string name="btn_qw_clear_model">مسح نموذج Qwen3-ASR المُنزَّل</string>
+    <string name="qw_download_status_downloading">جارٍ التنزيل… %1$d%%</string>
+    <string name="qw_download_status_extracting_progress">جارٍ الاستخراج… %1$d%%</string>
+    <string name="qw_download_status_done">تم تثبيت نموذج Qwen3-ASR</string>
+    <string name="qw_download_status_failed">فشل التنزيل أو الاستخراج</string>
+    <string name="qw_download_started_in_bg">بدأ التنزيل في الخلفية. راجع الإشعار للمتابعة.</string>
+    <string name="qw_import_started_in_bg">بدأ الاستيراد في الخلفية. راجع الإشعار للمتابعة.</string>
+    <string name="qw_import_success">تم استيراد النموذج بنجاح: %1$s</string>
+    <string name="qw_import_failed">فشل استيراد النموذج: %1$s</string>
+    <string name="qw_clear_confirm_title">مسح نموذج Qwen3-ASR؟</string>
+    <string name="qw_clear_confirm_message">سيُحذف ملفات نموذج Qwen3-ASR المُنزَّلة. يمكنك إعادة التنزيل لاحقاً. المتابعة؟</string>
+    <string name="qw_clear_done">تم مسح نموذج Qwen3-ASR</string>
+    <string name="qw_clear_failed">فشل المسح</string>
+    <string name="error_qwen3_asr_model_missing">ملفات نموذج Qwen3-ASR مفقودة. اضبطها أو نزّلها من الإعدادات.</string>
+    <string name="notif_qw_title_qwen3_06b_int8">نموذج Qwen3-ASR 0.6B Int8 (806MB)</string>
+</resources>

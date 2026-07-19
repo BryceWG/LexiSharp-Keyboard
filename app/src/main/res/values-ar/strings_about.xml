@@ -1,0 +1,68 @@
+<resources>
+    <!-- About page related strings -->
+
+    <!-- About -->
+    <string name="btn_about">حول</string>
+    <string name="about_title">حول</string>
+    <string name="about_app_name">اسم التطبيق: %1$s</string>
+    <string name="about_version">الإصدار: %1$s</string>
+    <string name="about_package">الحزمة: %1$s</string>
+    <string name="about_auto_update_check">التحقق التلقائي من التحديثات</string>
+    <string name="about_open_github">فتح صفحة المشروع</string>
+    <string name="about_project_url">https://github.com/BryceWG/BiBi-Keyboard</string>
+    <string name="about_open_website">فتح موقع المشروع</string>
+    <string name="about_website_url">https://bibi.brycewg.com</string>
+    <string name="about_open_docs">فتح الوثائق</string>
+    <string name="about_docs_url">https://bibidocs.brycewg.com</string>
+    <string name="about_desc">لوحة مفاتيح صوتية خفيفة مع ASR متعدد المزودين ومعالجة لاحقة عبر LLM</string>
+
+    <string name="label_asr_total_chars">إجمالي الأحرف من التعرّف على الكلام: %1$d</string>
+
+    <!-- Model download notifications -->
+    <string name="notif_channel_model_download">تنزيلات النماذج</string>
+    <string name="notif_channel_model_download_desc">تقدّم تنزيل واستخراج النماذج المحلية</string>
+    <string name="notif_model_summary_title">تنزيلات النماذج</string>
+    <string name="notif_model_summary_text">جارٍ تنزيل/استخراج النماذج في الخلفية</string>
+
+    <!-- About: Usage stats -->
+    <string name="about_stats_title">إحصاءات الاستخدام</string>
+    <string name="about_days_with_you">رافقتك BiBi Keyboard لمدة %1$d يوماً</string>
+    <string name="about_total_audio">إجمالي مدة الصوت: %1$s</string>
+    <string name="about_avg_line">متوسط الصوت: %1$s  ·  متوسط الأحرف: %2$d  ·  متوسط السرعة: %3$s حرف/دقيقة</string>
+    <string name="about_daily_weekly_avg">متوسط يومي (آخر 7 أيام): %1$d حرف، %2$s؛ متوسط أسبوعي (آخر 4 أسابيع): %3$d حرف، %4$s</string>
+    <string name="about_by_vendor">حسب المزود</string>
+    <string name="about_online_asr_failure_title">معدل فشل ASR السحابي (آخر 30 يوماً)</string>
+    <string name="about_proc_prefix">وقت المعالجة</string>
+    <string name="about_last_7_days">آخر 7 أيام (أحرف)</string>
+    <string name="about_empty_stats_placeholder">لا توجد بيانات بعد</string>
+
+    <!-- Open Source Acknowledgements -->
+    <string name="about_acknowledgements_title">شكر وتقدير</string>
+    <string name="about_acknowledgements_desc">بُني هذا المشروع على المشاريع مفتوحة المصدر التالية. نشكر مطوريها:</string>
+    <string name="about_view_full_licenses">عرض التراخيص كاملة</string>
+    <string name="about_licenses_dialog_title">تراخيص الطرف الثالث</string>
+
+    <string name="about_sherpa_onnx_title">k2-fsa/sherpa-onnx</string>
+    <string name="about_sherpa_onnx_desc">يوفر الحل التقني لنماذج ASR المحلية والتعرّف دون اتصال</string>
+
+    <string name="about_syncclipboard_title">Jeric-X/SyncClipboard</string>
+    <string name="about_syncclipboard_desc">يوفر خدمة خلفية لمزامنة الحافظة (لا تعمل محلياً، تتطلّب خادماً)</string>
+
+    <string name="about_phosphor_title">phosphor-icons/homepage</string>
+    <string name="about_phosphor_desc">يوفر معظم الأيقونات المستخدمة في التطبيق</string>
+
+    <string name="about_miuix_title">compose-miuix-ui/miuix</string>
+    <string name="about_miuix_desc">يوفر مكوّنات Compose بأسلوب Miuix والأيقونات وتفضيلات واجهة الإعدادات</string>
+
+    <string name="about_wavelineview_title">Jay-Goo/WaveLineView</string>
+    <string name="about_wavelineview_desc">يوفر رسماً موجياً جميلاً لتصور الصوت وجعل تجربة التسجيل أكثر سلاسة</string>
+
+    <string name="about_tenvad_title">TEN-framework/ten-vad</string>
+    <string name="about_tenvad_desc">يوفر نموذج اكتشاف النشاط الصوتي (VAD) لإيقاف التسجيل الذكي تلقائياً</string>
+
+    <string name="unit_chars">حرف</string>
+    <string name="unit_0_min">0 د</string>
+    <string name="fmt_h_m">%1$d س %2$d د</string>
+    <string name="fmt_m_s">%1$d د %2$d ث</string>
+    <string name="fmt_s">%1$d ث</string>
+</resources>

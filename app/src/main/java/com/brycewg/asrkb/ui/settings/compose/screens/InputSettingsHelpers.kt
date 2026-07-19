@@ -29,7 +29,8 @@ internal fun Context.languageOptions(): List<String> = listOf(
     getString(R.string.lang_zh_cn),
     getString(R.string.lang_zh_tw),
     getString(R.string.lang_ja),
-    getString(R.string.lang_en)
+    getString(R.string.lang_en),
+    getString(R.string.lang_ar)
 )
 
 internal fun Context.languageLabel(tag: String): String = languageOptions()[languageIndex(tag)]
@@ -39,6 +40,7 @@ internal fun languageTagForIndex(index: Int): String = when (index) {
     2 -> "zh-TW"
     3 -> "ja"
     4 -> "en"
+    5 -> "ar"
     else -> ""
 }
 
@@ -49,6 +51,7 @@ internal fun languageIndex(tag: String): Int = when (tag) {
     "zh-TW", "zh-Hant" -> 2
     "ja" -> 3
     "en" -> 4
+    "ar" -> 5
     else -> 0
 }
 

@@ -1,0 +1,73 @@
+<resources>
+    <!-- SenseVoice local ASR configuration strings -->
+    <string name="sensevoice_section_title">SenseVoice ASR محلي</string>
+    <string name="vendor_sensevoice">SenseVoice</string>
+
+    <!-- SenseVoice local settings -->
+    <string name="label_sv_threads">عدد الخيوط (1-8)</string>
+    <string name="label_sv_language">لغة التعرّف</string>
+    <string name="sv_lang_auto">تلقائي</string>
+    <string name="sv_lang_zh">الصينية (zh)</string>
+    <string name="sv_lang_en">الإنجليزية (en)</string>
+    <string name="sv_lang_ja">اليابانية (ja)</string>
+    <string name="sv_lang_ko">الكورية (ko)</string>
+    <string name="sv_lang_yue">الكانتونية (yue)</string>
+    <string name="label_sv_use_itn">تفعيل ITN (تعرّف ذكي على الأرقام)</string>
+    <string name="btn_sv_download_model">تنزيل النموذج بنقرة</string>
+    <string name="btn_sv_download_model_int8">تنزيل النموذج بنقرة</string>
+    <string name="btn_sv_download_model_full">تنزيل النموذج بنقرة</string>
+    <string name="btn_sv_import_model">استيراد النموذج من ملف محلي</string>
+    <string name="btn_sv_clear_model">مسح النموذج المُنزَّل</string>
+    <string name="sv_download_status_downloading">جارٍ التنزيل… %1$d%%</string>
+    <string name="sv_download_status_extracting_progress">جارٍ الاستخراج… %1$d%%</string>
+    <string name="sv_download_status_done">تم تثبيت النموذج</string>
+    <string name="sv_download_status_failed">فشل التنزيل أو الاستخراج</string>
+    <string name="sv_download_started_in_bg">بدأ التنزيل في الخلفية. راجع الإشعار للمتابعة.</string>
+    <string name="sv_import_started_in_bg">بدأ الاستيراد في الخلفية. راجع الإشعار للمتابعة.</string>
+    <string name="sv_import_success">تم استيراد النموذج بنجاح: %1$s</string>
+    <string name="sv_import_failed">فشل استيراد النموذج: %1$s</string>
+    <string name="sv_import_status_extracting">جارٍ الاستيراد… %1$d%%</string>
+    <string name="sv_clear_confirm_title">تأكيد مسح النموذج؟</string>
+    <string name="sv_clear_confirm_message">سيُحذف ملفات النموذج المُنزَّلة. يمكنك إعادة التنزيل لاحقاً. المتابعة؟</string>
+    <string name="sv_clear_done">تم مسح النموذج</string>
+    <string name="sv_clear_failed">فشل المسح</string>
+    <string name="label_sv_model_variant">إصدار النموذج</string>
+    <string name="sv_model_small_int8">صغير (int8، ~160MB)</string>
+    <string name="sv_model_small_full">صغير (fp32، ~850MB)</string>
+    <string name="sv_loading_model">جارٍ تحميل النموذج المحلي…</string>
+    <string name="sv_loading_model_while_listening">جارٍ الاستماع… تحميل النموذج المحلي في الخلفية…</string>
+    <string name="sv_model_ready">تم تحميل النموذج المحلي</string>
+    <string name="sv_model_ready_with_ms">تم تحميل النموذج المحلي (%1$d مللي ثانية)</string>
+    <string name="label_sv_preload">تحميل النموذج بقوة</string>
+    <string name="label_sv_keep_alive">سياسة إلغاء تحميل النموذج</string>
+    <string name="sv_keep_alive_immediate">بدون إبقاء (إلغاء التحميل بعد التعرّف)</string>
+    <string name="sv_keep_alive_5m">5 دقائق</string>
+    <string name="sv_keep_alive_15m">15 دقيقة</string>
+    <string name="sv_keep_alive_30m">30 دقيقة</string>
+    <string name="sv_keep_alive_always">إبقاء دائماً (حتى تتغيّر المعلمات)</string>
+
+    <!-- Error messages -->
+    <string name="error_local_asr_not_ready">ASR المحلي غير جاهز. ادمج sherpa‑onnx وملفات النموذج لاحقاً.</string>
+    <string name="error_sensevoice_model_missing">نموذج SenseVoice مفقود. اضبطه أو نزّله لاحقاً من الإعدادات.</string>
+
+    <!-- Model download notifications -->
+    <string name="notif_model_title_small_int8">نموذج SenseVoice (صغير int8)</string>
+    <string name="notif_model_title_small_full">نموذج SenseVoice (صغير fp32)</string>
+
+    <!-- ============================================== -->
+    <!-- SenseVoice Settings - Feature Descriptions -->
+    <!-- ============================================== -->
+
+    <!-- SenseVoice - Use ITN -->
+    <string name="feature_sv_use_itn_off_desc">يحتفظ بالصيغ المنطوقة، مثل «ألف ومئتان وأربعة وثلاثون».</string>
+    <string name="feature_sv_use_itn_on_desc">يحوّل الأرقام والتواريخ والأوقات الصينية المدعومة إلى صيغ مكتوبة شائعة، مثل «1234».</string>
+
+    <!-- SenseVoice - Preload model -->
+    <string name="feature_sv_preload_off_desc">يُحمَّل النموذج عند الحاجة فقط، وقد يسبب تأخيراً في أول استخدام.</string>
+    <string name="feature_sv_preload_on_desc">يُحمَّل النموذج مسبقاً عند ظهور لوحة المفاتيح لتقليل تأخير أول استخدام.</string>
+
+    <!-- SenseVoice - Pseudo streaming -->
+    <string name="label_sv_pseudo_stream">تفعيل معاينة شبه البث (مقاطع بطول ثابت)</string>
+    <string name="feature_sv_pseudo_stream_off_desc">تعطيل شبه البث. يُتعرّف على الصوت مرة واحدة في النهاية، كوضع عدم الاتصال التقليدي.</string>
+    <string name="feature_sv_pseudo_stream_on_desc">يقسّم الصوت إلى مقاطع بطول ثابت للمعاينة المحلية، ثم يشغّل تعرّفاً كاملاً في النهاية لاستبدال نص المعاينة.</string>
+</resources>

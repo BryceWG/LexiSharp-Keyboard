@@ -1,0 +1,39 @@
+<resources>
+    <!-- Error messages related strings -->
+
+    <!-- Errors (ASR engines) -->
+    <string name="error_record_permission_denied">لم يُمنح إذن تسجيل الصوت</string>
+    <string name="error_audio_init_failed">فشل تهيئة التسجيل</string>
+    <string name="error_audio_error">خطأ في التسجيل: %1$s</string>
+    <string name="error_audio_empty">صوت فارغ</string>
+    <string name="error_audio_empty_skipped">تم التعرّف على صوت فارغ؛ تم تخطّي النسخ النصي</string>
+    <string name="error_missing_gemini_key">مفتاح Gemini API غير مضبوط</string>
+    <string name="error_missing_dashscope_key">مفتاح DashScope API غير مضبوط</string>
+    <string name="error_missing_siliconflow_key">مفتاح SiliconFlow API غير مضبوط</string>
+    <string name="error_missing_eleven_key">مفتاح ElevenLabs API غير مضبوط</string>
+    <string name="error_missing_soniox_key">مفتاح Soniox API غير مضبوط</string>
+    <string name="error_missing_stepaudio_key">مفتاح StepFun API غير مضبوط</string>
+    <string name="error_missing_openrouter_key">مفتاح OpenRouter API غير مضبوط</string>
+    <string name="error_missing_mimo_key">مفتاح MiMo API غير مضبوط</string>
+    <string name="error_request_failed_http">فشل طلب التعرّف: HTTP %1$d%2$s</string>
+    <string name="error_asr_request_failed_http">فشل طلب ASR: HTTP %1$d%2$s</string>
+    <string name="error_dash_getpolicy_failed_http">فشل getPolicy: HTTP %1$d%2$s</string>
+    <string name="error_dash_no_data">استجابة getPolicy بدون بيانات</string>
+    <string name="error_dash_missing_upload_host">استجابة getPolicy بدون upload_host</string>
+    <string name="error_oss_upload_failed_http">فشل رفع OSS: %1$d%2$s</string>
+    <string name="error_asr_empty_result">نتيجة ASR فارغة</string>
+    <string name="error_asr_timeout">انتهت مهلة التعرّف. أعد المحاولة.</string>
+    <string name="error_recognize_failed_with_reason">فشل التعرّف: %1$s</string>
+    <string name="error_local_model_integrity_failed">فشل التحقق من سلامة ملف النموذج المحلي: %1$s. احذف النموذج وأعد تنزيله/استيراده.</string>
+
+    <!-- User-facing ASR error toasts (floating + keyboard) -->
+    <string name="asr_error_empty_result">لم يُتعرّف على كلام. أعد المحاولة.</string>
+    <string name="asr_error_network_unavailable">فشل الاتصال بالشبكة. تحقّق من الاتصال وأعد المحاولة.</string>
+    <string name="asr_error_network_handshake">فشل مصافحة الاتصال. أعد المحاولة أو غيّر الشبكة.</string>
+    <string name="asr_error_mic_permission_denied">يلزم إذن الميكروفون. فعّله من الإعدادات.</string>
+    <string name="asr_error_mic_in_use">الميكروفون مستخدم من تطبيق آخر. حاول لاحقاً.</string>
+    <string name="asr_error_auth_invalid">فشل المصادقة. بيانات الاعتماد غير صالحة أو منتهية. حدّثها في الإعدادات.</string>
+    <string name="asr_error_auth_forbidden">مرفوض. تحقّق من صلاحيات الخدمة.</string>
+
+    <string name="error_auto_copied">تم نسخ رسالة الخطأ تلقائياً</string>
+</resources>

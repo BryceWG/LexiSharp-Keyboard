@@ -1,0 +1,30 @@
+<resources>
+    <!-- Parakeet local ASR configuration strings -->
+    <string name="parakeet_section_title">Parakeet ASR محلي</string>
+    <string name="vendor_parakeet">Parakeet</string>
+
+    <string name="label_pk_model_variant">إصدار النموذج</string>
+    <string name="pk_model_06b_v3_int8">0.6B V3 Int8 أوروبي (456MB)</string>
+    <string name="pk_model_06b_v2_int8">0.6B V2 Int8 إنجليزي (451MB)</string>
+    <string name="label_pk_threads">عدد الخيوط (1-8)</string>
+    <string name="label_pk_preload">تحميل النموذج بقوة</string>
+    <string name="label_pk_keep_alive">سياسة إلغاء تحميل النموذج</string>
+    <string name="btn_pk_download_model">تنزيل النموذج بنقرة</string>
+    <string name="btn_pk_import_model">استيراد النموذج من ملف محلي</string>
+    <string name="btn_pk_clear_model">مسح نموذج Parakeet المُنزَّل</string>
+    <string name="pk_download_status_downloading">جارٍ التنزيل… %1$d%%</string>
+    <string name="pk_download_status_extracting_progress">جارٍ الاستخراج… %1$d%%</string>
+    <string name="pk_download_status_done">تم تثبيت نموذج Parakeet</string>
+    <string name="pk_download_status_failed">فشل التنزيل أو الاستخراج</string>
+    <string name="pk_download_started_in_bg">بدأ التنزيل في الخلفية. راجع الإشعار للمتابعة.</string>
+    <string name="pk_import_started_in_bg">بدأ الاستيراد في الخلفية. راجع الإشعار للمتابعة.</string>
+    <string name="pk_import_success">تم استيراد النموذج بنجاح: %1$s</string>
+    <string name="pk_import_failed">فشل استيراد النموذج: %1$s</string>
+    <string name="pk_clear_confirm_title">مسح نموذج Parakeet؟</string>
+    <string name="pk_clear_confirm_message">سيُحذف ملفات نموذج Parakeet المُنزَّلة. يمكنك إعادة التنزيل لاحقاً. المتابعة؟</string>
+    <string name="pk_clear_done">تم مسح نموذج Parakeet</string>
+    <string name="pk_clear_failed">فشل المسح</string>
+    <string name="error_parakeet_model_missing">ملفات نموذج Parakeet مفقودة. اضبطها أو نزّلها من الإعدادات.</string>
+    <string name="notif_pk_title_06b_v3_int8">نموذج Parakeet 0.6B V3 Int8 أوروبي (456MB)</string>
+    <string name="notif_pk_title_06b_v2_int8">نموذج Parakeet 0.6B V2 Int8 إنجليزي (451MB)</string>
+</resources>

@@ -1,0 +1,28 @@
+<resources>
+    <string name="hint_need_keys">أدخل المفاتيح في الإعدادات لتفعيل الإدخال الصوتي</string>
+    <string name="error_only_zip_supported">يُدعم فقط ملفات .zip</string>
+
+    <!-- ============================================== -->
+    <!-- ASR Settings - Feature Descriptions -->
+    <!-- ============================================== -->
+
+    <!-- Auto stop on silence -->
+    <string name="feature_auto_stop_silence_off_desc">يستمر التسجيل حتى توقفه يدوياً. مفيد للكلام الطويل أو عند وجود توقفات ضمن المحتوى.</string>
+    <string name="feature_auto_stop_silence_on_desc">يتوقف التسجيل تلقائياً بعد فترة بلا كلام، دون الحاجة لإيقافه يدوياً. يمكنك ضبط مدة الانتظار وحساسية الاكتشاف.</string>
+
+    <!-- Backup ASR engine -->
+    <string name="feature_backup_asr_off_desc">عند الإيقاف، يستخدم الإدخال الصوتي المزود الأساسي فقط.</string>
+    <string name="feature_backup_asr_on_desc">إذا تعذّر المزود الأساسي أو فشل أو استغرق وقتاً طويلاً، يمكن للتطبيق استخدام المزود الاحتياطي. حسب إعداداتك، قد يبدأ مع الأساسي أو عند الحاجة فقط.</string>
+
+    <!-- Provider tags (for selector UI) -->
+    <string name="asr_vendor_tag_streaming">بث مباشر</string>
+    <string name="asr_vendor_tag_non_streaming">غير متدفق</string>
+    <string name="asr_vendor_tag_online">سحابي</string>
+    <string name="asr_vendor_tag_local">على الجهاز</string>
+    <string name="asr_vendor_tag_custom">مخصص</string>
+    <string name="asr_vendor_tag_pseudo_streaming">شبه بث</string>
+    <string name="asr_vendor_tag_chinese_dialect">لهجات صينية</string>
+    <string name="asr_vendor_tag_accurate">دقيق</string>
+    <string name="asr_vendor_group_configured">مُعدّ</string>
+    <string name="asr_vendor_group_unconfigured">غير مُعدّ</string>
+</resources>

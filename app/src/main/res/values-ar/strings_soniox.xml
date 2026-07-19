@@ -1,0 +1,48 @@
+<resources>
+    <!-- Soniox ASR configuration strings -->
+    <string name="soniox_section_title">إعدادات Soniox API</string>
+    <string name="vendor_soniox">Soniox</string>
+
+    <!-- Soniox configuration -->
+    <string name="label_soniox_streaming">التعرّف بالبث</string>
+    <string name="label_soniox_endpoint_mode">وضع التعرّف</string>
+    <string name="label_soniox_language">لغة التعرّف (متعدد)</string>
+    <string name="label_soniox_language_strict">تقييد اللغة بصرامة</string>
+    <string name="label_soniox_api_key">مفتاح API (Bearer)</string>
+
+    <!-- Soniox endpoint modes -->
+    <string name="soniox_endpoint_mode_low_latency">زمن استجابة منخفض</string>
+    <string name="soniox_endpoint_mode_default">افتراضي</string>
+    <string name="soniox_endpoint_mode_high_accuracy">دقة عالية</string>
+
+    <!-- Soniox language options -->
+    <string name="soniox_lang_auto">تلقائي (متعدد اللغات)</string>
+    <string name="soniox_lang_en">الإنجليزية (en)</string>
+    <string name="soniox_lang_zh">الصينية (zh)</string>
+    <string name="soniox_lang_ja">اليابانية (ja)</string>
+    <string name="soniox_lang_ko">الكورية (ko)</string>
+    <string name="soniox_lang_es">الإسبانية (es)</string>
+    <string name="soniox_lang_pt">البرتغالية (pt)</string>
+    <string name="soniox_lang_de">الألمانية (de)</string>
+    <string name="soniox_lang_fr">الفرنسية (fr)</string>
+    <string name="soniox_lang_id">الإندونيسية (id)</string>
+    <string name="soniox_lang_ru">الروسية (ru)</string>
+    <string name="soniox_lang_ar">العربية (ar)</string>
+    <string name="soniox_lang_hi">الهندية (hi)</string>
+    <string name="soniox_lang_vi">الفيتنامية (vi)</string>
+    <string name="soniox_lang_th">التايلاندية (th)</string>
+    <string name="soniox_lang_ms">الماليزية (ms)</string>
+    <string name="soniox_lang_fil">الفلبينية (fil)</string>
+
+    <!-- ============================================== -->
+    <!-- Soniox Settings - Feature Descriptions -->
+    <!-- ============================================== -->
+
+    <!-- Soniox - Streaming -->
+    <string name="feature_soniox_streaming_off_desc">يستخدم تعرّفاً غير متدفق. تبدأ المعالجة بعد انتهاء التسجيل.</string>
+    <string name="feature_soniox_streaming_on_desc">يستخدم التعرّف بالبث للنسخ النصي الفوري أثناء الكلام.</string>
+
+    <!-- Soniox - Language strict restriction -->
+    <string name="feature_soniox_language_strict_off_desc">تلميحات اللغة تفضيل فقط. قد تُتعرّف لغات أخرى.</string>
+    <string name="feature_soniox_language_strict_on_desc">يقيّد التعرّف بقوة إلى اللغات المحددة فقط، لتجنّب النسخ النصي بلغات أخرى بالخطأ.</string>
+</resources>

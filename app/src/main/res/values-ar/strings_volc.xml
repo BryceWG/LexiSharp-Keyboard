@@ -1,0 +1,65 @@
+<resources>
+    <!-- Volcengine (Volcano Engine) ASR configuration strings -->
+    <string name="volc_section_title">إعدادات Volcano Engine API</string>
+    <string name="vendor_volc">Volcano Engine</string>
+
+    <!-- Volc configuration -->
+    <string name="label_volc_streaming">التعرّف بالبث</string>
+    <string name="label_volc_file_standard">استخدام تعرّف الملفات (قياسي)</string>
+    <string name="label_volc_model_v2">استخدام نموذج Doubao ASR 2.0</string>
+    <string name="label_volc_ddc">تفعيل التنعيم الدلالي (تجريبي)</string>
+    <string name="label_volc_vad">تفعيل تقسيم VAD (تجريبي)</string>
+    <string name="label_volc_nonstream">تفعيل التعرّف بمرورتين (تجريبي)</string>
+    <string name="label_volc_language">لغة التعرّف</string>
+    <string name="label_volc_use_new_auth">استخدام طريقة المصادقة الجديدة</string>
+    <string name="label_volc_api_key">X-Api-Key</string>
+
+    <!-- Volc modes hint -->
+    <string name="volc_modes_hint">الأوضاع:\n
+1. تعرّف الملفات (قياسي، إرسال/استعلام): الرفع بعد اكتمال التسجيل؛ أبطأ من وضع flash لكنه يدعم Doubao ASR 2.0؛ موصى به عند تعطيل البث.\n
+2. تعرّف الملفات (flash): الرفع بعد اكتمال التسجيل؛ أسرع لكنه لا يدعم Doubao ASR 2.0.\n
+3. البث (افتراضي، ثنائي الاتجاه): الرفع أثناء التسجيل مع معاينة تدريجية فورية؛ زمن بدء/انتهاء أقل؛ يتطلّب شبكة مستقرة. يدعم الآن Doubao ASR 2.0.</string>
+
+    <!-- Volc language options -->
+    <string name="volc_lang_auto">تلقائي (صيني/إنجليزي + لهجات)</string>
+    <string name="volc_lang_en_us">الإنجليزية (en-US)</string>
+    <string name="volc_lang_ja_jp">اليابانية (ja-JP)</string>
+    <string name="volc_lang_id_id">الإندونيسية (id-ID)</string>
+    <string name="volc_lang_es_mx">الإسبانية (es-MX)</string>
+    <string name="volc_lang_pt_br">البرتغالية (pt-BR)</string>
+    <string name="volc_lang_de_de">الألمانية (de-DE)</string>
+    <string name="volc_lang_fr_fr">الفرنسية (fr-FR)</string>
+    <string name="volc_lang_ko_kr">الكورية (ko-KR)</string>
+    <string name="volc_lang_fil_ph">الفلبينية (fil-PH)</string>
+    <string name="volc_lang_ms_my">الماليزية (ms-MY)</string>
+    <string name="volc_lang_th_th">التايلاندية (th-TH)</string>
+    <string name="volc_lang_ar_sa">العربية (ar-SA)</string>
+
+    <!-- ============================================== -->
+    <!-- Volcengine Settings - Feature Descriptions -->
+    <!-- ============================================== -->
+
+    <!-- Volcengine - Streaming -->
+    <string name="feature_volc_streaming_off_desc">يستخدم وضع تعرّف الملفات. يُرسل التسجيل كاملاً دفعة واحدة بعد الانتهاء. مناسب للشبكات غير المستقرة.</string>
+    <string name="feature_volc_streaming_on_desc">يستخدم تعرّف البث ثنائي الاتجاه عبر WebSocket. تُعرض النتائج الوسيطة فوراً أثناء الكلام. يتطلّب اتصالاً مستقراً.</string>
+
+    <!-- Volcengine - DDC (semantic smoothing) -->
+    <string name="feature_volc_ddc_off_desc">يُخرج نتائج التعرّف الخام دون معالجة إضافية.</string>
+    <string name="feature_volc_ddc_on_desc">يفعّل التنعيم الدلالي لتحسين التعبير والتنسيق تلقائياً. ميزة تجريبية.</string>
+
+    <!-- Volcengine - VAD segmentation -->
+    <string name="feature_volc_vad_off_desc">يُتعرّف على التسجيل بشكل مستمر دون تقسيم تلقائي حسب الكلام والتوقفات.</string>
+    <string name="feature_volc_vad_on_desc">يُقسَّم التسجيل تلقائياً حسب الكلام والتوقفات، مما قد يسهّل قراءة النتائج الطويلة. النتيجة تعتمد على الصوت والمزود.</string>
+
+    <!-- Volcengine - Two-pass recognition -->
+    <string name="feature_volc_nonstream_off_desc">يستخدم نتيجة البث الأولى فقط. يُعاد النص مباشرة دون مرور تصحيح ثانٍ.</string>
+    <string name="feature_volc_nonstream_on_desc">ينفّذ المزود مرور تصحيح ثانٍ على نتيجة البث. قد يتحسّن النص النهائي، وقد يتغيّر النص المؤقت.</string>
+
+    <!-- Volcengine - File recognition (standard mode) -->
+    <string name="feature_volc_file_standard_off_desc">يستخدم تعرّف الملفات (وضع flash) بعد اكتمال التسجيل. أسرع لكنه لا يدعم Doubao ASR 2.0.</string>
+    <string name="feature_volc_file_standard_on_desc">يستخدم تعرّف الملفات (قياسي، إرسال/استعلام) بعد اكتمال التسجيل. أبطأ من flash لكنه يدعم Doubao ASR 2.0 لدقة أفضل.</string>
+
+    <!-- Volcengine - Model version -->
+    <string name="feature_volc_model_v2_off_desc">يستخدم نموذج Doubao ASR 1.0. متوافق مع إصدارات API الأقدم.</string>
+    <string name="feature_volc_model_v2_on_desc">يستخدم نموذج Doubao ASR 2.0 (افتراضي). دقة أفضل ودعم لغات أوسع.</string>
+</resources>

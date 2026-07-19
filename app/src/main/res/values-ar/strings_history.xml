@@ -1,0 +1,86 @@
+<resources>
+    <!-- ASR history related strings -->
+
+    <string name="btn_open_asr_history">السجل</string>
+
+    <!-- ASR History -->
+    <string name="title_asr_history">سجل ASR</string>
+    <string name="hint_search_history">البحث في السجل…</string>
+    <string name="history_section_2h">خلال ساعتين</string>
+    <string name="history_section_today">اليوم</string>
+    <string name="history_section_7d">آخر 7 أيام</string>
+    <string name="history_section_30d">آخر 30 يوماً</string>
+    <string name="history_section_older">أقدم</string>
+    <string name="label_vendor">المزود</string>
+    <string name="label_source">المصدر</string>
+    <string name="source_ime">لوحة المفاتيح</string>
+    <string name="source_floating">عائم</string>
+    <string name="source_external">خارجي</string>
+    <string name="source_ime_full">إدخال لوحة المفاتيح</string>
+    <string name="source_floating_full">إدخال عائم</string>
+    <string name="source_external_full">إدخال خارجي</string>
+    <string name="label_ai_processed">معالَج بالذكاء الاصطناعي</string>
+    <string name="label_chars_count">النص:%1$d</string>
+    <string name="label_audio_duration_s">المدة:%1$.1f ث</string>
+    <!-- History list: total duration and processing duration (non-streaming) -->
+    <string name="meta_total_seconds">صوت %1$.1fث</string>
+    <string name="meta_total_elapsed_seconds">الإجمالي %1$.1fث</string>
+    <string name="meta_proc_seconds">وقت التعرّف %1$.1fث</string>
+    <string name="meta_ai_postproc_seconds">وقت المعالجة اللاحقة %1$.1fث</string>
+    <string name="ai_processed_yes">تمت المعالجة اللاحقة</string>
+    <string name="ai_processed_no">بدون معالجة لاحقة</string>
+    <string name="ai_processed_failed">فشلت المعالجة اللاحقة</string>
+    <string name="label_timestamp">الوقت</string>
+    <string name="label_time">نطاق الوقت</string>
+    <string name="filter_time_all">الكل</string>
+    <string name="filter_all">الكل</string>
+    <string name="btn_copy">نسخ</string>
+    <string name="toast_copied">تم النسخ</string>
+    <string name="yes">نعم</string>
+    <string name="no">لا</string>
+    <string name="menu_filter">تصفية</string>
+    <string name="menu_select_all">تحديد الكل</string>
+    <string name="menu_clear_selection">مسح التحديد</string>
+    <string name="menu_delete_selected">حذف المحدد</string>
+    <string name="menu_api_log">سجل API</string>
+    <string name="title_api_log">سجل API</string>
+    <string name="hint_search_api_log">ابحث عن مزود أو نموذج أو مضيف أو مسار أو خطأ…</string>
+    <string name="api_log_filter_asr">ASR</string>
+    <string name="api_log_filter_llm">LLM</string>
+    <string name="api_log_filter_failed">فشل</string>
+    <string name="api_log_status_success">نجاح</string>
+    <string name="api_log_status_failed">فشل</string>
+    <string name="api_log_status_cancelled">أُلغي</string>
+    <string name="api_log_unknown">غير معروف</string>
+    <string name="api_log_meta_format">%1$s · %2$dمللي · نموذج %3$s</string>
+    <string name="api_log_local_endpoint_format">محلي %1$s · %2$s</string>
+    <string name="api_log_local_action_infer">استدلال</string>
+    <string name="api_log_local_action_load">تحميل</string>
+    <string name="api_log_local_source_preload">تحميل مسبق</string>
+    <string name="api_log_local_source_file">تعرّف غير متدفق</string>
+    <string name="api_log_local_source_inference_load">تحميل النموذج عند أول استخدام</string>
+    <string name="api_log_local_source_pseudo_stream_final">تعرّف نهائي شبه بث</string>
+    <string name="api_log_local_source_pseudo_stream_final_load">تحميل نموذج نهائي شبه بث</string>
+    <string name="api_log_local_source_pseudo_stream_preview_load">تحميل نموذج معاينة شبه بث</string>
+    <string name="api_log_local_source_streaming_load">تحميل نموذج البث</string>
+    <string name="api_log_local_source_streaming">تعرّف بالبث</string>
+    <string name="api_log_local_source_external_pcm_stream">استدعاء تكامل خارجي</string>
+    <string name="api_log_request">الطلب</string>
+    <string name="api_log_request_structure">البنية</string>
+    <string name="api_log_response">الاستجابة</string>
+    <string name="api_log_error">خطأ</string>
+    <string name="menu_clear_api_log">مسح سجل API</string>
+    <string name="dialog_clear_api_log_title">مسح سجل API؟</string>
+    <string name="dialog_clear_api_log_message">سيُحذف ملخصات طلبات API المحلية. لا تُحفظ مفاتيح API أو الصوت أو النص الكامل.</string>
+    <string name="toast_api_log_cleared">تم مسح سجل API</string>
+    <string name="empty_api_log">لا توجد سجلات API بعد</string>
+    <string name="empty_api_log_filtered">لا توجد سجلات API مطابقة</string>
+    <string name="dialog_filter_title">تصفية</string>
+    <string name="dialog_filter_ok">موافق</string>
+    <string name="dialog_filter_cancel">إلغاء</string>
+    <string name="dialog_filter_reset">إعادة تعيين</string>
+    <string name="dialog_delete_selected_title">تأكيد الحذف</string>
+    <string name="dialog_delete_selected_msg">حذف %1$d عنصر محدد؟ لا يمكن التراجع.</string>
+    <string name="toast_deleted">تم حذف %1$d عنصر</string>
+    <string name="empty_history">لا يوجد سجل بعد</string>
+</resources>

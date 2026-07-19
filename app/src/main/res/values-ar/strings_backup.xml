@@ -1,0 +1,31 @@
+<resources>
+    <!-- Backup settings related strings -->
+
+    <!-- Backup settings -->
+    <string name="title_backup_settings">النسخ والمزامنة</string>
+    <string name="btn_open_backup_settings">النسخ والمزامنة</string>
+    <string name="section_file_backup">نسخ إلى ملف</string>
+    <string name="btn_export_to_file">تصدير إلى ملف</string>
+    <string name="btn_import_from_file">استيراد من ملف</string>
+    <string name="section_webdav_sync">مزامنة WebDAV</string>
+    <string name="hint_webdav_url">رابط WebDAV (مثل https://dav.example.com)</string>
+    <string name="hint_webdav_username">اسم المستخدم (اختياري)</string>
+    <string name="hint_webdav_password">كلمة المرور (اختياري)</string>
+    <string name="btn_webdav_upload">رفع</string>
+    <string name="btn_webdav_download">استعادة</string>
+
+    <string name="toast_webdav_upload_success">تم الرفع إلى WebDAV</string>
+    <string name="toast_webdav_upload_failed">فشل الرفع: %1$s</string>
+    <string name="toast_webdav_download_success">تم الاستيراد من WebDAV</string>
+    <string name="toast_webdav_download_failed">فشل التنزيل/الاستيراد: %1$s</string>
+    <string name="toast_webdav_backup_not_found">لا يوجد ملف نسخ على خادم WebDAV</string>
+    <string name="toast_webdav_url_required">يرجى إدخال عنوان WebDAV الأساسي</string>
+    <string name="toast_webdav_directory_created">تم إنشاء مجلد BiBi Keyboard</string>
+
+    <string name="toast_export_success">تم التصدير: %1$s</string>
+    <string name="toast_export_failed">فشل التصدير</string>
+    <string name="toast_import_success">تم الاستيراد والتطبيق بنجاح</string>
+    <string name="toast_import_failed">فشل الاستيراد أو صيغة غير صحيحة</string>
+
+    <string name="tip_backup_contains_secrets">تنبيه: النسخة تتضمن مفاتيح وبيانات اعتماد. احفظها بسرية.</string>
+</resources>

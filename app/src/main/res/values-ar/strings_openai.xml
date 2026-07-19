@@ -1,0 +1,33 @@
+<resources>
+    <string name="vendor_openai">OpenAI</string>
+    <string name="openai_section_title">تحويل الكلام إلى نص عبر OpenAI</string>
+    <string name="label_openai_choose_profile">اختر القناة</string>
+    <string name="label_openai_profile_name">اسم القناة</string>
+    <string name="btn_openai_add_profile">إضافة قناة</string>
+    <string name="btn_openai_delete_profile">حذف القناة</string>
+    <string name="toast_openai_profile_added">تمت إضافة القناة</string>
+    <string name="toast_openai_profile_deleted">تم حذف القناة</string>
+    <string name="toast_openai_profile_delete_blocked">أبقِ قناة واحدة على الأقل</string>
+    <string name="openai_profile_default_name">قناة OpenAI %1$d</string>
+    <string name="label_openai_asr_endpoint">نقطة النهاية (../transcriptions أو ../chat/completions)</string>
+    <string name="hint_openai_custom_endpoint_wav_upload">الخدمات المتوافقة المخصصة سترفع صوت WAV لتحسين التوافق.</string>
+    <string name="label_openai_api_key">مفتاح API (Bearer)</string>
+    <string name="label_openai_model">النموذج (مثل gpt-4o-mini-transcribe أو whisper-1)</string>
+    <string name="label_openai_streaming">التعرّف بالبث</string>
+    <string name="label_openai_use_completions">استخدام Completions API</string>
+    <string name="label_openai_use_prompt">موجّه مخصص (بعض النماذج غير مدعومة)</string>
+    <string name="label_openai_prompt">موجّه مخصص (اختياري)</string>
+    <string name="label_openai_language">لغة التعرّف</string>
+
+    <!-- ============================================== -->
+    <!-- OpenAI Settings - Feature Descriptions -->
+    <!-- ============================================== -->
+
+    <!-- OpenAI - Use prompt -->
+    <string name="feature_openai_use_prompt_off_desc">ينسخ الصوت مباشرة إلى نص دون توجيه.</string>
+    <string name="feature_openai_use_prompt_on_desc">يرسل الموجّه مع طلب التعرّف لاقتراح مصطلحات أو سياق. الدعم والنتيجة يعتمدان على النموذج والمزود.</string>
+
+    <!-- OpenAI - Streaming -->
+    <string name="feature_openai_streaming_off_desc">يستخدم النسخ النصي عبر رفع الملفات. تُعاد النتائج بعد إيقاف التسجيل.</string>
+    <string name="feature_openai_streaming_on_desc">يستخدم بث Realtime عبر WebSocket. يعرض نتائج جزئية أثناء الكلام. يتطلّب دعم Realtime API من المزود.</string>
+</resources>

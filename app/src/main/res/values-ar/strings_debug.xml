@@ -1,0 +1,17 @@
+<resources>
+    <!-- Debug logging related strings -->
+
+    <!-- Debug logging -->
+    <string name="about_debug_title">سجل التشخيص</string>
+    <string name="about_debug_desc">يُسجَّل التشخيص الأساسي محلياً افتراضياً. يمكن تفعيل التسجيل المفصّل للدعم مؤقتاً لاستكشاف أعمق. لا تتضمن السجلات نص ASR أو المحتوى المدخل أو الحافظة أو المفاتيح.</string>
+    <string name="about_debug_last_exit_prefix">آخر خروج غير طبيعي: %1$s</string>
+    <string name="btn_debug_start_recording">تفعيل التسجيل المفصّل للدعم</string>
+    <string name="btn_debug_stop_recording">إيقاف التسجيل المفصّل للدعم</string>
+    <string name="btn_debug_export">تصدير سجل التشخيص</string>
+    <string name="toast_debug_recording_started">تم تفعيل التسجيل المفصّل للدعم</string>
+    <string name="toast_debug_recording_stopped">تم إيقاف التسجيل المفصّل للدعم</string>
+    <string name="toast_debug_no_log">لا يوجد سجل للتصدير</string>
+    <string name="toast_debug_stop_before_export">أوقف التسجيل قبل التصدير</string>
+    <string name="toast_debug_failed">فشلت العملية. أعد المحاولة</string>
+    <string name="toast_debug_export_failed">فشل التصدير</string>
+</resources>

@@ -1,0 +1,87 @@
+<resources>
+    <!-- Keyboard related strings -->
+
+    <!-- Content Descriptions -->
+    <string name="cd_mic">الميكروفون</string>
+    <string name="cd_settings">الإعدادات</string>
+    <string name="cd_enter">إدخال</string>
+    <string name="cd_backspace">حذف</string>
+    <string name="cd_switch_ime">تبديل طريقة الإدخال</string>
+    <string name="cd_postproc_toggle">معالجة لاحقة بالذكاء الاصطناعي</string>
+    <string name="cd_ai_edit">تحرير بالذكاء الاصطناعي</string>
+    <string name="cd_hide">إخفاء لوحة المفاتيح</string>
+    <string name="cd_prompt_picker">تبديل موجّه المعالجة اللاحقة</string>
+    <string name="cd_vendor_picker">تبديل مزود ASR</string>
+    <string name="cd_floating_keyboard_drag">تحريك لوحة المفاتيح العائمة</string>
+    <string name="cd_floating_keyboard_resize">تغيير حجم لوحة المفاتيح العائمة</string>
+    <string name="cd_keyboard_dock_left">نقل لوحة المفاتيح يساراً</string>
+    <string name="cd_keyboard_dock_right">نقل لوحة المفاتيح يميناً</string>
+    <string name="cd_punct_btn_1">مفتاح مخصص 1</string>
+    <string name="cd_punct_btn_2">مفتاح مخصص 2</string>
+    <string name="cd_punct_btn_3">مفتاح مخصص 3</string>
+    <string name="cd_punct_btn_4">مفتاح مخصص 4</string>
+
+    <!-- Extension buttons content descriptions -->
+    <string name="desc_extension_button_1">زر الامتداد 1</string>
+    <string name="desc_extension_button_2">زر الامتداد 2</string>
+    <string name="desc_extension_button_3">زر الامتداد 3</string>
+    <string name="desc_extension_button_4">زر الامتداد 4</string>
+    <string name="desc_extension_center_button_1">زر الامتداد المركزي 1</string>
+    <string name="desc_extension_center_button_2">زر الامتداد المركزي 2</string>
+
+    <!-- Edit panel content descriptions -->
+    <string name="cd_return_main">العودة للوحة الرئيسية</string>
+    <string name="cd_apply_preset_prompt">تطبيق الموجّه المُعدّ مسبقاً</string>
+    <string name="cd_cursor_left">تحريك المؤشر يساراً</string>
+    <string name="cd_cursor_right">تحريك المؤشر يميناً</string>
+    <string name="cd_numpad">لوحة الأرقام</string>
+    <string name="cd_numpad_back">العودة للوحة التحرير</string>
+    <string name="cd_space">مسافة</string>
+    <string name="cd_punct_lang_toggle">تبديل ترقيم صيني/إنجليزي</string>
+    <string name="cd_select_toggle">تبديل وضع التحديد</string>
+    <string name="cd_select_all">تحديد الكل</string>
+    <string name="cd_copy">نسخ</string>
+    <string name="cd_paste">لصق</string>
+    <string name="cd_move_home">الانتقال للبداية</string>
+    <string name="cd_move_end">الانتقال للنهاية</string>
+    <string name="cd_undo">تراجع</string>
+
+    <!-- AI edit panel guide -->
+    <string name="ime_ai_edit_guide_tap">اضغط الميكروفون لتسجيل تعليمات التحرير؛ اضغط مجدداً للإيقاف</string>
+    <string name="ime_ai_edit_guide_hold">اضغط مطوّلاً على الميكروفون لنطق تعليمات التحرير؛ أفلت للإيقاف</string>
+
+    <!-- Keyboard height -->
+    <string name="label_keyboard_height">مقياس لوحة المفاتيح</string>
+    <string name="label_ime_tablet_floating_keyboard">لوحة مفاتيح عائمة</string>
+    <string name="keyboard_height_small">صغير</string>
+    <string name="keyboard_height_medium">متوسط</string>
+    <string name="keyboard_height_large">كبير</string>
+
+    <!-- Haptic feedback strength -->
+    <string name="label_haptic_feedback_strength">قوة الاهتزاز للإدخال/الضغط</string>
+    <string name="haptic_strength_off">إيقاف</string>
+    <string name="haptic_strength_system">النظام</string>
+    <string name="haptic_strength_weak">ضعيف</string>
+    <string name="haptic_strength_light">خفيف</string>
+    <string name="haptic_strength_medium">متوسط</string>
+    <string name="haptic_strength_strong">قوي</string>
+    <string name="haptic_strength_heavy">قوي جداً</string>
+
+    <!-- Keyboard bottom padding -->
+    <string name="label_keyboard_bottom_padding">هامش أسفل لوحة المفاتيح</string>
+    <string name="keyboard_bottom_padding_value">%d dp</string>
+
+    <!-- Waveform sensitivity -->
+    <string name="label_waveform_sensitivity">حساسية الموجة (1-10؛ الأعلى = أسرع استجابة)</string>
+
+    <!-- Keyboard layout option -->
+    <string name="label_fcitx5_return_on_switcher">مفتاح التبديل يمكنه العودة لطريقة إدخال محددة</string>
+    <string name="label_ime_switch_target">طريقة الإدخال المستهدفة</string>
+    <string name="ime_switch_target_previous">طريقة الإدخال السابقة</string>
+    <string name="label_hide_recent_task_card">إخفاء معاينة المهام الأخيرة</string>
+
+    <!-- Section titles -->
+    <string name="section_input_behavior">سلوك الإدخال</string>
+    <string name="section_audio_and_link">الصوت والربط الخارجي</string>
+    <string name="section_ui_settings">إعدادات الواجهة</string>
+</resources>

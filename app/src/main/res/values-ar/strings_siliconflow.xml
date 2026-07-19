@@ -1,0 +1,33 @@
+<resources>
+    <!-- SiliconFlow ASR configuration strings -->
+    <string name="sf_section_title">إعدادات SiliconFlow API</string>
+    <string name="vendor_sf">SiliconFlow</string>
+
+    <!-- SiliconFlow configuration -->
+    <string name="label_sf_api_key">مفتاح API (Bearer)</string>
+    <string name="label_sf_model_select">اختر النموذج</string>
+    <string name="sf_model_default_display">FunAudioLLM/SenseVoiceSmall</string>
+    <string name="label_sf_omni_prompt">موجّه النسخ النصي متعدد الوسائط (اختياري)</string>
+
+    <!-- SiliconFlow Free Service (ASR) -->
+    <string name="label_sf_free_enabled">استخدام الخدمة المجانية</string>
+    <string name="sf_free_description">خدمة مجانية مقدَّمة من SiliconFlow لتجربة التعرّف على الصوت فوراً. لا يلزم مفتاح API.</string>
+
+    <!-- SiliconFlow Free Service (LLM) -->
+    <string name="sf_free_llm_description">خدمة معالجة لاحقة مجانية بالذكاء الاصطناعي من SiliconFlow. لا يلزم مفتاح API.</string>
+    <string name="label_sf_free_llm_enabled">استخدام نموذج SiliconFlow المجاني</string>
+    <string name="label_sf_free_llm_model">اختر النموذج</string>
+
+    <!-- SiliconFlow Free Error Messages -->
+    <string name="error_sf_free_quota_exceeded">تجاوزت حصة الخدمة المجانية، حاول لاحقاً</string>
+    <string name="error_sf_free_auth_failed">فشل التحقق من الخدمة المجانية</string>
+    <string name="error_sf_free_service_unavailable">الخدمة المجانية غير متاحة مؤقتاً</string>
+
+    <!-- SiliconFlow Powered By -->
+    <string name="sf_powered_by_desc">مدعوم من SiliconFlow</string>
+
+    <!-- SiliconFlow Free Registration Prompt -->
+    <string name="sf_free_register_hint">سجّل حساب SiliconFlow خاصاً بك للوصول إلى مزيد من النماذج. ستحصل على رصيد إضافي ¥14 يكفي لمعظم النماذج.</string>
+    <string name="btn_sf_free_register">الحصول على مفتاح API</string>
+    <string name="btn_sf_free_guide">دليل الإعداد</string>
+</resources>

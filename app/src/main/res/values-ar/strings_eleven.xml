@@ -1,0 +1,20 @@
+<resources>
+    <string name="vendor_eleven">ElevenLabs</string>
+    <string name="eleven_section_title">إعدادات ElevenLabs API</string>
+    <string name="label_eleven_api_key">xi-api-key</string>
+    <string name="label_eleven_language">لغة التعرّف</string>
+    <string name="eleven_lang_auto">تلقائي (تفعيل تحديد اللغة)</string>
+    <string name="eleven_lang_zh">الصينية (zh)</string>
+    <string name="eleven_lang_en">الإنجليزية (en)</string>
+    <string name="eleven_lang_ja">اليابانية (ja)</string>
+    <string name="eleven_lang_ko">الكورية (ko)</string>
+    <string name="eleven_lang_de">الألمانية (de)</string>
+    <string name="eleven_lang_fr">الفرنسية (fr)</string>
+    <string name="eleven_lang_es">الإسبانية (es)</string>
+    <string name="eleven_lang_pt">البرتغالية (pt)</string>
+    <string name="eleven_lang_ru">الروسية (ru)</string>
+    <string name="eleven_lang_it">الإيطالية (it)</string>
+    <string name="label_eleven_streaming">التعرّف بالبث</string>
+    <string name="feature_eleven_streaming_off_desc">يستخدم نسخاً نصياً غير متدفق. يُرفع الصوت بعد انتهاء التسجيل.</string>
+    <string name="feature_eleven_streaming_on_desc">يستخدم بثاً فورياً لعرض النص أثناء الكلام.</string>
+</resources>

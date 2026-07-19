@@ -118,7 +118,7 @@ class Prefs(context: Context) {
     internal fun getLocalizedString(@StringRes resId: Int, vararg formatArgs: Any): String = createContextForAppLanguage().getString(resId, *formatArgs)
 
     private fun buildKnownDefaultPromptPresetVariants(): List<List<PromptPreset>> {
-        val tags = listOf("en", "zh-CN", "zh-TW", "ja")
+        val tags = listOf("en", "zh-CN", "zh-TW", "ja", "ar")
         return tags
             .map { buildDefaultPromptPresets(createContextForLanguageTag(it)) }
             .distinctBy { list -> list.map { it.title to it.content } }

@@ -1,0 +1,54 @@
+<resources>
+    <!-- DashScope (Alibaba Cloud DashScope) ASR configuration strings -->
+    <string name="dash_section_title">معلمات Alibaba Cloud DashScope ASR</string>
+    <string name="vendor_dashscope">Alibaba Cloud DashScope</string>
+
+    <!-- DashScope configuration -->
+    <string name="label_dash_api_key">مفتاح DashScope API (Bearer)</string>
+    <string name="label_dash_model">نموذج ASR</string>
+    <string name="dash_model_qwen_file">Qwen3-ASR-Flash (غير متدفق)</string>
+    <string name="dash_model_fun_flash">Fun-ASR-Flash (غير متدفق)</string>
+    <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash (غير متدفق)</string>
+    <string name="dash_model_qwen35_omni_plus">Qwen3.5-Omni-Plus (غير متدفق)</string>
+    <string name="dash_model_qwen_realtime">Qwen3-ASR-Flash-Realtime (بث)</string>
+    <string name="dash_model_fun_realtime">Fun-ASR-Realtime (بث)</string>
+    <string name="label_dash_prompt">موجّه / سياق مخصص (اختياري)</string>
+    <string name="label_dash_language">لغة التعرّف</string>
+    <string name="label_dash_streaming">التعرّف بالبث</string>
+    <string name="dash_streaming_note">اختيار النموذج يحدد سلوك البث. نماذج Qwen3 و Qwen3.5-Omni تدعم الموجّه/السياق المخصص. Qwen3.5-Omni و Fun-ASR-Flash لا يدعمان اختيار اللغة، ونماذج Fun-ASR لا تدعم الموجّه المخصص.</string>
+    <string name="label_dash_fun_asr">استخدام نموذج Fun-ASR (fun-asr-realtime)</string>
+    <string name="label_dash_funasr_semantic_punct">استخدام التقسيم الدلالي (Fun-ASR)</string>
+    <string name="dash_lang_auto">اكتشاف تلقائي</string>
+    <string name="label_dash_region">منطقة الخادم</string>
+    <string name="dash_region_cn">الصين القارية (aliyuncs.com)</string>
+    <string name="dash_region_intl">سنغافورة/دولي (dashscope-intl.aliyuncs.com)</string>
+
+    <!-- DashScope language options -->
+    <string name="dash_lang_zh">الصينية (zh)</string>
+    <string name="dash_lang_en">الإنجليزية (en)</string>
+    <string name="dash_lang_ja">اليابانية (ja)</string>
+    <string name="dash_lang_de">الألمانية (de)</string>
+    <string name="dash_lang_ko">الكورية (ko)</string>
+    <string name="dash_lang_ru">الروسية (ru)</string>
+    <string name="dash_lang_fr">الفرنسية (fr)</string>
+    <string name="dash_lang_pt">البرتغالية (pt)</string>
+    <string name="dash_lang_ar">العربية (ar)</string>
+    <string name="dash_lang_it">الإيطالية (it)</string>
+    <string name="dash_lang_es">الإسبانية (es)</string>
+
+    <!-- ============================================== -->
+    <!-- DashScope Settings - Feature Descriptions -->
+    <!-- ============================================== -->
+
+    <!-- DashScope - Streaming -->
+    <string name="feature_dash_streaming_off_desc">يستخدم تعرّفاً غير متدفق. تبدأ المعالجة بعد انتهاء التسجيل وقد يحدث تأخير. متاح لنماذج Qwen3-ASR-Flash و Qwen3.5-Omni.</string>
+    <string name="feature_dash_streaming_on_desc">يستخدم التعرّف بالبث. تُعرض نتائج النسخ النصي فوراً أثناء الكلام. الافتراضي Qwen3-ASR-Flash-Realtime؛ يمكنك التبديل إلى Fun-ASR-Realtime أدناه.</string>
+
+    <!-- DashScope - Fun-ASR model (streaming) -->
+    <string name="feature_dash_fun_asr_off_desc">يستخدم Qwen3-ASR-Flash-Realtime للبث (افتراضي).</string>
+    <string name="feature_dash_fun_asr_on_desc">يستخدم Fun-ASR-Realtime للبث.</string>
+
+    <!-- DashScope - Fun-ASR Semantic Segmentation -->
+    <string name="feature_dash_funasr_semantic_punct_off_desc">يُقسَّم أساساً حسب التوقفات، وعادةً أسرع.</string>
+    <string name="feature_dash_funasr_semantic_punct_on_desc">يستخدم معنى الجملة لاختيار الفواصل. قد تبدو الترقيم أكثر طبيعية، لكن النتائج قد تتأخر.</string>
+</resources>

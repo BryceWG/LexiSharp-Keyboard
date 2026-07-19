@@ -1,0 +1,260 @@
+<resources>
+    <!-- LLM related strings -->
+
+    <!-- LLM settings -->
+    <string name="label_llm_endpoint">نقطة نهاية OpenAI (../v1 أو ../chat/completions)</string>
+    <string name="label_llm_api_key">مفتاح API</string>
+    <string name="label_llm_model">اسم النموذج (اختياري)</string>
+    <string name="label_llm_temperature">درجة الحرارة</string>
+    <string name="label_llm_prompt">موجّه المعالجة اللاحقة (أخرج النص المعالَج فقط)</string>
+    <string name="label_llm_prompt_title">عنوان موجّه مُعدّ مسبقاً</string>
+    <string name="label_llm_prompt_presets">اختر موجّهاً مُعدّاً مسبقاً</string>
+    <string name="btn_add_preset">إضافة موجّه</string>
+    <string name="btn_delete_preset">حذف الموجّه</string>
+    <string name="label_llm_choose_profile">اختر مزوداً مخصصاً</string>
+    <string name="label_llm_profile_name">اسم الملف الشخصي</string>
+    <string name="btn_llm_add_profile">إضافة ملف</string>
+    <string name="btn_llm_delete_profile">حذف الملف</string>
+    <string name="toast_llm_profile_added">تمت إضافة الملف</string>
+    <string name="toast_llm_profile_deleted">تم حذف الملف</string>
+    <string name="untitled_profile">ملف بدون عنوان</string>
+
+    <!-- LLM test call -->
+    <string name="btn_llm_test_call">اختبار</string>
+    <string name="btn_llm_fetch_models">جلب النماذج</string>
+    <string name="llm_test_running">جارٍ اختبار استدعاء LLM…</string>
+    <string name="llm_test_success_title">نجح الاختبار</string>
+    <string name="llm_test_success_preview">معاينة الاستجابة: %1$s</string>
+    <string name="llm_test_failed_title">فشل الاختبار</string>
+    <string name="llm_test_failed_reason">السبب: %1$s</string>
+    <string name="llm_test_failed_generic">فشل الاستدعاء</string>
+    <string name="llm_test_cancelled">أُلغي الاختبار</string>
+    <string name="llm_test_missing_params">يرجى إدخال نقطة نهاية API</string>
+    <string name="llm_models_fetching">جارٍ جلب قائمة النماذج…</string>
+    <string name="llm_models_fetch_failed_title">فشل الجلب</string>
+    <string name="llm_models_fetch_failed">فشل جلب النماذج: %1$s</string>
+    <string name="llm_models_select_title">اختر النماذج للإضافة</string>
+    <string name="btn_llm_models_add">إضافة المحدد</string>
+    <string name="toast_llm_models_none_selected">لم يُحدد أي نموذج</string>
+    <!-- Skip AI under char count -->
+    <string name="label_ai_skip_under_chars">تخطّي معالجة الذكاء الاصطناعي إذا أقصر من</string>
+    <string name="helper_ai_skip_under_chars">عندما يكون الطول الفعّال (CJK: أحرف، الإنجليزية: كلمات) أقل من هذا الرقم، تُتخطّى معالجة الذكاء الاصطناعي. عيّن 0 للتعطيل.</string>
+    <string name="title_ai_skip_under">عتبة التخطّي التلقائي</string>
+
+    <!-- ============================================== -->
+    <!-- AI Post-processing Settings - Feature Descriptions -->
+    <!-- ============================================== -->
+
+    <!-- AI post-processing enabled -->
+    <string name="feature_ai_post_process_off_desc">تُخرج نتائج التعرّف مباشرة دون معالجة.</string>
+    <string name="feature_ai_post_process_on_desc">تُعالَج نتائج التعرّف بالذكاء الاصطناعي قبل الإخراج لتحسين النص والترقيم والتنسيق وغيرها.</string>
+
+    <!-- Post-processing typewriter effect -->
+    <string name="label_postproc_typewriter_enabled">تأثير الآلة الكاتبة (خرج المعالجة اللاحقة)</string>
+    <string name="feature_postproc_typewriter_off_desc">عرض خرج المعالجة اللاحقة المتدفق كما هو (قد يظهر على دفعات كبيرة).</string>
+    <string name="feature_postproc_typewriter_on_desc">تحريك خرج المعالجة اللاحقة المتدفق بتأثير آلة كاتبة سريع لواجهة أنعم.</string>
+
+    <!-- AI edit default use last ASR -->
+    <string name="feature_ai_edit_default_use_last_asr_off_desc">عند عدم تحديد نص، يستهدف التحرير بالذكاء الاصطناعي حقل الإدخال بالكامل.</string>
+    <string name="feature_ai_edit_default_use_last_asr_on_desc">عند عدم تحديد نص، يستهدف التحرير بالذكاء الاصطناعي مقطع نتيجة التعرّف الأخيرة فقط.</string>
+
+    <!-- AI edit custom system prompt -->
+    <string name="label_ai_edit_custom_prompt_enabled">استخدام موجّه تحرير مخصص بالذكاء الاصطناعي</string>
+    <string name="label_ai_edit_system_prompt">موجّه نظام التحرير بالذكاء الاصطناعي</string>
+    <string name="helper_ai_edit_system_prompt">يُعرض الموجّه المدمج افتراضياً. إعادة التعيين تمسح القيمة المخصصة وتبقى على الافتراضي المدمج.</string>
+    <string name="action_reset_to_default">إعادة للافتراضي</string>
+
+    <!-- Section titles -->
+    <string name="section_post_process_scope">وضع المعالجة اللاحقة</string>
+    <string name="section_ai_edit">تحرير بالذكاء الاصطناعي</string>
+    <string name="section_post_process_model">نموذج المعالجة اللاحقة</string>
+
+    <string name="label_ai_post_process_enabled">تفعيل معالجة لاحقة بالذكاء الاصطناعي</string>
+
+    <!-- LLM vendor selection -->
+    <string name="label_llm_vendor">مزود LLM</string>
+    <string name="llm_vendor_group_configured">مُعدّ</string>
+    <string name="llm_vendor_group_unconfigured">غير مُعدّ</string>
+    <string name="label_llm_model_select">اختر النموذج</string>
+    <string name="btn_llm_register">الحصول على مفتاح API</string>
+    <string name="btn_llm_guide">دليل الإعداد</string>
+    <string name="custom_llm_description">إعداد API متوافق مع OpenAI قابل للتخصيص بالكامل. أنشئ ملفات متعددة لمزودين مختلفين.</string>
+
+    <!-- Built-in LLM vendors -->
+    <string name="llm_vendor_sf_free">SiliconFlow</string>
+    <string name="llm_vendor_openai">OpenAI</string>
+    <string name="llm_vendor_gemini">Google Gemini</string>
+    <string name="llm_vendor_deepseek">DeepSeek</string>
+    <string name="llm_vendor_moonshot">Moonshot (Kimi)</string>
+    <string name="llm_vendor_zhipu">Zhipu GLM</string>
+    <string name="llm_vendor_volcengine">Volcengine</string>
+    <string name="llm_vendor_groq">Groq</string>
+    <string name="llm_vendor_cerebras">Cerebras</string>
+    <string name="llm_vendor_ohmygpt">OhMyGPT</string>
+    <string name="llm_vendor_fireworks">Fireworks AI</string>
+    <string name="llm_vendor_dashscope">Alibaba DashScope</string>
+    <string name="llm_vendor_custom">مخصص</string>
+
+    <!-- Reasoning mode -->
+    <string name="label_reasoning_mode">تفعيل التفكير العميق</string>
+    <string name="label_custom_reasoning_params">معلمات تفكير مخصصة</string>
+    <string name="hint_reasoning_mode">عند التفعيل، يحلّل النموذج بالتفكير. أبطأ لكن أفضل للمهام المعقدة.</string>
+    <string name="hint_reasoning_not_supported">النموذج الحالي لا يدعم وضع التفكير</string>
+    <string name="label_reasoning_params_on_json">معلمات التفكير (تشغيل، JSON)</string>
+    <string name="label_reasoning_params_off_json">معلمات التفكير (إيقاف، JSON)</string>
+    <string name="hint_reasoning_params_json">أدخل كائن JSON، مثل {"thinking":{"type":"enabled"}}. اتركه فارغاً أو {} لعدم الإرسال.</string>
+
+    <!-- SiliconFlow free/paid toggle -->
+    <string name="label_sf_use_free_service">استخدام الخدمة المجانية</string>
+    <string name="sf_free_service_desc">معالجة لاحقة مجانية بالذكاء الاصطناعي من SiliconFlow. لا يلزم مفتاح API.</string>
+    <string name="sf_paid_service_hint">أدخل مفتاح SiliconFlow API لمزيد من خيارات النماذج.</string>
+
+    <!-- Common buttons -->
+    <string name="btn_get_api_key">الحصول على مفتاح API</string>
+    <string name="label_custom_model_id">معرّف نموذج مخصص</string>
+    <string name="option_custom_model">مخصص…</string>
+
+    <!-- Built-in prompt localization -->
+    <string name="prompt_default_sf_omni">يرجى نسخ الصوت التالي حرفياً إلى نص. لا تُخرج شروحات أو بادئات أو لاحقات. قد تكون لغة الإدخال صينية أو إنجليزية أو غيرها.</string>
+    <string name="prompt_default_gem">يرجى نسخ الصوت التالي حرفياً إلى نص. لا تُخرج شروحات أو بادئات أو لاحقات.</string>
+    <string name="llm_prompt_user_input_prefix">النص للمعالجة:\n</string>
+    <string name="llm_edit_instruction_label">[تعليمات التحرير]</string>
+    <string name="llm_edit_original_label">[النص الأصلي]</string>
+    <string name="llm_prompt_preset_mine_title">موجّهي</string>
+    <string name="llm_prompt_preset_default_general_title">معالجة لاحقة عامة</string>
+    <string name="llm_prompt_preset_default_general_content"># الدور
+
+أنت خبير معالجة لاحقة لـ ASR (التعرّف التلقائي على الكلام) من الطراز الأول.
+
+# المهمة
+
+سيرسل المستخدم نصاً خاماً مفرّغاً من نظام ASR. مهمتك معالجته وتحسينه.
+
+# القواعد
+
+1. **إزالة الحشو**: احذف تماماً الحشو والتردد والعادات اللفظية بلا معنى.
+   - **أمثلة**: «يعني»، «آه»، «مثل»، «كما تعلم»، إلخ.
+2. **دمج التكرار والتصحيح الذاتي**: عند تكرار الكلمات/العبارات أو التصحيح الذاتي، أبقِ النية النهائية والأوضح فقط.
+3. **إصلاح أخطاء التعرّف**: صحّح الأخطاء الواضحة حسب السياق.
+4. **الحفاظ على المعنى**: التزم بنية المتحدث الأصلية. لا تضف معلومات جديدة. حافظ على النبرة؛ بلا إضفاء رسمي قسري.
+5. ملاحظة التنسيق: قد يبدأ إدخال المستخدم بـ «النص للمعالجة:» كعلامة. تجاهل العلامة وعالج محتوى النص فقط.
+
+# متطلبات الإخراج
+
+- أخرج النص النهائي المصحّح فقط.
+- لا تُخرج شروحات أو بادئات/لاحقات أو اقتباسات أو Markdown.
+- إذا كان الإدخال جيداً بما يكفي، أخرجه دون تغيير.</string>
+    <string name="llm_prompt_preset_default_polish_title">تلميع نص أساسي</string>
+    <string name="llm_prompt_preset_default_polish_content"># الدور
+
+أنت محرر نصوص محترف.
+
+# المهمة
+
+سيرسل المستخدم نصاً خاماً من ASR. حسّنه وصحّحه.
+
+# القواعد
+
+1. صحّح الأخطاء الإملائية والنحوية.
+2. أضف ترقيمًا مناسبًا وطبيعيًا.
+3. أزل العامية والتكرار والحشو.
+4. حافظ على المعنى الأصلي مع جعل التعبير أكثر سلاسة وكتابة.
+5. لا تضف معلومات غير موجودة في النص الأصلي.
+6. تجاهل العلامة الافتتاحية «النص للمعالجة:» وعالج المحتوى الفعلي فقط.
+
+# متطلبات الإخراج
+
+- أخرج النص الملمّع فقط.
+- لا تُخرج شروحات أو بادئات/لاحقات أو اقتباسات أو Markdown.</string>
+    <string name="llm_prompt_preset_default_translate_en_title">ترجمة إلى الإنجليزية</string>
+    <string name="llm_prompt_preset_default_translate_en_content"># الدور
+
+أنت مساعد ترجمة محترف.
+
+# المهمة
+
+سيرسل المستخدم نصاً. ترجمه إلى الإنجليزية.
+
+# القواعد
+
+1. حافظ بدقة على المعنى الأساسي.
+2. حافظ على النبرة الأصلية (رسمية، عادية، عاجلة، إلخ).
+3. اجعل التعبير في اللغة الهدف سلساً وطبيعياً.
+4. تجاهل العلامة الافتتاحية «النص للمعالجة:» وترجم المحتوى الفعلي فقط.
+
+# متطلبات الإخراج
+
+- أخرج النص الإنجليزي المترجم فقط.
+- لا تُخرج شروحات أو بادئات/لاحقات أو اقتباسات أو Markdown.</string>
+    <string name="llm_prompt_preset_default_key_points_title">استخراج النقاط الرئيسية</string>
+    <string name="llm_prompt_preset_default_key_points_content"># الدور
+
+أنت مساعد استخراج معلومات محترف.
+
+# المهمة
+
+سيرسل المستخدم نصاً. استخرج نقاطه الأساسية.
+
+# القواعد
+
+1. حدّد واستخرج المعلومات والنقاط الأساسية.
+2. اجعل كل نقطة موجزة وواضحة.
+3. استخدم تنسيق النقاط.
+4. تجاهل العلامة الافتتاحية «النص للمعالجة:» وعالج المحتوى الفعلي فقط.
+
+# متطلبات الإخراج
+
+- أخرج كنقاط.
+- لا تضف شروحات أو أغلفة إضافية.</string>
+    <string name="llm_prompt_preset_default_todo_title">استخراج بنود العمل</string>
+    <string name="llm_prompt_preset_default_todo_content"># الدور
+
+أنت مساعد استخراج مهام محترف.
+
+# المهمة
+
+سيرسل المستخدم نصاً. حدّد واستخرج كل بنود العمل.
+
+# القواعد
+
+1. استخرج المهام أو البنود القابلة للتنفيذ المذكورة في النص.
+2. إن ذُكر المسؤول والموعد، أدرجهما.
+3. إن كانت المعلومات ناقصة، احذف ذلك الجزء.
+4. تجاهل العلامة الافتتاحية «النص للمعالجة:» وعالج المحتوى الفعلي فقط.
+
+# متطلبات الإخراج
+
+استخدم هذا التنسيق:
+- [ ] [المهمة 1]
+- [ ] [المهمة 2]
+
+إن لم يُعثر على بند عمل، أخرج «لم يُعثر على بنود عمل».</string>
+    <string name="llm_edit_system_prompt">أنت مساعد تحرير نصوص دقيق. مهمتك إجراء الحد الأدنى من التعديلات اللازمة على النص الأصلي وفق تعليمات التحرير.
+القواعد:
+- أخرج النص المحرَّر النهائي فقط. لا تُخرج شروحات أو بادئات/لاحقات أو اقتباسات.
+- إذا كانت التعليمات غامضة أو متعارضة أو غير قابلة للتنفيذ، أعد النص الأصلي دون تغيير.
+- لا تختلق محتوى. ما لم يُطلب صراحة، لا تضف/تحذف معلومات ولا تغيّر النبرة/الطول.
+- حافظ على الفقرات والأسطر والمسافات والترقيم الأصلي ما لم يُطلب خلاف ذلك.
+- حافظ على اتساق أسلوب اللغة/الكتابة مع الأصل.
+- للحجب، استبدل المقاطع المطلوبة فقط بـ "[REDACTED]".
+- يجب أن يكون الإخراج النص المحرَّر فقط.
+
+أمثلة (للأسلوب فقط، لا تنسخ المحتوى):
+1) التعليمات: أعد كتابة النص العامي بأسلوب رسمي مع الحفاظ على المعنى.
+   الأصلي: i might be a bit late, you can start first
+   الإخراج: I may be a little late. Please start first.
+2) التعليمات: أصلح الأخطاء الإملائية.
+   الأصلي: this plan look good but need more data
+   الإخراج: This plan looks good but needs more data.
+3) التعليمات: استبدل comet بـ Kotlin.
+   الأصلي: we are building with comet now
+   الإخراج: we are building with Kotlin now
+4) التعليمات: حوّل القائمة متعددة الأسطر إلى سطر واحد مفصول بفواصل.
+   الأصلي: apple
+banana
+grape
+   الإخراج: apple, banana, grape.
+5) التعليمات: احجب الأسماء وأرقام الهواتف.
+   الأصلي: Contact John, phone 1234567890
+   الإخراج: Contact [REDACTED], phone [REDACTED]</string>
+</resources>

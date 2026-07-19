@@ -1,0 +1,72 @@
+<resources>
+    <!-- FunASR Nano local ASR configuration strings -->
+    <string name="funasr_section_title">FunASR Nano ASR محلي</string>
+    <string name="vendor_funasr_nano">FunASR Nano</string>
+
+    <!-- FunASR Nano local settings -->
+    <string name="label_fn_model_variant">إصدار النموذج</string>
+    <string name="fn_model_nano_int8">FunASR Nano (int8، ~690MB)</string>
+    <string name="fn_model_mlt_nano_int8">FunASR MLT Nano (متعدد اللغات، int8، ~690MB)</string>
+    <string name="label_fn_language_preset">لغة التعرّف</string>
+    <string name="fn_lang_auto">تلقائي / غير محدد</string>
+    <string name="fn_lang_zh">الصينية</string>
+    <string name="fn_lang_en">الإنجليزية</string>
+    <string name="fn_lang_yue">الكانتونية</string>
+    <string name="fn_lang_ja">اليابانية</string>
+    <string name="fn_lang_ko">الكورية</string>
+    <string name="fn_lang_vi">الفيتنامية</string>
+    <string name="fn_lang_id">الإندونيسية</string>
+    <string name="fn_lang_th">التايلاندية</string>
+    <string name="fn_lang_ms">الماليزية</string>
+    <string name="fn_lang_fil">الفلبينية</string>
+    <string name="fn_lang_ar">العربية</string>
+    <string name="fn_lang_hi">الهندية</string>
+    <string name="fn_lang_bg">البلغارية</string>
+    <string name="fn_lang_hr">الكرواتية</string>
+    <string name="fn_lang_cs">التشيكية</string>
+    <string name="fn_lang_da">الدنماركية</string>
+    <string name="fn_lang_nl">الهولندية</string>
+    <string name="fn_lang_et">الإستونية</string>
+    <string name="fn_lang_fi">الفنلندية</string>
+    <string name="fn_lang_el">اليونانية</string>
+    <string name="fn_lang_hu">المجرية</string>
+    <string name="fn_lang_ga">الأيرلندية</string>
+    <string name="fn_lang_lv">اللاتفية</string>
+    <string name="fn_lang_lt">الليتوانية</string>
+    <string name="fn_lang_mt">المالطية</string>
+    <string name="fn_lang_pl">البولندية</string>
+    <string name="fn_lang_pt">البرتغالية</string>
+    <string name="fn_lang_ro">الرومانية</string>
+    <string name="fn_lang_sk">السلوفاكية</string>
+    <string name="fn_lang_sl">السلوفينية</string>
+    <string name="fn_lang_sv">السويدية</string>
+    <string name="label_fn_threads">عدد الخيوط (1-8)</string>
+    <string name="label_fn_use_itn">تفعيل ITN (تعرّف ذكي على الأرقام)</string>
+    <string name="label_fn_user_prompt">موجّه المستخدم</string>
+    <string name="fn_user_prompt_hint">الموجّهات الطويلة قد تبطئ المعالجة.</string>
+    <string name="label_fn_preload">تحميل النموذج بقوة</string>
+    <string name="label_fn_keep_alive">سياسة إلغاء تحميل النموذج</string>
+    <string name="btn_fn_download_model">تنزيل النموذج بنقرة</string>
+    <string name="btn_fn_import_model">استيراد النموذج من ملف محلي</string>
+    <string name="btn_fn_clear_model">مسح النموذج المُنزَّل</string>
+    <string name="fn_download_status_downloading">جارٍ التنزيل… %1$d%%</string>
+    <string name="fn_download_status_extracting_progress">جارٍ الاستخراج… %1$d%%</string>
+    <string name="fn_download_status_done">تم تثبيت النموذج</string>
+    <string name="fn_download_status_failed">فشل التنزيل أو الاستخراج</string>
+    <string name="fn_download_started_in_bg">بدأ التنزيل في الخلفية. راجع الإشعار للمتابعة.</string>
+    <string name="fn_import_started_in_bg">بدأ الاستيراد في الخلفية. راجع الإشعار للمتابعة.</string>
+    <string name="fn_import_success">تم استيراد النموذج بنجاح: %1$s</string>
+    <string name="fn_import_failed">فشل استيراد النموذج: %1$s</string>
+    <string name="fn_import_status_extracting">جارٍ الاستيراد… %1$d%%</string>
+    <string name="fn_clear_confirm_title">تأكيد مسح النموذج؟</string>
+    <string name="fn_clear_confirm_message">سيُحذف ملفات النموذج المُنزَّلة. يمكنك إعادة التنزيل لاحقاً. المتابعة؟</string>
+    <string name="fn_clear_done">تم مسح النموذج</string>
+    <string name="fn_clear_failed">فشل المسح</string>
+
+    <!-- Error messages -->
+    <string name="error_funasr_model_missing">نموذج FunASR Nano مفقود. اضبطه أو نزّله لاحقاً من الإعدادات.</string>
+
+    <!-- Model download notifications -->
+    <string name="notif_fn_title_nano_int8">نموذج FunASR Nano (int8)</string>
+    <string name="notif_fn_title_mlt_nano_int8">نموذج FunASR MLT Nano (int8)</string>
+</resources>

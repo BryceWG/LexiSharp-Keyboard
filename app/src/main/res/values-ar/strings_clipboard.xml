@@ -1,0 +1,43 @@
+<resources>
+    <!-- Clipboard sync related strings -->
+
+    <!-- SyncClipboard settings -->
+    <string name="section_sync_clipboard">مزامنة الحافظة</string>
+    <string name="label_enable_sync_clipboard">استخدام مشروع SyncClipboard لمزامنة الحافظة</string>
+    <string name="label_sc_server_base">عنوان الخادم الأساسي (سيُلحق /SyncClipboard.json)</string>
+    <string name="label_sc_username">اسم المستخدم</string>
+    <string name="label_sc_password">كلمة المرور</string>
+    <string name="label_sc_auto_pull">سحب الحافظة تلقائياً دورياً (فقط عندما تكون لوحة المفاتيح ظاهرة)</string>
+    <string name="label_sc_pull_interval">فترة السحب (ثانية، 1-600)</string>
+    <string name="btn_sc_test_pull">تحقق</string>
+    <string name="sc_test_success">نجح السحب</string>
+    <string name="sc_test_failed">فشل السحب. تحقّق من الرابط وبيانات الاعتماد.</string>
+    <string name="sc_status_uploaded">تم رفع الحافظة بنجاح</string>
+    <string name="sc_status_upload_failed">فشل رفع الحافظة</string>
+    <string name="btn_sc_project_home">صفحة المشروع</string>
+    <string name="sc_open_browser_failed">تعذّر فتح المتصفح</string>
+    <string name="hint_sc_server_base_placeholder">https://your-server.com/path</string>
+    
+    <!-- Clipboard manager panel -->
+    <string name="ext_btn_clipboard">الحافظة</string>
+    <string name="cd_clipboard_back">رجوع</string>
+    <string name="cd_clipboard_delete">حذف</string>
+    <string name="clip_count_format">%1$d عنصر</string>
+    <string name="clip_delete_title">حذف (المثبّت يُبقى)</string>
+    <string name="clip_delete_before_1h">قبل ساعة</string>
+    <string name="clip_delete_before_24h">قبل 24 ساعة</string>
+    <string name="clip_delete_before_7d">قبل 7 أيام</string>
+    <string name="clip_delete_all_non_pinned">كل غير المثبّت</string>
+    <string name="clip_pinned">مثبّت</string>
+    <string name="clip_unpinned">أُلغي التثبيت</string>
+    <string name="clip_deleted">محذوف</string>
+    <string name="clip_cannot_delete_pinned">مثبّت. اسحب يميناً لإلغاء التثبيت</string>
+
+    <!-- Clipboard file sync / download -->
+    <string name="clip_file_download_success">تم تنزيل الملف</string>
+    <string name="clip_file_download_failed">فشل تنزيل الملف</string>
+    <string name="clip_file_download_error">خطأ تنزيل الملف: %1$s</string>
+    <string name="clip_file_not_found">الملف غير موجود</string>
+    <string name="clip_file_open_chooser_title">فتح الملف</string>
+    <string name="clip_file_open_failed">تعذّر فتح الملف: %1$s</string>
+</resources>

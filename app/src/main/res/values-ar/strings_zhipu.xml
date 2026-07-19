@@ -1,0 +1,10 @@
+<resources>
+    <string name="vendor_zhipu">Zhipu GLM</string>
+    <string name="zhipu_section_title">التعرّف على الكلام عبر Zhipu GLM</string>
+    <string name="label_zhipu_api_key">مفتاح Zhipu API</string>
+    <string name="label_zhipu_temperature">درجة الحرارة</string>
+    <string name="error_missing_zhipu_key">يرجى ضبط مفتاح Zhipu API أولاً</string>
+    <string name="zhipu_temperature_hint">0.0 - 1.0، الافتراضي 0.95</string>
+    <string name="label_zhipu_prompt">موجّه السياق</string>
+    <string name="zhipu_prompt_hint">قدّم النص السابق كسياق للتسجيلات الطويلة. يُفضّل أقل من 8000 حرف.</string>
+</resources>

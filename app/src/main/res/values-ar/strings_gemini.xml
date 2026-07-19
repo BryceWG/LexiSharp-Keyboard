@@ -1,0 +1,17 @@
+<resources>
+    <string name="vendor_gemini">Google Gemini</string>
+    <string name="gemini_section_title">فهم الصوت عبر Gemini</string>
+    <string name="label_gemini_endpoint">نقطة النهاية</string>
+    <string name="label_gemini_api_key">مفتاح Gemini API</string>
+    <string name="label_gemini_model">النموذج (مثل gemini-2.5-flash)</string>
+    <string name="label_gemini_prompt">موجّه النسخ النصي</string>
+    <string name="label_gemini_disable_thinking">تفكير أدنى</string>
+
+    <!-- ============================================== -->
+    <!-- Gemini Settings - Feature Descriptions -->
+    <!-- ============================================== -->
+
+    <!-- Gemini - Reduce thinking mode -->
+    <string name="feature_gemini_disable_thinking_off_desc">يستخدم وضع التفكير الافتراضي للنموذج؛ قد يكون أدق لكنه قد يعيد صياغة النتيجة.</string>
+    <string name="feature_gemini_disable_thinking_on_desc">يستخدم أدنى إعداد تفكير مدعوم لنسخ نصي أسرع أقرب للصوت الأصلي.</string>
+</resources>

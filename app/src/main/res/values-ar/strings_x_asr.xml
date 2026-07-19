@@ -1,0 +1,47 @@
+<resources>
+    <!-- X-ASR local streaming ASR configuration strings -->
+    <string name="x_asr_section_title">X-ASR (محلي)</string>
+    <string name="vendor_x_asr">X-ASR</string>
+
+    <!-- X-ASR configuration -->
+    <string name="label_x_asr_model_variant">متغير النموذج</string>
+    <string name="label_x_asr_threads">عدد الخيوط (1-8)</string>
+    <string name="label_x_asr_keep_alive">سياسة إلغاء تحميل النموذج</string>
+    <string name="x_asr_variant_480ms">صيني+إنجليزي (480 مللي ثانية، 530MB)</string>
+    <string name="btn_x_asr_download_model">تنزيل النموذج بنقرة</string>
+    <string name="btn_x_asr_import_model">استيراد النموذج من ملف محلي</string>
+    <string name="btn_x_asr_clear_model">مسح النموذج المُنزَّل</string>
+    <string name="x_asr_download_status_downloading">جارٍ التنزيل… %1$d%%</string>
+    <string name="x_asr_download_status_extracting_progress">جارٍ الاستخراج… %1$d%%</string>
+    <string name="x_asr_download_status_done">تم تثبيت النموذج</string>
+    <string name="x_asr_download_status_failed">فشل التنزيل أو الاستخراج</string>
+    <string name="x_asr_download_started_in_bg">بدأ في الخلفية. راجع الإشعار للمتابعة</string>
+    <string name="x_asr_import_started_in_bg">بدأ الاستيراد في الخلفية. راجع الإشعار للمتابعة</string>
+    <string name="x_asr_import_success">تم استيراد النموذج بنجاح: %1$s</string>
+    <string name="x_asr_import_failed">فشل استيراد النموذج: %1$s</string>
+    <string name="x_asr_clear_confirm_title">مسح النموذج؟</string>
+    <string name="x_asr_clear_confirm_message">سيُحذف ملفات النموذج المُنزَّلة. يمكنك إعادة التنزيل لاحقاً. المتابعة؟</string>
+    <string name="x_asr_clear_done">تم مسح النموذج</string>
+    <string name="x_asr_clear_failed">فشل المسح</string>
+    <string name="x_asr_loading_model">جارٍ تحميل النموذج المحلي…</string>
+    <string name="label_x_asr_preload">تحميل النموذج بقوة</string>
+    <string name="label_x_asr_use_itn">تفعيل ITN (تعرّف ذكي على الأرقام)</string>
+
+    <!-- Error message -->
+    <string name="error_x_asr_model_missing">ملفات نموذج X-ASR مفقودة. اضبطها أو نزّلها من الإعدادات</string>
+
+    <!-- Model download notifications -->
+    <string name="notif_x_asr_title_480ms">نموذج X-ASR (480 مللي ثانية)</string>
+
+    <!-- ============================================== -->
+    <!-- X-ASR Settings - Feature Descriptions -->
+    <!-- ============================================== -->
+
+    <!-- X-ASR - Preload model -->
+    <string name="feature_x_asr_preload_off_desc">يُحمَّل النموذج عند الحاجة فقط، وقد يسبب تأخيراً في أول استخدام.</string>
+    <string name="feature_x_asr_preload_on_desc">يُحمَّل النموذج مسبقاً عند ظهور لوحة المفاتيح لتقليل تأخير أول استخدام.</string>
+
+    <!-- X-ASR - Use ITN -->
+    <string name="feature_x_asr_use_itn_off_desc">يحتفظ بالصيغ المنطوقة، مثل «ألف ومئتان وأربعة وثلاثون».</string>
+    <string name="feature_x_asr_use_itn_on_desc">يحوّل الأرقام والتواريخ والأوقات الصينية المدعومة إلى صيغ مكتوبة شائعة، مثل «1234».</string>
+</resources>

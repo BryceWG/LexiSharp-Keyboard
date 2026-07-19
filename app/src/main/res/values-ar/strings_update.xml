@@ -1,0 +1,49 @@
+<resources>
+    <!-- Update check related strings -->
+
+    <string name="btn_check_update">التحقق من التحديثات</string>
+
+    <!-- Update check -->
+    <string name="update_checking">جارٍ التحقق من التحديثات…</string>
+    <string name="update_no_update">أنت تستخدم أحدث إصدار</string>
+    <string name="update_check_failed">فشل التحقق من التحديث: %1$s</string>
+    <string name="update_dialog_title">إصدار جديد متاح</string>
+    <string name="update_dialog_message">الإصدار الحالي: %1$s\nأحدث إصدار: %2$s\n\nهل تريد التنزيل؟</string>
+    <string name="current_version_info_title">معلومات الإصدار الحالي</string>
+    <string name="current_version_message">الإصدار الحالي: %1$s\n\nأنت تستخدم أحدث إصدار!</string>
+    <string name="btn_download">تنزيل</string>
+    <string name="btn_view_release_page">الإصدار</string>
+    <string name="btn_manual_check">تحقق يدوي</string>
+    <string name="btn_cancel">إلغاء</string>
+    <string name="btn_view_changelog">السجل</string>
+    <string name="update_feedback_title">تحديث</string>
+
+    <string name="download_source_title">اختر مصدر التنزيل</string>
+    <string name="download_source_github_official">GitHub (رسمي)</string>
+    <string name="download_source_mirror_1">مرآة GitHub 1</string>
+    <string name="download_source_mirror_2">مرآة GitHub 2</string>
+    <string name="download_source_mirror_3">مرآة GitHub 3</string>
+    <string name="download_source_latency_pending">زمن الاستجابة: قيد القياس…</string>
+    <string name="download_source_latency_value">زمن الاستجابة: %1$d مللي ثانية</string>
+    <string name="download_source_latency_timeout">زمن الاستجابة: انتهت المهلة</string>
+    <string name="download_source_latency_failed">زمن الاستجابة: غير متاح</string>
+    <string name="download_source_latency_note">بيانات زمن الاستجابة للمراجع فقط ولا تعكس سرعة التنزيل الفعلية.</string>
+    <string name="update_timestamp_label">وقت الإصدار: %1$s</string>
+    <string name="update_release_notes_label">ملاحظات الإصدار:\n%1$s</string>
+    <string name="error_open_browser">تعذّر فتح المتصفح</string>
+
+    <!-- APK download and installation -->
+    <string name="apk_download_notification_title">جارٍ تنزيل التحديث</string>
+    <string name="apk_download_notification_channel_name">تنزيل تحديث التطبيق</string>
+    <string name="apk_download_notification_channel_desc">تنزيل حزمة التحديث وتثبيتها تلقائياً</string>
+    <string name="apk_download_preparing">جارٍ تجهيز التنزيل…</string>
+    <string name="apk_download_progress">جارٍ التنزيل %1$d%% (%2$d MB / %3$d MB)</string>
+    <string name="apk_download_complete">اكتمل التنزيل، جارٍ التجهيز للتثبيت…</string>
+    <string name="apk_download_complete_click_to_install">اكتمل التنزيل، اضغط للتثبيت</string>
+    <string name="apk_download_failed">فشل التنزيل: %1$s</string>
+    <string name="apk_download_started">بدأ تنزيل التحديث</string>
+    <string name="apk_download_start_failed">فشل بدء التنزيل</string>
+    <string name="apk_install_permission_required_title">يلزم إذن التثبيت</string>
+    <string name="apk_install_permission_required_message">اسمح بالتثبيت من هذا المصدر في إعدادات النظام</string>
+    <string name="apk_install_failed">فشل التثبيت، ثبّت يدوياً</string>
+</resources>

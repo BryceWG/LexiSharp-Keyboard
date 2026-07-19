@@ -1,0 +1,502 @@
+<resources>
+  <!-- ============================================== -->
+  <!-- Basic Information -->
+  <!-- ============================================== -->
+  <string name="app_name">BiBi Keyboard</string>
+  <string name="fxliang_fcitx_voice_input_provider_label">ربط BiBi Keyboard</string>
+  <!-- PocketBase 统计服务地址（渠道可覆盖）；为空则不上报 -->
+  <string name="pocketbase_base_url" translatable="false"></string>
+
+  <string name="qs_tile_ime_picker">تبديل طريقة الإدخال</string>
+
+  <!-- ============================================== -->
+  <!-- Keyboard Status Information -->
+  <!-- ============================================== -->
+  <string name="status_idle">جاهز</string>
+  <string name="status_listening">جارٍ الاستماع…</string>
+  <string name="status_recognizing">جارٍ التعرّف…</string>
+  <string name="status_backup_asr_used">استُخدمت نتيجة المحرك الاحتياطي</string>
+  <string name="status_backup_asr_loading">جارٍ بدء التعرّف الاحتياطي المحلي…</string>
+  <string name="status_backup_asr_recognizing">جارٍ التعرّف بالاحتياطي المحلي…</string>
+  <string name="status_ai_processing">معالجة لاحقة بالذكاء الاصطناعي…</string>
+  <string name="status_ai_edit_listening">انطق تعليمات التحرير…</string>
+  <string name="status_ai_editing">تحرير بالذكاء الاصطناعي…</string>
+  <string name="status_cancelled">أُلغي</string>
+  <string name="status_last_request_ms">وقت آخر طلب: %1$d مللي ثانية</string>
+  <string name="status_reverted_to_raw">أُعيد إلى النص الخام</string>
+  <string name="status_revert_postprocess_unavailable">تعذّر التراجع عن معالجة الذكاء الاصطناعي</string>
+  <string name="status_postprocess_interrupted_raw">أُلغيت معالجة الذكاء الاصطناعي؛ استُخدم النص الخام</string>
+  <string name="status_undone">تم التراجع عن آخر تغيير</string>
+  <string name="status_llm_empty_result">فشل التحرير بالذكاء الاصطناعي: لا نتيجة</string>
+  <string name="status_last_asr_not_found">لم يُعثر على آخر نتيجة ASR؛ أُلغي</string>
+  <string name="hint_need_llm_keys">اضبط معالجة الذكاء الاصطناعي أولاً</string>
+  <string name="hint_cannot_read_text">نص التطبيق الحالي غير قابل للقراءة</string>
+  <string name="status_llm_failed_used_raw">فشلت معالجة الذكاء الاصطناعي؛ استُخدم النص الخام</string>
+  <string name="status_llm_edit_failed">فشل التحرير بالذكاء الاصطناعي. أعد المحاولة</string>
+  <string name="hint_need_permission">يلزم إذن الميكروفون للإدخال الصوتي</string>
+  <string name="status_postproc">معالجة الذكاء الاصطناعي: %1$s</string>
+  <string name="action_revert_postprocess">التراجع عن معالجة الذكاء الاصطناعي</string>
+
+  <string name="toggle_on">تشغيل</string>
+  <string name="toggle_off">إيقاف</string>
+  <string name="label_recording_gesture_cancel">اسحب يساراً للإلغاء</string>
+  <string name="label_recording_gesture_send">اسحب يميناً للإرسال</string>
+  <string name="label_recording_tap_cancel">اضغط للإلغاء</string>
+  <string name="label_recording_tap_send">اضغط للإرسال</string>
+  <string name="hint_swipe_down_lock">اسحب لأسفل لقفل التسجيل</string>
+  <string name="hint_tap_to_stop_recording">اضغط لإيقاف التسجيل</string>
+
+  <string name="label_ai_edit_default_use_last_asr">تطبيق على مقطع النسخ النصي الأخير فقط</string>
+  <string name="label_auto_start_recording_on_show">بدء التسجيل تلقائياً عند ظهور اللوحة</string>
+  <string name="label_continuous_capture">تسجيل مستمر أثناء الظهور</string>
+  <string name="label_auto_enter_after_asr">إدخال تلقائي بعد اكتمال التعرّف</string>
+  <string name="btn_retry">فشل الاتصال، إعادة المحاولة؟</string>
+
+  <!-- ============================================== -->
+  <!-- Settings Related -->
+  <!-- ============================================== -->
+  <string name="btn_one_click_setup">إعداد بنقرة</string>
+
+  <string name="settings_title">إعدادات BiBi Keyboard</string>
+  <string name="settings_tab_input">الإدخال</string>
+  <string name="settings_tab_smart">ذكي</string>
+  <string name="settings_tab_system">النظام</string>
+  <string name="settings_ui_mode">أسلوب الواجهة</string>
+  <string name="settings_ui_mode_summary">اختر أسلوب Miuix أو Material</string>
+  <string name="settings_ui_mode_miuix">Miuix</string>
+  <string name="settings_ui_mode_material">Material</string>
+  <string name="settings_theme_mode">وضع السمة</string>
+  <string name="settings_theme_mode_system">اتباع النظام</string>
+  <string name="settings_theme_mode_light">فاتح</string>
+  <string name="settings_theme_mode_dark">داكن</string>
+  <string name="home_summary_enabled">مفعّل</string>
+  <string name="home_summary_disabled">معطّل</string>
+  <string name="home_summary_more_input_disabled">غير مفعّل</string>
+  <string name="home_summary_more_input_volume_key_enabled">إدخال مفاتيح الصوت مفعّل</string>
+  <string name="home_summary_more_input_floating_enabled">إدخال الكرة العائمة مفعّل</string>
+  <string name="home_summary_more_input_both_enabled">مفاتيح الصوت والكرة العائمة مفعّلة</string>
+  <string name="home_summary_more_input_accessibility_missing">إمكانية الوصول غير مفعّلة</string>
+  <string name="home_summary_setup_done">اكتمل الإعداد الأساسي</string>
+  <string name="home_summary_setup_progress">الإعداد الأساسي %1$d/%2$d</string>
+  <string name="home_summary_input_tap_control">تحكم بالضغط</string>
+  <string name="home_summary_input_hold_control">تحكم بالضغط المطوّل</string>
+  <string name="home_summary_asr_format">إيقاف تلقائي %1$s · %2$s</string>
+  <string name="home_summary_ai_format">%1$s · %2$s · %3$s</string>
+  <string name="home_summary_api_log_errors">استدعاءات API الأخيرة فيها أخطاء</string>
+  <string name="home_summary_update_available">إصدار جديد متاح</string>
+  <string name="title_input_settings">إعدادات الإدخال</string>
+  <string name="title_asr_settings">إعدادات التعرّف على الكلام</string>
+  <string name="title_ai_settings">إعدادات معالجة الذكاء الاصطناعي</string>
+  <string name="title_other_settings">إعدادات أخرى</string>
+  <string name="btn_settings_search">بحث في الإعدادات</string>
+  <string name="title_settings_search">بحث في الإعدادات</string>
+  <string name="hint_settings_search">ابحث في الإعدادات</string>
+  <string name="cd_settings_search_clear">مسح نص البحث</string>
+  <string name="cd_show_password">إظهار كلمة المرور</string>
+  <string name="cd_hide_password">إخفاء كلمة المرور</string>
+  <string name="text_settings_search_empty">لا إعدادات مطابقة</string>
+
+  <!-- Settings page section titles -->
+  <string name="section_settings_items">الإعدادات الرئيسية</string>
+  <string name="section_more">المزيد</string>
+  <string name="section_general">إبقاء التطبيق في الخلفية</string>
+
+  <string name="label_app_key">X-Api-App-Key</string>
+  <string name="label_access_key">X-Api-Access-Key</string>
+  <string name="label_asr_vendor">مزود التعرّف على الكلام</string>
+  <string name="label_backup_asr_engine">محرك التعرّف الاحتياطي</string>
+  <string name="label_backup_asr_enabled">تفعيل المحرك الاحتياطي</string>
+  <string name="label_backup_asr_vendor">المزود الاحتياطي</string>
+  <string name="label_backup_asr_timeout_sensitivity">حساسية المهلة</string>
+  <string name="label_backup_asr_local_residency">وضع الاحتياطي المحلي</string>
+  <string name="hint_backup_asr_uses_existing_config">يستخدم إعدادات المزود المضبوطة مسبقاً في هذه الصفحة</string>
+  <string name="hint_backup_asr_timeout_sensitivity">حساسية أعلى تنتقل لنتيجة الاحتياطي أسرع عند بطء المحرك الأساسي</string>
+  <string name="hint_backup_asr_local_residency">عند الطلب يفرّغ نماذج الاحتياطي المحلي بعد الخمول؛ الإبقاء يبقيها محمّلة لأسرع احتياطي.</string>
+  <string name="option_backup_asr_timeout_sensitivity_relaxed">مرتخي</string>
+  <string name="option_backup_asr_timeout_sensitivity_balanced">متوازن (موصى به)</string>
+  <string name="option_backup_asr_timeout_sensitivity_sensitive">حسّاس</string>
+  <string name="option_backup_asr_local_residency_on_demand">تحميل عند الطلب</string>
+  <string name="option_backup_asr_local_residency_resident">إبقاء مقيم</string>
+
+  <!-- ============================================== -->
+  <!-- Custom Punctuation -->
+  <!-- ============================================== -->
+  <string name="custom_punct_section_title">أزرار ترقيم مخصصة</string>
+  <string name="label_custom_punct_1">الزر 1</string>
+  <string name="label_custom_punct_2">الزر 2</string>
+  <string name="label_custom_punct_3">الزر 3</string>
+  <string name="label_custom_punct_4">الزر 4</string>
+
+  <!-- ============================================== -->
+  <!-- Speech Presets -->
+  <!-- ============================================== -->
+  <string name="label_speech_preset_section">قوالب الكلام</string>
+  <string name="label_speech_preset_select">القالب الحالي</string>
+  <string name="speech_preset_empty_placeholder">لا قوالب بعد</string>
+  <string name="speech_preset_untitled">قالب بدون عنوان</string>
+  <string name="hint_speech_preset_name">اسم القالب</string>
+  <string name="hint_speech_preset_content">محتوى القالب</string>
+  <string name="btn_speech_preset_add">إضافة</string>
+  <string name="btn_speech_preset_delete">حذف</string>
+  <string name="speech_preset_default_name">قالب %1$d</string>
+  <string name="toast_speech_preset_added">تمت إضافة القالب</string>
+  <string name="toast_speech_preset_deleted">تم حذف القالب</string>
+  <string name="dialog_speech_preset_delete_title">حذف القالب</string>
+  <string name="dialog_speech_preset_delete_message">حذف \"%1$s\"؟</string>
+  <string name="speech_preset_intro">عندما تساوي نتيجة ASR الاسم تماماً، تُستبدل بالمحتوى. مفيد للعبارات والتوقيعات والعناوين والمعرّفات. المطابقة: أولاً بحساسية حالة الأحرف، ثم بدونها إن لم تُطابق؛ تُفعَّل فقط عند تطابق النص بالكامل مع الاسم. قد يلزم تفعيل إزالة الترقيم الختامي.</string>
+
+  <!-- ============================================== -->
+  <!-- Language Settings -->
+  <!-- ============================================== -->
+  <string name="label_language">لغة التطبيق</string>
+  <string name="lang_follow_system">اتباع النظام</string>
+  <string name="lang_zh_cn">الصينية المبسّطة</string>
+  <string name="lang_zh_tw">الصينية التقليدية</string>
+  <string name="lang_ja">اليابانية</string>
+  <string name="lang_en">الإنجليزية</string>
+  <string name="lang_ar">العربية</string>
+
+  <!-- ============================================== -->
+  <!-- General Toasts -->
+  <!-- ============================================== -->
+  <string name="toast_backup_asr_used">استُخدمت نتيجة المحرك الاحتياطي</string>
+  <string name="toast_preset_added">تمت إضافة القالب</string>
+  <string name="toast_preset_deleted">تم حذف القالب</string>
+  <string name="untitled_preset">قالب بدون عنوان</string>
+  <string name="switched_preset">تم التبديل: %1$s</string>
+  <string name="toast_search_changed_asr_vendor">تم تبديل مزود ASR: %1$s</string>
+  <string name="toast_search_changed_llm_vendor">تم تبديل مزود نموذج المعالجة اللاحقة: %1$s</string>
+
+  <!-- ============================================== -->
+  <!-- Input Related -->
+  <!-- ============================================== -->
+  <string name="label_trim_trailing_punct">إزالة الترقيم والإيموجي الختامي</string>
+  <string name="label_trim_trailing_punct_threshold">عتبة الإزالة</string>
+  <string name="trim_trailing_punct_threshold_value">ضمن %1$d كلمة/حرف</string>
+  <string name="trim_trailing_punct_threshold_unlimited">بدون حد</string>
+  <string name="label_mic_haptic">اهتزاز للمفاتيح والكرة العائمة</string>
+  <string name="label_mic_tap_toggle">اضغط لبدء/إيقاف التسجيل</string>
+  <string name="label_test_input">جرّب لوحة المفاتيح</string>
+  <string name="btn_test_input">جرّب لوحة المفاتيح</string>
+
+  <!-- ============================================== -->
+  <!-- Extension Button Configuration -->
+  <!-- ============================================== -->
+  <string name="label_extension_buttons">تخطيط لوحة مفاتيح مخصص</string>
+  <string name="keyboard_layout_summary">رئيسي %1$d×%2$d، ذكاء اصطناعي %3$d×%4$d</string>
+  <string name="keyboard_layout_editor_title">تخطيط لوحة مفاتيح مخصص</string>
+  <string name="keyboard_layout_panel_selector">التخطيط</string>
+  <string name="keyboard_layout_panel_main">رئيسي</string>
+  <string name="keyboard_layout_panel_ai_edit">تحرير ذكاء اصطناعي</string>
+  <string name="keyboard_layout_panel_recording">تسجيل</string>
+  <string name="keyboard_layout_cols">أعمدة</string>
+  <string name="keyboard_layout_rows">صفوف</string>
+  <string name="keyboard_layout_reset_default">إعادة تعيين</string>
+  <string name="keyboard_layout_clear_current">مسح</string>
+  <string name="keyboard_layout_import_export">مشاركة</string>
+  <string name="keyboard_layout_copy_json">نسخ JSON</string>
+  <string name="keyboard_layout_json_label">تخطيط JSON</string>
+  <string name="keyboard_layout_import_json">استيراد JSON</string>
+  <string name="keyboard_layout_import_success">تم استيراد التخطيط</string>
+  <string name="keyboard_layout_import_failed">تخطيط JSON غير صالح</string>
+  <string name="keyboard_layout_export_copied">تم نسخ تخطيط JSON</string>
+  <string name="keyboard_layout_save_success">تم حفظ التخطيط</string>
+  <string name="keyboard_layout_error_invalid">التخطيط فيه أزرار مفقودة أو متداخلة أو خارج الحدود.</string>
+  <string name="keyboard_layout_block_status">الحالة</string>
+  <string name="keyboard_layout_block_ai_info">معلومات الذكاء الاصطناعي</string>
+  <string name="btn_save">حفظ</string>
+  <string name="btn_delete">حذف</string>
+  <string name="ext_btn_default_summary">تراجع، تحديد الكل، نسخ، إخفاء اللوحة</string>
+  <string name="ext_btn_none_selected">غير محدد</string>
+  <string name="ext_btn_must_select_4">يرجى تحديد 4 أزرار بالضبط</string>
+  <string name="ext_btn_max_4">الحد الأقصى 4 أزرار</string>
+  <string name="ext_btn_none">معطّل</string>
+  <string name="ext_btn_select">وضع التحديد</string>
+  <string name="ext_btn_select_all">تحديد الكل</string>
+  <string name="ext_btn_copy">نسخ</string>
+  <string name="ext_btn_paste">لصق</string>
+  <string name="ext_btn_cursor_left">تحريك يساراً</string>
+  <string name="ext_btn_cursor_right">تحريك يميناً</string>
+  <string name="ext_btn_prev_punct">الترقيم السابق</string>
+  <string name="ext_btn_next_punct">الترقيم التالي</string>
+  <string name="ext_btn_move_start">الانتقال للبداية</string>
+  <string name="ext_btn_move_end">الانتقال للنهاية</string>
+  <string name="ext_btn_numpad">لوحة أرقام</string>
+  <string name="ext_btn_undo">تراجع</string>
+  <string name="ext_btn_hide">إخفاء اللوحة</string>
+  <string name="ext_btn_silence_autostop">إيقاف تلقائي عند الصمت</string>
+  <string name="ext_btn_mic_tap_toggle">وضع التسجيل</string>
+  <string name="ext_btn_floating_keyboard">لوحة عائمة</string>
+  <string name="ext_btn_auto_enter_after_asr">إدخال تلقائي بعد اكتمال التعرّف</string>
+  <string name="status_copied">تم النسخ</string>
+  <string name="status_pasted">تم اللصق</string>
+  <string name="status_nothing_to_undo">لا شيء للتراجع عنه</string>
+
+  <!-- ============================================== -->
+  <!-- General Buttons -->
+  <!-- ============================================== -->
+  <string name="toast_setup_all_done">اكتمل كل شيء</string>
+  <string name="toast_setup_enable_keyboard_first">فعّل لوحة المفاتيح في إعدادات النظام ثم عد</string>
+  <string name="toast_setup_choose_keyboard">يرجى اختيار «BiBi Keyboard» كطريقة الإدخال الحالية</string>
+  <string name="toast_setup_aborted">أُلغي الإعداد: %1$s</string>
+  <string name="setup_abort_reason_ime_timeout">انتهت مهلة اختيار طريقة الإدخال</string>
+  <string name="btn_get_api_key_guide">عرض دليل الإعداد</string>
+  <string name="btn_local_model_guide">عرض دليل الإعداد</string>
+
+  <!-- ============================================== -->
+  <!-- Silence Auto-stop Settings -->
+  <!-- ============================================== -->
+  <string name="section_silence_autostop">إيقاف تلقائي عند الصمت</string>
+  <string name="label_recording_auto_stop_mode">وضع الإيقاف التلقائي للتسجيل</string>
+  <string name="option_recording_auto_stop_manual">تحكم يدوي</string>
+  <string name="option_recording_auto_stop_silence">إيقاف عند انتهاء الكلام</string>
+  <string name="option_recording_auto_stop_max_duration">إيقاف بالمهلة</string>
+  <string name="label_auto_stop_silence">إيقاف تلقائي عند غياب الكلام</string>
+  <string name="label_silence_window_ms">نافذة الإيقاف (مللي ثانية)</string>
+  <string name="label_silence_sensitivity">حساسية إيقاف التسجيل (1-10؛ الأعلى يوقف أبكر)</string>
+  <string name="label_recording_max_duration">أقصى مدة تسجيل</string>
+  <string name="label_recording_max_duration_value_s">%1$d ث</string>
+
+  <!-- ============================================== -->
+  <!-- Other General Settings -->
+  <!-- ============================================== -->
+  <string name="label_audio_ducking_on_record">خفض الصوت أثناء التسجيل</string>
+  <string name="label_auto_cancel_empty_audio_input">تجاهل الإدخال غير الصالح تلقائياً</string>
+  <string name="label_auto_filter_silent_audio_segments">تصفية الأجزاء الصامتة تلقائياً</string>
+  <string name="label_offline_denoise">إزالة ضوضاء دون اتصال لـ ASR غير المباشر</string>
+  <string name="label_upload_audio_compression">ضغط الصوت قبل الرفع</string>
+  <string name="label_headset_mic_priority">تجربة ميكروفون السماعة (تجريبي)</string>
+  <!-- External IME linking (AIDL) -->
+  <string name="label_external_ime_link_aidl">السماح بربط لوحة خارجية (AIDL)</string>
+  <string name="external_aidl_guide_title">كيفية استخدام ميزة الربط</string>
+  <string name="external_aidl_guide_message">تتيح هذه الميزة التعرّف على الصوت من لوحات خارجية عبر AIDL. المدعوم حالياً: Fcitx (Little Penguin) و Trime.\n\nفعّلها أولاً في BiBi Keyboard: الإعدادات - إعدادات الإدخال - السماح بربط لوحة خارجية (AIDL) (لا يلزم كرة عائمة أو خدمة إمكانية وصول).\n\nثم اضبط لوحتك:\n\n[Fcitx (Little Penguin)]\n1. نزّل Fcitx المعدّل: https://github.com/BryceWG/fcitx5-android-lexi-keyboard/releases (ألغِ تثبيت Fcitx الأصلي أولاً وانسخ بياناتك احتياطياً)\n2. افتح إعدادات Fcitx - لوحة افتراضية - سلوك الضغط المطوّل على المسافة - إدخال صوتي (AIDL)\n3. اضغط مطوّلاً على المسافة في لوحة IME لبدء الإدخال الصوتي\n\n[Trime]\n1. نزّل Trime المعدّل: https://github.com/BryceWG/trime-bibi-keyboard/releases\n2. في إعدادات Trime - عام، فعّل «إدخال صوتي BiBi Keyboard AIDL». إن لم يكن مخطط السمة يحتوي وظيفة الضغط المطوّل VOICE_ASSIST، يمكنك تفعيل «زر الميكروفون في شريط الأدوات».\n3. اضغط مطوّلاً على الزر بوظيفة VOICE_ASSIST لبدء التسجيل وأفلت للإيقاف؛ أو اضغط زر الميكروفون في شريط أدوات اللوحة لبدء التسجيل، واضغط مجدداً للإيقاف وعرض النص.</string>
+  <string name="external_aidl_guide_btn_close">إغلاق</string>
+  <string name="external_aidl_guide_btn_open_release">فتح صفحة الإصدار</string>
+  <string name="external_aidl_guide_choose_release_title">اختر صفحة إصدار</string>
+  <string name="external_aidl_guide_release_fcitx">Fcitx معدّل (Little Penguin)</string>
+  <string name="external_aidl_guide_release_trime">Trime معدّل</string>
+  <string name="external_aidl_guide_open_failed">تعذّر فتح المتصفح، زر الموقع يدوياً</string>
+
+  <!-- Model Selection Guide -->
+  <string name="model_guide_title">اختر نموذج التعرّف على الكلام</string>
+  <string name="model_guide_message">لاستخدام BiBi Keyboard، اختر نوع نموذج التعرّف:</string>
+  <string name="model_guide_option_sf_free">⭐ خدمة سحابية مجانية (موصى بها)</string>
+  <string name="model_guide_option_sf_free_desc">بدون إعداد، مدعومة من SiliconFlow. تتضمن ASR مجاني وتحسين نص بالذكاء الاصطناعي.</string>
+  <string name="model_guide_option_sf_free_action">جاهز للاستخدام فوراً، حصة مجانية محدودة</string>
+  <string name="model_guide_sf_free_ready">الخدمة المجانية مفعّلة، جاهز للاستخدام!</string>
+  <string name="model_guide_option_local">📦 نموذج محلي</string>
+  <string name="model_guide_option_local_desc">بدون مفتاح API، يعمل دون اتصال، أكثر خصوصية</string>
+  <string name="model_guide_option_local_action">سينزّل نموذج SenseVoice (~1GB) ويفعّل التعرّف دون اتصال</string>
+  <string name="model_guide_option_online">☁️ نموذج سحابي (مخصص)</string>
+  <string name="model_guide_option_online_desc">دقة أفضل، يدعم مزودين متعددين (Volcengine و OpenAI و Gemini وغيرها)، يتطلّب ضبط مفتاح API</string>
+  <string name="model_guide_option_online_action">سيفتح دليل الإعداد لمساعدتك على ضبط مفاتيح API</string>
+  <string name="model_guide_online_dialog_message">يدعم التعرّف السحابي مزودين متعددين (Volcengine و SiliconFlow و OpenAI و Gemini و DashScope و Soniox و ElevenLabs وغيرها). راجع دليل الإعداد للتفاصيل.</string>
+  <string name="model_guide_select_prompt">يرجى اختيار نوع النموذج</string>
+  <string name="model_guide_downloading">جارٍ تنزيل النموذج، انتظر…</string>
+  <string name="model_guide_download_complete">اكتمل تنزيل النموذج</string>
+  <string name="model_guide_config_doc_url">https://brycewg.notion.site/bibi-keyboard-providers-guide</string>
+  <string name="local_model_guide_config_doc_url">https://bibidocs.brycewg.com/getting-started/asr-providers.html#%E6%9C%AC%E5%9C%B0%E6%A8%A1%E5%9E%8B%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97</string>
+  <string name="label_return_prev_ime_on_hide">التبديل إلى IME محدد عند الإخفاء</string>
+  <string name="toast_bt_connect_permission_required">يلزم إذن اتصال Bluetooth لاستخدام ميكروفون السماعة</string>
+  <string name="toast_bt_connect_permission_denied">رُفض إذن اتصال Bluetooth؛ أُوقف أولوية السماعة</string>
+  <string name="toast_vad_sensitivity_applied">حُدّثت حساسية الإيقاف؛ تُطبَّق على التسجيل التالي</string>
+
+  <!-- Privacy & Data toggles -->
+  <string name="section_data_retention">الاحتفاظ بالبيانات</string>
+  <string name="label_disable_asr_history">تعطيل سجل ASR</string>
+  <string name="label_disable_usage_stats">تعطيل إحصاءات الاستخدام</string>
+  <string name="label_data_collection">جمع بيانات مجهولة</string>
+  <string name="dialog_disable_asr_history_title">تعطيل سجل ASR؟</string>
+  <string name="dialog_disable_asr_history_message">سيُمسح السجل الحالي ويتوقف حفظ سجل ASR جديد. هل تؤكد التعطيل؟</string>
+  <string name="dialog_disable_usage_stats_title">تعطيل إحصاءات الاستخدام؟</string>
+  <string name="dialog_disable_usage_stats_message">سيُمسح الإحصاءات (إجمالي الأحرف والإحصاءات المجمّعة) ويتوقف تسجيل إحصاءات جديدة. هل تؤكد التعطيل؟</string>
+  <string name="btn_confirm">تأكيد</string>
+  <string name="btn_skip_guide">تخطّي الآن، سأضبط لاحقاً</string>
+  <string name="toast_cleared_history">تم مسح السجل</string>
+  <string name="btn_clear_clipboard_history">مسح سجل الحافظة</string>
+  <string name="dialog_clear_clipboard_history_title">مسح سجل الحافظة؟</string>
+  <string name="dialog_clear_clipboard_history_message">يحذف كل سجل الحافظة الذي يحفظه التطبيق، بما فيه المثبّت. حافظة النظام الحالية غير متأثرة.</string>
+  <string name="toast_cleared_clipboard_history">تم مسح سجل الحافظة</string>
+  <string name="toast_clear_clipboard_history_failed">تعذّر مسح سجل الحافظة</string>
+  <string name="toast_cleared_stats">تم مسح الإحصاءات</string>
+
+  <!-- ============================================== -->
+  <!-- General Toasts -->
+  <!-- ============================================== -->
+  <string name="toast_accessibility_enabled">خدمة إمكانية الوصول مفعّلة. الإدراج التلقائي متاح الآن.</string>
+  <string name="toast_silence_autostop_on">الإيقاف التلقائي عند الصمت مفعّل</string>
+  <string name="toast_silence_autostop_off">الإيقاف التلقائي عند الصمت معطّل</string>
+  <string name="toast_mic_tap_mode_on">تم التبديل إلى الضغط للبدء</string>
+  <string name="toast_mic_tap_mode_off">تم التبديل إلى الضغط المطوّل للكلام</string>
+  <string name="toast_floating_keyboard_on">اللوحة العائمة مفعّلة</string>
+  <string name="toast_floating_keyboard_off">اللوحة العائمة معطّلة</string>
+  <string name="toast_auto_enter_after_asr_on">الإدخال التلقائي بعد اكتمال التعرّف مفعّل</string>
+  <string name="toast_auto_enter_after_asr_off">الإدخال التلقائي بعد اكتمال التعرّف معطّل</string>
+
+  <!-- ============================================== -->
+  <!-- Feature Explainer Dialog -->
+  <!-- ============================================== -->
+  <string name="dialog_feature_explainer_title">وصف الميزة</string>
+  <string name="dialog_feature_explainer_turn_on">أنت على وشك تشغيل هذه الميزة:</string>
+  <string name="dialog_feature_explainer_turn_off">أنت على وشك إيقاف هذه الميزة:</string>
+  <string name="dialog_feature_explainer_from">الحالي:</string>
+  <string name="dialog_feature_explainer_to">سيصبح:</string>
+  <string name="dialog_feature_explainer_dont_show_again">لا تظهر مجدداً</string>
+
+  <!-- ============================================== -->
+  <!-- Feature Descriptions for Input Settings -->
+  <!-- ============================================== -->
+  <!-- Trim trailing punctuation -->
+  <string name="feature_trim_trailing_punct_off_desc">ستحتفظ نتائج التعرّف بكل المحتوى كما هو.</string>
+  <string name="feature_trim_trailing_punct_on_desc">نتائج التعرّف ضمن العتبة ستُزيل الترقيم والإيموجي الختامي. عيّن العتبة إلى بدون حد لتطبيقها على أي طول.</string>
+
+  <!-- Mic haptic -->
+  <string name="feature_mic_haptic_off_desc">لا اهتزاز عند الضغط على المفاتيح أو التفاعل مع الكرة العائمة.</string>
+  <string name="feature_mic_haptic_on_desc">يوفر اهتزازاً عند الضغط على المفاتيح أو التفاعل مع الكرة العائمة لتجربة لمس أفضل.</string>
+
+  <!-- Mic tap toggle -->
+  <string name="feature_mic_tap_toggle_off_desc">اضغط مطوّلاً على زر الميكروفون للتسجيل، أفلت للإيقاف.</string>
+  <string name="feature_mic_tap_toggle_on_desc">اضغط زر الميكروفون لبدء التسجيل، واضغط مجدداً للإيقاف. أسهل بيد واحدة.</string>
+
+  <!-- Auto start recording on show -->
+  <string name="feature_auto_start_recording_on_show_off_desc">تحتاج للضغط يدوياً على الميكروفون لبدء التسجيل بعد ظهور اللوحة.</string>
+  <string name="feature_auto_start_recording_on_show_on_desc">يبدأ التسجيل تلقائياً عند ظهور اللوحة، لتوفير ضغطة.</string>
+  <string name="feature_continuous_capture_off_desc">لا يستمر التسجيل أثناء ظهور اللوحة أو الكرة العائمة؛ يبدأ فقط بعد الضغط على الميكروفون.</string>
+  <string name="feature_continuous_capture_on_desc">أثناء ظهور اللوحة أو الكرة العائمة، يُسجَّل الصوت محلياً في الخلفية ليبدأ التعرّف أسرع عند الضغط على الميكروفون. لا يُرفع الصوت حتى تبدأ التعرّف.</string>
+
+  <!-- Auto enter after input -->
+  <string name="feature_auto_enter_after_asr_off_desc">بعد التعرّف (ومعالجة الذكاء الاصطناعي إن فُعّلت)، يُدرج النص فقط. يمكنك السحب يميناً على الميكروفون للإرسال بـ Enter في تلك الجلسة.</string>
+  <string name="feature_auto_enter_after_asr_on_desc">بعد اكتمال التعرّف—بما فيه معالجة الذكاء الاصطناعي عند التفعيل—يُضغط Enter / إجراء الإرسال تلقائياً لإرسال الرسالة في تطبيقات الدردشة. تُتخطّى النتائج الفارغة.</string>
+
+  <!-- Fcitx5 return on switcher -->
+  <string name="feature_fcitx5_return_on_switcher_off_desc">مفتاح تبديل IME يفتح منتقي طرق الإدخال بالنظام.</string>
+  <string name="feature_fcitx5_return_on_switcher_on_desc">مفتاح تبديل IME يعود لطريقة الإدخال المحددة (يعود للسابقة إن لم تُضبط).</string>
+
+  <!-- Return prev IME on hide -->
+  <string name="feature_return_prev_ime_on_hide_off_desc">تبقى طريقة الإدخال الحالية BiBi Keyboard بعد الإخفاء.</string>
+  <string name="feature_return_prev_ime_on_hide_on_desc">يتبدل إلى طريقة الإدخال المحددة عند إخفاء اللوحة (يعود للسابقة إن لم تُضبط)، مناسب للإدخال الصوتي المؤقت.</string>
+
+  <!-- Hide recent tasks -->
+  <string name="feature_hide_recent_tasks_off_desc">بطاقة التطبيق ظاهرة في نظرة المهام الأخيرة.</string>
+  <string name="feature_hide_recent_tasks_on_desc">تُخفى بطاقة التطبيق من المهام الأخيرة لواجهة أنظف. قد يقلّل من قدرة إبقاء التطبيق في الخلفية.</string>
+
+  <!-- Duck media on record -->
+  <string name="feature_duck_media_on_record_off_desc">لا يطلب التطبيق من التطبيقات الأخرى خفض الصوت أو الإيقاف أثناء التسجيل، فقد يلتقط الميكروفون صوت الوسائط.</string>
+  <string name="feature_duck_media_on_record_on_desc">أثناء التسجيل، يطلب التطبيق من التطبيقات الأخرى خفض الصوت مؤقتاً أو الإيقاف لتقليل تداخل الوسائط. النتيجة تعتمد على النظام وتطبيق الوسائط.</string>
+
+  <!-- Offline denoise -->
+  <string name="feature_auto_cancel_empty_audio_input_off_desc">تُرسل طلبات التعرّف غير المباشر حتى عند عدم اكتشاف كلام في التسجيل.</string>
+  <string name="feature_auto_cancel_empty_audio_input_on_desc">قبل إرسال تسجيل مكتمل، يفحصه التطبيق على جهازك. إن لم يحتوِ كلاماً، يُتجاهل بدل إرساله لمزود التعرّف.</string>
+  <string name="feature_auto_filter_silent_audio_segments_off_desc">يستخدم التعرّف غير المباشر التسجيل الأصلي، بما فيه التوقفات الصامتة.</string>
+  <string name="feature_auto_filter_silent_audio_segments_on_desc">قبل التعرّف، يزيل التطبيق الأجزاء الصامتة من التسجيل المكتمل على جهازك. يقصّر الصوت وقد يقلّل وقت الرفع.</string>
+
+  <!-- Offline denoise -->
+  <string name="feature_offline_denoise_off_desc">يُستخدم الصوت الخام دون إزالة ضوضاء قائمة على نموذج.</string>
+  <string name="feature_offline_denoise_on_desc">يطبّق إزالة ضوضاء قائمة على نموذج قبل الرفع غير المباشر أو التعرّف دون اتصال. تحسّن محدود للكلام منخفض الصوت.</string>
+
+  <!-- Upload audio compression -->
+  <string name="feature_upload_audio_compression_off_desc">تُرفع التسجيلات المكتملة بصيغتها الأصلية غير المضغوطة. يستخدم الرفع بيانات أكثر، دون ضغط إضافي مسبقاً.</string>
+  <string name="feature_upload_audio_compression_on_desc">عند دعم مزود التعرّف، تُضغط التسجيلات المكتملة قبل الرفع. يستخدم بيانات أقل وقد يكون أسرع.</string>
+
+  <!-- Headset mic priority -->
+  <string name="feature_headset_mic_priority_off_desc">يستخدم ميكروفون الجهاز المدمج للتسجيل.</string>
+  <string name="feature_headset_mic_priority_on_desc">يفضّل ميكروفون السماعة عند توفره. ميزة تجريبية، تتطلّب إذن Bluetooth وإذن الأجهزة القريبة.</string>
+
+  <!-- ============================================== -->
+  <!-- Other Settings - Feature Explanations -->
+  <!-- ============================================== -->
+
+  <!-- Disable ASR history -->
+  <string name="feature_disable_asr_history_off_desc">سيُحفظ سجل التعرّف للمراجعة والإدارة لاحقاً.</string>
+  <string name="feature_disable_asr_history_on_desc">لن يُحفظ سجل التعرّف. التفعيل سيمسح كل السجل الحالي. استخدمه لحماية خصوصيتك.</string>
+
+  <!-- Disable usage statistics -->
+  <string name="feature_disable_usage_stats_off_desc">ستُجمع إحصاءات الاستخدام (إجمالي الأحرف والبيانات المجمّعة) لمرجعك.</string>
+  <string name="feature_disable_usage_stats_on_desc">لن تُجمع إحصاءات الاستخدام. التفعيل سيمسح كل الإحصاءات الحالية. استخدمه لحماية خصوصيتك.</string>
+
+  <!-- Anonymous data collection -->
+  <string name="feature_data_collection_off_desc">لن تُرفع بيانات الاستخدام المجهولة.</string>
+  <string name="feature_data_collection_on_desc">ستُرفع بيانات استخدام مجهولة (إصدار التطبيق، قناة التثبيت، تاريخ أول ظهور، إصدار Android (SDK)، طراز الجهاز، بيانات أحداث ASR الوصفية، لغة التطبيق، بدء التطبيق) مرة يومياً. لا يُضمَّن نص التعرّف أو محتوى شخصي.</string>
+
+  <!-- Data collection consent dialog -->
+  <string name="title_data_collection_consent">جمع بيانات مجهولة</string>
+  <string name="msg_data_collection_consent">للمساعدة على تحسين BiBi Keyboard، نود جمع إحصاءات استخدام مجهولة. يشمل ذلك: إصدار التطبيق، قناة التثبيت، تاريخ أول ظهور، إصدار Android (SDK)، طراز الجهاز، بيانات أحداث ASR الوصفية (المزود، مدة الصوت، وقت المعالجة، عدد الأحرف، قناة المصدر، هل استُخدمت معالجة الذكاء الاصطناعي)، لغة التطبيق، وأحداث بدء التطبيق. لن يُرفع نص التعرّف أو محتوى شخصي. رمز الجمع مفتوح المصدر. هل توافق على التفعيل؟</string>
+  <string name="btn_agree">موافق</string>
+  <string name="btn_disagree">ليس الآن</string>
+
+  <!-- ============================================== -->
+  <!-- Pro Version Promo -->
+  <!-- ============================================== -->
+  <string name="pro_promo_title">BiBi Keyboard Pro متاح الآن على Play Store!</string>
+  <string name="pro_promo_price">شراء لمرة واحدة بـ $5.49. الترخيص يتبع حسابك بلا حد للأجهزة.</string>
+  <string name="pro_promo_features_title">ميزات Pro الحصرية:</string>
+  <string name="pro_promo_features">1. إدارة موحّدة للكلمات الساخنة عبر المزودين (باستثناء النماذج دون اتصال و ElevenLabs)\n2. نسخ احتياطي تلقائي عبر WebDAV\n3. اختيار ألوان واجهة مخصص\n4. انزلاق مؤشر متعدد الاتجاهات\n5. تحويل صيني تقليدي دون اتصال\n6. معالجة لاحقة بتعبيرات منتظمة</string>
+  <string name="pro_promo_future">مزيد من الميزات قريباً…</string>
+  <string name="pro_promo_once_hint">يظهر هذا الحوار مرة واحدة فقط. يمكنك عرضه مجدداً في صفحة حول.</string>
+  <string name="pro_promo_btn_play_store">الحصول من Play Store</string>
+  <string name="pro_promo_btn_telegram">الانضمام لمجموعة Telegram</string>
+  <string name="pro_promo_btn_payment_qr">الدفع عبر رمز QR</string>
+  <string name="pro_promo_btn_close">إغلاق</string>
+  <string name="about_btn_learn_pro">تعرّف على Pro</string>
+
+  <!-- Payment QR Dialog -->
+  <string name="payment_qr_title">شراء Pro عبر رمز QR</string>
+  <string name="payment_qr_instruction">ادفع للمؤلف مباشرة عبر WeChat أو Alipay (¥36 CNY)، ثم أرسل لقطة شاشة الدفع مع رقم الطلب إلى بريد المؤلف. سيرد المؤلف برمز استرداد Play Store لـ «说点啥 Pro» (رمز تفعيل). يجب أن يتمكن هاتفك من استخدام Play Store للاسترداد. يصل الرد خلال يوم أو يومين على الأكثر.</string>
+  <string name="payment_qr_wechat">WeChat</string>
+  <string name="payment_qr_alipay">Alipay</string>
+  <string name="payment_qr_save">حفظ</string>
+  <string name="payment_qr_email_label">نسخ بريد المؤلف</string>
+  <string name="payment_qr_email_tap_copy">اضغط للنسخ</string>
+  <string name="payment_qr_email_copied">تم نسخ البريد إلى الحافظة</string>
+  <string name="payment_qr_save_success">تم الحفظ في المعرض</string>
+  <string name="payment_qr_save_failed">فشل الحفظ</string>
+
+  <!-- Recording test -->
+  <string name="title_recording_test">اختبار التسجيل</string>
+  <string name="recording_test_latency_chain">سلسلة زمن الاستجابة</string>
+  <string name="recording_test_status_idle">جاهز للتسجيل</string>
+  <string name="recording_test_status_recording">جارٍ التسجيل</string>
+  <string name="recording_test_status_ready">الصوت جاهز</string>
+  <string name="recording_test_status_processing">جارٍ المعالجة</string>
+  <string name="recording_test_total_label">إجمالي زمن الاستجابة</string>
+  <string name="recording_test_segment_record">تسجيل</string>
+  <string name="recording_test_segment_asr">ASR</string>
+  <string name="recording_test_segment_ai">ذكاء اصطناعي</string>
+  <string name="recording_test_press_time">الضغط</string>
+  <string name="recording_test_first_frame_time">الإطار الأول</string>
+  <string name="recording_test_audio_title">التسجيل / مستوى الصوت</string>
+  <string name="recording_test_duration_label">المدة</string>
+  <string name="recording_test_current_level_label">المستوى الحالي</string>
+  <string name="recording_test_peak_level_label">مستوى الذروة</string>
+  <string name="recording_test_silence_label">صمت</string>
+  <string name="recording_test_percent_value">%1$d%%</string>
+  <string name="recording_test_play">تشغيل</string>
+  <string name="recording_test_playing">جارٍ التشغيل</string>
+  <string name="recording_test_rerecord">مسح</string>
+  <string name="recording_test_recognition_title">التعرّف والمعالجة</string>
+  <string name="recording_test_asr_label">ASR</string>
+  <string name="recording_test_asr_summary">%1$s · %2$s%3$s</string>
+  <string name="recording_test_asr_mode_push_pcm">قناة البث/الدفع الحالية</string>
+  <string name="recording_test_asr_mode_file">قناة الملف الحالية</string>
+  <string name="recording_test_asr_backup_suffix"> · احتياطي %1$s · %2$s</string>
+  <string name="recording_test_backup_strategy_parallel">متوازي</string>
+  <string name="recording_test_backup_strategy_lazy">تسلسلي كسول</string>
+  <string name="recording_test_auto_transcribe">نسخ نصي تلقائي</string>
+  <string name="recording_test_ai_label">ذكاء اصطناعي</string>
+  <string name="recording_test_prompt_summary">اختر الموجّه المُعدّ مسبقاً لمعالجة الذكاء الاصطناعي</string>
+  <string name="recording_test_ai_process">معالجة ذكاء اصطناعي</string>
+  <string name="recording_test_result_compare">مقارنة النتائج</string>
+  <string name="recording_test_raw_result">خام:</string>
+  <string name="recording_test_ai_result">ذكاء اصطناعي:</string>
+  <string name="recording_test_empty_result_placeholder">لا نتيجة بعد</string>
+  <string name="recording_test_no_prompt">الموجّه الحالي</string>
+  <string name="recording_test_record">تسجيل</string>
+  <string name="recording_test_stop">إيقاف</string>
+  <string name="recording_test_error_record">فشل التسجيل: %1$s</string>
+  <string name="recording_test_error_empty_audio">لم يُلتقط صوت</string>
+  <string name="recording_test_error_playback">فشل التشغيل: %1$s</string>
+  <string name="recording_test_error_transcribe">فشل النسخ النصي: %1$s</string>
+  <string name="recording_test_error_transcribe_timeout">انتهت مهلة النسخ النصي</string>
+  <string name="recording_test_error_vendor_unavailable">إعداد ASR الحالي غير متاح لهذا الاختبار</string>
+  <string name="recording_test_error_ai">فشلت معالجة الذكاء الاصطناعي: %1$s</string>
+</resources>

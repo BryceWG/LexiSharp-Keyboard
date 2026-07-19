@@ -1,0 +1,48 @@
+<resources>
+    <!-- FireRedASR V2 local ASR configuration strings -->
+    <string name="firered_asr_section_title">FireRedASR V2 (محلي)</string>
+    <string name="vendor_firered_asr">FireRedASR V2</string>
+
+    <!-- FireRedASR V2 configuration -->
+    <string name="label_fr_model_variant">متغير النموذج</string>
+    <string name="label_fr_threads">عدد الخيوط (1-8)</string>
+    <string name="label_fr_keep_alive">سياسة إلغاء تحميل النموذج</string>
+    <string name="label_fr_preload">تحميل النموذج بقوة</string>
+    <string name="fr_model_ctc_int8">صيني + إنجليزي CTC (int8، ~740MB)</string>
+    <string name="btn_fr_download_model">تنزيل النموذج بنقرة</string>
+    <string name="btn_fr_import_model">استيراد من محلي</string>
+    <string name="btn_fr_clear_model">مسح نموذج FireRedASR V2 المُنزَّل</string>
+    <string name="fr_download_status_downloading">جارٍ التنزيل… %1$d%%</string>
+    <string name="fr_download_status_extracting_progress">جارٍ الاستخراج… %1$d%%</string>
+    <string name="fr_download_status_done">تم تثبيت نموذج FireRedASR V2</string>
+    <string name="fr_download_status_failed">فشل التنزيل أو الاستخراج</string>
+    <string name="fr_download_started_in_bg">بدأ التنزيل في الخلفية. راجع الإشعار للمتابعة</string>
+    <string name="fr_import_started_in_bg">بدأ الاستيراد في الخلفية. راجع الإشعار للمتابعة</string>
+    <string name="fr_import_success">تم استيراد النموذج بنجاح: %1$s</string>
+    <string name="fr_import_failed">فشل استيراد النموذج: %1$s</string>
+    <string name="fr_import_status_extracting">جارٍ الاستيراد… %1$d%%</string>
+    <string name="fr_clear_confirm_title">مسح نموذج FireRedASR V2؟</string>
+    <string name="fr_clear_confirm_message">سيُحذف ملفات نموذج FireRedASR V2 المُنزَّلة. يمكنك إعادة التنزيل لاحقاً. المتابعة؟</string>
+    <string name="fr_clear_done">تم مسح نموذج FireRedASR V2</string>
+    <string name="fr_clear_failed">فشل المسح</string>
+
+    <!-- Error message -->
+    <string name="error_firered_asr_model_missing">ملفات نموذج FireRedASR V2 مفقودة. اضبطها أو نزّلها لاحقاً من الإعدادات.</string>
+
+    <!-- Model download notifications -->
+    <string name="notif_fr_title_ctc_int8">FireRedASR V2 (CTC · int8)</string>
+
+    <!-- FireRedASR V2 Settings - Feature Descriptions -->
+    <string name="feature_fr_preload_off_desc">يُحمَّل النموذج عند الحاجة فقط، وقد يسبب تأخيراً في أول استخدام.</string>
+    <string name="feature_fr_preload_on_desc">يُحمَّل النموذج مسبقاً عند ظهور لوحة المفاتيح لتقليل تأخير أول استخدام.</string>
+
+    <!-- FireRedASR V2 - Use ITN -->
+    <string name="label_fr_use_itn">تفعيل ITN (تعرّف ذكي على الأرقام)</string>
+    <string name="feature_fr_use_itn_off_desc">يحتفظ بالصيغ المنطوقة، مثل «ألف ومئتان وأربعة وثلاثون».</string>
+    <string name="feature_fr_use_itn_on_desc">يحوّل الأرقام والتواريخ والأوقات الصينية المدعومة إلى صيغ مكتوبة شائعة، مثل «1234».</string>
+
+    <!-- FireRedASR V2 - Pseudo streaming -->
+    <string name="label_fr_pseudo_stream">تفعيل معاينة شبه البث (مقاطع بطول ثابت)</string>
+    <string name="feature_fr_pseudo_stream_off_desc">تعطيل شبه البث. يُتعرّف على الصوت مرة واحدة في النهاية، كوضع عدم الاتصال التقليدي.</string>
+    <string name="feature_fr_pseudo_stream_on_desc">يقسّم الصوت إلى مقاطع بطول ثابت للمعاينة المحلية، ثم يشغّل تعرّفاً كاملاً في النهاية لاستبدال نص المعاينة.</string>
+</resources>

@@ -1,0 +1,156 @@
+<resources>
+    <!-- Floating ball related strings -->
+
+    <string name="title_floating_settings">طرق إدخال إضافية</string>
+    <string name="section_floating_basic">إعدادات الكرة العائمة</string>
+    <string name="section_volume_key_recording">وضع التسجيل بمفاتيح الصوت</string>
+    <string name="section_floating_compat">متقدم</string>
+    <string name="section_floating_keep_alive">إبقاء التطبيق في الخلفية</string>
+    <string name="label_floating_only_when_ime_visible">إظهار الكرة العائمة فقط عند ظهور لوحة المفاتيح</string>
+    <string name="label_floating_hold_to_record">اضغط مطوّلاً على الكرة العائمة للتسجيل</string>
+    <string name="label_floating_direct_drag">اسحب لتحريك الكرة العائمة</string>
+    <string name="label_floating_alpha">شفافية الكرة العائمة</string>
+    <string name="label_floating_size">حجم الكرة العائمة</string>
+    <string name="toast_need_overlay_perm">امنح إذن «العرض فوق التطبيقات الأخرى» في إعدادات النظام لتفعيل الكرة العائمة</string>
+    <string name="label_floating_asr">استخدام الكرة العائمة للتعرّف على الصوت</string>
+    <string name="label_floating_keep_alive_foreground">الإبقاء عبر خدمة أمامية</string>
+    <string name="label_floating_keep_alive_privileged">الإبقاء عبر Shizuku / root</string>
+    <string name="label_request_battery_whitelist">طلب استثناء تحسين البطارية</string>
+    <string name="label_floating_ime_bridge">إدراج النص عبر جسر IME</string>
+    <string name="label_ime_bridge_pcm_recording">التسجيل داخل لوحة المفاتيح الموصولة</string>
+    <string name="label_floating_ime_bridge_status">حالة جسر IME</string>
+    <string name="status_floating_ime_bridge_unknown">اضغط للتحديث</string>
+    <string name="status_floating_ime_bridge_unknown_target">لوحة المفاتيح الحالية</string>
+    <string name="status_floating_ime_bridge_disabled">معطّل</string>
+    <string name="status_floating_ime_bridge_ready">جاهز: %1$s</string>
+    <string name="status_floating_ime_bridge_hidden">مكتشف، اللوحة مخفية: %1$s</string>
+    <string name="status_floating_ime_bridge_waiting">مكتشف، بانتظار حقل إدخال: %1$s</string>
+    <string name="status_floating_ime_bridge_no_active_ime">لا توجد لوحة نشطة. اختر وافتح لوحة موصولة أولاً.</string>
+    <string name="status_floating_ime_bridge_no_input_connection">لا يوجد اتصال إدخال نشط: %1$s. اضغط حقل نص وأبقِ اللوحة مفتوحة.</string>
+    <string name="status_floating_ime_bridge_pcm_unsupported">وحدة الجسر هذه لا تُبلغ دعم تسجيل PCM: %1$s. حدّث وحدة LSPosed/LSPatch.</string>
+    <string name="status_floating_ime_bridge_not_found">لا استجابة من الجسر: %1$s</string>
+    <string name="status_floating_ime_bridge_sensitive">حقل حسّاس محظور: %1$s</string>
+    <string name="status_floating_ime_bridge_error">خطأ الجسر في %1$s: %2$s</string>
+    <string name="status_floating_ime_bridge_recording_enabled">تسجيل جانب IME: مفعّل</string>
+    <string name="status_floating_ime_bridge_recording_disabled">تسجيل جانب IME: معطّل. يمكن أن يبقى إدراج النص عبر الجسر مفعّلاً.</string>
+    <string name="status_floating_ime_bridge_module_summary">الوحدة: %1$s · PCM: %2$s</string>
+    <string name="status_floating_ime_bridge_module_unknown">إصدار غير معروف</string>
+    <string name="status_floating_ime_bridge_pcm_supported">مدعوم</string>
+    <string name="status_floating_ime_bridge_pcm_not_supported">غير مدعوم</string>
+    <string name="status_floating_ime_bridge_input_summary">IME ظاهر: %1$s · اتصال الإدخال: %2$s · حقل حسّاس: %3$s</string>
+    <string name="status_floating_ime_bridge_yes">نعم</string>
+    <string name="status_floating_ime_bridge_no">لا</string>
+    <string name="status_floating_ime_bridge_last_failure">آخر فشل: %1$s</string>
+    <string name="status_floating_ime_bridge_last_failure_mic_permission">آخر فشل: لوحة الهدف لا تستطيع تسجيل الصوت. تحقّق من إذن الميكروفون. (%1$s)</string>
+    <string name="status_floating_ime_bridge_last_failure_injection_unsupported">آخر فشل: نافذة هذه اللوحة لا تدعم الزناد السفلي العام. (%1$s)</string>
+    <string name="floating_ime_bridge_sensitive_field">حقل إدخال حسّاس محظور. لم يُدرج النص.</string>
+    <string name="floating_ime_bridge_insert_failed">فشل إدراج جسر IME: %1$s</string>
+    <string name="label_floating_write_compat">تحسين توافق الكتابة عبر إمكانية الوصول</string>
+    <string name="desc_floating_write_compat">تكشف بعض التطبيقات نصاً نائباً في الخلفية لإمكانية الوصول فيلوّث الإدراج النهائي. عند التفعيل، في التطبيقات المستهدفة تنتقل الكرة العائمة إلى تحديد الكل + لصق مع علامة غير مرئية لتجنّب مشاكل النائب. قد تُستخدم الحافظة مؤقتاً (استعادة بأفضل جهد). يعمل مع Telegram وDouyin وغيرها.</string>
+    <string name="label_floating_write_compat_pkgs">أسماء الحزم المستهدفة (سطر لكل واحدة)</string>
+    <string name="hint_floating_write_compat_pkgs">أدخل الحزمة أو البادئة (مثل org.telegram). * في النهاية تعني مطابقة البادئة (مثل org.telegram.*).</string>
+    <string name="label_floating_write_paste">إمكانية الوصول: نسخ النتيجة إلى الحافظة فقط</string>
+    <string name="desc_floating_write_paste">ينطبق فقط على الحزم أدناه: في هذه التطبيقات، عند الإدخال الصوتي العائم، انسخ النتيجة إلى الحافظة بدل الإدراج عبر واجهات إمكانية الوصول. إن احتوى سطر على all، يُطبَّق عالمياً.</string>
+    <string name="label_floating_write_paste_pkgs">الحزم المستهدفة (سطر لكل واحدة)</string>
+    <string name="hint_floating_write_paste_pkgs">أدخل أسماء الحزم الدقيقة (مثل com.tencent.mm). للتطبيق عالمياً، أضف سطراً واحداً بـ all.</string>
+    <string name="toast_need_accessibility_perm">فعّل خدمة إمكانية الوصول في إعدادات النظام لدعم هذه الميزة</string>
+    <string name="label_volume_key_recording">استخدام مفاتيح الصوت للتعرّف على الصوت</string>
+    <string name="label_volume_key_recording_mode">إجراء مفتاح الصوت</string>
+    <string name="option_volume_key_up_toggle">Volume+ يبدأ / يوقف التسجيل</string>
+    <string name="option_volume_key_down_toggle">Volume- يبدأ / يوقف التسجيل</string>
+    <string name="option_volume_key_up_start_down_stop">Volume+ يبدأ، Volume- يوقف</string>
+    <string name="option_volume_key_down_start_up_stop">Volume- يبدأ، Volume+ يوقف</string>
+    <string name="label_volume_key_status_toast">تذكير بحالة التسجيل</string>
+    <string name="label_volume_key_stop_on_ime_hidden">إيقاف التسجيل عند اختفاء لوحة المفاتيح</string>
+    <string name="toast_volume_key_recording_started">بدأ التسجيل</string>
+    <string name="toast_volume_key_recording_stopped">توقف التسجيل</string>
+    <string name="cd_floating_asr">التعرّف الصوتي عبر الكرة العائمة</string>
+    <string name="cd_floating_edge_handle">إظهار الكرة العائمة</string>
+    <string name="toast_battery_whitelist_already">تحسينات البطارية متجاهلة بالفعل</string>
+    <string name="toast_battery_whitelist_failed">فشل طلب استثناء البطارية</string>
+    <string name="toast_need_floating_keep_alive_first">فعّل الإبقاء عبر الخدمة الأمامية أولاً</string>
+    <string name="toast_shizuku_permission_requested">طُلب إذن Shizuku. امنحه في Shizuku.</string>
+    <string name="toast_shizuku_permission_waiting">جارٍ الاتصال بـ Shizuku. سيظهر طلب الإذن عند الاتصال.</string>
+    <string name="toast_shizuku_permission_request_failed">فشل طلب إذن Shizuku</string>
+    <string name="toast_shizuku_or_root_unavailable">Shizuku غير متاح ولم يُكتشف root</string>
+    <string name="toast_floating_keep_alive_privileged_start_failed">فشل بدء الإبقاء عبر Shizuku / root</string>
+    <string name="toast_floating_recording_foreground_failed">تعذّر بدء خدمة الميكروفون الأمامية. افتح التطبيق مرة ثم أعد المحاولة.</string>
+
+    <!-- Floating ASR status messages -->
+    <string name="floating_asr_error">فشل التعرّف: %1$s</string>
+    <string name="floating_asr_copied">تم النسخ إلى الحافظة</string>
+    <string name="accessibility_service_description">يسمح للكرة العائمة والتسجيل بمفاتيح الصوت بإدراج نتائج ASR في حقل الإدخال الحالي. لا تُجمع بيانات ولا تُرفع.</string>
+
+    <!-- Floating radial menu -->
+    <string name="label_radial_switch_asr">تبديل مزود ASR</string>
+    <string name="label_radial_switch_ime">تبديل طريقة الإدخال</string>
+    <string name="label_radial_move">تحريك الكرة العائمة</string>
+    <string name="label_radial_postproc">تبديل معالجة الذكاء الاصطناعي</string>
+    <string name="label_radial_switch_prompt">تبديل موجّه معالجة الذكاء الاصطناعي</string>
+    <string name="label_radial_clipboard_upload">رفع الحافظة</string>
+    <string name="label_radial_clipboard_pull">سحب الحافظة</string>
+    <string name="label_radial_toggle_silence_autostop">تبديل الإيقاف التلقائي عند الصمت</string>
+    <string name="label_radial_open_history">سجل ASR</string>
+    <string name="label_radial_open_settings">الإعدادات</string>
+    <string name="label_choose_asr_vendor">اختر مزود ASR</string>
+    <string name="toast_move_mode_on">وضع التحريك مفعّل. اضغط الكرة للخروج.</string>
+    <string name="label_reset_floating_position">إعادة تعيين موضع الكرة العائمة</string>
+    <string name="toast_floating_position_reset">أُعيد تعيين موضع الكرة العائمة</string>
+
+    <string name="notif_channel_floating_keep_alive">إبقاء التطبيق في الخلفية</string>
+    <string name="notif_channel_floating_keep_alive_desc">يُبقي التطبيق يعمل بإشعار مستمر.</string>
+    <string name="notif_floating_keep_alive_title">%1$s يعمل</string>
+    <string name="notif_floating_keep_alive_desc">اليوم %1$d حرف · %2$s · المعالجة اللاحقة %3$s</string>
+    <string name="notif_floating_keep_alive_postproc_enabled">مفعّلة</string>
+    <string name="notif_floating_keep_alive_postproc_disabled">معطّلة</string>
+    <string name="notif_channel_floating_recording">تسجيل عائم</string>
+    <string name="notif_channel_floating_recording_desc">يعرض حالة التسجيل أثناء استخدام الكرة العائمة للميكروفون.</string>
+    <string name="notif_floating_recording_title">%1$s يسجّل</string>
+    <string name="notif_floating_recording_desc">التعرّف الصوتي العائم يستمع.</string>
+
+    <!-- ============================================== -->
+    <!-- Floating Settings - Feature Explanations -->
+    <!-- ============================================== -->
+
+    <!-- Floating ASR -->
+    <string name="feature_floating_asr_off_desc">الكرة العائمة مخفية. يمكنك الاستمرار باستخدام الإدخال الصوتي من BiBi Keyboard.</string>
+    <string name="feature_floating_asr_on_desc">تُظهر كرة إدخال صوتي عائمة فوق التطبيقات الأخرى، فيمكن بدء التعرّف واللوحة مخفية. يلزم إذن الطبقة؛ التحكم بمفاتيح الصوت وبعض طرق الإدخال تحتاج أيضاً إمكانية الوصول أو جسر IME.</string>
+
+    <!-- Floating only when IME visible -->
+    <string name="feature_floating_only_when_ime_visible_off_desc">تبقى الكرة العائمة ظاهرة حتى عند إخفاء لوحة المفاتيح.</string>
+    <string name="feature_floating_only_when_ime_visible_on_desc">تُخفى الكرة العائمة تلقائياً عند إخفاء اللوحة وتُظهر عند ظهورها. يمكن اكتشاف حالة اللوحة عبر إمكانية الوصول أو جسر IME النشط.</string>
+
+    <!-- Hold floating ball to record -->
+    <string name="feature_floating_hold_to_record_off_desc">اضغط الكرة العائمة لبدء التسجيل، ثم اضغط مجدداً للإيقاف.</string>
+    <string name="feature_floating_hold_to_record_on_desc">اضغط مطوّلاً على الكرة العائمة للتسجيل، ثم أفلت للإيقاف. فتح القائمة أو تحريك الكرة يتطلّب سحباً أطول ويلغي التسجيل الحالي.</string>
+
+    <!-- Floating direct drag -->
+    <string name="feature_floating_direct_drag_off_desc">تحريك الكرة العائمة يتطلّب ضغطاً مطوّلاً لدخول وضع التحريك أو استخدام القائمة.</string>
+    <string name="feature_floating_direct_drag_on_desc">يمكنك سحب الكرة العائمة مباشرة لإعادة وضعها.</string>
+
+    <!-- Volume key recording -->
+    <string name="feature_volume_key_recording_off_desc">تحتفظ مفاتيح الصوت بسلوك النظام العادي ولن تتحكم بالتسجيل.</string>
+    <string name="feature_volume_key_recording_on_desc">عند ظهور لوحة المفاتيح، تستمع خدمة إمكانية الوصول لنقرات مفاتيح الصوت لبدء أو إيقاف التعرّف. الضغط المطوّل على مفاتيح الصوت غير مستخدم.</string>
+    <string name="feature_volume_key_status_toast_off_desc">يبدأ التسجيل بمفاتيح الصوت ويتوقف بصمت، باستثناء تنبيهات الأخطاء الحالية.</string>
+    <string name="feature_volume_key_status_toast_on_desc">يعرض تنبيهاً قصيراً عند بدء أو إيقاف التسجيل بنجاح عبر مفاتيح الصوت.</string>
+    <string name="feature_volume_key_stop_on_ime_hidden_off_desc">إن اختفت اللوحة أثناء تسجيل مفاتيح الصوت، يستمر التسجيل حتى توقفه يدوياً.</string>
+    <string name="feature_volume_key_stop_on_ime_hidden_on_desc">إن اختفت اللوحة أثناء تسجيل مفاتيح الصوت، يتوقف التسجيل تلقائياً.</string>
+
+    <!-- Floating write compatibility mode -->
+    <string name="feature_floating_ime_bridge_off_desc">تُدخل نتائج الكرة العائمة عبر إمكانية الوصول. إن فشل الإدخال المباشر، قد تُنسخ النتيجة إلى الحافظة كاحتياطي.</string>
+    <string name="feature_floating_ime_bridge_on_desc">مع جسر LSPosed أو LSPatch متوافق، تُدخل نتائج الكرة العائمة مباشرة عبر لوحة المفاتيح الخارجية الحالية. قد يُحسّن التوافق واكتشاف ظهور اللوحة. لا يقرأ النص الذي أدخلته مسبقاً.</string>
+    <string name="feature_ime_bridge_pcm_recording_off_desc">يمكن للجسر إدخال نتائج التعرّف، لكن التسجيل بالضغط المطوّل داخل لوحة خارجية غير متاح.</string>
+    <string name="feature_ime_bridge_pcm_recording_on_desc">يمكنك الضغط مطوّلاً للتسجيل في لوحة خارجية متوافقة وإرسال التسجيل إلى BiBi Keyboard للتعرّف. إن فشل التسجيل، لا ينتقل تلقائياً إلى الكرة العائمة أو ميكروفون هذا التطبيق.</string>
+    <string name="feature_floating_write_compat_off_desc">تُدخل نتائج التعرّف مباشرة في حقل النص. يعمل مع معظم التطبيقات.</string>
+    <string name="feature_floating_write_compat_on_desc">في التطبيقات التي تختارها، يُحدد النص الحالي قبل لصق النتيجة لتجنّب تضمين النص النائب. تُستخدم الحافظة مؤقتاً، ويحاول التطبيق استعادة محتواها السابق بعدها.</string>
+
+    <!-- Floating write paste -->
+    <string name="feature_floating_write_paste_off_desc">تُدخل نتائج التعرّف تلقائياً في حقل النص الحالي.</string>
+    <string name="feature_floating_write_paste_on_desc">في التطبيقات التي تختارها، تُنسخ نتائج التعرّف إلى الحافظة فقط ولا تُدخل تلقائياً. عليك اللصق بنفسك.</string>
+
+    <!-- Floating keep alive -->
+    <string name="feature_floating_keep_alive_off_desc">يُرجَّح إيقاف التطبيق بعد التشغيل في الخلفية لفترة، فقد تصبح ميزات الكرة العائمة ومفاتيح الصوت غير متاحة.</string>
+    <string name="feature_floating_keep_alive_on_desc">يعرض إشعاراً مستمراً للمساعدة على إبقاء ميزات الكرة العائمة ومفاتيح الصوت متاحة في الخلفية. قد تتطلّب بعض الهواتف تغيير إعدادات البطارية.</string>
+    <string name="feature_floating_keep_alive_privileged_off_desc">يستخدم الطريقة القياسية فقط للبقاء نشطاً في الخلفية. قد توقف بعض الهواتف ميزات الكرة العائمة أو مفاتيح الصوت.</string>
+    <string name="feature_floating_keep_alive_privileged_on_desc">يستخدم Shizuku أو root لاستعادة الخدمة الخلفية دورياً، مما يقلّل انقطاع ميزات الكرة العائمة أو مفاتيح الصوت. يلزم إذن Shizuku أو root.</string>
+</resources>

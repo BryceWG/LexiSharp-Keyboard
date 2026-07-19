@@ -1,0 +1,27 @@
+<resources>
+    <!-- Shared sherpa-onnx punctuation model (ct-transformer zh+en) -->
+    <string name="label_punct_model_shared">نموذج الترقيم المشترك (60MB، تستخدمه بعض نماذج ASR)</string>
+    <string name="btn_punct_download_model">تنزيل نموذج الترقيم</string>
+    <string name="btn_punct_import_model">استيراد نموذج الترقيم</string>
+    <string name="btn_punct_clear_model">مسح نموذج الترقيم</string>
+
+    <string name="punct_download_status_downloading">جارٍ تنزيل نموذج الترقيم… %1$d%%</string>
+    <string name="punct_download_status_extracting_progress">جارٍ استخراج نموذج الترقيم… %1$d%%</string>
+    <string name="punct_download_status_done">تم تثبيت نموذج الترقيم</string>
+    <string name="punct_download_status_failed">فشل تنزيل أو استخراج نموذج الترقيم</string>
+    <string name="punct_download_started_in_bg">بدأ تنزيل نموذج الترقيم في الخلفية. راجع الإشعار للمتابعة.</string>
+
+    <string name="punct_import_started_in_bg">بدأ استيراد نموذج الترقيم في الخلفية. راجع الإشعار للمتابعة.</string>
+    <string name="punct_import_success">تم استيراد نموذج الترقيم: %1$s</string>
+    <string name="punct_import_failed">فشل استيراد نموذج الترقيم: %1$s</string>
+
+    <string name="punct_clear_confirm_title">مسح نموذج الترقيم؟</string>
+    <string name="punct_clear_confirm_message">سيُحذف نموذج الترقيم المحلي المشترك. يمكنك تنزيله لاحقاً. المتابعة؟</string>
+    <string name="punct_clear_done">تم مسح نموذج الترقيم</string>
+    <string name="punct_clear_failed">فشل مسح نموذج الترقيم</string>
+
+    <string name="notif_punct_title">نموذج الترقيم (60MB، مشترك)</string>
+
+    <!-- Toast when punctuation model is missing for FireRedASR V2 -->
+    <string name="toast_punct_model_missing">لم يُعثر على نموذج ترقيم محلي. قد تفتقر نتائج FireRedASR V2 إلى علامات الترقيم. يمكنك تنزيل النموذج المشترك من إعدادات ASR.</string>
+</resources>
