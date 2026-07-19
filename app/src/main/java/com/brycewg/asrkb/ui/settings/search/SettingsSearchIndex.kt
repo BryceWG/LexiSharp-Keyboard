@@ -133,6 +133,7 @@ object SettingsSearchIndex {
         }
         item(R.string.label_floating_asr, R.string.section_floating_basic)
         item(R.string.label_floating_only_when_ime_visible, R.string.section_floating_basic)
+        item(R.string.label_floating_hold_to_record, R.string.section_floating_basic)
         item(R.string.label_floating_direct_drag, R.string.section_floating_basic)
         item(R.string.label_floating_alpha, R.string.section_floating_basic)
         item(R.string.label_floating_size, R.string.section_floating_basic)

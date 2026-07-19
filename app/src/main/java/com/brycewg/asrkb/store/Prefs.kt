@@ -487,6 +487,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_FLOATING_DOCK_HIDDEN, false)
         set(value) = sp.edit { putBoolean(KEY_FLOATING_DOCK_HIDDEN, value) }
 
+    // 悬浮球：长按开始录音，松手停止；关闭时使用点按启停
+    var floatingBallHoldToRecordEnabled: Boolean
+        get() = sp.getBoolean(KEY_FLOATING_HOLD_TO_RECORD_ENABLED, false)
+        set(value) = sp.edit { putBoolean(KEY_FLOATING_HOLD_TO_RECORD_ENABLED, value) }
+
     // 悬浮球：直接拖动移动（无需长按进入移动模式）
     var floatingBallDirectDragEnabled: Boolean
         get() = sp.getBoolean(KEY_FLOATING_DIRECT_DRAG_ENABLED, true)

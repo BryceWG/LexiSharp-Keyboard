@@ -7,6 +7,7 @@
     <string name="section_floating_compat">進階功能</string>
     <string name="section_floating_keep_alive">背景保活</string>
     <string name="label_floating_only_when_ime_visible">僅在鍵盤顯示時顯示懸浮球</string>
+    <string name="label_floating_hold_to_record">長按懸浮球錄音</string>
     <string name="label_floating_direct_drag">直接拖動移動懸浮球</string>
     <string name="label_floating_alpha">懸浮球透明度</string>
     <string name="label_floating_size">懸浮球大小</string>
@@ -118,6 +119,10 @@
     <!-- 僅在鍵盤顯示時顯示懸浮球 -->
     <string name="feature_floating_only_when_ime_visible_off_desc">即使鍵盤隱藏，懸浮球仍保持可見。</string>
     <string name="feature_floating_only_when_ime_visible_on_desc">鍵盤隱藏時懸浮球自動隱藏，鍵盤出現時自動顯示。鍵盤狀態可透過無障礙或已啟用的輸入法橋接偵測。</string>
+
+    <!-- 長按懸浮球錄音 -->
+    <string name="feature_floating_hold_to_record_off_desc">點按懸浮球開始錄音，再次點按停止錄音。</string>
+    <string name="feature_floating_hold_to_record_on_desc">長按懸浮球開始錄音，放開後停止。滑出選單或移動懸浮球需要拖動更長距離，觸發時會取消本次錄音。</string>
 
     <!-- 直接拖動移動懸浮球 -->
     <string name="feature_floating_direct_drag_off_desc">移動懸浮球需要長按進入移動模式或透過選單開啟移動模式。</string>

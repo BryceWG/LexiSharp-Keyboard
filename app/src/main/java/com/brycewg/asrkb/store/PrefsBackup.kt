@@ -67,6 +67,7 @@ internal object PrefsBackup {
         o.put(KEY_FLOATING_DOCK_SIDE, floatingBallDockSide)
         o.put(KEY_FLOATING_DOCK_FRACTION, floatingBallDockFraction.toDouble())
         o.put(KEY_FLOATING_DOCK_HIDDEN, floatingBallDockHidden)
+        o.put(KEY_FLOATING_HOLD_TO_RECORD_ENABLED, floatingBallHoldToRecordEnabled)
         o.put(KEY_FLOATING_DIRECT_DRAG_ENABLED, floatingBallDirectDragEnabled)
         o.put(KEY_FLOATING_ASR_ENABLED, floatingAsrEnabled)
         o.put(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE, floatingSwitcherOnlyWhenImeVisible)
@@ -329,6 +330,9 @@ internal object PrefsBackup {
             optInt(KEY_FLOATING_DOCK_SIDE)?.let { floatingBallDockSide = it }
             optFloat(KEY_FLOATING_DOCK_FRACTION)?.let { floatingBallDockFraction = it }
             optBool(KEY_FLOATING_DOCK_HIDDEN)?.let { floatingBallDockHidden = it }
+            optBool(KEY_FLOATING_HOLD_TO_RECORD_ENABLED)?.let {
+                floatingBallHoldToRecordEnabled = it
+            }
             optBool(KEY_FLOATING_DIRECT_DRAG_ENABLED)?.let { floatingBallDirectDragEnabled = it }
             optBool(KEY_FLOATING_ASR_ENABLED)?.let { floatingAsrEnabled = it }
             optBool(KEY_FLOATING_ONLY_WHEN_IME_VISIBLE)?.let {

@@ -22,6 +22,7 @@ private const val FLOATING_SETTINGS_STATE_TAG = "FloatingSettingsState"
 internal data class FloatingSettingsUiState(
     val asrEnabled: Boolean,
     val onlyWhenImeVisible: Boolean,
+    val holdToRecordEnabled: Boolean,
     val directDragEnabled: Boolean,
     val alphaPercent: Float,
     val sizeDp: Int,
@@ -38,6 +39,7 @@ internal data class FloatingSettingsUiState(
         val placeholder: FloatingSettingsUiState = FloatingSettingsUiState(
             asrEnabled = false,
             onlyWhenImeVisible = false,
+            holdToRecordEnabled = false,
             directDragEnabled = false,
             alphaPercent = 100f,
             sizeDp = 56,
@@ -54,6 +56,7 @@ internal data class FloatingSettingsUiState(
         fun fromPrefs(prefs: Prefs): FloatingSettingsUiState = FloatingSettingsUiState(
             asrEnabled = prefs.floatingAsrEnabled,
             onlyWhenImeVisible = prefs.floatingSwitcherOnlyWhenImeVisible,
+            holdToRecordEnabled = prefs.floatingBallHoldToRecordEnabled,
             directDragEnabled = prefs.floatingBallDirectDragEnabled,
             alphaPercent = (prefs.floatingSwitcherAlpha * 100f).coerceIn(30f, 100f),
             sizeDp = prefs.floatingBallSizeDp,

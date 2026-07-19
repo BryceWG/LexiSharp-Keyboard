@@ -7,6 +7,7 @@
     <string name="section_floating_compat">Advanced</string>
     <string name="section_floating_keep_alive">Background Keep-Alive</string>
     <string name="label_floating_only_when_ime_visible">Only show floating ball when keyboard is visible</string>
+    <string name="label_floating_hold_to_record">Hold the floating ball to record</string>
     <string name="label_floating_direct_drag">Drag to move the floating ball</string>
     <string name="label_floating_alpha">Floating ball transparency</string>
     <string name="label_floating_size">Floating ball size</string>
@@ -118,6 +119,10 @@
     <!-- Floating only when IME visible -->
     <string name="feature_floating_only_when_ime_visible_off_desc">The floating ball remains visible even when the keyboard is hidden.</string>
     <string name="feature_floating_only_when_ime_visible_on_desc">The floating ball is automatically hidden when the keyboard is hidden and shown when the keyboard appears. Keyboard state can be detected by Accessibility or by an active IME bridge.</string>
+
+    <!-- Hold floating ball to record -->
+    <string name="feature_floating_hold_to_record_off_desc">Tap the floating ball to start recording, then tap it again to stop.</string>
+    <string name="feature_floating_hold_to_record_on_desc">Press and hold the floating ball to record, then release to stop. Opening the menu or moving the ball requires a longer drag and cancels the current recording.</string>
 
     <!-- Floating direct drag -->
     <string name="feature_floating_direct_drag_off_desc">Moving the floating ball requires long-pressing to enter move mode or using the menu.</string>

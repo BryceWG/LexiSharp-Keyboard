@@ -8,6 +8,7 @@
     <string name="section_floating_compat">高度な機能</string>
     <string name="section_floating_keep_alive">バックグラウンド保活</string>
     <string name="label_floating_only_when_ime_visible">キーボード表示時のみフローティングボールを表示する</string>
+    <string name="label_floating_hold_to_record">フローティングボールを長押しして録音</string>
     <string name="label_floating_direct_drag">直接ドラッグでフローティングボールを移動</string>
     <string name="label_floating_alpha">フローティングボールの透明度</string>
     <string name="label_floating_size">フローティングボールのサイズ</string>
@@ -119,6 +120,10 @@
     <!-- キーボード表示時のみフローティングボールを表示 -->
     <string name="feature_floating_only_when_ime_visible_off_desc">キーボードが非表示でもフローティングボールは表示されたままになります。</string>
     <string name="feature_floating_only_when_ime_visible_on_desc">キーボードが非表示のときにフローティングボールが自動的に非表示になり、キーボードが表示されると表示されます。キーボードの状態は、アクセシビリティまたは有効な IME ブリッジで検出できます。</string>
+
+    <!-- フローティングボールの長押し録音 -->
+    <string name="feature_floating_hold_to_record_off_desc">フローティングボールをタップして録音を開始し、もう一度タップして停止します。</string>
+    <string name="feature_floating_hold_to_record_on_desc">フローティングボールを長押しして録音を開始し、指を離すと停止します。メニュー表示や移動にはより長いドラッグが必要で、切り替わると今回の録音はキャンセルされます。</string>
 
     <!-- 直接ドラッグ移動 -->
     <string name="feature_floating_direct_drag_off_desc">移動するには長押しで移動モードに入るか、メニューから移動を選ぶ必要があります。</string>

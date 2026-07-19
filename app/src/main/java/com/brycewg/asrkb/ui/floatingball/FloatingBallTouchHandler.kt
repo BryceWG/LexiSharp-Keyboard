@@ -32,6 +32,9 @@ class FloatingBallTouchHandler(
     interface TouchEventListener {
         fun onSingleTap()
         fun onLongPress()
+        fun onLongPressGestureMovedBeyondSlop()
+        fun onLongPressRelease()
+        fun onLongPressCancel()
         fun onLongPressDragStart(initialRawX: Float, initialRawY: Float)
         fun onLongPressDragMove(rawX: Float, rawY: Float)
         fun onLongPressDragRelease(rawX: Float, rawY: Float)
@@ -41,8 +44,7 @@ class FloatingBallTouchHandler(
     }
 
     private val handler = Handler(Looper.getMainLooper())
-    private val touchSlop = dp(4)
-    private val directMoveSlop = maxOf(dp(8), ViewConfiguration.get(context).scaledTouchSlop)
+    private val scaledTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private val longPressTimeout = ViewConfiguration.getLongPressTimeout().toLong()
 
     // 触摸状态
@@ -56,9 +58,16 @@ class FloatingBallTouchHandler(
     private var longPressPosted = false
     private var dragSelecting = false
     private var longHoldMovePosted = false
+    private var holdMovementExceededNotified = false
     private var moveStarted = false
     private var directMoveEnabled = false
-    private var activeMoveSlop = touchSlop
+    private var holdToRecordEnabled = false
+    private var gestureSlops = resolveFloatingBallGestureSlops(
+        density = context.resources.displayMetrics.density,
+        scaledTouchSlop = scaledTouchSlop,
+        holdToRecordEnabled = false,
+        directMoveEnabled = false
+    )
     private var dragScreenW = 0
     private var dragScreenH = 0
 
@@ -137,8 +146,15 @@ class FloatingBallTouchHandler(
         longActionFired = false
         dragSelecting = false
         moveStarted = false
+        holdMovementExceededNotified = false
         directMoveEnabled = prefs.floatingBallDirectDragEnabled
-        activeMoveSlop = if (directMoveEnabled) directMoveSlop else touchSlop
+        holdToRecordEnabled = prefs.floatingBallHoldToRecordEnabled
+        gestureSlops = resolveFloatingBallGestureSlops(
+            density = context.resources.displayMetrics.density,
+            scaledTouchSlop = scaledTouchSlop,
+            holdToRecordEnabled = holdToRecordEnabled,
+            directMoveEnabled = directMoveEnabled
+        )
         val screen = getUsableScreenSize()
         dragScreenW = screen.first
         dragScreenH = screen.second
@@ -151,11 +167,25 @@ class FloatingBallTouchHandler(
         // 移动模式下不触发长按
         if (!isMoveMode && !longPressPosted) {
             try {
-                handler.postDelayed(longPressRunnable, longPressTimeout)
-                longPressPosted = true
-                if (!directMoveEnabled) {
-                    handler.postDelayed(longHoldMoveRunnable, DIRECT_MOVE_HOLD_TIMEOUT_MS)
-                    longHoldMovePosted = true
+                if (shouldStartFloatingHoldRecordingOnDown(
+                        holdToRecordEnabled = holdToRecordEnabled,
+                        isMoveMode = isMoveMode
+                    )
+                ) {
+                    longActionFired = true
+                    hapticFeedback()
+                    listener.onLongPress()
+                } else {
+                    handler.postDelayed(longPressRunnable, longPressTimeout)
+                    longPressPosted = true
+                    if (shouldScheduleFloatingLongHoldMove(
+                            holdToRecordEnabled = holdToRecordEnabled,
+                            directMoveEnabled = directMoveEnabled
+                        )
+                    ) {
+                        handler.postDelayed(longHoldMoveRunnable, DIRECT_MOVE_HOLD_TIMEOUT_MS)
+                        longHoldMovePosted = true
+                    }
                 }
             } catch (e: Throwable) {
                 Log.e(TAG, "Failed to post long press callback", e)
@@ -166,13 +196,23 @@ class FloatingBallTouchHandler(
     private fun handleActionMove(v: View, e: MotionEvent): Boolean {
         val dx = (e.rawX - downX).toInt()
         val dy = (e.rawY - downY).toInt()
-        val moveSlop = activeMoveSlop
+        val moveSlop = gestureSlops.moveActivationPx
+        val movementExceeded = exceedsFloatingBallMoveSlop(dx, dy, moveSlop)
 
         if (!moved && (kotlin.math.abs(dx) > moveSlop || kotlin.math.abs(dy) > moveSlop)) {
             moved = true
         }
 
-        if (!isDragging && directMoveEnabled && moved && !longActionFired && !dragSelecting) {
+        if (holdToRecordEnabled && longActionFired && movementExceeded &&
+            !holdMovementExceededNotified
+        ) {
+            holdMovementExceededNotified = true
+            listener.onLongPressGestureMovedBeyondSlop()
+        }
+
+        if (!isDragging && directMoveEnabled && !longActionFired && !dragSelecting &&
+            exceedsFloatingBallMoveSlop(dx, dy, gestureSlops.directMovePx)
+        ) {
             isDragging = true
             cancelLongPress()
             cancelLongHoldMove()
@@ -181,19 +221,66 @@ class FloatingBallTouchHandler(
         if (!isDragging) {
             // 非移动模式：处理长按后的拖拽选中逻辑
             if (longActionFired) {
-                val absDx = kotlin.math.abs(dx)
-                val absDy = kotlin.math.abs(dy)
-                if (!dragSelecting) {
-                    // 要求初次“向左右方向”滑动超过阈值才进入拖拽选中
-                    if (absDx > touchSlop && absDx >= absDy) {
+                if (dragSelecting) {
+                    listener.onLongPressDragMove(e.rawX, e.rawY)
+                    return true
+                }
+
+                val shouldOpenMenu = if (holdToRecordEnabled) {
+                    shouldStartFloatingBallMenuTowardCenter(
+                        dx = dx,
+                        dy = dy,
+                        slop = gestureSlops.menuSelectionPx,
+                        downX = downX,
+                        downY = downY,
+                        screenWidth = dragScreenW,
+                        screenHeight = dragScreenH
+                    )
+                } else {
+                    shouldStartFloatingBallMenuSelection(
+                        dx = dx,
+                        dy = dy,
+                        slop = gestureSlops.menuSelectionPx
+                    )
+                }
+                val movingTowardScreenCenter = holdToRecordEnabled &&
+                    isFloatingBallMovementTowardCenter(
+                        dx = dx,
+                        dy = dy,
+                        downX = downX,
+                        downY = downY,
+                        screenWidth = dragScreenW,
+                        screenHeight = dragScreenH
+                    )
+                val holdMoveAction = if (holdToRecordEnabled) {
+                    resolveFloatingBallHoldMoveAction(
+                        movementExceeded = movementExceeded,
+                        menuThresholdExceeded = shouldOpenMenu,
+                        movingTowardScreenCenter = movingTowardScreenCenter,
+                        directMoveEnabled = directMoveEnabled
+                    )
+                } else if (shouldOpenMenu) {
+                    FloatingBallHoldMoveAction.OpenMenu
+                } else {
+                    FloatingBallHoldMoveAction.None
+                }
+
+                when (holdMoveAction) {
+                    FloatingBallHoldMoveAction.OpenMenu -> {
                         dragSelecting = true
                         cancelLongHoldMove()
                         listener.onLongPressDragStart(e.rawX, e.rawY)
                     }
-                } else {
-                    listener.onLongPressDragMove(e.rawX, e.rawY)
+                    FloatingBallHoldMoveAction.MoveBall -> {
+                        isDragging = true
+                        moveStarted = true
+                        cancelLongPress()
+                        cancelLongHoldMove()
+                        listener.onMoveStarted()
+                    }
+                    FloatingBallHoldMoveAction.None -> Unit
                 }
-                return true
+                if (!isDragging) return true
             } else {
                 // 移动超过阈值，取消未触发的长按
                 if (moved) {
@@ -255,8 +342,7 @@ class FloatingBallTouchHandler(
                 listener.onMoveEnded()
             }
         } else if (longActionFired) {
-            // 已触发长按但未进入拖拽选择：通知取消以清理可见性保护
-            listener.onDragCancelled()
+            listener.onLongPressRelease()
         } else if (!moved) {
             // 非移动模式的点按
             hapticFeedback()
@@ -268,6 +354,7 @@ class FloatingBallTouchHandler(
         longActionFired = false
         dragSelecting = false
         moveStarted = false
+        holdMovementExceededNotified = false
         dragScreenW = 0
         dragScreenH = 0
         return true
@@ -280,12 +367,15 @@ class FloatingBallTouchHandler(
             listener.onMoveEnded()
         } else if (dragSelecting) {
             listener.onDragCancelled()
+        } else if (longActionFired) {
+            listener.onLongPressCancel()
         }
         moved = false
         isDragging = false
         longActionFired = false
         dragSelecting = false
         moveStarted = false
+        holdMovementExceededNotified = false
         dragScreenW = 0
         dragScreenH = 0
         return true
@@ -293,11 +383,6 @@ class FloatingBallTouchHandler(
 
     private fun hapticFeedback() {
         HapticFeedbackHelper.performTap(context, prefs, viewManager.getBallView())
-    }
-
-    private fun dp(v: Int): Int {
-        val d = context.resources.displayMetrics.density
-        return (v * d + 0.5f).toInt()
     }
 
     /**

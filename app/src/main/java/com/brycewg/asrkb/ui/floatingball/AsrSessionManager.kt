@@ -367,6 +367,14 @@ class AsrSessionManager(
         startProcessingTimeout(activeSessionToken, lastAudioMsForStats)
     }
 
+    /** 录音引擎是否仍在采集；独立于悬浮球当前展示的视觉状态。 */
+    internal fun isRecordingActive(): Boolean = try {
+        asrEngine?.isRunning == true
+    } catch (t: Throwable) {
+        Log.w(TAG, "Failed to read active recording state", t)
+        false
+    }
+
     /**
      * 取消当前会话并丢弃本轮迟到回调，供悬浮球在 Processing/Recording 态主动中止。
      */

@@ -7,6 +7,7 @@
     <string name="section_floating_compat">高级功能</string>
     <string name="section_floating_keep_alive">后台保活</string>
     <string name="label_floating_only_when_ime_visible">仅在键盘显示时显示悬浮球</string>
+    <string name="label_floating_hold_to_record">长按悬浮球录音</string>
     <string name="label_floating_direct_drag">直接拖动移动悬浮球</string>
     <string name="label_floating_alpha">悬浮球透明度</string>
     <string name="label_floating_size">悬浮球大小</string>
@@ -118,6 +119,10 @@
     <!-- 仅在键盘显示时显示悬浮球 -->
     <string name="feature_floating_only_when_ime_visible_off_desc">即使键盘隐藏，悬浮球仍保持可见。</string>
     <string name="feature_floating_only_when_ime_visible_on_desc">键盘隐藏时悬浮球自动隐藏，键盘出现时自动显示。键盘状态可通过无障碍或已激活的输入法桥接检测。</string>
+
+    <!-- 长按悬浮球录音 -->
+    <string name="feature_floating_hold_to_record_off_desc">点按悬浮球开始录音，再次点按停止录音。</string>
+    <string name="feature_floating_hold_to_record_on_desc">长按悬浮球开始录音，松手停止。滑出菜单或移动悬浮球需要拖动更长距离，触发时会取消本轮录音。</string>
 
     <!-- 直接拖动移动悬浮球 -->
     <string name="feature_floating_direct_drag_off_desc">移动悬浮球需要长按进入移动模式或通过菜单开启移动模式。</string>

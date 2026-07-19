@@ -20,11 +20,17 @@ import com.brycewg.asrkb.ui.AsrAccessibilityService
 import com.brycewg.asrkb.ui.AsrVendorUi
 import com.brycewg.asrkb.ui.SettingsActivity
 import com.brycewg.asrkb.ui.floatingball.AsrSessionManager
+import com.brycewg.asrkb.ui.floatingball.FloatingBallHoldAccessibilityPromptTracker
+import com.brycewg.asrkb.ui.floatingball.FloatingBallHoldRecordingTracker
+import com.brycewg.asrkb.ui.floatingball.FloatingBallHoldPressAction
+import com.brycewg.asrkb.ui.floatingball.FloatingBallRecordingTapAction
 import com.brycewg.asrkb.ui.floatingball.FloatingBallState
 import com.brycewg.asrkb.ui.floatingball.FloatingBallStateMachine
 import com.brycewg.asrkb.ui.floatingball.FloatingBallTouchHandler
 import com.brycewg.asrkb.ui.floatingball.FloatingBallViewManager
 import com.brycewg.asrkb.ui.floatingball.FloatingMenuHelper
+import com.brycewg.asrkb.ui.floatingball.resolveFloatingBallRecordingTapAction
+import com.brycewg.asrkb.ui.floatingball.resolveFloatingBallHoldPressAction
 import com.brycewg.asrkb.util.HapticFeedbackHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +50,12 @@ internal class FloatingAsrInteractionController(
     private val stopRecordingForeground: () -> Unit
 ) : AsrSessionManager.AsrSessionListener,
     FloatingBallTouchHandler.TouchEventListener {
+    private enum class RecordingStartFromBallResult {
+        Started,
+        MissingAccessibility,
+        Failed
+    }
+
     companion object {
         private const val EDGE_HANDLE_AUTO_HIDE_DELAY_MS = 2500L
         private const val AMPLITUDE_DISPATCH_INTERVAL_MS = 32L
@@ -60,6 +72,8 @@ internal class FloatingAsrInteractionController(
     private var postErrorPartialHideRunnable: Runnable? = null
     private var postErrorResetStateRunnable: Runnable? = null
     private var volumeKeySessionActive: Boolean = false
+    private val holdRecordingTracker = FloatingBallHoldRecordingTracker()
+    private val holdAccessibilityPromptTracker = FloatingBallHoldAccessibilityPromptTracker()
     private var pendingAmplitude: Float? = null
     private var amplitudeDispatchRunnable: Runnable? = null
     private var lastAmplitudeDispatchUptimeMs: Long = 0L
@@ -74,6 +88,8 @@ internal class FloatingAsrInteractionController(
         cancelPostErrorPartialHide()
         cancelPostErrorResetState()
         cancelAmplitudeDispatch()
+        holdRecordingTracker.clear()
+        holdAccessibilityPromptTracker.clear()
         stopRecordingForeground()
         try {
             menuController.hideAll()
@@ -396,7 +412,9 @@ internal class FloatingAsrInteractionController(
 
     override fun onSessionStateChanged(state: FloatingBallState) {
         stateMachine.transitionTo(state)
-        if (state !is FloatingBallState.Recording) {
+        val recordingActive = isRecordingCaptureActive()
+        holdRecordingTracker.onRecordingActivityChanged(recordingActive)
+        if (state !is FloatingBallState.Recording && !recordingActive) {
             cancelAmplitudeDispatch()
             stopRecordingForeground()
         }
@@ -571,7 +589,13 @@ internal class FloatingAsrInteractionController(
         }
 
         if (stateMachine.isRecording) {
-            stopRecording()
+            if (resolveFloatingBallRecordingTapAction(
+                    isRecording = true,
+                    holdToRecordEnabled = isHoldToRecordEnabled()
+                ) == FloatingBallRecordingTapAction.StopRecording
+            ) {
+                stopRecording()
+            }
             return
         }
 
@@ -580,37 +604,22 @@ internal class FloatingAsrInteractionController(
             return
         }
 
-        if (viewManager.isEdgeHandleVisible()) {
-            try {
-                viewManager.animateRevealFromEdgeIfNeeded()
-            } catch (e: Throwable) {
-                Log.w(tag, "Failed to reveal from edge handle tap", e)
-            }
-            scheduleEdgeHandleAutoHide()
-            return
+        if (revealEdgeHandleIfNeeded()) return
+        when (resolveFloatingBallRecordingTapAction(
+            isRecording = false,
+            holdToRecordEnabled = isHoldToRecordEnabled()
+        )) {
+            FloatingBallRecordingTapAction.StartRecording -> startRecordingFromBall()
+            FloatingBallRecordingTapAction.StopRecording,
+            FloatingBallRecordingTapAction.None -> Unit
         }
+    }
 
-        if (!AsrAccessibilityService.isEnabled() && !isImeBridgeEnabled()) {
-            Log.w(tag, "Accessibility service not enabled")
-            showToast(context.getString(R.string.toast_need_accessibility_perm))
-            try {
-                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-            } catch (e: Throwable) {
-                Log.e(tag, "Failed to open accessibility settings", e)
-            }
-            return
-        }
-
-        try {
-            viewManager.animateRevealFromEdgeIfNeeded()
-        } catch (e: Throwable) {
-            Log.w(tag, "Failed to reveal on tap", e)
-        }
-
-        startRecording()
+    private fun isHoldToRecordEnabled(): Boolean = try {
+        prefs.floatingBallHoldToRecordEnabled
+    } catch (e: Throwable) {
+        Log.w(tag, "Failed to read floating hold-to-record preference", e)
+        false
     }
 
     private fun isImeBridgeEnabled(): Boolean = try {
@@ -622,11 +631,60 @@ internal class FloatingAsrInteractionController(
 
     override fun onLongPress() {
         cancelEdgeHandleAutoHide()
+        holdAccessibilityPromptTracker.clear()
         touchActiveGuard = true
         updateVisibilityByPref("long_press")
+        if (!isHoldToRecordEnabled()) return
+        if (stateMachine.isMoveMode) return
+        when (resolveFloatingBallHoldPressAction(
+            isRecording = stateMachine.isRecording,
+            isProcessing = stateMachine.isProcessing,
+            isEdgeHandleVisible = viewManager.isEdgeHandleVisible()
+        )) {
+            FloatingBallHoldPressAction.StartRecording -> {
+                when (startRecordingFromBall(openAccessibilitySettingsOnMissing = false)) {
+                    RecordingStartFromBallResult.Started -> {
+                        holdRecordingTracker.markStartResult(
+                            started = true,
+                            isRecordingActive = isRecordingCaptureActive()
+                        )
+                    }
+                    RecordingStartFromBallResult.MissingAccessibility ->
+                        holdAccessibilityPromptTracker.markPending()
+                    RecordingStartFromBallResult.Failed -> Unit
+                }
+            }
+            FloatingBallHoldPressAction.StopRecording -> stopRecording()
+            FloatingBallHoldPressAction.CancelProcessing -> cancelCurrentSession()
+            FloatingBallHoldPressAction.RevealEdge -> revealEdgeHandleIfNeeded()
+            FloatingBallHoldPressAction.None -> Unit
+        }
+    }
+
+    override fun onLongPressRelease() {
+        val shouldStop = holdRecordingTracker.consumeStopOnRelease(isRecordingCaptureActive())
+        if (shouldStop) {
+            stopRecording()
+        }
+        if (holdAccessibilityPromptTracker.consumeOnRelease()) {
+            openAccessibilitySettings()
+        }
+        touchActiveGuard = false
+        updateVisibilityByPref("long_press_release")
+    }
+
+    override fun onLongPressGestureMovedBeyondSlop() {
+        holdAccessibilityPromptTracker.clear()
+    }
+
+    override fun onLongPressCancel() {
+        cancelHoldRecordingForGesture()
+        touchActiveGuard = false
+        updateVisibilityByPref("long_press_cancel")
     }
 
     override fun onLongPressDragStart(initialRawX: Float, initialRawY: Float) {
+        cancelHoldRecordingForGesture()
         touchActiveGuard = true
         cancelEdgeHandleAutoHide()
         try {
@@ -658,6 +716,7 @@ internal class FloatingAsrInteractionController(
     }
 
     override fun onMoveStarted() {
+        cancelHoldRecordingForGesture()
         touchActiveGuard = true
         cancelEdgeHandleAutoHide()
         if (!viewManager.isEdgeHandleVisible()) {
@@ -702,6 +761,66 @@ internal class FloatingAsrInteractionController(
         menuController.dismissDragSession()
         touchActiveGuard = false
         updateVisibilityByPref("drag_cancelled")
+    }
+
+    private fun startRecordingFromBall(
+        openAccessibilitySettingsOnMissing: Boolean = true
+    ): RecordingStartFromBallResult {
+        if (!AsrAccessibilityService.isEnabled() && !isImeBridgeEnabled()) {
+            Log.w(tag, "Accessibility service not enabled")
+            showToast(context.getString(R.string.toast_need_accessibility_perm))
+            if (openAccessibilitySettingsOnMissing) {
+                openAccessibilitySettings()
+            }
+            return RecordingStartFromBallResult.MissingAccessibility
+        }
+
+        try {
+            viewManager.animateRevealFromEdgeIfNeeded()
+        } catch (e: Throwable) {
+            Log.w(tag, "Failed to reveal before recording", e)
+        }
+
+        return if (startRecording()) {
+            RecordingStartFromBallResult.Started
+        } else {
+            RecordingStartFromBallResult.Failed
+        }
+    }
+
+    private fun openAccessibilitySettings() {
+        try {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Throwable) {
+            Log.e(tag, "Failed to open accessibility settings", e)
+        }
+    }
+
+    private fun revealEdgeHandleIfNeeded(): Boolean {
+        if (!viewManager.isEdgeHandleVisible()) return false
+        try {
+            viewManager.animateRevealFromEdgeIfNeeded()
+        } catch (e: Throwable) {
+            Log.w(tag, "Failed to reveal from edge handle", e)
+        }
+        scheduleEdgeHandleAutoHide()
+        return true
+    }
+
+    private fun cancelHoldRecordingForGesture() {
+        holdAccessibilityPromptTracker.clear()
+        val shouldCancel = holdRecordingTracker.consumeCancelForGesture(isRecordingCaptureActive())
+        if (shouldCancel) {
+            cancelCurrentSession()
+        }
+    }
+
+    private fun isRecordingCaptureActive(): Boolean {
+        if (!this::asrSessionManager.isInitialized) return false
+        return asrSessionManager.isRecordingActive()
     }
 
     // ==================== 菜单动作 ====================

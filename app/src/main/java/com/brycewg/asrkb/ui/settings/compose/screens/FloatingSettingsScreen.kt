@@ -442,7 +442,7 @@ fun FloatingSettingsScreen(
 
             item("basic") {
                 FloatingSection(uiMode = uiMode, titleRes = R.string.section_floating_basic) {
-                    val basicItemCount = if (uiState.asrEnabled) 5 else 1
+                    val basicItemCount = if (uiState.asrEnabled) 6 else 1
                     FloatingExplainedSwitch(
                         id = "floating_asr",
                         titleRes = R.string.label_floating_asr,
@@ -487,6 +487,23 @@ fun FloatingSettingsScreen(
                             count = basicItemCount
                         )
                         FloatingExplainedSwitch(
+                            id = "floating_hold_to_record",
+                            titleRes = R.string.label_floating_hold_to_record,
+                            checked = uiState.holdToRecordEnabled,
+                            onToggle = { target ->
+                                applyExplainedSwitch(
+                                    current = uiState.holdToRecordEnabled,
+                                    target = target,
+                                    titleRes = R.string.label_floating_hold_to_record,
+                                    offDescRes = R.string.feature_floating_hold_to_record_off_desc,
+                                    onDescRes = R.string.feature_floating_hold_to_record_on_desc,
+                                    preferenceKey = "floating_hold_to_record_explained"
+                                ) { prefs.floatingBallHoldToRecordEnabled = it }
+                            },
+                            index = 2,
+                            count = basicItemCount
+                        )
+                        FloatingExplainedSwitch(
                             id = "floating_direct_drag",
                             titleRes = R.string.label_floating_direct_drag,
                             checked = uiState.directDragEnabled,
@@ -500,7 +517,7 @@ fun FloatingSettingsScreen(
                                     preferenceKey = "floating_direct_drag_explained"
                                 ) { prefs.floatingBallDirectDragEnabled = it }
                             },
-                            index = 2,
+                            index = 3,
                             count = basicItemCount
                         )
                         FloatingSliderPreference(
@@ -510,7 +527,7 @@ fun FloatingSettingsScreen(
                             valueRange = 30f..100f,
                             step = 5,
                             uiMode = uiMode,
-                            index = 3,
+                            index = 4,
                             count = basicItemCount,
                             onValueChange = { value ->
                                 uiState = uiState.copy(alphaPercent = value.roundFloatingToStep(5))
@@ -528,7 +545,7 @@ fun FloatingSettingsScreen(
                             valueRange = 28f..96f,
                             step = 4,
                             uiMode = uiMode,
-                            index = 4,
+                            index = 5,
                             count = basicItemCount,
                             onValueChange = { value ->
                                 uiState = uiState.copy(sizeDp = value.roundFloatingToStep(4).toInt().coerceIn(28, 96))
