@@ -183,8 +183,6 @@ private fun OtherPrivacySection(
             valueRange = 0f..100f,
             steps = 99,
             showKeyPoints = false,
-            startLabel = "0",
-            endLabel = "100",
             index = 1,
             count = 4,
             onValueChange = { onAudioRetentionChange(it.toInt()) },
