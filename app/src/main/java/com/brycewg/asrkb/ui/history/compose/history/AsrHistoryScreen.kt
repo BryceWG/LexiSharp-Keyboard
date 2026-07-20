@@ -58,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -81,6 +82,7 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.flow.distinctUntilChanged
 import top.yukonga.miuix.kmp.basic.Card as MiuixCard
+import top.yukonga.miuix.kmp.basic.CardDefaults as MiuixCardDefaults
 import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
 import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
@@ -450,44 +452,60 @@ private fun HistoryItemCard(
     onCopy: (String) -> Unit
 ) {
     val record = row.record
-    val modifier = Modifier
-        .fillMaxWidth()
-        .combinedClickable(
-            onClick = {
-                if (selectedCount > 0) onToggleSelection(record.id)
-            },
-            onLongClick = { onToggleSelection(record.id) }
-        )
+    val onClick = {
+        if (selectedCount > 0) onToggleSelection(record.id)
+    }
+    val onLongClick = { onToggleSelection(record.id) }
     when (uiMode) {
-        BibiUiMode.Material -> ElevatedCard(
-            modifier = modifier,
-            shape = RoundedCornerShape(SettingsLayoutMetrics.MaterialSectionShape),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = if (row.selected) {
-                    MaterialTheme.colorScheme.secondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceContainer
-                }
-            )
-        ) {
-            HistoryItemContent(record, uiMode, vendorOptions, onCopy)
+        BibiUiMode.Material -> {
+            // clickable 必须落在 clip(shape) 之内，否则按压遮罩会画出直角方框。
+            val shape = RoundedCornerShape(SettingsLayoutMetrics.MaterialSectionShape)
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .combinedClickable(
+                        onClick = onClick,
+                        onLongClick = onLongClick
+                    ),
+                shape = shape,
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = if (row.selected) {
+                        MaterialTheme.colorScheme.secondaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainer
+                    }
+                )
+            ) {
+                HistoryItemContent(record, uiMode, vendorOptions, onCopy)
+            }
         }
 
-        BibiUiMode.Miuix -> MiuixCard(
-            modifier = modifier.then(
-                if (row.selected) {
-                    Modifier.border(
-                        width = 1.dp,
-                        color = MiuixTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(SettingsLayoutMetrics.MaterialSectionShape)
-                    )
-                } else {
-                    Modifier
-                }
-            )
-        ) {
-            HistoryItemContent(record, uiMode, vendorOptions, onCopy)
+        BibiUiMode.Miuix -> {
+            // 使用 Card 自带 onClick/onLongPress，指示器画在圆角 clip 内，避免外层再叠一层遮罩。
+            val cornerRadius = MiuixCardDefaults.CornerRadius
+            MiuixCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (row.selected) {
+                            Modifier.border(
+                                width = 1.dp,
+                                color = MiuixTheme.colorScheme.primary,
+                                shape = RoundedCornerShape(cornerRadius)
+                            )
+                        } else {
+                            Modifier
+                        }
+                    ),
+                cornerRadius = cornerRadius,
+                onClick = onClick,
+                onLongPress = onLongClick,
+                showIndication = true
+            ) {
+                HistoryItemContent(record, uiMode, vendorOptions, onCopy)
+            }
         }
     }
 }

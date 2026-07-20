@@ -364,10 +364,10 @@ private fun ApiLogCard(
     onClick: () -> Unit
 ) {
     when (uiMode) {
+        // 使用 Card 自带 onClick，按压指示器落在圆角 clip 内，避免外层 clickable 画出直角遮罩。
         BibiUiMode.Material -> ElevatedCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick),
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(SettingsLayoutMetrics.MaterialSectionShape),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
             colors = CardDefaults.elevatedCardColors(
@@ -378,9 +378,9 @@ private fun ApiLogCard(
         }
 
         BibiUiMode.Miuix -> MiuixCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onClick,
+            showIndication = true
         ) {
             ApiLogCardContent(record = record, uiMode = uiMode)
         }
