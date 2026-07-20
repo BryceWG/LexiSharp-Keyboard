@@ -1,5 +1,26 @@
 # Changelog
 
+## v4.2.0 (2026-07-20)
+
+### New Features
+
+- **Floating Ball Hold-to-Record**: Added a hold-to-record mode for the floating ball—press and hold to record, release to stop
+- **Cohere ASR**: Added Cohere as a speech recognition vendor
+- **Arabic UI**: Added Arabic as an app language option
+- **History Audio & Rerun**: Recognition sessions can cache audio; history details show the raw transcript and final result, with re-recognize and re-process actions; Other settings can configure audio retention count
+- **IME Bridge Clipboard Sync**: Clipboard sync can use IME Bridge assistance while the target IME process is alive
+
+### Improvements
+
+- **Recording Audio Focus**: Unified audio-focus handling for recording sessions so recording stops more reliably when focus is lost
+- **Settings Interactions**: Smoother dialog exit animations and various UI improvements
+
+### Bug Fixes
+
+- **IME Bridge Coordination**: Fixed premature cancellation of finishing sessions during service shutdown, which could drop pending recognition results
+
+---
+
 ## v4.1.2 (2026-07-13)
 
 ### New Features
