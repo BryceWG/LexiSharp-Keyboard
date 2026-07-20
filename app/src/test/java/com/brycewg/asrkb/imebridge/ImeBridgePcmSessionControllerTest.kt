@@ -267,6 +267,18 @@ class ImeBridgePcmSessionControllerTest {
         assertEquals(1, fixture.sessions.single().cancels)
     }
 
+    @Test
+    fun serviceShutdownAfterFinishKeepsPendingFinalResultAlive() {
+        val fixture = Fixture()
+        assertOk(fixture.controller.begin(fixture.beginRequest("session-1")))
+
+        assertOk(fixture.controller.finish("session-1"))
+        fixture.controller.cancelActiveForShutdown()
+
+        assertEquals(1, fixture.sessions.single().finishes)
+        assertEquals(0, fixture.sessions.single().cancels)
+    }
+
     private class Fixture(
         featureEnabled: Boolean = true,
         requestAudioFocus: Boolean = false,

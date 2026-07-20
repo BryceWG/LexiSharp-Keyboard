@@ -221,6 +221,9 @@ internal class ImeBridgePcmSessionController(
     @Synchronized
     fun cancelActiveForShutdown() {
         val current = active ?: return
+        // Binder 客户端在提交完 PCM 后会解除绑定。此时服务可能立即销毁，但
+        // Finishing 会话仍在等待 ASR final/error/timeout，不能把正常解绑当成取消。
+        if (current.state == ActiveState.Finishing) return
         active = null
         runCatching { current.session.cancel() }
     }
