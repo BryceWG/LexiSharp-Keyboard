@@ -26,8 +26,8 @@ English | [简体中文](README.md)
 
 > 💎 **BiBi Keyboard Pro** is now officially available on the Play Store for a one-time purchase of just $5.49!
 
-The Pro version offers more advanced features and a better user experience.
-You can learn more in "About - Learn about Pro" in BiBi Keyboard v3.9.0+, or in the [Pro Features](https://bibidocs.brycewg.com/en/pro/features.html) documentation. We welcome your feedback to help us polish a better product!
+The Pro version offers more advanced features and a better experience (hotwords, Simplified/Traditional conversion, continuous dictation, WebDAV auto-backup, and more).
+You can learn more in **About → Learn about Pro**, or in the [Pro Features](https://bibidocs.brycewg.com/en/pro/features.html) documentation. We welcome your feedback to help us polish a better product!
 
 If you are interested in BiBi Keyboard, join our [Telegram Group](https://t.me/+UGFobXqi2bYzMDFl) for more information.
 
@@ -42,9 +42,10 @@ If you are interested in BiBi Keyboard, join our [Telegram Group](https://t.me/+
 - **Press & Hold Recording** - Simple and intuitive recording
 - **Smart Auto-Stop** - Automatically stops recording on silence
 - **Fast Recognition** - Release to upload, quick results
-- **Multi-Engine Support** - 11 mainstream ASR services (7 cloud + 4 local)
-- **Local ASR Model** - Offline voice recognition, no network required, privacy-focused
-- **AI Text Optimization** - LLM smart correction of recognition results
+- **Multi-Engine Support** - 18 ASR vendors (12 cloud + 6 local)
+- **Local ASR Models** - SenseVoice / FunASR Nano / Qwen3-ASR / Parakeet / FireRedASR / X-ASR for offline use
+- **Primary + Backup** - Backup engines and local backup residency for unstable networks
+- **AI Text Optimization** - LLM post-processing; history can cache audio and re-run recognition/post-processing
 
 </td>
 <td width="50%">
@@ -52,6 +53,7 @@ If you are interested in BiBi Keyboard, join our [Telegram Group](https://t.me/+
 ### 🟣 Floating Ball Input ⭐
 
 - **Cross-IME Usage** - Voice input with any input method
+- **Hold to Record** - Press and hold to record, release to stop
 - **Seamless Integration** - Maintain your original typing habits
 - **Auto Insertion** - Recognition results automatically inserted
 - **Compatibility Mode** - Support for Telegram, TikTok and other special apps
@@ -65,22 +67,22 @@ If you are interested in BiBi Keyboard, join our [Telegram Group](https://t.me/+
 ### 📝 Smart Input
 
 - **AI Edit Panel** - Dedicated editing interface with voice command text editing
-- **Rich Editing Tools** - Complete editing functions including cursor movement, selection, copy-paste
-- **Smart Target Selection** - Automatically identifies editing targets (selected text/last recognition/full text)
-- **Custom Keys** - Personalized punctuation keys
-- **Fcitx5/Trime Integration** - Supports invoking BiBi Keyboard's speech recognition capability directly via modified Fcitx5-Android/Trime
-- **External Speech Input Interface** - Supports third-party apps invoking BiBi Keyboard for speech input via SpeechRecognizer interface [Open-source Test Tool](https://github.com/BryceWG/SpeechRecognizer-Tester)
+- **Custom Keyboard Layout** - Freely rearrange key pools and panels
+- **Clipboard Sync & History** - SyncClipboard upload/pull plus in-app clipboard history
+- **IME Bridge** - Record, commit text, and sync clipboard in third-party IMEs via LSPosed/LSPatch module
+- **Fcitx5/Trime Integration** - Invoke BiBi recognition from modified Fcitx5-Android/Trime
+- **External Speech Input Interface** - Third-party apps via SpeechRecognizer / AIDL [Open-source Test Tool](https://github.com/BryceWG/SpeechRecognizer-Tester)
 
 </td>
 <td width="50%">
 
 ### 🎨 User Experience
 
-- **Material3 Design** - Modern interface style with Monet color adaptation
-- **Multi-language Support** - Supports Simplified Chinese, Traditional Chinese, English, and Japanese
+- **Material3 / Miuix** - Modern settings UI with Monet and Miuix styles
+- **Multi-language Support** - Simplified Chinese, Traditional Chinese, English, Japanese, and Arabic
 - **Keyboard Height Adjustment** - Three height levels to choose from
-- **Test Input** - Test input method directly in settings
-- **Statistics** - Recognition character count
+- **Auto Enter After ASR** - Optionally send automatically after recognition in chat apps
+- **Backup & Restore** - One-tap export/import of settings
 - **Vibration Feedback** - Microphone / keyboard button vibration
 - **Auto Update Check** - Daily automatic update check on app launch
 
@@ -137,6 +139,7 @@ If you are interested in BiBi Keyboard, join our [Telegram Group](https://t.me/+
 - Microphone permission (for voice recognition)
 - Overlay permission (optional, for floating ball feature)
 - Accessibility permission (optional, for automatic text insertion)
+- LSPosed / LSPatch (optional, for integration with any third-party IMEs)
 
 ### 📥 Installation Steps
 
@@ -164,11 +167,11 @@ If you are interested in BiBi Keyboard, join our [Telegram Group](https://t.me/+
 ### 🎨 Tech Stack
 
 ```
-Kotlin 2.2.20
-Android SDK 36 (Compile SDK 36, Target SDK 35, Min SDK 29)
-Material Design 3
+Kotlin 2.3.21
+Android SDK (Compile SDK 37, Target SDK 35, Min SDK 26)
+Jetpack Compose + Material Design 3 / Miuix
 Coroutines (async processing)
-OkHttp 5.2.1 (network requests)
+OkHttp 5.3.2 (network requests)
 SharedPreferences (data storage)
 sherpa-onnx (local ASR models)
 ```
