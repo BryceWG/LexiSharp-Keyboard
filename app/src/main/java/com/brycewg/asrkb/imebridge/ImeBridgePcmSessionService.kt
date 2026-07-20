@@ -23,6 +23,7 @@ class ImeBridgePcmSessionService : Service() {
             },
             bridgeStatusProvider = BridgeStatusProvider { bridgeClient.queryStatus() },
             sessionFactory = ImeBridgePcmExternalSessionFactory(this, prefs, bridgeClient),
+            audioFocusPolicy = BridgePcmAudioFocusPolicy { prefs.duckMediaOnRecordEnabled },
             logSink = ApiLogBridgePcmSessionLogSink
         )
     }
@@ -95,6 +96,7 @@ class ImeBridgePcmSessionService : Service() {
             writeNoException()
             writeInt(result.code)
             writeString(result.message)
+            writeInt(if (result.requestAudioFocus) 1 else 0)
         }
     }
 }

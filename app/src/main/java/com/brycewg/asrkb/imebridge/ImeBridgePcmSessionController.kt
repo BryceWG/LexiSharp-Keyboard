@@ -22,7 +22,8 @@ internal data class BridgePcmSessionOperationRequest(
 
 internal data class BridgePcmOperationResult(
     val code: Int,
-    val message: String = ImeBridgePcmContract.messageForCode(code)
+    val message: String = ImeBridgePcmContract.messageForCode(code),
+    val requestAudioFocus: Boolean = false
 ) {
     val isSuccess: Boolean get() = code == ImeBridgePcmContract.RESULT_OK
 }
@@ -37,6 +38,10 @@ internal fun interface CurrentImePackageProvider {
 
 internal fun interface BridgeStatusProvider {
     fun queryStatus(): ImeBridgeResult
+}
+
+internal fun interface BridgePcmAudioFocusPolicy {
+    fun shouldRequestAudioFocus(): Boolean
 }
 
 internal fun interface BridgePcmSessionFactory {
@@ -55,6 +60,7 @@ internal class ImeBridgePcmSessionController(
     private val currentImePackageProvider: CurrentImePackageProvider,
     private val bridgeStatusProvider: BridgeStatusProvider,
     private val sessionFactory: BridgePcmSessionFactory,
+    private val audioFocusPolicy: BridgePcmAudioFocusPolicy = BridgePcmAudioFocusPolicy { false },
     private val logSink: BridgePcmSessionLogSink = NoopBridgePcmSessionLogSink,
     private val clockMs: () -> Long = { System.currentTimeMillis() }
 ) {
@@ -121,7 +127,10 @@ internal class ImeBridgePcmSessionController(
         )
         return try {
             session.start()
-            result(ImeBridgePcmContract.RESULT_OK).also {
+            result(
+                code = ImeBridgePcmContract.RESULT_OK,
+                requestAudioFocus = audioFocusPolicy.shouldRequestAudioFocus()
+            ).also {
                 active?.let { current -> record(current, "begin", it) }
             }
         } catch (t: Throwable) {
@@ -242,8 +251,11 @@ internal class ImeBridgePcmSessionController(
     private fun stale(): BridgePcmOperationResult =
         result(ImeBridgePcmContract.RESULT_STALE_SESSION)
 
-    private fun result(code: Int, message: String = ImeBridgePcmContract.messageForCode(code)) =
-        BridgePcmOperationResult(code, message)
+    private fun result(
+        code: Int,
+        message: String = ImeBridgePcmContract.messageForCode(code),
+        requestAudioFocus: Boolean = false
+    ) = BridgePcmOperationResult(code, message, requestAudioFocus)
 
     private fun record(
         current: ActiveSession,

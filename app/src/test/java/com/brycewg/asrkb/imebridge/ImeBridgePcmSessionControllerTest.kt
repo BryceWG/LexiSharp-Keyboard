@@ -18,6 +18,15 @@ class ImeBridgePcmSessionControllerTest {
     }
 
     @Test
+    fun acceptedBeginReturnsCurrentAudioFocusPolicy() {
+        val enabled = Fixture(requestAudioFocus = true)
+        val disabled = Fixture(requestAudioFocus = false)
+
+        assertTrue(enabled.controller.begin(enabled.beginRequest()).requestAudioFocus)
+        assertFalse(disabled.controller.begin(disabled.beginRequest()).requestAudioFocus)
+    }
+
+    @Test
     fun startFailureRejectsBeginAndDoesNotKeepActiveSession() {
         val sessions = mutableListOf<FakeSession>()
         val fixture = Fixture(
@@ -260,6 +269,7 @@ class ImeBridgePcmSessionControllerTest {
 
     private class Fixture(
         featureEnabled: Boolean = true,
+        requestAudioFocus: Boolean = false,
         private val currentImePackage: String = DEFAULT_IME_PACKAGE,
         private val status: ImeBridgeResult = okStatus(),
         private val sessionFactory: BridgePcmSessionFactory? = null
@@ -274,6 +284,7 @@ class ImeBridgePcmSessionControllerTest {
             sessionFactory = sessionFactory ?: BridgePcmSessionFactory { config, _ ->
                 FakeSession(config.sessionId).also { sessions += it }
             },
+            audioFocusPolicy = BridgePcmAudioFocusPolicy { requestAudioFocus },
             logSink = BridgePcmSessionLogSink { logs += it },
             clockMs = { nowMs.also { nowMs += 100L } }
         )
