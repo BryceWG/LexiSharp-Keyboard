@@ -23,6 +23,9 @@ import androidx.compose.ui.platform.LocalContext
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.ApiLogStore
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.AsrHistoryAudioStore
+import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.history.AsrHistoryRerunCoordinator
 import com.brycewg.asrkb.ui.AsrVendorUi
 import com.brycewg.asrkb.ui.history.compose.apilog.ApiLogScreen
 import com.brycewg.asrkb.ui.history.compose.apilog.formatApiLogDetail
@@ -49,8 +52,13 @@ internal fun SettingsHistoryRoute(
     val context = LocalContext.current
     val appContext = context.applicationContext
     val store = remember(appContext) { AsrHistoryStore(appContext) }
+    val audioStore = remember(appContext) { AsrHistoryAudioStore(appContext) }
     val hapticTap = LocalSettingsHapticTap.current
     val scope = rememberCoroutineScope()
+    val rerunCoordinator = remember(appContext, scope) {
+        AsrHistoryRerunCoordinator(appContext, scope)
+    }
+    val prefs = remember(appContext) { Prefs(appContext) }
     val vendors = remember(context) {
         AsrVendorUi.ordered().map { vendor ->
             HistoryVendorOption(vendor.id, AsrVendorUi.name(context, vendor))
@@ -63,6 +71,7 @@ internal fun SettingsHistoryRoute(
     var displayLimit by remember { mutableIntStateOf(HISTORY_PAGE_SIZE) }
     var hasRecentApiErrors by remember { mutableStateOf(false) }
     var messageDialog by remember { mutableStateOf<SettingsMessageDialogState?>(null) }
+    var audioRecordIds by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     fun showHistoryMessage(message: String) {
         messageDialog = SettingsMessageDialogState(
@@ -74,6 +83,9 @@ internal fun SettingsHistoryRoute(
 
     suspend fun loadData(resetPage: Boolean) {
         records = withContext(Dispatchers.IO) { store.listAll() }
+        audioRecordIds = withContext(Dispatchers.IO) {
+            records.asSequence().filter { audioStore.hasAudio(it.id) }.map { it.id }.toSet()
+        }
         hasRecentApiErrors = withContext(Dispatchers.IO) {
             ApiLogStore.listAll().take(10).any { !it.success && !it.canceled }
         }
@@ -119,10 +131,18 @@ internal fun SettingsHistoryRoute(
                 showHistoryMessage(context.getString(R.string.toast_copied))
             }
         },
+        audioRecordIds = audioRecordIds,
+        llmAvailable = prefs.hasLlmKeys(),
+        onReRecognize = rerunCoordinator::reRecognize,
+        onReprocess = rerunCoordinator::reprocess,
+        onRecordUpdated = { updated ->
+            records = records.map { if (it.id == updated.id) updated else it }
+        },
         onDeleteSelected = { ids ->
             if (ids.isNotEmpty()) {
                 scope.launch {
                     val deleted = withContext(Dispatchers.IO) { store.deleteByIds(ids) }
+                    withContext(Dispatchers.IO) { ids.forEach(audioStore::delete) }
                     showHistoryMessage(context.getString(R.string.toast_deleted, deleted))
                     selectedIds = emptySet()
                     loadData(resetPage = true)

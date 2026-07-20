@@ -25,7 +25,7 @@ abstract class LocalModelPseudoStreamAsrEngine(
     protected val prefs: Prefs,
     protected val listener: StreamingAsrEngine.Listener,
     protected val onRequestDuration: ((Long) -> Unit)? = null
-) : StreamingAsrEngine {
+) : StreamingAsrEngine, AudioFrameSinkOwner {
 
     companion object {
         private const val TAG = "LocalPseudoStreamEngine"
@@ -38,6 +38,7 @@ abstract class LocalModelPseudoStreamAsrEngine(
     protected open val chunkMillis: Int = 200
 
     private val running = AtomicBoolean(false)
+    override var audioFrameSink: AudioFrameSink? = null
     private var audioJob: Job? = null
     private var finalRecognitionJob: Job? = null
 
@@ -121,7 +122,8 @@ abstract class LocalModelPseudoStreamAsrEngine(
                     sampleRate = sampleRate,
                     channelConfig = channelConfig,
                     audioFormat = audioFormat,
-                    chunkMillis = chunkMillis
+                    chunkMillis = chunkMillis,
+                    audioFrameSinkProvider = { audioFrameSink }
                 )
 
                 if (!audioManager.hasPermission()) {

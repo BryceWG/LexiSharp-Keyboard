@@ -38,7 +38,8 @@ class ParallelAsrEngine(
 ) : StreamingAsrEngine,
     BackupAwareAsrEngine,
     ExternalPcmConsumer,
-    CancelableAsrEngine {
+    CancelableAsrEngine,
+    AudioFrameSinkOwner {
 
     companion object {
         private const val TAG = "ParallelAsrEngine"
@@ -58,6 +59,10 @@ class ParallelAsrEngine(
         get() = running.get()
 
     private val running = AtomicBoolean(false)
+    override var audioFrameSink: AudioFrameSink? = null
+    internal var modePreferencesOverride: AsrEngineModePreferences? = null
+    private val modePreferences: AsrEngineModePreferences
+        get() = modePreferencesOverride ?: prefs.asrEngineModePreferencesSnapshot()
     private val stopRequested = AtomicBoolean(false)
 
     private val stateLock = Any()
@@ -316,7 +321,8 @@ class ParallelAsrEngine(
                 sampleRate = SAMPLE_RATE,
                 channelConfig = AudioFormat.CHANNEL_IN_MONO,
                 audioFormat = AudioFormat.ENCODING_PCM_16BIT,
-                chunkMillis = CHUNK_MS
+                chunkMillis = CHUNK_MS,
+                audioFrameSinkProvider = { audioFrameSink }
             )
 
             if (!audioManager.hasPermission()) {
@@ -591,7 +597,7 @@ class ParallelAsrEngine(
             pushPcmEngineFactory.resolvePlan(
                 vendor = primaryVendor,
                 invocationMode = AsrEngineInvocationMode.ParallelPrimary,
-                preferences = prefs.asrEngineModePreferencesSnapshot(),
+                preferences = modePreferences,
                 source = AsrEngineConstructionSource.App
             ).family
         ) {
@@ -729,7 +735,7 @@ class ParallelAsrEngine(
             listener = engineListener,
             vendor = vendor,
             invocationMode = invocationMode,
-            preferences = prefs.asrEngineModePreferencesSnapshot(),
+            preferences = modePreferences,
             source = AsrEngineConstructionSource.App,
             onRequestDuration = onRequestDuration,
             applyVoiceFilter = false

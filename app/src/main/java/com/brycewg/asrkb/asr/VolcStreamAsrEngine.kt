@@ -43,7 +43,10 @@ class VolcStreamAsrEngine(
     private val listener: StreamingAsrEngine.Listener,
     private val externalPcmMode: Boolean = false
 ) : StreamingAsrEngine,
-    ExternalPcmConsumer {
+    ExternalPcmConsumer,
+    AudioFrameSinkOwner {
+
+    override var audioFrameSink: AudioFrameSink? = null
 
     companion object {
         private const val TAG = "VolcStreamAsrEngine"
@@ -345,7 +348,8 @@ class VolcStreamAsrEngine(
                 sampleRate = sampleRate,
                 channelConfig = channelConfig,
                 audioFormat = audioFormat,
-                chunkMillis = chunkMillis
+                chunkMillis = chunkMillis,
+                audioFrameSinkProvider = { audioFrameSink }
             )
 
             if (!audioManager.hasPermission()) {

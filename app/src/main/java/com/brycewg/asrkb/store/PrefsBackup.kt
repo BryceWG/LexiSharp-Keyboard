@@ -206,6 +206,7 @@ internal object PrefsBackup {
         // 隐私开关
         try {
             o.put(KEY_DISABLE_ASR_HISTORY, disableAsrHistory)
+            o.put(KEY_AUDIO_HISTORY_RETENTION_COUNT, audioHistoryRetentionCount)
         } catch (_: Throwable) {}
         try {
             o.put(KEY_DISABLE_USAGE_STATS, disableUsageStats)
@@ -525,6 +526,7 @@ internal object PrefsBackup {
             optInt(KEY_SC_PULL_INTERVAL_SEC)?.let { syncClipboardPullIntervalSec = it }
             // 隐私开关
             optBool(KEY_DISABLE_ASR_HISTORY)?.let { disableAsrHistory = it }
+            optInt(KEY_AUDIO_HISTORY_RETENTION_COUNT)?.let { audioHistoryRetentionCount = it }
             optBool(KEY_DISABLE_USAGE_STATS)?.let { disableUsageStats = it }
             optBool(KEY_DATA_COLLECTION_ENABLED)?.let { dataCollectionEnabled = it }
             // WebDAV 备份

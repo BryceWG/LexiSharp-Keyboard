@@ -98,6 +98,7 @@ internal class DictationUseCase(
 
         commitRecorder.record(
             text = finalOut,
+            rawText = text,
             aiProcessed = aiUsed,
             aiPostMs = aiPostMs,
             aiPostStatus = aiPostStatus
@@ -191,7 +192,7 @@ internal class DictationUseCase(
             }
         }
 
-        commitRecorder.record(text = finalToCommit, aiProcessed = false)
+        commitRecorder.record(text = finalToCommit, rawText = text, aiProcessed = false)
 
         uiListenerProvider()?.onVibrate()
 

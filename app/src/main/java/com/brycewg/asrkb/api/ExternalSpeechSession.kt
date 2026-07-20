@@ -12,10 +12,13 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.analytics.AnalyticsManager
 import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.AsrHistoryAudioCapture
+import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.util.TypewriterTextAnimator
 import java.util.concurrent.atomic.AtomicLong
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -84,6 +87,9 @@ internal class ExternalSpeechSession(
     private val parallelEngineFactory = AsrParallelEngineFactory()
     private val directMicrophoneEngineFactory = AsrDirectMicrophoneEngineFactory()
     private val pushPcmEngineFactory = AsrPushPcmEngineFactory()
+    private var historyRecordId: String = UUID.randomUUID().toString()
+    private var historyAudioCapture: AsrHistoryAudioCapture? = null
+    private var pushPcmInput: Boolean = false
 
     @Volatile private var processingTimeoutJob: Job? = null
 
@@ -257,6 +263,9 @@ internal class ExternalSpeechSession(
                 }
                 Log.w(TAG, "Processing timeout fired (audioMs=$audioMs, timeoutMs=$timeoutMs)")
                 finished = true
+                historyAudioCapture?.discard()
+                historyAudioCapture = null
+                (engine as? AudioFrameSinkOwner)?.audioFrameSink = null
                 try {
                     engine?.stop()
                 } catch (t: Throwable) {
@@ -282,6 +291,7 @@ internal class ExternalSpeechSession(
     }
 
     fun prepare(): Boolean {
+        pushPcmInput = false
         // 完全跟随应用内当前设置：供应商与是否流式均以 Prefs 为准
         val primaryVendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
@@ -309,6 +319,7 @@ internal class ExternalSpeechSession(
     }
 
     fun preparePushPcm(): Boolean {
+        pushPcmInput = true
         val primaryVendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
         this.vendor = primaryVendor
@@ -354,11 +365,16 @@ internal class ExternalSpeechSession(
             hasAsrPartial = false
             finished = false
             cancelProcessingTimeout()
+            historyRecordId = UUID.randomUUID().toString()
+            historyAudioCapture?.discard()
+            historyAudioCapture = AsrHistoryAudioCapture.create(context, prefs, historyRecordId)
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to mark session start", t)
         }
         ensureAutoStopSuppressed()
         engine?.let { startedEngine ->
+            (startedEngine as? AudioFrameSinkOwner)?.audioFrameSink =
+                historyAudioCapture.takeUnless { pushPcmInput }
             preloadLocalAsrForImmediateUse(context, prefs)
             startedEngine.start()
         }
@@ -397,6 +413,9 @@ internal class ExternalSpeechSession(
         releaseAutoStopSuppression()
         cancelLocalModelReadyWait()
         cancelProcessingTimeout()
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        (engine as? AudioFrameSinkOwner)?.audioFrameSink = null
         try {
             engine?.stop()
         } catch (t: Throwable) {
@@ -415,6 +434,7 @@ internal class ExternalSpeechSession(
         if (e !is com.brycewg.asrkb.asr.ExternalPcmConsumer) return
 
         if (sampleRate > 0 && channels > 0 && pcm.isNotEmpty()) {
+            historyAudioCapture?.onAudioFrame(pcm, sampleRate, channels)
             pcmBytesForStats += pcm.size.toLong()
             val denom = sampleRate.toLong() * channels.toLong() * 2L
             if (denom > 0L) {
@@ -434,6 +454,10 @@ internal class ExternalSpeechSession(
         releaseAutoStopSuppression()
         cancelProcessingTimeout()
         processingEndUptimeMs = SystemClock.uptimeMillis()
+        historyAudioCapture?.complete()
+        historyAudioCapture = null
+        (engine as? AudioFrameSinkOwner)?.audioFrameSink = null
+        if (prefs.disableAsrHistory) AsrHistoryAudioStore(context).delete(historyRecordId)
         // 若尚未收到 onStopped，则以当前时间近似计算一次时长
         if (lastAudioMsForStats == 0L && sessionStartUptimeMs > 0L) {
             try {
@@ -606,8 +630,10 @@ internal class ExternalSpeechSession(
                         val store = com.brycewg.asrkb.store.AsrHistoryStore(context)
                         store.add(
                             com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
+                                id = historyRecordId,
                                 timestamp = System.currentTimeMillis(),
                                 text = out,
+                                rawText = text,
                                 vendorId = vendorForRecord.id,
                                 audioMs = audioMs,
                                 totalElapsedMs = totalElapsedMs,
@@ -618,6 +644,11 @@ internal class ExternalSpeechSession(
                                 aiPostStatus = aiPostStatus,
                                 charCount = chars
                             )
+                        )
+                        AsrHistoryAudioStore.pruneAsync(
+                            context,
+                            store.listAll(),
+                            prefs.audioHistoryRetentionCount
                         )
                     }
                 } catch (e: Exception) {
@@ -672,8 +703,10 @@ internal class ExternalSpeechSession(
                     val store = com.brycewg.asrkb.store.AsrHistoryStore(context)
                     store.add(
                         com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
+                            id = historyRecordId,
                             timestamp = System.currentTimeMillis(),
                             text = out,
+                            rawText = text,
                             vendorId = vendorForRecord.id,
                             audioMs = audioMs,
                             totalElapsedMs = totalElapsedMs,
@@ -682,6 +715,11 @@ internal class ExternalSpeechSession(
                             aiProcessed = false,
                             charCount = chars
                         )
+                    )
+                    AsrHistoryAudioStore.pruneAsync(
+                        context,
+                        store.listAll(),
+                        prefs.audioHistoryRetentionCount
                     )
                 }
             } catch (e: Exception) {
@@ -706,6 +744,9 @@ internal class ExternalSpeechSession(
         processingEndUptimeMs = SystemClock.uptimeMillis()
         cancelLocalModelReadyWait()
         cancelProcessingTimeout()
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        (engine as? AudioFrameSinkOwner)?.audioFrameSink = null
         safe {
             callbacks.onError(id, 500, message)
             callbacks.onState(id, STATE_ERROR, message)

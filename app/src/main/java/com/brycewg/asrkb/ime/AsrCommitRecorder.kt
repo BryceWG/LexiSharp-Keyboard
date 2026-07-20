@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.brycewg.asrkb.analytics.AnalyticsManager
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.util.TextSanitizer
 
@@ -15,10 +16,12 @@ internal class AsrCommitRecorder(
 ) {
     fun record(
         text: String,
+        rawText: String = text,
         aiProcessed: Boolean,
         aiPostMs: Long = 0L,
         aiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE
     ) {
+        val historyRecordId = asrManager.popLastHistoryRecordId()
         try {
             val chars = TextSanitizer.countEffectiveChars(text)
             if (!prefs.disableUsageStats) {
@@ -54,8 +57,10 @@ internal class AsrCommitRecorder(
                         val store = AsrHistoryStore(context)
                         store.add(
                             AsrHistoryStore.AsrHistoryRecord(
+                                id = historyRecordId,
                                 timestamp = System.currentTimeMillis(),
                                 text = text,
+                                rawText = rawText,
                                 vendorId = vendorForRecord.id,
                                 audioMs = audioMs,
                                 totalElapsedMs = totalElapsedMs,
@@ -67,9 +72,16 @@ internal class AsrCommitRecorder(
                                 charCount = chars
                             )
                         )
+                        AsrHistoryAudioStore.pruneAsync(
+                            context,
+                            store.listAll(),
+                            prefs.audioHistoryRetentionCount
+                        )
                     } catch (e: Exception) {
                         Log.e(logTag, "Failed to add ASR history", e)
                     }
+                } else {
+                    AsrHistoryAudioStore(context).delete(historyRecordId)
                 }
             } catch (t: Throwable) {
                 Log.e(logTag, "Failed to record usage stats", t)

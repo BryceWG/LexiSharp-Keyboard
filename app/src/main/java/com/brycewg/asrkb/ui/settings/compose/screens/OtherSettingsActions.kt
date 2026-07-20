@@ -16,6 +16,7 @@ import com.brycewg.asrkb.analytics.AnalyticsManager
 import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
 import com.brycewg.asrkb.clipboard.SyncClipboardManager
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveStarter
 import kotlinx.coroutines.CoroutineScope
@@ -72,6 +73,7 @@ internal fun checkPrivilegedKeepAlivePreconditions(
 internal fun clearAsrHistory(context: Context, showMessage: (Int) -> Unit) {
     try {
         AsrHistoryStore(context).clearAll()
+        AsrHistoryAudioStore(context).clearAll()
         showMessage(R.string.toast_cleared_history)
     } catch (e: Throwable) {
         Log.e(OTHER_ACTION_TAG, "Failed to clear ASR history", e)

@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Article
 import androidx.compose.material.icons.rounded.Clear
@@ -55,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +83,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Card as MiuixCard
 import top.yukonga.miuix.kmp.basic.CardDefaults as MiuixCardDefaults
 import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
@@ -107,6 +111,11 @@ fun AsrHistoryScreen(
     onClearSelection: () -> Unit,
     onLoadMore: () -> Unit,
     onCopy: (String) -> Unit,
+    audioRecordIds: Set<String>,
+    llmAvailable: Boolean,
+    onReRecognize: suspend (AsrHistoryStore.AsrHistoryRecord) -> AsrHistoryStore.AsrHistoryRecord,
+    onReprocess: suspend (AsrHistoryStore.AsrHistoryRecord) -> AsrHistoryStore.AsrHistoryRecord,
+    onRecordUpdated: (AsrHistoryStore.AsrHistoryRecord) -> Unit,
     onDeleteSelected: (Set<String>) -> Unit,
     onOpenApiLog: () -> Unit,
     hasRecentApiErrors: Boolean,
@@ -132,6 +141,10 @@ fun AsrHistoryScreen(
     val listState = rememberLazyListState()
     var showFilterDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var selectedRecord by remember { mutableStateOf<AsrHistoryStore.AsrHistoryRecord?>(null) }
+    var rerunJob by remember { mutableStateOf<Job?>(null) }
+    var rerunError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(filteredIds, selectedIds) {
         if (selectedVisibleIds != selectedIds) {
@@ -214,7 +227,8 @@ fun AsrHistoryScreen(
                         onCopy = {
                             onHapticTap()
                             onCopy(it)
-                        }
+                        },
+                        onOpenDetails = { selectedRecord = it }
                     )
                 }
             }
@@ -245,6 +259,45 @@ fun AsrHistoryScreen(
             onConfirm = {
                 showDeleteDialog = false
                 onDeleteSelected(selectedVisibleIds)
+            }
+        )
+    }
+    selectedRecord?.let { record ->
+        HistoryDetailsDialog(
+            record = record,
+            uiMode = uiMode,
+            hasAudio = record.id in audioRecordIds,
+            llmAvailable = llmAvailable,
+            working = rerunJob?.isActive == true,
+            error = rerunError,
+            onDismiss = {
+                rerunJob?.cancel()
+                rerunJob = null
+                rerunError = null
+                selectedRecord = null
+            },
+            onCopy = { onCopy(it) },
+            onReRecognize = {
+                rerunError = null
+                rerunJob = scope.launch {
+                    runCatching { onReRecognize(record) }
+                        .onSuccess {
+                            selectedRecord = it
+                            onRecordUpdated(it)
+                        }
+                        .onFailure { rerunError = it.message ?: "rerun_failed" }
+                }
+            },
+            onReprocess = {
+                rerunError = null
+                rerunJob = scope.launch {
+                    runCatching { onReprocess(record) }
+                        .onSuccess {
+                            selectedRecord = it
+                            onRecordUpdated(it)
+                        }
+                        .onFailure { rerunError = it.message ?: "postprocess_failed" }
+                }
             }
         )
     }
@@ -390,7 +443,8 @@ private fun HistoryList(
     listState: androidx.compose.foundation.lazy.LazyListState,
     scrollModifier: Modifier,
     onToggleSelection: (String) -> Unit,
-    onCopy: (String) -> Unit
+    onCopy: (String) -> Unit,
+    onOpenDetails: (AsrHistoryStore.AsrHistoryRecord) -> Unit
 ) {
     LazyColumn(
         state = listState,
@@ -417,7 +471,8 @@ private fun HistoryList(
                     vendorOptions = vendorOptions,
                     selectedCount = selectedCount,
                     onToggleSelection = onToggleSelection,
-                    onCopy = onCopy
+                    onCopy = onCopy,
+                    onOpenDetails = onOpenDetails
                 )
             }
         }
@@ -449,11 +504,12 @@ private fun HistoryItemCard(
     vendorOptions: List<HistoryVendorOption>,
     selectedCount: Int,
     onToggleSelection: (String) -> Unit,
-    onCopy: (String) -> Unit
+    onCopy: (String) -> Unit,
+    onOpenDetails: (AsrHistoryStore.AsrHistoryRecord) -> Unit
 ) {
     val record = row.record
     val onClick = {
-        if (selectedCount > 0) onToggleSelection(record.id)
+        if (selectedCount > 0) onToggleSelection(record.id) else onOpenDetails(record)
     }
     val onLongClick = { onToggleSelection(record.id) }
     when (uiMode) {
@@ -592,6 +648,157 @@ private fun buildMeta(
         parts.add(stringResource(R.string.meta_ai_postproc_seconds, record.aiPostMs / 1000.0))
     }
     return parts.joinToString("·")
+}
+
+@Composable
+private fun HistoryDetailsDialog(
+    record: AsrHistoryStore.AsrHistoryRecord,
+    uiMode: BibiUiMode,
+    hasAudio: Boolean,
+    llmAvailable: Boolean,
+    working: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onCopy: (String) -> Unit,
+    onReRecognize: () -> Unit,
+    onReprocess: () -> Unit
+) {
+    val content: @Composable () -> Unit = {
+        SelectionContainer {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 480.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                HistoryResultSection(
+                    title = stringResource(R.string.history_raw_text),
+                    value = record.rawText ?: stringResource(R.string.history_raw_unavailable),
+                    canCopy = !record.rawText.isNullOrBlank(),
+                    uiMode = uiMode,
+                    onCopy = { record.rawText?.let(onCopy) }
+                )
+                HistoryResultSection(
+                    title = stringResource(R.string.history_final_text),
+                    value = record.text,
+                    canCopy = record.text.isNotBlank(),
+                    uiMode = uiMode,
+                    onCopy = { onCopy(record.text) }
+                )
+                if (!hasAudio) {
+                    HistoryText(
+                        text = stringResource(R.string.history_audio_unavailable),
+                        uiMode = uiMode,
+                        compact = true,
+                        secondary = true
+                    )
+                }
+                if (!llmAvailable) {
+                    HistoryText(
+                        text = stringResource(R.string.history_llm_unavailable),
+                        uiMode = uiMode,
+                        compact = true,
+                        secondary = true
+                    )
+                }
+                if (working) {
+                    HistoryText(
+                        text = stringResource(R.string.history_rerun_working),
+                        uiMode = uiMode,
+                        secondary = true
+                    )
+                }
+                error?.let {
+                    val errorMessage = when (it) {
+                        "audio_unavailable" -> stringResource(R.string.history_audio_unavailable)
+                        "llm_unavailable" -> stringResource(R.string.history_llm_unavailable)
+                        "engine_unavailable", "engine_pcm_unsupported" ->
+                            stringResource(R.string.history_rerun_engine_unavailable)
+                        "record_missing" -> stringResource(R.string.history_record_missing)
+                        else -> it
+                    }
+                    HistoryText(
+                        text = stringResource(R.string.history_rerun_error, errorMessage),
+                        uiMode = uiMode,
+                        secondary = true
+                    )
+                }
+            }
+        }
+    }
+    val actions = listOf(
+        SettingsDialogAction(
+            text = stringResource(R.string.btn_close),
+            onClick = onDismiss
+        ),
+        SettingsDialogAction(
+            text = stringResource(R.string.btn_rerecognize),
+            onClick = onReRecognize,
+            enabled = hasAudio && !working
+        ),
+        SettingsDialogAction(
+            text = stringResource(R.string.btn_reprocess),
+            onClick = onReprocess,
+            enabled = llmAvailable && !working,
+            primary = true
+        )
+    )
+    when (uiMode) {
+        BibiUiMode.Material -> MaterialSettingsAlertDialog(
+            title = stringResource(R.string.history_details_title),
+            onDismissRequest = onDismiss,
+            text = content,
+            buttons = {
+                MaterialSettingsDialogButtonRow(
+                    actions.map {
+                        MaterialSettingsDialogAction(
+                            text = it.text,
+                            onClick = it.onClick,
+                            enabled = it.enabled,
+                            primary = it.primary
+                        )
+                    }
+                )
+            }
+        )
+
+        BibiUiMode.Miuix -> OverlayDialog(
+            show = true,
+            title = stringResource(R.string.history_details_title),
+            onDismissRequest = onDismiss
+        ) {
+            content()
+            Spacer(modifier = Modifier.height(12.dp))
+            SettingsDialogActionRow(uiMode = uiMode, actions = actions)
+        }
+    }
+}
+
+@Composable
+private fun HistoryResultSection(
+    title: String,
+    value: String,
+    canCopy: Boolean,
+    uiMode: BibiUiMode,
+    onCopy: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HistoryText(text = title, uiMode = uiMode, header = true)
+            SettingsAssistChip(
+                uiMode = uiMode,
+                label = stringResource(R.string.btn_copy),
+                icon = Icons.Rounded.ContentCopy,
+                onClick = onCopy.takeIf { canCopy }
+            )
+        }
+        HistoryText(text = value, uiMode = uiMode)
+    }
 }
 
 @Composable

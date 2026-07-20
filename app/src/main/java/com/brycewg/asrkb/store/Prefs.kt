@@ -1769,6 +1769,10 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_DISABLE_ASR_HISTORY, false)
         set(value) = sp.edit { putBoolean(KEY_DISABLE_ASR_HISTORY, value) }
 
+    var audioHistoryRetentionCount: Int
+        get() = sp.getInt(KEY_AUDIO_HISTORY_RETENTION_COUNT, 10).coerceIn(0, 100)
+        set(value) = sp.edit { putInt(KEY_AUDIO_HISTORY_RETENTION_COUNT, value.coerceIn(0, 100)) }
+
     // 隐私：关闭数据统计记录
     var disableUsageStats: Boolean
         get() = sp.getBoolean(KEY_DISABLE_USAGE_STATS, false)

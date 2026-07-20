@@ -83,4 +83,18 @@
     <string name="dialog_delete_selected_msg">确定删除选中的 %1$d 条记录吗？此操作不可撤销。</string>
     <string name="toast_deleted">已删除 %1$d 条记录</string>
     <string name="empty_history">暂无识别历史</string>
+    <string name="history_details_title">识别详情</string>
+    <string name="history_raw_text">识别原文</string>
+    <string name="history_final_text">最终结果</string>
+    <string name="history_raw_unavailable">此旧记录未保存识别原文</string>
+    <string name="history_audio_unavailable">音频未缓存或已超过保留上限</string>
+    <string name="history_llm_unavailable">请先配置可用的 AI 后处理服务</string>
+    <string name="history_rerun_working">正在处理…</string>
+    <string name="history_rerun_error">操作失败：%1$s</string>
+    <string name="history_rerun_engine_unavailable">当前语音识别配置不支持重新识别</string>
+    <string name="history_record_missing">该历史记录已不存在</string>
+    <string name="btn_rerecognize">重新识别</string>
+    <string name="btn_reprocess">重新后处理</string>
+    <string name="label_audio_history_retention_count">音频历史保留数量</string>
+    <string name="audio_history_retention_count_value">%1$d 条</string>
 </resources>

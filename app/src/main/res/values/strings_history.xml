@@ -83,4 +83,18 @@
     <string name="dialog_delete_selected_msg">Delete %1$d selected items? This action cannot be undone.</string>
     <string name="toast_deleted">Deleted %1$d item(s)</string>
     <string name="empty_history">No history yet</string>
+    <string name="history_details_title">Recognition details</string>
+    <string name="history_raw_text">Recognition transcript</string>
+    <string name="history_final_text">Final result</string>
+    <string name="history_raw_unavailable">The original transcript was not saved for this older record.</string>
+    <string name="history_audio_unavailable">Audio was not cached or has exceeded the retention limit.</string>
+    <string name="history_llm_unavailable">Configure an AI post-processing provider before re-processing.</string>
+    <string name="history_rerun_working">Processing…</string>
+    <string name="history_rerun_error">Operation failed: %1$s</string>
+    <string name="history_rerun_engine_unavailable">Recognition is unavailable with the current ASR configuration.</string>
+    <string name="history_record_missing">This history record no longer exists.</string>
+    <string name="btn_rerecognize">Recognize again</string>
+    <string name="btn_reprocess">Process again</string>
+    <string name="label_audio_history_retention_count">Audio history retention</string>
+    <string name="audio_history_retention_count_value">%1$d records</string>
 </resources>

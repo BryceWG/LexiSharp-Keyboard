@@ -572,7 +572,7 @@ class KeyboardActionHandler(
             lastAsrCommitText = rawText,
             lastPostprocCommit = null
         )
-        commitRecorder.record(text = rawText, aiProcessed = false)
+        commitRecorder.record(text = rawText, rawText = rawText, aiProcessed = false)
         transitionToState(KeyboardState.Idle)
         uiListener?.onStatusMessage(context.getString(R.string.status_postprocess_interrupted_raw))
         uiListener?.onVibrate()

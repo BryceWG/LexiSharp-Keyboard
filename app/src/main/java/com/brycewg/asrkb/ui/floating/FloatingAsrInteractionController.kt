@@ -444,6 +444,8 @@ internal class FloatingAsrInteractionController(
                 viewManager.showCompletionTick()
                 try {
                     val audioMs = asrSessionManager.popLastAudioMsForStats()
+                    val historyRecordId = asrSessionManager.popLastHistoryRecordId()
+                    val historyRawText = asrSessionManager.popLastHistoryRawText() ?: text
                     val totalElapsedMs = asrSessionManager.popLastTotalElapsedMsForStats()
                     val procMs = asrSessionManager.getLastRequestDuration() ?: 0L
                     val chars = com.brycewg.asrkb.util.TextSanitizer.countEffectiveChars(text)
@@ -499,8 +501,10 @@ internal class FloatingAsrInteractionController(
                             val store = com.brycewg.asrkb.store.AsrHistoryStore(context)
                             store.add(
                                 com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
+                                    id = historyRecordId,
                                     timestamp = System.currentTimeMillis(),
                                     text = text,
+                                    rawText = historyRawText,
                                     vendorId = vendorForRecord.id,
                                     audioMs = audioMs,
                                     totalElapsedMs = totalElapsedMs,
@@ -512,9 +516,16 @@ internal class FloatingAsrInteractionController(
                                     charCount = chars
                                 )
                             )
+                            com.brycewg.asrkb.store.AsrHistoryAudioStore.pruneAsync(
+                                context,
+                                store.listAll(),
+                                prefs.audioHistoryRetentionCount
+                            )
                         } catch (e: Exception) {
                             Log.e(tag, "Failed to add ASR history (floating)", e)
                         }
+                    } else {
+                        com.brycewg.asrkb.store.AsrHistoryAudioStore(context).delete(historyRecordId)
                     }
                 } catch (t: Throwable) {
                     Log.e(tag, "Failed to record usage stats (floating)", t)

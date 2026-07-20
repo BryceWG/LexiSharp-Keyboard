@@ -84,4 +84,18 @@
     <string name="dialog_delete_selected_msg">%1$d個の選択項目を削除しますか？この操作は元に戻せません。</string>
     <string name="toast_deleted">%1$d個のアイテムを削除しました</string>
     <string name="empty_history">まだ履歴がありません</string>
+    <string name="history_details_title">認識の詳細</string>
+    <string name="history_raw_text">認識原文</string>
+    <string name="history_final_text">最終結果</string>
+    <string name="history_raw_unavailable">この古い記録には認識原文が保存されていません</string>
+    <string name="history_audio_unavailable">音声は未保存、または保存上限を超えています</string>
+    <string name="history_llm_unavailable">先に AI 後処理サービスを設定してください</string>
+    <string name="history_rerun_working">処理中…</string>
+    <string name="history_rerun_error">処理に失敗しました: %1$s</string>
+    <string name="history_rerun_engine_unavailable">現在の音声認識設定では再認識できません</string>
+    <string name="history_record_missing">この履歴は存在しません</string>
+    <string name="btn_rerecognize">再認識</string>
+    <string name="btn_reprocess">再後処理</string>
+    <string name="label_audio_history_retention_count">音声履歴の保存件数</string>
+    <string name="audio_history_retention_count_value">%1$d 件</string>
 </resources>

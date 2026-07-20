@@ -22,6 +22,7 @@ class AsrHistoryStore(context: Context) {
 
         // 防止无限增长，保留最近 N 条
         private const val MAX_RECORDS = 2000
+        private val HISTORY_LOCK = Any()
     }
 
     private val sp: SharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
@@ -43,6 +44,8 @@ class AsrHistoryStore(context: Context) {
         val id: String = UUID.randomUUID().toString(),
         val timestamp: Long,
         val text: String,
+        // ASR 引擎返回、进入任何末处理前的原始文本；旧记录没有该字段。
+        val rawText: String? = null,
         val vendorId: String,
         val audioMs: Long,
         // 端到端总耗时（毫秒）：从开始录音到最终提交完成（含识别/后处理/打字机动画等待等）。
@@ -80,26 +83,47 @@ class AsrHistoryStore(context: Context) {
     }
 
     fun add(record: AsrHistoryRecord) {
-        val list = readAllInternal()
-        list.add(record)
-        // 按时间倒序裁剪
-        val ordered = list.sortedByDescending { it.timestamp }
-        val pruned = if (ordered.size > MAX_RECORDS) ordered.take(MAX_RECORDS) else ordered
-        writeAllInternal(pruned)
+        synchronized(HISTORY_LOCK) {
+            val list = readAllInternal()
+            list.add(record)
+            // 按时间倒序裁剪
+            val ordered = list.sortedByDescending { it.timestamp }
+            val pruned = if (ordered.size > MAX_RECORDS) ordered.take(MAX_RECORDS) else ordered
+            writeAllInternal(pruned)
+        }
     }
 
-    fun listAll(): List<AsrHistoryRecord> = readAllInternal().sortedByDescending { it.timestamp }
+    fun updateById(
+        id: String,
+        transform: (AsrHistoryRecord) -> AsrHistoryRecord
+    ): AsrHistoryRecord? {
+        synchronized(HISTORY_LOCK) {
+            val list = readAllInternal()
+            val index = list.indexOfFirst { it.id == id }
+            if (index < 0) return null
+            val updated = transform(list[index]).copy(id = id)
+            list[index] = updated
+            writeAllInternal(list)
+            return updated
+        }
+    }
+
+    fun listAll(): List<AsrHistoryRecord> = synchronized(HISTORY_LOCK) {
+        readAllInternal().sortedByDescending { it.timestamp }
+    }
 
     fun deleteByIds(ids: Set<String>): Int {
         if (ids.isEmpty()) return 0
-        val list = readAllInternal()
-        val before = list.size
-        val remained = list.filterNot { ids.contains(it.id) }
-        writeAllInternal(remained)
-        return (before - remained.size).coerceAtLeast(0)
+        synchronized(HISTORY_LOCK) {
+            val list = readAllInternal()
+            val before = list.size
+            val remained = list.filterNot { ids.contains(it.id) }
+            writeAllInternal(remained)
+            return (before - remained.size).coerceAtLeast(0)
+        }
     }
 
     fun clearAll() {
-        writeAllInternal(emptyList())
+        synchronized(HISTORY_LOCK) { writeAllInternal(emptyList()) }
     }
 }

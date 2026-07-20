@@ -83,4 +83,18 @@
     <string name="dialog_delete_selected_msg">حذف %1$d عنصر محدد؟ لا يمكن التراجع.</string>
     <string name="toast_deleted">تم حذف %1$d عنصر</string>
     <string name="empty_history">لا يوجد سجل بعد</string>
+    <string name="history_details_title">تفاصيل التعرّف</string>
+    <string name="history_raw_text">النص الأصلي للتعرّف</string>
+    <string name="history_final_text">النتيجة النهائية</string>
+    <string name="history_raw_unavailable">لم يُحفظ النص الأصلي لهذا السجل القديم</string>
+    <string name="history_audio_unavailable">لم يُخزّن الصوت أو تجاوز حد الاحتفاظ</string>
+    <string name="history_llm_unavailable">اضبط خدمة معالجة لاحقة بالذكاء الاصطناعي أولاً</string>
+    <string name="history_rerun_working">جارٍ المعالجة…</string>
+    <string name="history_rerun_error">فشلت العملية: %1$s</string>
+    <string name="history_rerun_engine_unavailable">إعداد التعرّف الحالي لا يدعم إعادة التعرّف</string>
+    <string name="history_record_missing">لم يعد سجل التاريخ موجوداً</string>
+    <string name="btn_rerecognize">إعادة التعرّف</string>
+    <string name="btn_reprocess">إعادة المعالجة</string>
+    <string name="label_audio_history_retention_count">عدد ملفات سجل الصوت</string>
+    <string name="audio_history_retention_count_value">%1$d سجل</string>
 </resources>

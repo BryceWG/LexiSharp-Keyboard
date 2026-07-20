@@ -83,4 +83,18 @@
     <string name="dialog_delete_selected_msg">確定刪除選中的 %1$d 條記錄嗎？此操作無法復原。</string>
     <string name="toast_deleted">已刪除 %1$d 條記錄</string>
     <string name="empty_history">尚無識別歷史</string>
+    <string name="history_details_title">辨識詳情</string>
+    <string name="history_raw_text">辨識原文</string>
+    <string name="history_final_text">最終結果</string>
+    <string name="history_raw_unavailable">此舊記錄未儲存辨識原文</string>
+    <string name="history_audio_unavailable">音訊未快取或已超過保留上限</string>
+    <string name="history_llm_unavailable">請先設定可用的 AI 後處理服務</string>
+    <string name="history_rerun_working">正在處理…</string>
+    <string name="history_rerun_error">操作失敗：%1$s</string>
+    <string name="history_rerun_engine_unavailable">目前語音辨識設定不支援重新辨識</string>
+    <string name="history_record_missing">該歷史記錄已不存在</string>
+    <string name="btn_rerecognize">重新辨識</string>
+    <string name="btn_reprocess">重新後處理</string>
+    <string name="label_audio_history_retention_count">音訊歷史保留數量</string>
+    <string name="audio_history_retention_count_value">%1$d 筆</string>
 </resources>

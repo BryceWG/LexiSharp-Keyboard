@@ -58,7 +58,9 @@ fun filterHistoryRecords(
     return records.filter { record ->
         val okVendor = filterState.vendorIds.isEmpty() || record.vendorId in filterState.vendorIds
         val okSource = filterState.sources.isEmpty() || record.source in filterState.sources
-        val okText = trimmedQuery.isEmpty() || record.text.contains(trimmedQuery, ignoreCase = true)
+        val okText = trimmedQuery.isEmpty() ||
+            record.text.contains(trimmedQuery, ignoreCase = true) ||
+            record.rawText?.contains(trimmedQuery, ignoreCase = true) == true
         val okTime = when (filterState.timeFilter) {
             TimeFilter.ALL -> true
             TimeFilter.WITHIN_2H -> record.timestamp >= now - twoHoursMs

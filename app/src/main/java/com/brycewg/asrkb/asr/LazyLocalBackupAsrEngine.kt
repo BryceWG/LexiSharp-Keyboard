@@ -58,6 +58,7 @@ internal class LazyLocalBackupAsrEngine(
     override val backupVendor: AsrVendor,
     private val onPrimaryRequestDuration: ((Long) -> Unit)? = null,
     private val externalPcmInput: Boolean = false,
+    private val modePreferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
     private val maxBufferedPcmBytes: Int = defaultMaxBufferedPcmBytes(),
     private val hooks: LazyLocalBackupAsrEngineHooks = realHooks(
         context = context,
@@ -65,11 +66,13 @@ internal class LazyLocalBackupAsrEngine(
         prefs = prefs,
         primaryVendor = primaryVendor,
         backupVendor = backupVendor,
-        onPrimaryRequestDuration = onPrimaryRequestDuration
+        onPrimaryRequestDuration = onPrimaryRequestDuration,
+        modePreferences = modePreferences
     )
 ) : BackupAwareAsrEngine,
     ExternalPcmConsumer,
-    CancelableAsrEngine {
+    CancelableAsrEngine,
+    AudioFrameSinkOwner {
 
     private enum class Source { PRIMARY, BACKUP }
 
@@ -88,6 +91,7 @@ internal class LazyLocalBackupAsrEngine(
         get() = running.get()
 
     private val running = AtomicBoolean(false)
+    override var audioFrameSink: AudioFrameSink? = null
     private val stopRequested = AtomicBoolean(false)
     private val backupTriggered = AtomicBoolean(false)
     private val backupFed = AtomicBoolean(false)
@@ -250,7 +254,8 @@ internal class LazyLocalBackupAsrEngine(
                 sampleRate = SAMPLE_RATE,
                 channelConfig = AudioFormat.CHANNEL_IN_MONO,
                 audioFormat = AudioFormat.ENCODING_PCM_16BIT,
-                chunkMillis = CHUNK_MS
+                chunkMillis = CHUNK_MS,
+                audioFrameSinkProvider = { audioFrameSink }
             )
 
             if (!audioManager.hasPermission()) {
@@ -759,7 +764,8 @@ internal class LazyLocalBackupAsrEngine(
             prefs: Prefs,
             primaryVendor: AsrVendor,
             backupVendor: AsrVendor,
-            onPrimaryRequestDuration: ((Long) -> Unit)?
+            onPrimaryRequestDuration: ((Long) -> Unit)?,
+            modePreferences: AsrEngineModePreferences
         ): LazyLocalBackupAsrEngineHooks {
             val pushPcmFactory = AsrPushPcmEngineFactory()
             return LazyLocalBackupAsrEngineHooks(
@@ -771,7 +777,7 @@ internal class LazyLocalBackupAsrEngine(
                         listener = engineListener,
                         vendor = primaryVendor,
                         invocationMode = AsrEngineInvocationMode.ParallelPrimary,
-                        preferences = prefs.asrEngineModePreferencesSnapshot(),
+                        preferences = modePreferences,
                         source = AsrEngineConstructionSource.App,
                         onRequestDuration = onPrimaryRequestDuration,
                         applyVoiceFilter = false
@@ -785,7 +791,7 @@ internal class LazyLocalBackupAsrEngine(
                         listener = engineListener,
                         vendor = backupVendor,
                         invocationMode = AsrEngineInvocationMode.ParallelBackup,
-                        preferences = prefs.asrEngineModePreferencesSnapshot(),
+                        preferences = modePreferences,
                         source = AsrEngineConstructionSource.App,
                         onRequestDuration = null,
                         applyVoiceFilter = false

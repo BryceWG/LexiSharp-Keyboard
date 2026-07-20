@@ -25,6 +25,7 @@ internal data class OtherSettingsUiState(
     val keepAliveEnabled: Boolean,
     val privilegedKeepAliveEnabled: Boolean,
     val disableAsrHistory: Boolean,
+    val audioHistoryRetentionCount: Int,
     val disableUsageStats: Boolean,
     val dataCollectionEnabled: Boolean
 ) {
@@ -33,6 +34,7 @@ internal data class OtherSettingsUiState(
             keepAliveEnabled = prefs.floatingKeepAliveEnabled,
             privilegedKeepAliveEnabled = prefs.floatingKeepAlivePrivilegedEnabled,
             disableAsrHistory = prefs.disableAsrHistory,
+            audioHistoryRetentionCount = prefs.audioHistoryRetentionCount,
             disableUsageStats = prefs.disableUsageStats,
             dataCollectionEnabled = prefs.dataCollectionEnabled
         )

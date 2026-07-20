@@ -24,6 +24,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.brycewg.asrkb.BuildConfig
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.AsrHistoryAudioStore
+import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveScheduler
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveStarter
@@ -294,6 +296,18 @@ fun OtherSettingsScreen(
                         if (enabled) clearAsrHistory(context, ::showOtherMessage)
                     }
                 ) { prefs.disableAsrHistory = it }
+            },
+            onAudioRetentionChange = { value ->
+                uiState = uiState.copy(audioHistoryRetentionCount = value.coerceIn(0, 100))
+            },
+            onAudioRetentionChangeFinished = {
+                prefs.audioHistoryRetentionCount = uiState.audioHistoryRetentionCount
+                coroutineScope.launch(Dispatchers.IO) {
+                    AsrHistoryAudioStore(context).prune(
+                        AsrHistoryStore(context).listAll(),
+                        prefs.audioHistoryRetentionCount
+                    )
+                }
             },
             onDisableUsageStatsToggle = { target ->
                 applyExplainedSwitch(

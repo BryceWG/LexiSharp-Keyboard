@@ -19,6 +19,7 @@ import com.brycewg.asrkb.store.debug.DebugLogManager
 import kotlin.coroutines.resume
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -43,7 +44,8 @@ class AudioCaptureManager(
     private val sampleRate: Int = 16000,
     private val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO,
     private val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT,
-    private val chunkMillis: Int = 200
+    private val chunkMillis: Int = 200,
+    private val audioFrameSinkProvider: (() -> AudioFrameSink?)? = null
 ) {
     private val bytesPerSample = 2 // 16bit mono PCM
     private val prefs by lazy { Prefs(context) }
@@ -132,7 +134,10 @@ class AudioCaptureManager(
             sampleRate = sampleRate,
             channelConfig = channelConfig,
             audioFormat = audioFormat
-        ) ?: startPlatformCapture()
+        )?.onEach { audioFrameSinkProvider?.invoke()?.onAudioFrame(it, sampleRate, 1) }
+            ?: startPlatformCapture().onEach {
+                audioFrameSinkProvider?.invoke()?.onAudioFrame(it, sampleRate, 1)
+            }
 
     internal fun startPlatformCapture(): Flow<ByteArray> = flow {
         try {

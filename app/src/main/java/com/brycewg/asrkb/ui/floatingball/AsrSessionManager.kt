@@ -17,6 +17,7 @@ import com.brycewg.asrkb.imebridge.ImeBridgeClient
 import com.brycewg.asrkb.imebridge.ImeBridgeContract
 import com.brycewg.asrkb.imebridge.ImeBridgeResult
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
@@ -112,6 +113,10 @@ class AsrSessionManager(
         AsrVendor.Volc
     }
     private var lastFinalVendorForStats: AsrVendor? = null
+    private var historyAudioCapture: AsrHistoryAudioCapture? = null
+    private var activeHistoryRecordId: String? = null
+    private var completedHistoryRecordId: String? = null
+    private var completedHistoryRawText: String? = null
 
     private val recordingAudioFocusController = RecordingAudioFocusController(context) { loss ->
         onRecordingAudioFocusLost(loss)
@@ -248,10 +253,17 @@ class AsrSessionManager(
 
     /** 开始录音 */
     fun startRecording() {
+        historyAudioCapture?.discard()
         Log.d(TAG, "startRecording called")
         val sessionToken = createSessionToken()
         stopActiveEngineIfRunning("start_recording")
         releaseRecordingResources("start_recording")
+        activeHistoryRecordId = UUID.randomUUID().toString()
+        historyAudioCapture = AsrHistoryAudioCapture.create(
+            context,
+            prefs,
+            activeHistoryRecordId.orEmpty()
+        )
         try {
             sessionPrimaryVendor = prefs.asrVendor
         } catch (t: Throwable) {
@@ -332,6 +344,7 @@ class AsrSessionManager(
         }
         listener.onSessionStateChanged(FloatingBallState.Recording)
         asrEngine?.let { engine ->
+            (engine as? AudioFrameSinkOwner)?.audioFrameSink = historyAudioCapture
             preloadLocalAsrForImmediateUse(context, prefs)
             ContinuousCaptureCoordinator.beginSession(sessionToken)
             engine.start()
@@ -372,6 +385,10 @@ class AsrSessionManager(
      * 取消当前会话并丢弃本轮迟到回调，供悬浮球在 Processing/Recording 态主动中止。
      */
     fun cancelSession() {
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         Log.d(TAG, "cancelSession called")
         val sessionToken = activeSessionToken
         ContinuousCaptureCoordinator.endSession(sessionToken)
@@ -450,6 +467,13 @@ class AsrSessionManager(
         return v
     }
 
+    fun popLastHistoryRecordId(): String =
+        completedHistoryRecordId.also { completedHistoryRecordId = null }
+            ?: UUID.randomUUID().toString()
+
+    fun popLastHistoryRawText(): String? =
+        completedHistoryRawText.also { completedHistoryRawText = null }
+
     /** 最近一次请求耗时（毫秒），仅非流式模式有效 */
     fun getLastRequestDuration(): Long? = lastRequestDurationMs
 
@@ -482,6 +506,10 @@ class AsrSessionManager(
 
     /** 清理会话 */
     fun cleanup() {
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         clearActiveSessionToken()
         ContinuousCaptureCoordinator.endAnySession()
         postproc.cancelActiveRequest()
@@ -514,6 +542,16 @@ class AsrSessionManager(
             Log.d(TAG, "Ignoring onFinal from stale session: $sessionToken")
             return
         }
+        if (text.isNotBlank()) {
+            completedHistoryRecordId = activeHistoryRecordId
+            completedHistoryRawText = text
+            historyAudioCapture?.complete()
+        } else {
+            historyAudioCapture?.discard()
+        }
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         val shouldUseAiPostProcessing = prefs.postProcessEnabled && prefs.hasLlmKeys()
         if (shouldUseAiPostProcessing) {
             beginAiPostProcessing(sessionToken, text)
@@ -782,6 +820,10 @@ class AsrSessionManager(
             Log.d(TAG, "Ignoring onError from stale session: $sessionToken")
             return
         }
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         serviceScope.launch {
             if (!isSessionActive(sessionToken)) return@launch
             try {
@@ -982,6 +1024,9 @@ class AsrSessionManager(
         Log.w(TAG, "Finalize timeout; fallback with preview='$candidate'")
         if (candidate.isEmpty()) {
             Log.w(TAG, "Fallback has no candidate text; only clear state")
+            historyAudioCapture?.discard()
+            historyAudioCapture = null
+            activeHistoryRecordId = null
             clearActiveSessionToken(sessionToken)
             clearImeBridgeComposingPreview("processing_timeout_empty")
             listener.onSessionStateChanged(FloatingBallState.Idle)
@@ -1023,6 +1068,13 @@ class AsrSessionManager(
         }
         if (!isSessionActive(sessionToken)) return
 
+        if (completedHistoryRecordId == null && textOut.isNotBlank()) {
+            completedHistoryRecordId = activeHistoryRecordId
+            completedHistoryRawText = candidate
+            historyAudioCapture?.complete()
+            historyAudioCapture = null
+            activeHistoryRecordId = null
+        }
         val success = insertTextToFocus(textOut)
         Log.d(TAG, "Fallback inserted=$success text='$textOut'")
         clearActiveSessionToken(sessionToken)

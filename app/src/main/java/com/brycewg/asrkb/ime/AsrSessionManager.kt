@@ -13,9 +13,11 @@ import android.util.Log
 import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import java.util.concurrent.atomic.AtomicLong
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -127,6 +129,9 @@ class AsrSessionManager(
     // 会话录音时长统计（毫秒）
     private var sessionStartUptimeMs: Long = 0L
     private var lastAudioMsForStats: Long = 0L
+    private var historyAudioCapture: AsrHistoryAudioCapture? = null
+    private var activeHistoryRecordId: String? = null
+    private val completedHistoryRecordIds = java.util.ArrayDeque<String>()
 
     // 统计/历史：端到端耗时起点（从开始录音到最终提交完成）
     private var sessionStartTotalUptimeMs: Long = 0L
@@ -433,6 +438,13 @@ class AsrSessionManager(
         lastAudioMsForStats = 0L
         // 新会话开始时重置上次请求耗时，避免串台（流式模式不会更新此值）
         lastRequestDurationMs = null
+        historyAudioCapture?.discard()
+        activeHistoryRecordId = UUID.randomUUID().toString()
+        historyAudioCapture = AsrHistoryAudioCapture.create(
+            context,
+            prefs,
+            activeHistoryRecordId.orEmpty()
+        )
         try {
             val eng = ensureEngineMatchesMode(activeSeq)
             if (eng == null) {
@@ -469,6 +481,7 @@ class AsrSessionManager(
             Log.d(TAG, "Audio ducking disabled by user; skip audio focus request")
         }
         asrEngine?.let { engine ->
+            (engine as? AudioFrameSinkOwner)?.audioFrameSink = historyAudioCapture
             ContinuousCaptureCoordinator.beginSession(activeSeq)
             engine.start()
         }
@@ -546,6 +559,9 @@ class AsrSessionManager(
         return v
     }
 
+    fun popLastHistoryRecordId(): String =
+        completedHistoryRecordIds.pollFirst() ?: UUID.randomUUID().toString()
+
     /**
      * 读取并清空最近一次会话的端到端总耗时（毫秒）。
      * 口径：从开始录音到最终提交完成（含识别/后处理/打字机动画等待等）。
@@ -598,6 +614,11 @@ class AsrSessionManager(
         engineListenerBridge = null
         directEngineIdentity = null
         sessionStartTotalUptimeMs = 0L
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
+        completedHistoryRecordIds.clear()
         listener = null
     }
 
@@ -668,6 +689,14 @@ class AsrSessionManager(
             audioMs = lastAudioMsForStats,
             requestMs = lastRequestDurationMs
         )
+        if (text.isNotBlank()) {
+            activeHistoryRecordId?.let { completedHistoryRecordIds.addLast(it) }
+            historyAudioCapture?.complete()
+        } else {
+            historyAudioCapture?.discard()
+        }
+        historyAudioCapture = null
+        activeHistoryRecordId = null
         try {
             DebugLogManager.log(
                 category = "asr",
@@ -681,6 +710,14 @@ class AsrSessionManager(
         } catch (_: Throwable) { }
         if (asrEngine?.isRunning != true) {
             clearActiveSession(seq)
+        } else {
+            activeHistoryRecordId = UUID.randomUUID().toString()
+            historyAudioCapture = AsrHistoryAudioCapture.create(
+                context,
+                prefs,
+                activeHistoryRecordId.orEmpty()
+            )
+            (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = historyAudioCapture
         }
         listener?.onAsrFinal(text, currentState)
     }
@@ -724,6 +761,10 @@ class AsrSessionManager(
             )
         } catch (_: Throwable) { }
         recordingAudioFocusController.release()
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         clearActiveSession(seq)
         listener?.onAsrError(friendlyMessage ?: message)
     }

@@ -27,13 +27,14 @@ abstract class BaseFileAsrEngine(
     protected val prefs: Prefs,
     protected val listener: StreamingAsrEngine.Listener,
     protected val onRequestDuration: ((Long) -> Unit)? = null
-) : StreamingAsrEngine {
+) : StreamingAsrEngine, AudioFrameSinkOwner {
 
     companion object {
         private const val TAG = "BaseFileAsrEngine"
     }
 
     private val running = AtomicBoolean(false)
+    override var audioFrameSink: AudioFrameSink? = null
 
     @Volatile private var stopRequested: Boolean = false
 
@@ -206,7 +207,8 @@ abstract class BaseFileAsrEngine(
             sampleRate = sampleRate,
             channelConfig = channelConfig,
             audioFormat = audioFormat,
-            chunkMillis = chunkMillis
+            chunkMillis = chunkMillis,
+            audioFrameSinkProvider = { audioFrameSink }
         )
 
         // 权限检查
@@ -411,7 +413,8 @@ abstract class BaseFileAsrEngine(
             sampleRate = sampleRate,
             channelConfig = channelConfig,
             audioFormat = audioFormat,
-            chunkMillis = chunkMillis
+            chunkMillis = chunkMillis,
+            audioFrameSinkProvider = { audioFrameSink }
         )
 
         if (!audioManager.hasPermission()) {

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsLazyColumn
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMaterialItemSurface
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsSliderPreference
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import com.brycewg.asrkb.ui.settings.other.OtherSettingsViewModel
@@ -40,6 +41,8 @@ internal fun OtherSettingsRouteContent(
     onPrivilegedKeepAliveToggle: (Boolean) -> Unit,
     onRequestBatteryWhitelist: () -> Unit,
     onDisableAsrHistoryToggle: (Boolean) -> Unit,
+    onAudioRetentionChange: (Int) -> Unit,
+    onAudioRetentionChangeFinished: () -> Unit,
     onDisableUsageStatsToggle: (Boolean) -> Unit,
     onDataCollectionToggle: (Boolean) -> Unit,
     onClearClipboardHistory: () -> Unit,
@@ -99,6 +102,8 @@ internal fun OtherSettingsRouteContent(
                 uiMode = uiMode,
                 uiState = uiState,
                 onDisableAsrHistoryToggle = onDisableAsrHistoryToggle,
+                onAudioRetentionChange = onAudioRetentionChange,
+                onAudioRetentionChangeFinished = onAudioRetentionChangeFinished,
                 onDisableUsageStatsToggle = onDisableUsageStatsToggle,
                 onDataCollectionToggle = onDataCollectionToggle,
                 onClearClipboardHistory = onClearClipboardHistory
@@ -152,6 +157,8 @@ private fun OtherPrivacySection(
     uiMode: BibiUiMode,
     uiState: OtherSettingsUiState,
     onDisableAsrHistoryToggle: (Boolean) -> Unit,
+    onAudioRetentionChange: (Int) -> Unit,
+    onAudioRetentionChangeFinished: () -> Unit,
     onDisableUsageStatsToggle: (Boolean) -> Unit,
     onDataCollectionToggle: (Boolean) -> Unit,
     onClearClipboardHistory: () -> Unit
@@ -163,23 +170,41 @@ private fun OtherPrivacySection(
             checked = uiState.disableAsrHistory,
             onToggle = onDisableAsrHistoryToggle,
             index = 0,
-            count = 3
+            count = 4
+        )
+        SettingsSliderPreference(
+            uiMode = uiMode,
+            title = stringResource(R.string.label_audio_history_retention_count),
+            valueLabel = stringResource(
+                R.string.audio_history_retention_count_value,
+                uiState.audioHistoryRetentionCount
+            ),
+            value = uiState.audioHistoryRetentionCount.toFloat(),
+            valueRange = 0f..100f,
+            steps = 99,
+            showKeyPoints = false,
+            startLabel = "0",
+            endLabel = "100",
+            index = 1,
+            count = 4,
+            onValueChange = { onAudioRetentionChange(it.toInt()) },
+            onValueChangeFinished = onAudioRetentionChangeFinished
         )
         OtherExplainedSwitch(
             id = "disable_usage_stats",
             titleRes = R.string.label_disable_usage_stats,
             checked = uiState.disableUsageStats,
             onToggle = onDisableUsageStatsToggle,
-            index = 1,
-            count = 3
+            index = 2,
+            count = 4
         )
         OtherExplainedSwitch(
             id = "data_collection",
             titleRes = R.string.label_data_collection,
             checked = uiState.dataCollectionEnabled,
             onToggle = onDataCollectionToggle,
-            index = 2,
-            count = 3
+            index = 3,
+            count = 4
         )
         OtherButton(
             text = stringResource(R.string.btn_clear_clipboard_history),

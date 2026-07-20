@@ -13,6 +13,7 @@ internal data class AsrParallelEngineRequest(
     val primaryVendor: AsrVendor,
     val backupVendor: AsrVendor,
     val externalPcmInput: Boolean = false,
+    val modePreferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
     val onPrimaryRequestDuration: ((Long) -> Unit)? = null
 )
 
@@ -62,7 +63,7 @@ internal class AsrParallelEngineFactory(
                     backupVendor = plan.backupVendor,
                     onPrimaryRequestDuration = request.onPrimaryRequestDuration,
                     externalPcmInput = plan.externalPcmInput
-                )
+                ).also { it.modePreferencesOverride = request.modePreferences }
                 AsrParallelEngineDecision.UseLazyLocalBackup -> LazyLocalBackupAsrEngine(
                     context = request.context,
                     scope = request.scope,
@@ -71,7 +72,8 @@ internal class AsrParallelEngineFactory(
                     primaryVendor = plan.primaryVendor,
                     backupVendor = plan.backupVendor,
                     onPrimaryRequestDuration = request.onPrimaryRequestDuration,
-                    externalPcmInput = plan.externalPcmInput
+                    externalPcmInput = plan.externalPcmInput,
+                    modePreferences = request.modePreferences
                 )
                 AsrParallelEngineDecision.UsePrimaryOnly ->
                     error("Primary-only plan cannot construct a backup wrapper")
@@ -87,6 +89,7 @@ internal class AsrParallelEngineFactory(
         primaryVendor: AsrVendor = prefs.asrVendor,
         backupVendor: AsrVendor = prefs.backupAsrVendor,
         externalPcmInput: Boolean = false,
+        modePreferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
         onPrimaryRequestDuration: ((Long) -> Unit)? = null
     ): StreamingAsrEngine? = createOrNull(
         AsrParallelEngineRequest(
@@ -97,6 +100,7 @@ internal class AsrParallelEngineFactory(
             primaryVendor = primaryVendor,
             backupVendor = backupVendor,
             externalPcmInput = externalPcmInput,
+            modePreferences = modePreferences,
             onPrimaryRequestDuration = onPrimaryRequestDuration
         )
     )
