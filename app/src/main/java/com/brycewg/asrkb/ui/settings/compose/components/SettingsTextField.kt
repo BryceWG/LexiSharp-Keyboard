@@ -80,6 +80,7 @@ internal fun SettingsTextField(
     index: Int = 0,
     count: Int = 1,
     materialContainer: Boolean = true,
+    applyEdgePadding: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(
         horizontal = SettingsLayoutMetrics.TextFieldHorizontalPadding,
         vertical = SettingsLayoutMetrics.TextFieldVerticalPadding
@@ -126,12 +127,16 @@ internal fun SettingsTextField(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
     val layoutDirection = LocalLayoutDirection.current
-    val effectiveContentPadding = contentPadding.withTextFieldEdgePadding(
-        layoutDirection = layoutDirection,
-        index = index,
-        count = count,
-        horizontalEdges = materialContainer
-    )
+    val effectiveContentPadding = if (applyEdgePadding) {
+        contentPadding.withTextFieldEdgePadding(
+            layoutDirection = layoutDirection,
+            index = index,
+            count = count,
+            horizontalEdges = materialContainer
+        )
+    } else {
+        contentPadding
+    }
     val containerModifier = modifier
         .fillMaxWidth()
         .bringIntoViewRequester(bringIntoViewRequester)

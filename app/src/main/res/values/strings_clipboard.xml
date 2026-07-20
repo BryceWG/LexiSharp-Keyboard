@@ -5,12 +5,12 @@
     <string name="section_sync_clipboard">Clipboard Sync</string>
     <string name="label_enable_sync_clipboard">Use SyncClipboard project to sync clipboard</string>
     <string name="sc_mode_default_ime">Mode: BiBi default IME background sync</string>
-    <string name="sc_mode_ime_bridge">Mode: IME Bridge assisted sync while the target IME process is alive</string>
+    <string name="sc_mode_ime_bridge">Mode: IME Bridge assisted sync</string>
     <string name="sc_mode_manual_only">Mode: manual only. Enable a compatible IME Bridge or set BiBi as the default IME.</string>
     <string name="label_sc_server_base">Server base URL (will append /SyncClipboard.json)</string>
     <string name="label_sc_username">Username</string>
     <string name="label_sc_password">Password</string>
-    <string name="label_sc_auto_pull">Auto pull clipboard periodically (only when IME is visible)</string>
+    <string name="label_sc_auto_pull">Pull clipboard periodically</string>
     <string name="label_sc_pull_interval">Pull interval (sec, 1-600)</string>
     <string name="btn_sc_test_pull">Validate</string>
     <string name="sc_test_success">Pull succeeded</string>
@@ -19,8 +19,8 @@
     <string name="sc_status_upload_failed">Clipboard upload failed</string>
     <string name="btn_sc_project_home">Project Home</string>
     <string name="sc_open_browser_failed">Cannot open browser</string>
-    <string name="hint_sc_server_base_placeholder">https://your-server.com/path</string>
     
+
     <!-- Clipboard manager panel -->
     <string name="ext_btn_clipboard">Clipboard</string>
     <string name="cd_clipboard_back">Back</string>

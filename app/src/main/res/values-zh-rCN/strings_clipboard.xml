@@ -5,12 +5,12 @@
     <string name="section_sync_clipboard">剪贴板同步</string>
     <string name="label_enable_sync_clipboard">使用 SyncClipboard 项目来同步粘贴板</string>
     <string name="sc_mode_default_ime">同步方式：说点啥默认输入法后台同步</string>
-    <string name="sc_mode_ime_bridge">同步方式：IME Bridge 辅助同步（目标输入法进程存活时）</string>
+    <string name="sc_mode_ime_bridge">同步方式：IME Bridge 辅助同步</string>
     <string name="sc_mode_manual_only">同步方式：仅手动。请启用兼容的 IME Bridge，或将说点啥设为默认输入法。</string>
     <string name="label_sc_server_base">服务器地址（会自动拼接 /SyncClipboard.json）</string>
     <string name="label_sc_username">用户名</string>
     <string name="label_sc_password">密码</string>
-    <string name="label_sc_auto_pull">自动定时拉取粘贴板内容（仅在输入法面板展开时）</string>
+    <string name="label_sc_auto_pull">定时拉取粘贴板内容</string>
     <string name="label_sc_pull_interval">拉取间隔（秒，1-600）</string>
     <string name="btn_sc_test_pull">立即验证</string>
     <string name="sc_test_success">拉取成功</string>
@@ -19,7 +19,6 @@
     <string name="sc_status_upload_failed">上传粘贴板失败</string>
     <string name="btn_sc_project_home">项目主页</string>
     <string name="sc_open_browser_failed">无法打开浏览器</string>
-    <string name="hint_sc_server_base_placeholder">https://your-server.com/path</string>
 
     <!-- Clipboard manager panel -->
     <string name="ext_btn_clipboard">剪贴板</string>

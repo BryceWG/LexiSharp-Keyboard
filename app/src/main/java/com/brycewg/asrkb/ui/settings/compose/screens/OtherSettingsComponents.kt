@@ -8,6 +8,7 @@
 package com.brycewg.asrkb.ui.settings.compose.screens
 
 import android.content.Context
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
@@ -40,6 +41,7 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButton
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButtonRow
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsMaterialItemSurface
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsPreference
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSectionContainer
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsTextField
@@ -118,6 +120,7 @@ internal fun OtherTextField(
     index: Int = 0,
     count: Int = 1,
     materialContainer: Boolean = true,
+    applyEdgePadding: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(
         horizontal = SettingsLayoutMetrics.TextFieldHorizontalPadding,
         vertical = SettingsLayoutMetrics.TextFieldLooseVerticalPadding
@@ -140,6 +143,7 @@ internal fun OtherTextField(
         index = index,
         count = count,
         materialContainer = materialContainer,
+        applyEdgePadding = applyEdgePadding,
         contentPadding = contentPadding
     )
 }
@@ -370,28 +374,51 @@ internal fun SyncClipboardSection(
                 ),
                 uiMode = uiMode
             )
-            OtherTextField(
-                value = state.serverBase,
-                onValueChange = onServerChange,
-                label = stringResource(R.string.label_sc_server_base),
-                placeholder = stringResource(R.string.hint_sc_server_base_placeholder),
-                uiMode = uiMode,
-                keyboardType = KeyboardType.Uri
+            val fieldPadding = PaddingValues(
+                horizontal = SettingsLayoutMetrics.TextFieldHorizontalPadding,
+                vertical = SettingsLayoutMetrics.TextFieldLooseVerticalPadding
             )
-            OtherTextField(
-                value = state.username,
-                onValueChange = onUsernameChange,
-                label = stringResource(R.string.label_sc_username),
-                uiMode = uiMode
-            )
-            OtherTextField(
-                value = state.password,
-                onValueChange = onPasswordChange,
-                label = stringResource(R.string.label_sc_password),
-                uiMode = uiMode,
-                keyboardType = KeyboardType.Password,
-                password = true
-            )
+            val credentialFields: @Composable () -> Unit = {
+                OtherTextField(
+                    value = state.serverBase,
+                    onValueChange = onServerChange,
+                    label = stringResource(R.string.label_sc_server_base),
+                    uiMode = uiMode,
+                    keyboardType = KeyboardType.Uri,
+                    materialContainer = false,
+                    applyEdgePadding = false,
+                    contentPadding = fieldPadding
+                )
+                OtherTextField(
+                    value = state.username,
+                    onValueChange = onUsernameChange,
+                    label = stringResource(R.string.label_sc_username),
+                    uiMode = uiMode,
+                    materialContainer = false,
+                    applyEdgePadding = false,
+                    contentPadding = fieldPadding
+                )
+                OtherTextField(
+                    value = state.password,
+                    onValueChange = onPasswordChange,
+                    label = stringResource(R.string.label_sc_password),
+                    uiMode = uiMode,
+                    keyboardType = KeyboardType.Password,
+                    password = true,
+                    materialContainer = false,
+                    applyEdgePadding = false,
+                    contentPadding = fieldPadding
+                )
+            }
+            when (uiMode) {
+                BibiUiMode.Material -> SettingsMaterialItemSurface {
+                    credentialFields()
+                }
+
+                BibiUiMode.Miuix -> Column {
+                    credentialFields()
+                }
+            }
             SettingsPreference(
                 SettingsEntry.Switch(
                     id = "sync_clipboard_auto_pull",
@@ -400,17 +427,21 @@ internal fun SyncClipboardSection(
                     onCheckedChange = onAutoPullChange
                 )
             )
-            OtherTextField(
-                value = intervalText,
-                onValueChange = { raw ->
-                    intervalText = raw.filter { it.isDigit() }.take(3)
-                    intervalText.toIntOrNull()?.let { onIntervalChange(it.coerceIn(1, 600)) }
-                },
-                label = stringResource(R.string.label_sc_pull_interval),
-                uiMode = uiMode,
-                keyboardType = KeyboardType.Number,
-                singleLine = true
-            )
+            if (state.autoPullEnabled) {
+                OtherTextField(
+                    value = intervalText,
+                    onValueChange = { raw ->
+                        intervalText = raw.filter { it.isDigit() }.take(3)
+                        intervalText.toIntOrNull()?.let { onIntervalChange(it.coerceIn(1, 600)) }
+                    },
+                    label = stringResource(R.string.label_sc_pull_interval),
+                    uiMode = uiMode,
+                    keyboardType = KeyboardType.Number,
+                    singleLine = true,
+                    applyEdgePadding = false,
+                    contentPadding = fieldPadding
+                )
+            }
             OtherButtonRow(uiMode = uiMode) {
                 OtherButton(
                     text = stringResource(R.string.btn_sc_test_pull),

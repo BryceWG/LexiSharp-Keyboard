@@ -6,12 +6,12 @@
     <string name="section_sync_clipboard">クリップボード同期</string>
     <string name="label_enable_sync_clipboard">SyncClipboardプロジェクトを使用してクリップボードを同期</string>
     <string name="sc_mode_default_ime">モード：BiBi を既定 IME としたバックグラウンド同期</string>
-    <string name="sc_mode_ime_bridge">モード：対象 IME プロセス動作中の IME Bridge 補助同期</string>
+    <string name="sc_mode_ime_bridge">モード：IME Bridge 補助同期</string>
     <string name="sc_mode_manual_only">モード：手動のみ。対応する IME Bridge を有効にするか、BiBi を既定 IME に設定してください。</string>
     <string name="label_sc_server_base">サーバーベースURL（/SyncClipboard.jsonを追加）</string>
     <string name="label_sc_username">ユーザー名</string>
     <string name="label_sc_password">パスワード</string>
-    <string name="label_sc_auto_pull">定期的にクリップボードを自動プル（IME表示時のみ）</string>
+    <string name="label_sc_auto_pull">定期的にクリップボードをプル</string>
     <string name="label_sc_pull_interval">プル間隔（秒、1-600）</string>
     <string name="btn_sc_test_pull">検証</string>
     <string name="sc_test_success">プル成功</string>
@@ -20,8 +20,8 @@
     <string name="sc_status_upload_failed">クリップボードのアップロードに失敗しました</string>
     <string name="btn_sc_project_home">プロジェクトホーム</string>
     <string name="sc_open_browser_failed">ブラウザを開けません</string>
-    <string name="hint_sc_server_base_placeholder">https://your-server.com/path</string>
     
+
     <!-- Clipboard manager panel -->
     <string name="ext_btn_clipboard">クリップボード</string>
     <string name="cd_clipboard_back">戻る</string>
