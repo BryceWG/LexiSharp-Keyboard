@@ -39,11 +39,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Article
-import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.DoneAll
-import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -192,22 +188,13 @@ fun AsrHistoryScreen(
                     uiMode = uiMode,
                     selectedCount = selectedVisibleIds.size,
                     hasData = filteredRecords.isNotEmpty(),
-                    onFilter = {
-                        onHapticTap()
-                        showFilterDialog = true
-                    },
-                    onSelectAll = {
-                        onHapticTap()
-                        onSelectAll(filteredIds)
-                    },
-                    onClearSelection = {
-                        onHapticTap()
-                        onClearSelection()
-                    },
-                    onDeleteSelected = {
-                        onHapticTap()
-                        showDeleteDialog = true
-                    }
+                    filterActive = filterState.vendorIds.isNotEmpty() ||
+                        filterState.sources.isNotEmpty() ||
+                        filterState.timeFilter != TimeFilter.ALL,
+                    onFilter = { showFilterDialog = true },
+                    onSelectAll = { onSelectAll(filteredIds) },
+                    onClearSelection = onClearSelection,
+                    onDeleteSelected = { showDeleteDialog = true }
                 )
                 HistorySearchField(
                     value = query,
@@ -358,6 +345,7 @@ private fun HistoryActionBar(
     uiMode: BibiUiMode,
     selectedCount: Int,
     hasData: Boolean,
+    filterActive: Boolean,
     onFilter: () -> Unit,
     onSelectAll: () -> Unit,
     onClearSelection: () -> Unit,
@@ -367,63 +355,43 @@ private fun HistoryActionBar(
         modifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
-            .padding(top = 6.dp, bottom = 4.dp),
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ActionChip(
+        SettingsFilterChip(
             uiMode = uiMode,
             label = stringResource(R.string.menu_filter),
-            icon = Icons.Rounded.FilterList,
+            selected = filterActive,
             onClick = onFilter
         )
         if (selectedCount == 0 && hasData) {
-            ActionChip(
+            SettingsFilterChip(
                 uiMode = uiMode,
                 label = stringResource(R.string.menu_select_all),
-                icon = Icons.Rounded.DoneAll,
+                selected = false,
                 onClick = onSelectAll
             )
         }
         if (selectedCount > 0) {
-            ActionChip(
+            SettingsFilterChip(
                 uiMode = uiMode,
                 label = stringResource(R.string.menu_clear_selection),
-                icon = Icons.Rounded.Clear,
+                selected = false,
                 onClick = onClearSelection
             )
-            ActionChip(
+            SettingsFilterChip(
                 uiMode = uiMode,
                 label = stringResource(R.string.menu_delete_selected),
-                icon = Icons.Rounded.Delete,
+                selected = false,
                 onClick = onDeleteSelected
             )
-            CountChip(count = selectedCount, uiMode = uiMode)
+            SettingsAssistChip(
+                uiMode = uiMode,
+                label = selectedCount.toString()
+            )
         }
     }
-}
-
-@Composable
-private fun ActionChip(
-    uiMode: BibiUiMode,
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit
-) {
-    SettingsAssistChip(
-        uiMode = uiMode,
-        label = label,
-        icon = icon,
-        onClick = onClick
-    )
-}
-
-@Composable
-private fun CountChip(count: Int, uiMode: BibiUiMode) {
-    SettingsAssistChip(
-        uiMode = uiMode,
-        label = count.toString()
-    )
 }
 
 @Composable
@@ -436,7 +404,8 @@ private fun HistorySearchField(
         value = value,
         onValueChange = onValueChange,
         label = stringResource(R.string.hint_search_history),
-        uiMode = uiMode
+        uiMode = uiMode,
+        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
     )
 }
 
@@ -797,6 +766,8 @@ private fun HistoryDetailsDialog(
     }
 }
 
+private val HistoryDetailBodyMaxHeight = 200.dp
+
 @Composable
 private fun HistoryResultSection(
     title: String,
@@ -819,7 +790,19 @@ private fun HistoryResultSection(
                 onClick = onCopy.takeIf { canCopy }
             )
         }
-        HistoryText(text = value, uiMode = uiMode)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = HistoryDetailBodyMaxHeight)
+                .verticalScroll(rememberScrollState())
+        ) {
+            HistoryText(
+                text = value,
+                uiMode = uiMode,
+                maxLines = Int.MAX_VALUE,
+                overflow = TextOverflow.Clip
+            )
+        }
     }
 }
 
@@ -847,7 +830,8 @@ private fun HistoryText(
     header: Boolean = false,
     compact: Boolean = false,
     secondary: Boolean = false,
-    maxLines: Int = 2
+    maxLines: Int = 2,
+    overflow: TextOverflow = TextOverflow.Ellipsis
 ) {
     when (uiMode) {
         BibiUiMode.Material -> Text(
@@ -865,7 +849,7 @@ private fun HistoryText(
                 MaterialTheme.colorScheme.onSurface
             },
             maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis
+            overflow = overflow
         )
 
         BibiUiMode.Miuix -> MiuixText(
@@ -883,7 +867,7 @@ private fun HistoryText(
                 MiuixTheme.colorScheme.onSurface
             },
             maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis
+            overflow = overflow
         )
     }
 }
@@ -1003,6 +987,37 @@ private fun HistoryFilterDialog(
         )
     }
 
+    val actionButtons: @Composable () -> Unit = {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(SettingsLayoutMetrics.ActionButtonSpacing)
+        ) {
+            SettingsDialogActionRow(
+                uiMode = uiMode,
+                actions = listOf(
+                    SettingsDialogAction(
+                        text = reset,
+                        onClick = { exit.dismiss(onReset) }
+                    )
+                )
+            )
+            SettingsDialogActionRow(
+                uiMode = uiMode,
+                actions = listOf(
+                    SettingsDialogAction(
+                        text = cancel,
+                        onClick = { exit.dismiss(onDismiss) }
+                    ),
+                    SettingsDialogAction(
+                        text = confirm,
+                        onClick = ::applyFilter,
+                        primary = true
+                    )
+                )
+            )
+        }
+    }
+
     when (uiMode) {
         BibiUiMode.Material -> {
             val alpha = animateSettingsDialogExitAlpha(
@@ -1015,18 +1030,7 @@ private fun HistoryFilterDialog(
                 modifier = Modifier.graphicsLayer(alpha = alpha),
                 title = title,
                 text = content,
-                buttons = {
-                    MaterialSettingsDialogButtonRow(
-                        actions = listOf(
-                            MaterialSettingsDialogAction(reset, onClick = { exit.dismiss(onReset) }),
-                            MaterialSettingsDialogAction(cancel, onClick = { exit.dismiss(onDismiss) }),
-                            MaterialSettingsDialogAction(
-                                text = confirm,
-                                onClick = ::applyFilter
-                            )
-                        )
-                    )
-                }
+                buttons = actionButtons
             )
         }
 
@@ -1038,25 +1042,7 @@ private fun HistoryFilterDialog(
         ) {
             content()
             Spacer(modifier = Modifier.height(12.dp))
-            SettingsDialogActionRow(
-                uiMode = BibiUiMode.Miuix,
-                actions = listOf(
-                    SettingsDialogAction(
-                        text = reset,
-                        onClick = { exit.dismiss(onReset) }
-                    ),
-                    SettingsDialogAction(
-                        text = cancel,
-                        onClick = { exit.dismiss(onDismiss) }
-                    ),
-                    SettingsDialogAction(
-                        text = confirm,
-                        onClick = ::applyFilter,
-                        primary = true
-                    )
-                ),
-                spacing = 10.dp
-            )
+            actionButtons()
         }
     }
 }

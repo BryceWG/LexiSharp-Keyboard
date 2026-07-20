@@ -8,8 +8,6 @@
 package com.brycewg.asrkb.ui.history.compose.apilog
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,7 +38,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,6 +68,7 @@ import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogEx
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogActionRow
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsFilterChip
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSearchField
 import com.brycewg.asrkb.ui.settings.compose.components.animateSettingsDialogExitAlpha
 import com.brycewg.asrkb.ui.settings.compose.components.rememberSettingsDialogExitController
@@ -89,8 +87,6 @@ private enum class ApiLogFilter(val labelRes: Int) {
     Llm(R.string.api_log_filter_llm),
     Failed(R.string.api_log_filter_failed)
 }
-
-private val ApiLogPillShape = RoundedCornerShape(50)
 
 @Composable
 fun ApiLogScreen(
@@ -260,56 +256,12 @@ private fun ApiLogFilters(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         ApiLogFilter.entries.forEach { filter ->
-            ApiLogFilterChip(
+            SettingsFilterChip(
+                uiMode = uiMode,
                 label = stringResource(filter.labelRes),
                 selected = activeFilter == filter,
-                uiMode = uiMode,
                 onClick = { onFilterChange(filter) }
             )
-        }
-    }
-}
-
-@Composable
-private fun ApiLogFilterChip(
-    label: String,
-    selected: Boolean,
-    uiMode: BibiUiMode,
-    onClick: () -> Unit
-) {
-    when (uiMode) {
-        BibiUiMode.Material -> FilterChip(
-            selected = selected,
-            onClick = onClick,
-            label = { Text(label) },
-            shape = ApiLogPillShape
-        )
-
-        BibiUiMode.Miuix -> {
-            val shape = ApiLogPillShape
-            val background = if (selected) {
-                MiuixTheme.colorScheme.primary.copy(alpha = 0.14f)
-            } else {
-                Color.Transparent
-            }
-            val borderColor = if (selected) {
-                MiuixTheme.colorScheme.primary
-            } else {
-                MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.35f)
-            }
-            Box(
-                modifier = Modifier
-                    .border(width = 1.dp, color = borderColor, shape = shape)
-                    .background(color = background, shape = shape)
-                    .clickable(onClick = onClick)
-                    .padding(horizontal = 16.dp, vertical = 9.dp)
-            ) {
-                MiuixText(
-                    text = label,
-                    color = if (selected) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,
-                    style = MiuixTheme.textStyles.body2
-                )
-            }
         }
     }
 }
