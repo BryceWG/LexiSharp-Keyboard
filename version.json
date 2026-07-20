@@ -1,11 +1,11 @@
 {
-  "version": "4.1.2",
-  "version_code": 164,
-  "download_url": "https://github.com/BryceWG/BiBi-Keyboard/releases/tag/v4.1.2",
-  "release_notes": "### 新增功能\n\n- **输入完成后自动回车**：新增开关与扩展按键，识别（或 AI 后处理）完成后自动回车或触发发送，便于聊天应用直接发送\n- **火山引擎新版鉴权**：火山引擎 ASR 支持使用新版 API Key 鉴权方式\n- **清除剪贴板记录**：其他设置支持一键清除应用内全部剪贴板历史（含置顶项）\n\n### 改进优化\n\n- **收起后切换输入法**：开启「收起后切换」时，切回后的键盘会尝试自动弹出\n- **剪贴板预览**：剪贴板预览改为有限行数展示，并优化性能\n- **ASR 设置文案**：优化静音自动停止、备用引擎、ITN 等相关说明，表述更清晰",
-  "release_notes_en": "### New Features\n\n- **Auto Enter After Input**: Added a toggle and extension button to automatically press Enter / trigger the editor Send action after recognition (or after AI post-processing ), making it easier to send in chat apps\n- **Volcengine New Authentication**: Volcengine ASR now supports the new API Key authentication method\n- **Clear Clipboard History**: Other settings can clear all in-app clipboard history at once (including pinned items)\n\n### Improvements\n\n- **Switch IME on Hide**: When “switch IME when hidden” is enabled, the keyboard will try to reappear after switching to the target IME\n- **Clipboard Preview**: Clipboard preview is now a limited number of lines display with more stable text normalization and truncation\n- **ASR Settings Copy**: Clarified descriptions for silence auto-stop, backup engine, ITN, and related settings",
+  "version": "4.2.0",
+  "version_code": 165,
+  "download_url": "https://github.com/BryceWG/BiBi-Keyboard/releases/tag/v4.2.0",
+  "release_notes": "### 新增功能\n\n- **悬浮球长按录音**：悬浮球设置新增长按录音模式，按住开始录音、松手停止\n- **Cohere ASR**：新增 Cohere 语音识别供应商\n- **阿拉伯语界面**：应用界面新增阿拉伯语语言选项\n- **识别历史音频与重跑**：识别时可缓存音频；历史详情可查看原文与最终结果，并支持重新识别或重新后处理；其他设置可配置音频保留数量\n- **IME Bridge 剪贴板同步**：剪贴板同步支持通过 IME Bridge，在目标输入法进程存活期间辅助同步\n\n### 改进优化\n\n- **录音音频焦点**：统一录音会话的音频焦点管理，失去焦点时更可靠地停止录音\n- **设置页交互**：优化对话框退出动画，以及多处 UI 细节\n\n### 问题修复\n\n- **IME Bridge 联动**：修复服务关闭时过早取消仍在收尾的会话，避免丢失待交付的识别结果",
+  "release_notes_en": "### New Features\n\n- **Floating Ball Hold-to-Record**: Added a hold-to-record mode for the floating ball—press and hold to record, release to stop\n- **Cohere ASR**: Added Cohere as a speech recognition vendor\n- **Arabic UI**: Added Arabic as an app language option\n- **History Audio & Rerun**: Recognition sessions can cache audio; history details show the raw transcript and final result, with re-recognize and re-process actions; Other settings can configure audio retention count\n- **IME Bridge Clipboard Sync**: Clipboard sync can use IME Bridge assistance while the target IME process is alive\n\n### Improvements\n\n- **Recording Audio Focus**: Unified audio-focus handling for recording sessions so recording stops more reliably when focus is lost\n- **Settings Interactions**: Smoother dialog exit animations and various UI improvements\n\n### Bug Fixes\n\n- **IME Bridge Coordination**: Fixed premature cancellation of finishing sessions during service shutdown, which could drop pending recognition results",
   "important_notice": "1. 4.0.0 版本将迎来大量重构和众多更新，欢迎下载尝鲜\n2. BiBi Keyboard Pro版本已上架，欢迎在3.8.6后版本-关于页面中了解详情。\n3. 官方网站和使用文档均已上线,网址分别为: bibi.brycewg.com bibidocs.brycewg.com",
   "notice_level": "info",
   "min_supported_version": "2.6.5",
-  "update_time": "2026-07-13T13:15:56Z"
+  "update_time": "2026-07-20T13:44:20Z"
 }
