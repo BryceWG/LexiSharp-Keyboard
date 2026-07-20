@@ -187,12 +187,10 @@ class SyncClipboardManager(
             Log.e(TAG, "Failed to read clipboard", e)
             null
         } ?: return null
-        if (clip.itemCount <= 0) return null
-        val item = clip.getItemAt(0)
         val text = try {
-            item.coerceToText(context)?.toString()
+            readClipboardText(clip)
         } catch (e: Throwable) {
-            Log.e(TAG, "Failed to coerce clipboard item to text", e)
+            Log.e(TAG, "Failed to read clipboard text", e)
             null
         }
         return text?.takeIf { it.isNotEmpty() }

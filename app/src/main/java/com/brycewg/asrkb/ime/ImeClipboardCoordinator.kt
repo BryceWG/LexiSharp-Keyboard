@@ -10,6 +10,7 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
 import com.brycewg.asrkb.clipboard.EntryType
 import com.brycewg.asrkb.clipboard.SyncClipboardManager
+import com.brycewg.asrkb.clipboard.readClipboardText
 import com.brycewg.asrkb.store.Prefs
 import java.io.File
 import java.security.MessageDigest
@@ -226,7 +227,8 @@ internal class ImeClipboardCoordinator(
                     ?: return@OnPrimaryClipChangedListener
                 serviceScope.launch(Dispatchers.Default) {
                     val text = clipboardWorkMutex.withLock {
-                        val currentText = readClipboardText(clipSnapshot) ?: return@withLock null
+                        val currentText = readClipboardText(clipSnapshot)
+                            ?: return@withLock null
                         val h = sha256Hex(currentText)
                         if (h == lastShownClipboardHash) return@withLock null
                         lastShownClipboardHash = h
@@ -258,12 +260,6 @@ internal class ImeClipboardCoordinator(
     } catch (e: Exception) {
         android.util.Log.e("AsrKeyboardService", "Failed to copy text to clipboard", e)
         false
-    }
-
-    private fun readClipboardText(clip: ClipData): String? {
-        if (clip.itemCount <= 0) return null
-        val item = clip.getItemAt(0)
-        return item.coerceToText(context)?.toString()?.takeIf { it.isNotEmpty() }
     }
 
     private fun sha256Hex(s: String): String = try {
