@@ -154,6 +154,13 @@ internal fun formatImeBridgeStatus(
             } else {
                 R.string.status_floating_ime_bridge_pcm_not_supported
             }
+        ),
+        context.getString(
+            if (result.supportsClipboard) {
+                R.string.status_floating_ime_bridge_clipboard_supported
+            } else {
+                R.string.status_floating_ime_bridge_clipboard_not_supported
+            }
         )
     )
     val inputText = context.getString(

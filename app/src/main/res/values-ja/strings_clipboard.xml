@@ -5,6 +5,9 @@
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">クリップボード同期</string>
     <string name="label_enable_sync_clipboard">SyncClipboardプロジェクトを使用してクリップボードを同期</string>
+    <string name="sc_mode_default_ime">モード：BiBi を既定 IME としたバックグラウンド同期</string>
+    <string name="sc_mode_ime_bridge">モード：対象 IME プロセス動作中の IME Bridge 補助同期</string>
+    <string name="sc_mode_manual_only">モード：手動のみ。対応する IME Bridge を有効にするか、BiBi を既定 IME に設定してください。</string>
     <string name="label_sc_server_base">サーバーベースURL（/SyncClipboard.jsonを追加）</string>
     <string name="label_sc_username">ユーザー名</string>
     <string name="label_sc_password">パスワード</string>

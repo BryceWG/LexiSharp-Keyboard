@@ -16,7 +16,10 @@ import kotlinx.coroutines.launch
  * ViewModel for the Compose other settings screen that manages speech presets and sync clipboard settings.
  * Uses StateFlow to drive reactive UI updates and eliminates manual UI refresh complexity.
  */
-class OtherSettingsViewModel(private val prefs: Prefs) : ViewModel() {
+class OtherSettingsViewModel(
+    private val prefs: Prefs,
+    private val onSyncClipboardChanged: () -> Unit = {}
+) : ViewModel() {
 
     companion object {
         private const val TAG = "OtherSettingsViewModel"
@@ -230,6 +233,7 @@ class OtherSettingsViewModel(private val prefs: Prefs) : ViewModel() {
             try {
                 prefs.syncClipboardEnabled = enabled
                 _syncClipboardState.value = _syncClipboardState.value.copy(enabled = enabled)
+                onSyncClipboardChanged()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update sync clipboard enabled", e)
             }
@@ -275,6 +279,7 @@ class OtherSettingsViewModel(private val prefs: Prefs) : ViewModel() {
                 prefs.syncClipboardAutoPullEnabled = enabled
                 _syncClipboardState.value =
                     _syncClipboardState.value.copy(autoPullEnabled = enabled)
+                onSyncClipboardChanged()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update sync clipboard auto pull enabled", e)
             }
@@ -288,6 +293,7 @@ class OtherSettingsViewModel(private val prefs: Prefs) : ViewModel() {
                 prefs.syncClipboardPullIntervalSec = coerced
                 _syncClipboardState.value =
                     _syncClipboardState.value.copy(pullIntervalSec = coerced)
+                onSyncClipboardChanged()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update sync clipboard pull interval", e)
             }

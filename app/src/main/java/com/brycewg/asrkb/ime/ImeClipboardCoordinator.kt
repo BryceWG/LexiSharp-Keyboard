@@ -10,6 +10,7 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
 import com.brycewg.asrkb.clipboard.EntryType
 import com.brycewg.asrkb.clipboard.SyncClipboardManager
+import com.brycewg.asrkb.clipboard.SystemClipboardPortFactory
 import com.brycewg.asrkb.clipboard.readClipboardText
 import com.brycewg.asrkb.store.Prefs
 import java.io.File
@@ -96,7 +97,8 @@ internal class ImeClipboardCoordinator(
                             }
                         }
                     },
-                    clipStoreProvider()
+                    clipStoreProvider(),
+                    clipboardPort = SystemClipboardPortFactory.create(context, prefs)
                 )
             }
             syncClipboardManager?.start()

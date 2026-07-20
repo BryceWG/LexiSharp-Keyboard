@@ -182,6 +182,8 @@ class AsrKeyboardService :
                 when (intent?.action) {
                     ACTION_REFRESH_IME_UI -> {
                         refreshCurrentInputViewTheme(recreateVisibleInputView = true)
+                        clipboardCoordinator?.stopClipboardSyncSafely()
+                        clipboardCoordinator?.startClipboardSync()
                     }
                 }
             }
@@ -411,8 +413,6 @@ class AsrKeyboardService :
         layoutController?.onInputViewFinished()
         super.onFinishInputView(finishingInput)
         DebugLogManager.log("ime", "finish_input_view")
-        clipboardCoordinator?.stopClipboardSyncSafely()
-
         // 停止剪贴板预览监听
         clipboardCoordinator?.stopClipboardPreviewListener()
 

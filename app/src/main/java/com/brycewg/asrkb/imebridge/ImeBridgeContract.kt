@@ -18,6 +18,16 @@ internal object ImeBridgeContract {
         "com.brycewg.asrkb.imebridge.action.FINISH_COMPOSING_TEXT"
     const val ACTION_IME_WINDOW_VISIBILITY_CHANGED: String =
         "com.brycewg.asrkb.imebridge.action.IME_WINDOW_VISIBILITY_CHANGED"
+    const val ACTION_SET_CLIPBOARD_TEXT: String =
+        "com.brycewg.asrkb.imebridge.action.SET_CLIPBOARD_TEXT"
+    const val ACTION_GET_CLIPBOARD_TEXT: String =
+        "com.brycewg.asrkb.imebridge.action.GET_CLIPBOARD_TEXT"
+    const val ACTION_START_CLIPBOARD_OBSERVE: String =
+        "com.brycewg.asrkb.imebridge.action.START_CLIPBOARD_OBSERVE"
+    const val ACTION_STOP_CLIPBOARD_OBSERVE: String =
+        "com.brycewg.asrkb.imebridge.action.STOP_CLIPBOARD_OBSERVE"
+    const val ACTION_CLIPBOARD_TEXT_CHANGED: String =
+        "com.brycewg.asrkb.imebridge.action.CLIPBOARD_TEXT_CHANGED"
 
     const val EXTRA_PROTOCOL_VERSION: String = "protocol_version"
     const val EXTRA_REQUEST_ID: String = "request_id"
@@ -34,6 +44,10 @@ internal object ImeBridgeContract {
     const val EXTRA_SUPPORTS_FINISH_COMPOSING_TEXT: String = "supports_finish_composing_text"
     const val EXTRA_SUPPORTS_SESSIONS: String = "supports_sessions"
     const val EXTRA_SUPPORTS_PCM_RECORDING: String = "supports_pcm_recording"
+    const val EXTRA_SUPPORTS_CLIPBOARD: String = "supports_clipboard"
+    const val EXTRA_IS_CLIPBOARD_SENSITIVE: String = "is_clipboard_sensitive"
+    const val EXTRA_CLIPBOARD_TEXT_CHARS: String = "clipboard_text_chars"
+    const val EXTRA_CLIPBOARD_SUBSCRIPTION_TOKEN: String = "clipboard_subscription_token"
     const val EXTRA_ACTIVE_SESSION_ID: String = "active_session_id"
     const val EXTRA_LAST_OPERATION: String = "last_operation"
     const val EXTRA_LAST_RESULT_CODE: String = "last_result_code"
@@ -50,6 +64,7 @@ internal object ImeBridgeContract {
     const val RESULT_BAD_REQUEST: Int = -7
     const val RESULT_COMPOSING_FAILED: Int = -8
     const val RESULT_SESSION_MISMATCH: Int = -9
+    const val RESULT_CLIPBOARD_FAILED: Int = -10
     const val RESULT_NO_CURRENT_IME: Int = -100
     const val RESULT_TIMEOUT: Int = -101
     const val RESULT_SEND_FAILED: Int = -102

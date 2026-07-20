@@ -1131,7 +1131,15 @@ internal class FloatingAsrInteractionController(
 
     private fun uploadClipboardOnceFromMenu() {
         try {
-            val mgr = com.brycewg.asrkb.clipboard.SyncClipboardManager(context, prefs, scope)
+            val mgr = com.brycewg.asrkb.clipboard.SyncClipboardManager(
+                context,
+                prefs,
+                scope,
+                clipboardPort = com.brycewg.asrkb.clipboard.SystemClipboardPortFactory.create(
+                    context,
+                    prefs
+                )
+            )
             scope.launch(Dispatchers.IO) {
                 val ok = try {
                     mgr.uploadOnce()
@@ -1154,7 +1162,15 @@ internal class FloatingAsrInteractionController(
 
     private fun pullClipboardOnceFromMenu() {
         try {
-            val mgr = com.brycewg.asrkb.clipboard.SyncClipboardManager(context, prefs, scope)
+            val mgr = com.brycewg.asrkb.clipboard.SyncClipboardManager(
+                context,
+                prefs,
+                scope,
+                clipboardPort = com.brycewg.asrkb.clipboard.SystemClipboardPortFactory.create(
+                    context,
+                    prefs
+                )
+            )
             scope.launch(Dispatchers.IO) {
                 val ok = try {
                     mgr.pullNow(updateClipboard = true).first

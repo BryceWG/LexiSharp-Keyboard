@@ -168,6 +168,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.test:core:1.7.0")
     testImplementation("org.robolectric:robolectric:4.16")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:5.3.2")
 
     // Shizuku：用于在已授权时执行部分 shell 级操作（增强后台保活）
     implementation("dev.rikka.shizuku:api:13.1.5")

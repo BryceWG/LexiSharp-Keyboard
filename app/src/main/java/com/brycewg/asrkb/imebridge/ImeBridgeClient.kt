@@ -32,6 +32,9 @@ data class ImeBridgeResult(
     val supportsFinishComposingText: Boolean = false,
     val supportsSessions: Boolean = false,
     val supportsPcmRecording: Boolean = false,
+    val supportsClipboard: Boolean = false,
+    val clipboardText: String? = null,
+    val isClipboardSensitive: Boolean = false,
     val activeSessionId: String? = null,
     val lastOperation: String? = null,
     val lastResultCode: Int = 0,
@@ -121,6 +124,56 @@ class ImeBridgeClient(private val context: Context) {
             sessionId = sessionId
         )
 
+    fun setClipboardText(
+        text: String,
+        timeoutMs: Long = DEFAULT_CLIPBOARD_TIMEOUT_MS
+    ): ImeBridgeResult {
+        if (text.isEmpty()) {
+            return ImeBridgeResult(
+                code = ImeBridgeContract.RESULT_BAD_REQUEST,
+                message = "empty text",
+                targetPackage = resolveCurrentImePackage(),
+                hasInputConnection = false,
+                isSensitiveField = false,
+                isImeWindowVisible = false
+            )
+        }
+        return sendBridgeRequest(
+            ImeBridgeContract.ACTION_SET_CLIPBOARD_TEXT,
+            text,
+            timeoutMs
+        )
+    }
+
+    fun getClipboardText(
+        timeoutMs: Long = DEFAULT_CLIPBOARD_TIMEOUT_MS
+    ): ImeBridgeResult =
+        sendBridgeRequest(
+            ImeBridgeContract.ACTION_GET_CLIPBOARD_TEXT,
+            null,
+            timeoutMs
+        )
+
+    fun startClipboardObserve(
+        subscriptionToken: String,
+        timeoutMs: Long = DEFAULT_CLIPBOARD_TIMEOUT_MS
+    ): ImeBridgeResult =
+        sendBridgeRequest(
+            ImeBridgeContract.ACTION_START_CLIPBOARD_OBSERVE,
+            null,
+            timeoutMs,
+            clipboardSubscriptionToken = subscriptionToken
+        )
+
+    fun stopClipboardObserve(
+        timeoutMs: Long = DEFAULT_CLIPBOARD_TIMEOUT_MS
+    ): ImeBridgeResult =
+        sendBridgeRequest(
+            ImeBridgeContract.ACTION_STOP_CLIPBOARD_OBSERVE,
+            null,
+            timeoutMs
+        )
+
     fun resolveCurrentImePackage(): String? = resolveCurrentImePackage(context)
 
     private fun sendBridgeRequest(
@@ -128,7 +181,8 @@ class ImeBridgeClient(private val context: Context) {
         text: String?,
         timeoutMs: Long,
         cursorPosition: Int = 1,
-        sessionId: String? = null
+        sessionId: String? = null,
+        clipboardSubscriptionToken: String? = null
     ): ImeBridgeResult {
         val targetPackage = resolveCurrentImePackage()
         val requestId = UUID.randomUUID().toString()
@@ -190,6 +244,15 @@ class ImeBridgeClient(private val context: Context) {
                         ImeBridgeContract.EXTRA_SUPPORTS_PCM_RECORDING,
                         false
                     ) == true,
+                    supportsClipboard = extras?.getBoolean(
+                        ImeBridgeContract.EXTRA_SUPPORTS_CLIPBOARD,
+                        false
+                    ) == true,
+                    clipboardText = extras?.getString(ImeBridgeContract.EXTRA_TEXT),
+                    isClipboardSensitive = extras?.getBoolean(
+                        ImeBridgeContract.EXTRA_IS_CLIPBOARD_SENSITIVE,
+                        false
+                    ) == true,
                     activeSessionId = extras?.getString(ImeBridgeContract.EXTRA_ACTIVE_SESSION_ID),
                     lastOperation = extras?.getString(ImeBridgeContract.EXTRA_LAST_OPERATION),
                     lastResultCode = extras?.getInt(ImeBridgeContract.EXTRA_LAST_RESULT_CODE, 0) ?: 0,
@@ -205,6 +268,12 @@ class ImeBridgeClient(private val context: Context) {
             putExtra(ImeBridgeContract.EXTRA_REQUEST_ID, requestId)
             putExtra(ImeBridgeContract.EXTRA_CURSOR_POSITION, cursorPosition)
             if (!sessionId.isNullOrEmpty()) putExtra(ImeBridgeContract.EXTRA_SESSION_ID, sessionId)
+            if (!clipboardSubscriptionToken.isNullOrEmpty()) {
+                putExtra(
+                    ImeBridgeContract.EXTRA_CLIPBOARD_SUBSCRIPTION_TOKEN,
+                    clipboardSubscriptionToken
+                )
+            }
             if (text != null) putExtra(ImeBridgeContract.EXTRA_TEXT, text)
         }
 
@@ -302,6 +371,7 @@ class ImeBridgeClient(private val context: Context) {
                     append("; supportsPreview=").append(result.supportsComposingPreview)
                     append("; supportsSessions=").append(result.supportsSessions)
                     append("; supportsPcmRecording=").append(result.supportsPcmRecording)
+                    append("; supportsClipboard=").append(result.supportsClipboard)
                 },
                 success = result.isSuccess,
                 durationMs = durationMs,
@@ -313,6 +383,7 @@ class ImeBridgeClient(private val context: Context) {
     private fun shouldRecordApiLog(action: String, result: ImeBridgeResult): Boolean {
         if (action == ImeBridgeContract.ACTION_SET_COMPOSING_TEXT && result.isSuccess) return false
         if (action == ImeBridgeContract.ACTION_FINISH_COMPOSING_TEXT && result.isSuccess) return false
+        if (action == ImeBridgeContract.ACTION_GET_CLIPBOARD_TEXT && result.isSuccess) return false
         return true
     }
 
@@ -325,6 +396,7 @@ class ImeBridgeClient(private val context: Context) {
         private const val DEFAULT_INSERT_TIMEOUT_MS = 700L
         private const val DEFAULT_COMPOSING_TIMEOUT_MS = 120L
         private const val DEFAULT_SESSION_TIMEOUT_MS = 180L
+        private const val DEFAULT_CLIPBOARD_TIMEOUT_MS = 500L
 
         fun resolveCurrentImePackage(context: Context): String? {
             val raw = try {
@@ -352,6 +424,7 @@ class ImeBridgeClient(private val context: Context) {
             ImeBridgeContract.RESULT_BAD_REQUEST -> "bad request"
             ImeBridgeContract.RESULT_COMPOSING_FAILED -> "composing failed"
             ImeBridgeContract.RESULT_SESSION_MISMATCH -> "session mismatch"
+            ImeBridgeContract.RESULT_CLIPBOARD_FAILED -> "clipboard failed"
             ImeBridgeContract.RESULT_NO_CURRENT_IME -> "no current ime"
             ImeBridgeContract.RESULT_TIMEOUT -> "timeout"
             ImeBridgeContract.RESULT_SEND_FAILED -> "send failed"

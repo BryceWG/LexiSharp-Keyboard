@@ -4,6 +4,9 @@
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">Clipboard Sync</string>
     <string name="label_enable_sync_clipboard">Use SyncClipboard project to sync clipboard</string>
+    <string name="sc_mode_default_ime">Mode: BiBi default IME background sync</string>
+    <string name="sc_mode_ime_bridge">Mode: IME Bridge assisted sync while the target IME process is alive</string>
+    <string name="sc_mode_manual_only">Mode: manual only. Enable a compatible IME Bridge or set BiBi as the default IME.</string>
     <string name="label_sc_server_base">Server base URL (will append /SyncClipboard.json)</string>
     <string name="label_sc_username">Username</string>
     <string name="label_sc_password">Password</string>

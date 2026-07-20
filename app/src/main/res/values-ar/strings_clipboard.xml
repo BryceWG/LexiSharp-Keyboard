@@ -4,6 +4,9 @@
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">مزامنة الحافظة</string>
     <string name="label_enable_sync_clipboard">استخدام مشروع SyncClipboard لمزامنة الحافظة</string>
+    <string name="sc_mode_default_ime">الوضع: مزامنة خلفية عندما تكون BiBi لوحة الإدخال الافتراضية</string>
+    <string name="sc_mode_ime_bridge">الوضع: مزامنة بمساعدة IME Bridge أثناء بقاء عملية لوحة الإدخال المستهدفة قيد التشغيل</string>
+    <string name="sc_mode_manual_only">الوضع: يدوي فقط. فعّل IME Bridge متوافقاً أو اجعل BiBi لوحة الإدخال الافتراضية.</string>
     <string name="label_sc_server_base">عنوان الخادم الأساسي (سيُلحق /SyncClipboard.json)</string>
     <string name="label_sc_username">اسم المستخدم</string>
     <string name="label_sc_password">كلمة المرور</string>

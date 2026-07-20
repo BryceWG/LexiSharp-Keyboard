@@ -7,6 +7,8 @@
 
 package com.brycewg.asrkb.ui.settings.compose.screens
 
+import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -26,6 +28,8 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.ime.AsrKeyboardService
+import com.brycewg.asrkb.ui.floating.FloatingAsrService
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveScheduler
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveStarter
@@ -60,10 +64,13 @@ fun OtherSettingsScreen(
     val serviceManager = remember(context) { FloatingServiceManager(context) }
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val viewModel: OtherSettingsViewModel = viewModel(
-        factory = remember(prefs) {
+        factory = remember(prefs, context) {
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T = OtherSettingsViewModel(prefs) as T
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    OtherSettingsViewModel(prefs) {
+                        notifySyncClipboardConfigChanged(context, prefs)
+                    } as T
             }
         }
     )
@@ -394,6 +401,20 @@ fun OtherSettingsScreen(
             },
             onOpenSyncClipboardProject = {
                 openSyncClipboardProjectHome(context, ::showOtherMessage)
+            }
+        )
+    }
+}
+
+private fun notifySyncClipboardConfigChanged(context: Context, prefs: Prefs) {
+    val appContext = context.applicationContext
+    appContext.sendBroadcast(
+        Intent(AsrKeyboardService.ACTION_REFRESH_IME_UI).setPackage(appContext.packageName)
+    )
+    if (prefs.floatingAsrEnabled) {
+        appContext.startService(
+            Intent(appContext, FloatingAsrService::class.java).apply {
+                action = FloatingAsrService.ACTION_REFRESH_UI
             }
         )
     }

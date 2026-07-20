@@ -34,6 +34,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.clipboard.SystemClipboardActor
+import com.brycewg.asrkb.clipboard.SystemClipboardPortFactory
+import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButton
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButtonRow
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
@@ -44,6 +47,8 @@ import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import com.brycewg.asrkb.ui.settings.compose.model.SettingsEntry
 import com.brycewg.asrkb.ui.settings.other.OtherSettingsViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -331,8 +336,19 @@ internal fun SyncClipboardSection(
     onTestPull: () -> Unit,
     onOpenProject: () -> Unit
 ) {
+    val context = LocalContext.current
     var intervalText by remember(state.pullIntervalSec) {
         mutableStateOf(state.pullIntervalSec.toString())
+    }
+    var availableActor by remember { mutableStateOf(SystemClipboardActor.UNAVAILABLE) }
+    LaunchedEffect(state.enabled) {
+        availableActor = if (state.enabled) {
+            withContext(Dispatchers.IO) {
+                SystemClipboardPortFactory.detectAvailableActor(context, Prefs(context))
+            }
+        } else {
+            SystemClipboardActor.UNAVAILABLE
+        }
     }
     OtherSection(uiMode = uiMode, titleRes = R.string.section_sync_clipboard) {
         SettingsPreference(
@@ -344,6 +360,16 @@ internal fun SyncClipboardSection(
             )
         )
         if (state.enabled) {
+            OtherBodyText(
+                text = stringResource(
+                    when (availableActor) {
+                        SystemClipboardActor.DIRECT -> R.string.sc_mode_default_ime
+                        SystemClipboardActor.BRIDGE -> R.string.sc_mode_ime_bridge
+                        SystemClipboardActor.UNAVAILABLE -> R.string.sc_mode_manual_only
+                    }
+                ),
+                uiMode = uiMode
+            )
             OtherTextField(
                 value = state.serverBase,
                 onValueChange = onServerChange,

@@ -4,6 +4,9 @@
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">剪貼簿同步</string>
     <string name="label_enable_sync_clipboard">使用 SyncClipboard 專案來同步剪貼簿</string>
+    <string name="sc_mode_default_ime">同步方式：說點啥預設輸入法背景同步</string>
+    <string name="sc_mode_ime_bridge">同步方式：IME Bridge 輔助同步（目標輸入法程序存活時）</string>
+    <string name="sc_mode_manual_only">同步方式：僅手動。請啟用相容的 IME Bridge，或將說點啥設為預設輸入法。</string>
     <string name="label_sc_server_base">伺服器位址（會自動拼接 /SyncClipboard.json）</string>
     <string name="label_sc_username">使用者名稱</string>
     <string name="label_sc_password">密碼</string>

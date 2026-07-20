@@ -1,7 +1,5 @@
 package com.brycewg.asrkb.clipboard
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
 import android.util.Base64
@@ -9,6 +7,7 @@ import android.util.Log
 import com.brycewg.asrkb.store.Prefs
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -47,19 +46,28 @@ private data class PullClipboardPayload(
     @SerialName("File") val legacyFile: String? = null
 )
 
+private data class HandledPullPayload(
+    val value: String,
+    val clipboardApplied: Boolean = true
+)
+
 /**
- * 在 IME 面板可见期间启用：
- * - 监听剪贴板变动并上传（文本类型）
- * - 按设定周期从服务器拉取文本并写入系统剪贴板
+ * SyncClipboard 客户端：
+ * - 经 [SystemClipboardPort] 监听剪贴板变动并上传（文本类型）
+ * - 按设定周期从服务器拉取文本并经 Port 写入系统剪贴板
  *
  * 注意：服务端认证使用标准 HTTP Basic（`Authorization: Basic <base64(username:password)>`）。
+ * 网络与凭证只留在本体；Port 可指向本进程 ClipboardManager 或 IME Bridge。
  */
 class SyncClipboardManager(
     private val context: Context,
     private val prefs: Prefs,
     private val scope: CoroutineScope,
     private val listener: Listener? = null,
-    private val clipboardStore: ClipboardHistoryStore? = null
+    private val clipboardStore: ClipboardHistoryStore? = null,
+    private val clipboardPort: SystemClipboardPort = DirectSystemClipboardPort(context),
+    private val httpClient: OkHttpClient = defaultHttpClient(),
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     interface Listener {
         fun onPulledNewContent(text: String)
@@ -68,73 +76,80 @@ class SyncClipboardManager(
         fun onFilePulled(type: EntryType, fileName: String, serverFileName: String)
     }
 
-    private val clipboard by lazy {
-        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    }
-    private val client by lazy {
-        OkHttpClient.Builder()
-            .connectTimeout(8, TimeUnit.SECONDS)
-            .readTimeout(8, TimeUnit.SECONDS)
-            .writeTimeout(8, TimeUnit.SECONDS)
-            .build()
-    }
     private val json by lazy { Json { ignoreUnknownKeys = true } }
     private val fileManager by lazy { ClipboardFileManager(context) }
 
     companion object {
         private const val TAG = "SyncClipboardManager"
+        private const val BRIDGE_OBSERVER_RENEW_INTERVAL_MS = 15_000L
+
+        fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
+            .connectTimeout(8, TimeUnit.SECONDS)
+            .readTimeout(8, TimeUnit.SECONDS)
+            .writeTimeout(8, TimeUnit.SECONDS)
+            .build()
     }
 
     private var pullJob: Job? = null
-    private var listenerRegistered = false
-
-    @Volatile private var suppressNextChange = false
+    private var observerRenewJob: Job? = null
+    private var observing = false
 
     // 记录最近一次从服务端拉取的文本哈希，用于减少本地剪贴板读取次数
     @Volatile private var lastPulledServerHash: String? = null
 
-    private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {
-        if (suppressNextChange) {
-            // 忽略由我们主动写入导致的回调
-            suppressNextChange = false
-            return@OnPrimaryClipChangedListener
-        }
-        if (!prefs.syncClipboardEnabled) return@OnPrimaryClipChangedListener
-        scope.launch(Dispatchers.IO) {
-            try {
-                uploadCurrentClipboardText()
-            } catch (e: Throwable) {
-                Log.e(TAG, "Failed to upload clipboard text on change", e)
-            }
-        }
-    }
+    val clipboardActor: SystemClipboardActor get() = clipboardPort.actor
 
     fun start() {
         if (!prefs.syncClipboardEnabled) return
-        ensureListener()
+        ensureObserver()
+        ensureObserverRenewLoop()
         ensurePullLoop()
     }
 
     fun stop() {
-        try {
-            if (listenerRegistered) clipboard.removePrimaryClipChangedListener(clipListener)
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to remove clipboard listener", e)
+        if (observing) {
+            try {
+                clipboardPort.stopObserving()
+            } catch (e: Throwable) {
+                Log.e(TAG, "Failed to stop clipboard observer", e)
+            }
         }
-        listenerRegistered = false
+        observing = false
         pullJob?.cancel()
         pullJob = null
-        suppressNextChange = false
+        observerRenewJob?.cancel()
+        observerRenewJob = null
         lastPulledServerHash = null
     }
 
-    private fun ensureListener() {
-        if (!listenerRegistered) {
-            try {
-                clipboard.addPrimaryClipChangedListener(clipListener)
-                listenerRegistered = true
-            } catch (e: Throwable) {
-                Log.e(TAG, "Failed to add clipboard listener", e)
+    private fun ensureObserver(force: Boolean = false) {
+        if (observing && !force) return
+        try {
+            clipboardPort.startObserving {
+                if (!prefs.syncClipboardEnabled) return@startObserving
+                scope.launch(ioDispatcher) {
+                    try {
+                        uploadCurrentClipboardText()
+                    } catch (e: Throwable) {
+                        Log.e(TAG, "Failed to upload clipboard text on change", e)
+                    }
+                }
+            }
+            observing = true
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to start clipboard observer", e)
+        }
+    }
+
+    private fun ensureObserverRenewLoop() {
+        if (clipboardPort.actor != SystemClipboardActor.BRIDGE || observerRenewJob?.isActive == true) {
+            return
+        }
+        observerRenewJob = scope.launch(ioDispatcher) {
+            while (isActive && prefs.syncClipboardEnabled) {
+                delay(BRIDGE_OBSERVER_RENEW_INTERVAL_MS)
+                if (!isActive || !prefs.syncClipboardEnabled) break
+                ensureObserver(force = true)
             }
         }
     }
@@ -143,7 +158,7 @@ class SyncClipboardManager(
         pullJob?.cancel()
         if (!prefs.syncClipboardAutoPullEnabled) return
         val intervalSec = prefs.syncClipboardPullIntervalSec.coerceIn(1, 600)
-        pullJob = scope.launch(Dispatchers.IO) {
+        pullJob = scope.launch(ioDispatcher) {
             while (isActive && prefs.syncClipboardEnabled && prefs.syncClipboardAutoPullEnabled) {
                 try {
                     pullNow(updateClipboard = true)
@@ -180,38 +195,25 @@ class SyncClipboardManager(
         return "Basic $b64"
     }
 
-    private fun readClipboardText(): String? {
-        val clip = try {
-            clipboard.primaryClip
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to read clipboard", e)
-            null
-        } ?: return null
-        val text = try {
-            readClipboardText(clip)
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to read clipboard text", e)
-            null
-        }
-        return text?.takeIf { it.isNotEmpty() }
-    }
+    private fun readClipboardText(): String? =
+        clipboardPort.readText()?.text?.takeIf { it.isNotEmpty() }
 
-    private fun writeClipboardText(text: String) {
-        val clip = ClipData.newPlainText("SyncClipboard", text)
-        suppressNextChange = true
-        try {
-            clipboard.setPrimaryClip(clip)
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to write clipboard text", e)
-        } finally {
-            suppressNextChange = false
-        }
+    private fun writeClipboardText(text: String): Boolean = try {
+        clipboardPort.writeText(text)
+    } catch (e: Throwable) {
+        Log.e(TAG, "Failed to write clipboard text via port", e)
+        false
     }
 
     private fun uploadCurrentClipboardText() {
         val url = buildUrl() ?: return
         val authB64 = authHeaderB64() ?: return
-        val text = readClipboardText() ?: return
+        val read = clipboardPort.readText() ?: return
+        if (read.isSensitive) {
+            Log.d(TAG, "Skip upload: clipboard marked sensitive, chars=${read.text.length}")
+            return
+        }
+        val text = read.text
         if (text.isEmpty()) return
         // 若与最近一次成功上传（或最近一次拉取写入）相同，则跳过上传，避免重复
         try {
@@ -239,7 +241,7 @@ class SyncClipboardManager(
             .header("Authorization", auth)
             .put(bodyJson.toRequestBody("application/json; charset=utf-8".toMediaType()))
             .build()
-        client.newCall(req).execute().use { resp ->
+        httpClient.newCall(req).execute().use { resp ->
             if (resp.isSuccessful) {
                 // 记录最近一次成功上传内容的哈希，便于后续对比
                 try {
@@ -280,11 +282,15 @@ class SyncClipboardManager(
     fun uploadOnce(): Boolean {
         val url = buildUrl() ?: return false
         val authB64 = authHeaderB64() ?: return false
-        val text = readClipboardText() ?: return false
+        val read = clipboardPort.readText() ?: return false
+        if (read.isSensitive) {
+            Log.d(TAG, "uploadOnce skipped: sensitive clipboard, chars=${read.text.length}")
+            return false
+        }
+        val text = read.text
         if (text.isEmpty()) return false
         return try {
-            val ok = uploadText(url, authB64, text)
-            ok
+            uploadText(url, authB64, text)
         } catch (e: Throwable) {
             Log.e(TAG, "uploadOnce failed", e)
             false
@@ -301,7 +307,7 @@ class SyncClipboardManager(
         val authB64 = authHeaderB64() ?: return null
         return try {
             val req = requestBuilder(authB64)
-            client.newCall(req).execute().use { resp ->
+            httpClient.newCall(req).execute().use { resp ->
                 if (resp.isSuccessful) {
                     return responseHandler(resp)
                 }
@@ -398,7 +404,7 @@ class SyncClipboardManager(
         }
 
         return if (result != null) {
-            true to result
+            result.clipboardApplied to result.value
         } else {
             false to null
         }
@@ -463,7 +469,7 @@ class SyncClipboardManager(
     /**
      * 处理文本类型的 payload
      */
-    private fun handleTextPayload(text: String, updateClipboard: Boolean): String {
+    private fun handleTextPayload(text: String, updateClipboard: Boolean): HandledPullPayload {
         // 远端内容变为文本时，清除历史中的文件条目与最近文件名记录
         try {
             clipboardStore?.clearFileEntries()
@@ -480,37 +486,43 @@ class SyncClipboardManager(
             null
         }
         val prevServerHash = lastPulledServerHash
-        lastPulledServerHash = newServerHash
 
         if (updateClipboard) {
             if (newServerHash != null && newServerHash == prevServerHash) {
                 // 服务端内容未变化：跳过本地剪贴板读取以降低读取频率
-                return text
+                return HandledPullPayload(text)
             }
             val cur = readClipboardText()
             if (text.isNotEmpty() && text != cur) {
-                writeClipboardText(text)
+                val written = writeClipboardText(text)
+                if (!written) {
+                    Log.w(TAG, "Clipboard port refused write, chars=${text.length} actor=${clipboardPort.actor}")
+                    return HandledPullPayload(text, clipboardApplied = false)
+                }
                 // 将此次拉取的内容也记录到"最近一次上传哈希"，避免后续补上传（减少不必要的上传）
                 try {
                     prefs.syncClipboardLastUploadedHash = sha256Hex(text)
                 } catch (e: Throwable) {
                     Log.e(TAG, "Failed to save pulled hash", e)
                 }
-                try {
-                    listener?.onPulledNewContent(text)
-                } catch (e: Throwable) {
-                    Log.e(TAG, "Failed to notify pulled content listener", e)
+                if (written) {
+                    try {
+                        listener?.onPulledNewContent(text)
+                    } catch (e: Throwable) {
+                        Log.e(TAG, "Failed to notify pulled content listener", e)
+                    }
                 }
             }
         }
-        return text
+        lastPulledServerHash = newServerHash
+        return HandledPullPayload(text)
     }
 
     /**
      * 处理文件类型的 payload
      * 仅添加到历史记录，不自动下载
      */
-    private fun handleFilePayload(type: String, fileName: String): String {
+    private fun handleFilePayload(type: String, fileName: String): HandledPullPayload {
         try {
             // 若文件名与最近一次处理的文件相同，则视为内容未更新，避免重复触发预览
             val prevName = try {
@@ -521,7 +533,7 @@ class SyncClipboardManager(
             }
             if (fileName.isNotEmpty() && fileName == prevName) {
                 Log.d(TAG, "File payload unchanged, skip preview: $fileName")
-                return fileName
+                return HandledPullPayload(fileName)
             }
 
             val entryType = when (type.lowercase()) {
@@ -565,10 +577,10 @@ class SyncClipboardManager(
             }
 
             Log.d(TAG, "File payload handled: $fileName (type: $type, status: $downloadStatus)")
-            return fileName
+            return HandledPullPayload(fileName)
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to handle file payload: $fileName", e)
-            return fileName
+            return HandledPullPayload(fileName)
         }
     }
 
@@ -673,7 +685,7 @@ class SyncClipboardManager(
                 .get()
                 .build()
 
-            client.newCall(req).execute().use { resp ->
+            httpClient.newCall(req).execute().use { resp ->
                 if (!resp.isSuccessful) {
                     Log.w(TAG, "Download failed: ${resp.code}")
                     return false to null
@@ -721,7 +733,12 @@ class SyncClipboardManager(
     fun proactiveUploadIfChanged() {
         val url = buildUrl() ?: return
         val authB64 = authHeaderB64() ?: return
-        val text = readClipboardText() ?: return
+        val read = clipboardPort.readText() ?: return
+        if (read.isSensitive) {
+            Log.d(TAG, "proactiveUpload skipped: sensitive clipboard, chars=${read.text.length}")
+            return
+        }
+        val text = read.text
         if (text.isEmpty()) return
         val newHash = try {
             sha256Hex(text)
