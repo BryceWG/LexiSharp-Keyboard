@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text as MaterialText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -127,45 +128,63 @@ private fun UpdateResultDialog(
     onOpenReleasePage: () -> Unit,
     onOpenChangelog: () -> Unit
 ) {
+    val exit = rememberSettingsDialogExitController(result)
+    fun finishDismiss() {
+        exit.finish()
+    }
+    val title = stringResource(
+        if (hasUpdate) R.string.update_dialog_title else R.string.current_version_info_title
+    )
+    val primaryText = stringResource(if (hasUpdate) R.string.btn_download else android.R.string.ok)
+    val primaryAction: () -> Unit = if (hasUpdate) {
+        { exit.dismiss(onDownload) }
+    } else {
+        { exit.dismiss(onDismiss) }
+    }
     when (uiMode) {
-        BibiUiMode.Material -> MaterialSettingsAlertDialog(
-            onDismissRequest = onDismiss,
-            title = stringResource(
-                if (hasUpdate) R.string.update_dialog_title else R.string.current_version_info_title
-            ),
-            text = {
-                UpdateMessageContent(
-                    result = result,
-                    hasUpdate = hasUpdate,
-                    uiMode = uiMode
-                )
-            },
-            buttons = {
-                MaterialSettingsDialogButtonRow(
-                    actions = listOf(
-                        MaterialSettingsDialogAction(
-                            text = stringResource(R.string.btn_view_changelog),
-                            onClick = onOpenChangelog
-                        ),
-                        MaterialSettingsDialogAction(
-                            text = stringResource(R.string.btn_view_release_page),
-                            onClick = onOpenReleasePage
-                        ),
-                        MaterialSettingsDialogAction(
-                            text = stringResource(if (hasUpdate) R.string.btn_download else android.R.string.ok),
-                            onClick = if (hasUpdate) onDownload else onDismiss
+        BibiUiMode.Material -> {
+            val alpha = animateSettingsDialogExitAlpha(
+                show = exit.show,
+                label = "UpdateResultDialogAlpha"
+            )
+            MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
+            MaterialSettingsAlertDialog(
+                onDismissRequest = { exit.dismiss(onDismiss) },
+                modifier = Modifier.graphicsLayer(alpha = alpha),
+                title = title,
+                text = {
+                    UpdateMessageContent(
+                        result = result,
+                        hasUpdate = hasUpdate,
+                        uiMode = uiMode
+                    )
+                },
+                buttons = {
+                    MaterialSettingsDialogButtonRow(
+                        actions = listOf(
+                            MaterialSettingsDialogAction(
+                                text = stringResource(R.string.btn_view_changelog),
+                                onClick = onOpenChangelog
+                            ),
+                            MaterialSettingsDialogAction(
+                                text = stringResource(R.string.btn_view_release_page),
+                                onClick = onOpenReleasePage
+                            ),
+                            MaterialSettingsDialogAction(
+                                text = primaryText,
+                                onClick = primaryAction
+                            )
                         )
                     )
-                )
-            }
-        )
+                }
+            )
+        }
 
         BibiUiMode.Miuix -> OverlayDialog(
-            show = true,
-            title = stringResource(
-                if (hasUpdate) R.string.update_dialog_title else R.string.current_version_info_title
-            ),
-            onDismissRequest = onDismiss
+            show = exit.show,
+            title = title,
+            onDismissRequest = { exit.dismiss(onDismiss) },
+            onDismissFinished = ::finishDismiss
         ) {
             UpdateMessageContent(
                 result = result,
@@ -185,8 +204,8 @@ private fun UpdateResultDialog(
                         onClick = onOpenReleasePage
                     ),
                     SettingsDialogAction(
-                        text = stringResource(if (hasUpdate) R.string.btn_download else android.R.string.ok),
-                        onClick = if (hasUpdate) onDownload else onDismiss,
+                        text = primaryText,
+                        onClick = primaryAction,
                         primary = true
                     )
                 )
@@ -203,37 +222,50 @@ private fun UpdateFailedDialog(
     onManualCheck: () -> Unit
 ) {
     val title = stringResource(R.string.update_check_failed, message.ifBlank { "Unknown error" })
+    val exit = rememberSettingsDialogExitController(title)
+    fun finishDismiss() {
+        exit.finish()
+    }
     when (uiMode) {
-        BibiUiMode.Material -> MaterialSettingsAlertDialog(
-            onDismissRequest = onDismiss,
-            title = title,
-            buttons = {
-                MaterialSettingsDialogButtonRow(
-                    actions = listOf(
-                        MaterialSettingsDialogAction(
-                            text = stringResource(R.string.btn_cancel),
-                            onClick = onDismiss
-                        ),
-                        MaterialSettingsDialogAction(
-                            text = stringResource(R.string.btn_manual_check),
-                            onClick = onManualCheck
+        BibiUiMode.Material -> {
+            val alpha = animateSettingsDialogExitAlpha(
+                show = exit.show,
+                label = "UpdateFailedDialogAlpha"
+            )
+            MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
+            MaterialSettingsAlertDialog(
+                onDismissRequest = { exit.dismiss(onDismiss) },
+                modifier = Modifier.graphicsLayer(alpha = alpha),
+                title = title,
+                buttons = {
+                    MaterialSettingsDialogButtonRow(
+                        actions = listOf(
+                            MaterialSettingsDialogAction(
+                                text = stringResource(R.string.btn_cancel),
+                                onClick = { exit.dismiss(onDismiss) }
+                            ),
+                            MaterialSettingsDialogAction(
+                                text = stringResource(R.string.btn_manual_check),
+                                onClick = onManualCheck
+                            )
                         )
                     )
-                )
-            }
-        )
+                }
+            )
+        }
 
         BibiUiMode.Miuix -> OverlayDialog(
-            show = true,
+            show = exit.show,
             title = title,
-            onDismissRequest = onDismiss
+            onDismissRequest = { exit.dismiss(onDismiss) },
+            onDismissFinished = ::finishDismiss
         ) {
             SettingsDialogActionRow(
                 uiMode = BibiUiMode.Miuix,
                 actions = listOf(
                     SettingsDialogAction(
                         text = stringResource(R.string.btn_cancel),
-                        onClick = onDismiss
+                        onClick = { exit.dismiss(onDismiss) }
                     ),
                     SettingsDialogAction(
                         text = stringResource(R.string.btn_manual_check),

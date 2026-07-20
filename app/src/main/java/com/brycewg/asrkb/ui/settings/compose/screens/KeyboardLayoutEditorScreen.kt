@@ -64,6 +64,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -91,6 +92,7 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsAlertDialog
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogButtonRow
+import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogExitEffect
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogActionRow
@@ -99,6 +101,8 @@ import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialogSta
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsPreference
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSheetActionRow
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsTextField
+import com.brycewg.asrkb.ui.settings.compose.components.animateSettingsDialogExitAlpha
+import com.brycewg.asrkb.ui.settings.compose.components.rememberSettingsDialogExitController
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.LocalSettingsHapticTap
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
@@ -633,39 +637,51 @@ private fun KeyboardLayoutJsonDialog(
     val title = stringResource(R.string.keyboard_layout_import_export)
     val importText = stringResource(R.string.keyboard_layout_import_json)
     val copyText = stringResource(R.string.keyboard_layout_copy_json)
+    val exit = rememberSettingsDialogExitController()
+    fun finishDismiss() {
+        exit.finish()
+    }
     when (uiMode) {
-        BibiUiMode.Material -> MaterialSettingsAlertDialog(
-            title = title,
-            onDismissRequest = onDismiss,
-            text = {
-                KeyboardLayoutJsonDialogContent(
-                    uiMode = uiMode,
-                    jsonText = jsonText,
-                    onJsonTextChange = onJsonTextChange
-                )
-            },
-            buttons = {
-                MaterialSettingsDialogButtonRow(
-                    actions = listOf(
-                        MaterialSettingsDialogAction(
-                            text = importText,
-                            onClick = onImport
-                        ),
-                        MaterialSettingsDialogAction(
-                            text = copyText,
-                            onClick = onCopy,
-                            primary = true
+        BibiUiMode.Material -> {
+            val alpha = animateSettingsDialogExitAlpha(
+                show = exit.show,
+                label = "KeyboardLayoutJsonDialogAlpha"
+            )
+            MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
+            MaterialSettingsAlertDialog(
+                title = title,
+                onDismissRequest = { exit.dismiss(onDismiss) },
+                modifier = Modifier.graphicsLayer(alpha = alpha),
+                text = {
+                    KeyboardLayoutJsonDialogContent(
+                        uiMode = uiMode,
+                        jsonText = jsonText,
+                        onJsonTextChange = onJsonTextChange
+                    )
+                },
+                buttons = {
+                    MaterialSettingsDialogButtonRow(
+                        actions = listOf(
+                            MaterialSettingsDialogAction(
+                                text = importText,
+                                onClick = onImport
+                            ),
+                            MaterialSettingsDialogAction(
+                                text = copyText,
+                                onClick = onCopy,
+                                primary = true
+                            )
                         )
                     )
-                )
-            }
-        )
+                }
+            )
+        }
 
         BibiUiMode.Miuix -> OverlayDialog(
-            show = true,
+            show = exit.show,
             title = title,
-            onDismissRequest = onDismiss,
-            onDismissFinished = {}
+            onDismissRequest = { exit.dismiss(onDismiss) },
+            onDismissFinished = ::finishDismiss
         ) {
             KeyboardLayoutJsonDialogContent(
                 uiMode = uiMode,

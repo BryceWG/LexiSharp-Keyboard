@@ -61,6 +61,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -71,12 +72,15 @@ import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsAlertDialog
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogButtonRow
+import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogExitEffect
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsAssistChip
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogActionRow
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsFilterChip
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSearchField
+import com.brycewg.asrkb.ui.settings.compose.components.animateSettingsDialogExitAlpha
+import com.brycewg.asrkb.ui.settings.compose.components.rememberSettingsDialogExitController
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import java.text.SimpleDateFormat
@@ -270,10 +274,12 @@ fun AsrHistoryScreen(
             llmAvailable = llmAvailable,
             working = rerunJob?.isActive == true,
             error = rerunError,
-            onDismiss = {
+            onDismissStarted = {
                 rerunJob?.cancel()
                 rerunJob = null
                 rerunError = null
+            },
+            onDismiss = {
                 selectedRecord = null
             },
             onCopy = { onCopy(it) },
@@ -658,11 +664,22 @@ private fun HistoryDetailsDialog(
     llmAvailable: Boolean,
     working: Boolean,
     error: String?,
+    onDismissStarted: () -> Unit,
     onDismiss: () -> Unit,
     onCopy: (String) -> Unit,
     onReRecognize: () -> Unit,
     onReprocess: () -> Unit
 ) {
+    val exit = rememberSettingsDialogExitController(record.id)
+    fun finishDismiss() {
+        exit.finish()
+    }
+    fun dismissDialog() {
+        if (!exit.show) return
+        onDismissStarted()
+        exit.dismiss(onDismiss)
+    }
+
     val content: @Composable () -> Unit = {
         SelectionContainer {
             Column(
@@ -729,10 +746,6 @@ private fun HistoryDetailsDialog(
     }
     val actions = listOf(
         SettingsDialogAction(
-            text = stringResource(R.string.btn_close),
-            onClick = onDismiss
-        ),
-        SettingsDialogAction(
             text = stringResource(R.string.btn_rerecognize),
             onClick = onReRecognize,
             enabled = hasAudio && !working
@@ -745,28 +758,37 @@ private fun HistoryDetailsDialog(
         )
     )
     when (uiMode) {
-        BibiUiMode.Material -> MaterialSettingsAlertDialog(
-            title = stringResource(R.string.history_details_title),
-            onDismissRequest = onDismiss,
-            text = content,
-            buttons = {
-                MaterialSettingsDialogButtonRow(
-                    actions.map {
-                        MaterialSettingsDialogAction(
-                            text = it.text,
-                            onClick = it.onClick,
-                            enabled = it.enabled,
-                            primary = it.primary
-                        )
-                    }
-                )
-            }
-        )
+        BibiUiMode.Material -> {
+            val alpha = animateSettingsDialogExitAlpha(
+                show = exit.show,
+                label = "HistoryDetailsDialogAlpha"
+            )
+            MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
+            MaterialSettingsAlertDialog(
+                title = stringResource(R.string.history_details_title),
+                onDismissRequest = ::dismissDialog,
+                modifier = Modifier.graphicsLayer(alpha = alpha),
+                text = content,
+                buttons = {
+                    MaterialSettingsDialogButtonRow(
+                        actions.map {
+                            MaterialSettingsDialogAction(
+                                text = it.text,
+                                onClick = it.onClick,
+                                enabled = it.enabled,
+                                primary = it.primary
+                            )
+                        }
+                    )
+                }
+            )
+        }
 
         BibiUiMode.Miuix -> OverlayDialog(
-            show = true,
+            show = exit.show,
             title = stringResource(R.string.history_details_title),
-            onDismissRequest = onDismiss
+            onDismissRequest = ::dismissDialog,
+            onDismissFinished = ::finishDismiss
         ) {
             content()
             Spacer(modifier = Modifier.height(12.dp))
@@ -877,38 +899,51 @@ private fun DeleteSelectedDialog(
     val message = stringResource(R.string.dialog_delete_selected_msg, selectedCount)
     val confirm = stringResource(R.string.dialog_filter_ok)
     val cancel = stringResource(R.string.dialog_filter_cancel)
+    val exit = rememberSettingsDialogExitController()
+    fun finishDismiss() {
+        exit.finish()
+    }
 
     when (uiMode) {
-        BibiUiMode.Material -> MaterialSettingsAlertDialog(
-            onDismissRequest = onDismiss,
-            title = title,
-            text = { Text(message) },
-            buttons = {
-                MaterialSettingsDialogButtonRow(
-                    actions = listOf(
-                        MaterialSettingsDialogAction(cancel, onDismiss),
-                        MaterialSettingsDialogAction(confirm, onConfirm)
+        BibiUiMode.Material -> {
+            val alpha = animateSettingsDialogExitAlpha(
+                show = exit.show,
+                label = "DeleteSelectedDialogAlpha"
+            )
+            MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
+            MaterialSettingsAlertDialog(
+                onDismissRequest = { exit.dismiss(onDismiss) },
+                modifier = Modifier.graphicsLayer(alpha = alpha),
+                title = title,
+                text = { Text(message) },
+                buttons = {
+                    MaterialSettingsDialogButtonRow(
+                        actions = listOf(
+                            MaterialSettingsDialogAction(cancel, onClick = { exit.dismiss(onDismiss) }),
+                            MaterialSettingsDialogAction(confirm, onClick = { exit.dismiss(onConfirm) })
+                        )
                     )
-                )
-            }
-        )
+                }
+            )
+        }
 
         BibiUiMode.Miuix -> OverlayDialog(
-            show = true,
+            show = exit.show,
             title = title,
             summary = message,
-            onDismissRequest = onDismiss
+            onDismissRequest = { exit.dismiss(onDismiss) },
+            onDismissFinished = ::finishDismiss
         ) {
             SettingsDialogActionRow(
                 uiMode = BibiUiMode.Miuix,
                 actions = listOf(
                     SettingsDialogAction(
                         text = cancel,
-                        onClick = onDismiss
+                        onClick = { exit.dismiss(onDismiss) }
                     ),
                     SettingsDialogAction(
                         text = confirm,
-                        onClick = onConfirm,
+                        onClick = { exit.dismiss(onConfirm) },
                         primary = true
                     )
                 )
@@ -939,6 +974,21 @@ private fun HistoryFilterDialog(
     val confirm = stringResource(R.string.dialog_filter_ok)
     val cancel = stringResource(R.string.dialog_filter_cancel)
     val reset = stringResource(R.string.dialog_filter_reset)
+    val exit = rememberSettingsDialogExitController(filterState)
+    fun finishDismiss() {
+        exit.finish()
+    }
+    fun applyFilter() {
+        exit.dismiss {
+            onApply(
+                HistoryFilterState(
+                    vendorIds = tempVendorIds,
+                    sources = tempSources,
+                    timeFilter = tempTimeFilter
+                )
+            )
+        }
+    }
 
     val content: @Composable () -> Unit = {
         FilterDialogContent(
@@ -954,36 +1004,37 @@ private fun HistoryFilterDialog(
     }
 
     when (uiMode) {
-        BibiUiMode.Material -> MaterialSettingsAlertDialog(
-            onDismissRequest = onDismiss,
-            title = title,
-            text = content,
-            buttons = {
-                MaterialSettingsDialogButtonRow(
-                    actions = listOf(
-                        MaterialSettingsDialogAction(reset, onReset),
-                        MaterialSettingsDialogAction(cancel, onDismiss),
-                        MaterialSettingsDialogAction(
-                            text = confirm,
-                            onClick = {
-                                onApply(
-                                    HistoryFilterState(
-                                        vendorIds = tempVendorIds,
-                                        sources = tempSources,
-                                        timeFilter = tempTimeFilter
-                                    )
-                                )
-                            }
+        BibiUiMode.Material -> {
+            val alpha = animateSettingsDialogExitAlpha(
+                show = exit.show,
+                label = "HistoryFilterDialogAlpha"
+            )
+            MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
+            MaterialSettingsAlertDialog(
+                onDismissRequest = { exit.dismiss(onDismiss) },
+                modifier = Modifier.graphicsLayer(alpha = alpha),
+                title = title,
+                text = content,
+                buttons = {
+                    MaterialSettingsDialogButtonRow(
+                        actions = listOf(
+                            MaterialSettingsDialogAction(reset, onClick = { exit.dismiss(onReset) }),
+                            MaterialSettingsDialogAction(cancel, onClick = { exit.dismiss(onDismiss) }),
+                            MaterialSettingsDialogAction(
+                                text = confirm,
+                                onClick = ::applyFilter
+                            )
                         )
                     )
-                )
-            }
-        )
+                }
+            )
+        }
 
         BibiUiMode.Miuix -> OverlayDialog(
-            show = true,
+            show = exit.show,
             title = title,
-            onDismissRequest = onDismiss
+            onDismissRequest = { exit.dismiss(onDismiss) },
+            onDismissFinished = ::finishDismiss
         ) {
             content()
             Spacer(modifier = Modifier.height(12.dp))
@@ -992,23 +1043,15 @@ private fun HistoryFilterDialog(
                 actions = listOf(
                     SettingsDialogAction(
                         text = reset,
-                        onClick = onReset
+                        onClick = { exit.dismiss(onReset) }
                     ),
                     SettingsDialogAction(
                         text = cancel,
-                        onClick = onDismiss
+                        onClick = { exit.dismiss(onDismiss) }
                     ),
                     SettingsDialogAction(
                         text = confirm,
-                        onClick = {
-                            onApply(
-                                HistoryFilterState(
-                                    vendorIds = tempVendorIds,
-                                    sources = tempSources,
-                                    timeFilter = tempTimeFilter
-                                )
-                            )
-                        },
+                        onClick = ::applyFilter,
                         primary = true
                     )
                 ),

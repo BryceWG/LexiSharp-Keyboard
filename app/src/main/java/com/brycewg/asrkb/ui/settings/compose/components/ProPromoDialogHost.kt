@@ -196,4 +196,4 @@ private fun ProPromoDialogPane(
     }
 }
 
-private const val PRO_DIALOG_EXIT_MILLIS = 180
+private const val PRO_DIALOG_EXIT_MILLIS = SETTINGS_DIALOG_EXIT_MILLIS

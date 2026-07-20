@@ -85,7 +85,7 @@ internal fun SettingsMessageDialog(
             onDismiss = {
                 dismiss {}
                 scope.launch {
-                    kotlinx.coroutines.delay(SETTINGS_DIALOG_EXIT_MILLIS)
+                    kotlinx.coroutines.delay(SETTINGS_DIALOG_EXIT_MILLIS.toLong())
                     afterDismiss?.invoke()
                     onDismiss()
                 }
@@ -93,7 +93,7 @@ internal fun SettingsMessageDialog(
             onDismissAfter = { action ->
                 dismiss(action)
                 scope.launch {
-                    kotlinx.coroutines.delay(SETTINGS_DIALOG_EXIT_MILLIS)
+                    kotlinx.coroutines.delay(SETTINGS_DIALOG_EXIT_MILLIS.toLong())
                     afterDismiss?.invoke()
                     onDismiss()
                 }
@@ -140,7 +140,7 @@ internal fun SettingsLongTextDialog(
         show = false
         if (uiMode == BibiUiMode.Material) {
             scope.launch {
-                kotlinx.coroutines.delay(SETTINGS_DIALOG_EXIT_MILLIS)
+                kotlinx.coroutines.delay(SETTINGS_DIALOG_EXIT_MILLIS.toLong())
                 onDismiss()
             }
         }
@@ -423,5 +423,3 @@ private fun progressCancelAction(
         }
     )
 }
-
-private const val SETTINGS_DIALOG_EXIT_MILLIS = 180L

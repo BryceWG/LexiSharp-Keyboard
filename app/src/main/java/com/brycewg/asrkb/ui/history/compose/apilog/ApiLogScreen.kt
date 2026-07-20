@@ -7,8 +7,6 @@
 
 package com.brycewg.asrkb.ui.history.compose.apilog
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,7 +46,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,13 +67,15 @@ import com.brycewg.asrkb.store.ApiLogStore
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsAlertDialog
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogButtonRow
+import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogExitEffect
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogActionRow
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSearchField
+import com.brycewg.asrkb.ui.settings.compose.components.animateSettingsDialogExitAlpha
+import com.brycewg.asrkb.ui.settings.compose.components.rememberSettingsDialogExitController
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
-import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.Card as MiuixCard
 import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
 import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
@@ -514,29 +513,20 @@ private fun ClearApiLogDialog(
     val message = stringResource(R.string.dialog_clear_api_log_message)
     val confirm = stringResource(R.string.dialog_filter_ok)
     val cancel = stringResource(R.string.dialog_filter_cancel)
-    var show by remember { mutableStateOf(true) }
-    var afterDismiss by remember { mutableStateOf<(() -> Unit)?>(null) }
-
-    fun dismissAfter(action: () -> Unit = onDismiss) {
-        afterDismiss = action
-        show = false
+    val exit = rememberSettingsDialogExitController()
+    fun finishDismiss() {
+        exit.finish()
     }
 
     when (uiMode) {
         BibiUiMode.Material -> {
-            val alpha by animateFloatAsState(
-                targetValue = if (show) 1f else 0f,
-                animationSpec = tween(API_LOG_DIALOG_EXIT_MILLIS),
+            val alpha = animateSettingsDialogExitAlpha(
+                show = exit.show,
                 label = "ClearApiLogDialogAlpha"
             )
-            LaunchedEffect(show) {
-                if (!show) {
-                    delay(API_LOG_DIALOG_EXIT_MILLIS.toLong())
-                    afterDismiss?.invoke()
-                }
-            }
+            MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
             MaterialSettingsAlertDialog(
-                onDismissRequest = { dismissAfter() },
+                onDismissRequest = { exit.dismiss(onDismiss) },
                 modifier = Modifier.graphicsLayer(alpha = alpha),
                 title = title,
                 text = { Text(message) },
@@ -545,11 +535,11 @@ private fun ClearApiLogDialog(
                         actions = listOf(
                             MaterialSettingsDialogAction(
                                 text = cancel,
-                                onClick = { dismissAfter() }
+                                onClick = { exit.dismiss(onDismiss) }
                             ),
                             MaterialSettingsDialogAction(
                                 text = confirm,
-                                onClick = { dismissAfter(onConfirm) }
+                                onClick = { exit.dismiss(onConfirm) }
                             )
                         )
                     )
@@ -558,22 +548,22 @@ private fun ClearApiLogDialog(
         }
 
         BibiUiMode.Miuix -> OverlayDialog(
-            show = show,
+            show = exit.show,
             title = title,
             summary = message,
-            onDismissRequest = { dismissAfter() },
-            onDismissFinished = { afterDismiss?.invoke() }
+            onDismissRequest = { exit.dismiss(onDismiss) },
+            onDismissFinished = ::finishDismiss
         ) {
             SettingsDialogActionRow(
                 uiMode = BibiUiMode.Miuix,
                 actions = listOf(
                     SettingsDialogAction(
                         text = cancel,
-                        onClick = { dismissAfter() }
+                        onClick = { exit.dismiss(onDismiss) }
                     ),
                     SettingsDialogAction(
                         text = confirm,
-                        onClick = { dismissAfter(onConfirm) },
+                        onClick = { exit.dismiss(onConfirm) },
                         primary = true
                     )
                 )
@@ -602,27 +592,17 @@ private fun MaterialDetailsDialog(
     onCopy: () -> Unit
 ) {
     val context = LocalContext.current
-    var show by remember(record.id) { mutableStateOf(true) }
-    var afterDismiss by remember(record.id) { mutableStateOf<(() -> Unit)?>(null) }
-
-    fun dismissAfter(action: () -> Unit = onDismiss) {
-        afterDismiss = action
-        show = false
+    val exit = rememberSettingsDialogExitController(record.id)
+    fun finishDismiss() {
+        exit.finish()
     }
-
-    val alpha by animateFloatAsState(
-        targetValue = if (show) 1f else 0f,
-        animationSpec = tween(API_LOG_DIALOG_EXIT_MILLIS),
+    val alpha = animateSettingsDialogExitAlpha(
+        show = exit.show,
         label = "ApiLogDetailsDialogAlpha"
     )
-    LaunchedEffect(show) {
-        if (!show) {
-            delay(API_LOG_DIALOG_EXIT_MILLIS.toLong())
-            afterDismiss?.invoke()
-        }
-    }
+    MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
     MaterialSettingsAlertDialog(
-        onDismissRequest = { dismissAfter() },
+        onDismissRequest = { exit.dismiss(onDismiss) },
         modifier = Modifier.graphicsLayer(alpha = alpha),
         titleContent = {
             Text(
@@ -643,11 +623,11 @@ private fun MaterialDetailsDialog(
                 actions = listOf(
                     MaterialSettingsDialogAction(
                         text = stringResource(R.string.btn_close),
-                        onClick = { dismissAfter() }
+                        onClick = { exit.dismiss(onDismiss) }
                     ),
                     MaterialSettingsDialogAction(
                         text = stringResource(R.string.btn_copy),
-                        onClick = { dismissAfter(onCopy) }
+                        onClick = { exit.dismiss(onCopy) }
                     )
                 )
             )
@@ -662,19 +642,16 @@ private fun MiuixDetailsDialog(
     onCopy: () -> Unit
 ) {
     val context = LocalContext.current
-    var show by remember(record.id) { mutableStateOf(true) }
-    var afterDismiss by remember(record.id) { mutableStateOf<(() -> Unit)?>(null) }
-
-    fun dismissAfter(action: () -> Unit = onDismiss) {
-        afterDismiss = action
-        show = false
+    val exit = rememberSettingsDialogExitController(record.id)
+    fun finishDismiss() {
+        exit.finish()
     }
 
     OverlayDialog(
-        show = show,
+        show = exit.show,
         title = apiLogTitle(context, record),
-        onDismissRequest = { dismissAfter() },
-        onDismissFinished = { afterDismiss?.invoke() }
+        onDismissRequest = { exit.dismiss(onDismiss) },
+        onDismissFinished = ::finishDismiss
     ) {
         DetailsContent(
             record = record,
@@ -689,20 +666,17 @@ private fun MiuixDetailsDialog(
             actions = listOf(
                 SettingsDialogAction(
                     text = stringResource(R.string.btn_close),
-                    onClick = { dismissAfter() }
+                    onClick = { exit.dismiss(onDismiss) }
                 ),
                 SettingsDialogAction(
                     text = stringResource(R.string.btn_copy),
-                    onClick = { dismissAfter(onCopy) },
+                    onClick = { exit.dismiss(onCopy) },
                     primary = true
                 )
             )
         )
     }
 }
-
-private const val API_LOG_DIALOG_EXIT_MILLIS = 180
-
 @Composable
 private fun DetailsContent(
     record: ApiLogStore.ApiLogRecord,

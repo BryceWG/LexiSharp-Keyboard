@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
@@ -131,57 +132,77 @@ internal fun SettingsFeatureExplainerDialog(
 ) {
     val visibleState = state ?: return
     var dontShowAgain by remember(visibleState) { mutableStateOf(false) }
+    val exit = rememberSettingsDialogExitController(visibleState)
+
+    fun finishDismiss() {
+        exit.finish()
+    }
 
     fun confirm() {
-        if (dontShowAgain) visibleState.onDontShowAgain()
-        visibleState.onConfirm()
-        onDismiss()
+        exit.dismiss {
+            if (dontShowAgain) visibleState.onDontShowAgain()
+            visibleState.onConfirm()
+            onDismiss()
+        }
     }
 
     fun cancel() {
-        if (dontShowAgain) visibleState.onDontShowAgain()
-        visibleState.onCancel()
-        onDismiss()
+        exit.dismiss {
+            if (dontShowAgain) visibleState.onDontShowAgain()
+            visibleState.onCancel()
+            onDismiss()
+        }
     }
 
     fun dismissByScrim() {
-        visibleState.onCancel()
-        onDismiss()
+        exit.dismiss {
+            visibleState.onCancel()
+            onDismiss()
+        }
     }
 
     when (uiMode) {
-        BibiUiMode.Material -> MaterialSettingsAlertDialog(
-            onDismissRequest = ::dismissByScrim,
-            title = visibleState.title,
-            text = {
-                FeatureExplainerContent(
-                    state = visibleState,
-                    uiMode = uiMode,
-                    dontShowAgain = dontShowAgain,
-                    onDontShowAgainChange = { dontShowAgain = it },
-                    modifier = Modifier.padding(bottom = SettingsLayoutMetrics.SheetBottomPadding)
-                )
-            },
-            buttons = {
-                MaterialSettingsDialogButtonRow(
-                    actions = listOf(
-                        MaterialSettingsDialogAction(
-                            text = visibleState.cancelText,
-                            onClick = ::cancel
-                        ),
-                        MaterialSettingsDialogAction(
-                            text = visibleState.confirmText,
-                            onClick = ::confirm
+        BibiUiMode.Material -> {
+            val alpha = animateSettingsDialogExitAlpha(
+                show = exit.show,
+                label = "FeatureExplainerDialogAlpha"
+            )
+            MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
+            MaterialSettingsAlertDialog(
+                onDismissRequest = ::dismissByScrim,
+                modifier = Modifier.graphicsLayer(alpha = alpha),
+                title = visibleState.title,
+                text = {
+                    FeatureExplainerContent(
+                        state = visibleState,
+                        uiMode = uiMode,
+                        dontShowAgain = dontShowAgain,
+                        onDontShowAgainChange = { dontShowAgain = it },
+                        modifier = Modifier.padding(bottom = SettingsLayoutMetrics.SheetBottomPadding)
+                    )
+                },
+                buttons = {
+                    MaterialSettingsDialogButtonRow(
+                        actions = listOf(
+                            MaterialSettingsDialogAction(
+                                text = visibleState.cancelText,
+                                onClick = ::cancel
+                            ),
+                            MaterialSettingsDialogAction(
+                                text = visibleState.confirmText,
+                                onClick = ::confirm
+                            )
                         )
                     )
-                )
-            }
-        )
+                }
+            )
+        }
 
         BibiUiMode.Miuix -> OverlayDialog(
-            show = true,
+            show = exit.show,
             title = visibleState.title,
-            onDismissRequest = ::dismissByScrim
+            onDismissRequest = ::dismissByScrim,
+            onDismissFinished = ::finishDismiss
         ) {
             FeatureExplainerContent(
                 state = visibleState,
