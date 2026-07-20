@@ -54,6 +54,8 @@ internal object SettingsLayoutMetrics {
     val SheetHorizontalPadding = 20.dp
     val SheetBottomPadding = 16.dp
     val SheetTitleBottomPadding = 12.dp
+    /** Miuix 选择器自绘标题顶部留白。 */
+    val SheetDialogTitleTopPadding = 16.dp
     val SheetContentMaxHeight = 520.dp
     val SheetTopCorner = 28.dp
     val SheetActionButtonSpacing = 20.dp
