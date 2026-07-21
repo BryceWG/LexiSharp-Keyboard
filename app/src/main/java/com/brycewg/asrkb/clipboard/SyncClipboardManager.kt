@@ -39,10 +39,14 @@ private data class UploadClipboardPayload(
 private data class PullClipboardPayload(
     val text: String? = null,
     val type: String? = null,
+    val hash: String? = null,
+    val size: Long? = null,
     val hasData: Boolean? = null,
     val dataName: String? = null,
     @SerialName("Clipboard") val legacyClipboard: String? = null,
     @SerialName("Type") val legacyType: String? = null,
+    @SerialName("Hash") val legacyHash: String? = null,
+    @SerialName("Size") val legacySize: Long? = null,
     @SerialName("File") val legacyFile: String? = null
 )
 
@@ -97,16 +101,28 @@ class SyncClipboardManager(
     // 记录最近一次从服务端拉取的文本哈希，用于减少本地剪贴板读取次数
     @Volatile private var lastPulledServerHash: String? = null
 
+    /** 凭证/服务器配置世代；变化时立即作废旧接收路径。 */
+    @Volatile private var credentialsEpoch: Long = 0L
+
+    /** 息屏/后台保持：暂停观察与自动写入，保留 realtime 连接语义。 */
+    @Volatile private var clipboardEffectsPaused: Boolean = false
+
+    @Volatile private var pollingEnabled: Boolean = false
+
     val clipboardActor: SystemClipboardActor get() = clipboardPort.actor
 
-    fun start() {
+    fun start(pollingEnabled: Boolean = prefs.syncClipboardAutoPullEnabled) {
         if (!prefs.syncClipboardEnabled) return
+        this.pollingEnabled = pollingEnabled
+        clipboardEffectsPaused = false
         ensureObserver()
         ensureObserverRenewLoop()
         ensurePullLoop()
     }
 
     fun stop() {
+        credentialsEpoch++
+        clipboardEffectsPaused = false
         if (observing) {
             try {
                 clipboardPort.stopObserving()
@@ -115,18 +131,59 @@ class SyncClipboardManager(
             }
         }
         observing = false
-        pullJob?.cancel()
-        pullJob = null
+        stopPullLoop()
         observerRenewJob?.cancel()
         observerRenewJob = null
         lastPulledServerHash = null
+        pollingEnabled = false
+    }
+
+    /** 暂停剪贴板副作用，但保留亮屏后应恢复的 polling 选择。 */
+    fun pauseClipboardSideEffects() {
+        clipboardEffectsPaused = true
+        if (observing) {
+            try {
+                clipboardPort.stopObserving()
+            } catch (e: Throwable) {
+                Log.e(TAG, "Failed to pause clipboard observer", e)
+            }
+        }
+        observing = false
+        stopPullLoop()
+        observerRenewJob?.cancel()
+        observerRenewJob = null
+    }
+
+    /** 恢复剪贴板副作用（亮屏后）。 */
+    fun resumeClipboardSideEffects() {
+        if (!prefs.syncClipboardEnabled) return
+        clipboardEffectsPaused = false
+        ensureObserver()
+        ensureObserverRenewLoop()
+        ensurePullLoop()
+    }
+
+    /** 关闭同步或变更服务器/凭证后调用，立即作废旧响应与接收循环。 */
+    internal fun invalidateReceivePath() {
+        credentialsEpoch++
+        pollingEnabled = false
+        stopPullLoop()
+    }
+
+    internal fun setPollingEnabled(enabled: Boolean) {
+        if (pollingEnabled && !enabled) {
+            // OkHttp execute() is blocking; invalidate a response that may outlive Job.cancel().
+            credentialsEpoch++
+        }
+        pollingEnabled = enabled
+        ensurePullLoop()
     }
 
     private fun ensureObserver(force: Boolean = false) {
         if (observing && !force) return
         try {
             clipboardPort.startObserving {
-                if (!prefs.syncClipboardEnabled) return@startObserving
+                if (!prefs.syncClipboardEnabled || clipboardEffectsPaused) return@startObserving
                 scope.launch(ioDispatcher) {
                     try {
                         uploadCurrentClipboardText()
@@ -154,12 +211,25 @@ class SyncClipboardManager(
         }
     }
 
-    private fun ensurePullLoop() {
+    private fun stopPullLoop() {
         pullJob?.cancel()
-        if (!prefs.syncClipboardAutoPullEnabled) return
+        pullJob = null
+    }
+
+    private fun ensurePullLoop() {
+        stopPullLoop()
+        if (clipboardEffectsPaused) return
+        if (!pollingEnabled || !prefs.syncClipboardEnabled) return
         val intervalSec = prefs.syncClipboardPullIntervalSec.coerceIn(1, 600)
+        val epochAtStart = credentialsEpoch
         pullJob = scope.launch(ioDispatcher) {
-            while (isActive && prefs.syncClipboardEnabled && prefs.syncClipboardAutoPullEnabled) {
+            while (
+                isActive &&
+                prefs.syncClipboardEnabled &&
+                !clipboardEffectsPaused &&
+                pollingEnabled &&
+                credentialsEpoch == epochAtStart
+            ) {
                 try {
                     pullNow(updateClipboard = true)
                 } catch (e: Throwable) {
@@ -320,8 +390,13 @@ class SyncClipboardManager(
         }
     }
 
-    fun pullNow(updateClipboard: Boolean): Pair<Boolean, String?> {
+    fun pullNow(
+        updateClipboard: Boolean,
+        requestEpoch: Long = credentialsEpoch
+    ): Pair<Boolean, String?> {
+        if (!canApplyPullResponse(updateClipboard, requestEpoch)) return false to null
         val url = buildUrl() ?: return false to null
+        if (!canApplyPullResponse(updateClipboard, requestEpoch)) return false to null
 
         val result = try {
             executeRequestWithAuth(
@@ -339,63 +414,8 @@ class SyncClipboardManager(
                         return@executeRequestWithAuth null
                     }
 
-                    val payload = try {
-                        json.decodeFromString<PullClipboardPayload>(body)
-                    } catch (e: Throwable) {
-                        Log.e(TAG, "Failed to parse clipboard payload", e)
-                        return@executeRequestWithAuth null
-                    }
-
-                    val payloadType = resolvePayloadType(payload)
-                    when (payloadType.lowercase()) {
-                        "text" -> {
-                            val textDataName = if (payload.hasData == true) {
-                                payload.dataName?.takeIf { it.isNotEmpty() }
-                                    ?: payload.legacyFile?.takeIf { it.isNotEmpty() }
-                            } else {
-                                null
-                            }
-                            val text = if (!textDataName.isNullOrBlank()) {
-                                downloadTextData(textDataName)
-                            } else {
-                                resolvePayloadText(payload)
-                            }
-                            val nonBlankText = text?.takeIf { it.isNotBlank() }
-                            if (nonBlankText == null) {
-                                Log.w(TAG, "Clipboard text is blank")
-                                return@executeRequestWithAuth null
-                            }
-                            return@executeRequestWithAuth handleTextPayload(
-                                nonBlankText,
-                                updateClipboard
-                            )
-                        }
-                        "image", "file" -> {
-                            val fileName = resolvePayloadFileName(payload)
-                            val nonBlankFileName = fileName?.takeIf { it.isNotBlank() }
-                            if (nonBlankFileName == null) {
-                                Log.w(TAG, "File name is blank for type: $payloadType")
-                                return@executeRequestWithAuth null
-                            }
-                            val normalizedType = if (payloadType.equals(
-                                    "image",
-                                    ignoreCase = true
-                                )
-                            ) {
-                                "Image"
-                            } else {
-                                "File"
-                            }
-                            return@executeRequestWithAuth handleFilePayload(
-                                normalizedType,
-                                nonBlankFileName
-                            )
-                        }
-                        else -> {
-                            Log.w(TAG, "Unsupported payload type: $payloadType")
-                            return@executeRequestWithAuth null
-                        }
-                    }
+                    val payload = decodeRemoteProfile(body) ?: return@executeRequestWithAuth null
+                    applyRemoteProfile(payload, updateClipboard, requestEpoch)
                 }
             )
         } catch (e: Throwable) {
@@ -407,6 +427,81 @@ class SyncClipboardManager(
             result.clipboardApplied to result.value
         } else {
             false to null
+        }
+    }
+
+    /** Applies a realtime ProfileDto through the same pipeline used by HTTP pulls. */
+    internal fun captureRemoteProfileEpoch(): Long = credentialsEpoch
+
+    internal fun applyRemoteProfileJson(
+        profileJson: String,
+        requestEpoch: Long = credentialsEpoch
+    ): Boolean {
+        if (!canApplyPullResponse(updateClipboard = true, requestEpoch)) return false
+        val payload = decodeRemoteProfile(profileJson) ?: return false
+        return applyRemoteProfile(payload, updateClipboard = true, requestEpoch)
+            ?.clipboardApplied == true
+    }
+
+    private fun decodeRemoteProfile(profileJson: String): PullClipboardPayload? = try {
+        json.decodeFromString<PullClipboardPayload>(profileJson)
+    } catch (e: Throwable) {
+        Log.w(TAG, "Failed to parse remote clipboard profile", e)
+        null
+    }
+
+    private fun applyRemoteProfile(
+        payload: PullClipboardPayload,
+        updateClipboard: Boolean,
+        requestEpoch: Long
+    ): HandledPullPayload? {
+        if (!canApplyPullResponse(updateClipboard, requestEpoch)) return null
+        val payloadType = resolvePayloadType(payload)
+        return when (payloadType.lowercase()) {
+            "text" -> {
+                val textDataName = if (payload.hasData == true) {
+                    payload.dataName?.takeIf { it.isNotEmpty() }
+                        ?: payload.legacyFile?.takeIf { it.isNotEmpty() }
+                } else {
+                    null
+                }
+                val text = if (!textDataName.isNullOrBlank()) {
+                    downloadTextData(textDataName)
+                } else {
+                    resolvePayloadText(payload)
+                }
+                val nonBlankText = text?.takeIf { it.isNotBlank() }
+                if (nonBlankText == null) {
+                    Log.w(TAG, "Clipboard text is blank")
+                    return null
+                }
+                if (!canApplyPullResponse(updateClipboard, requestEpoch)) return null
+                handleTextPayload(nonBlankText, updateClipboard, requestEpoch)
+            }
+            "image", "file" -> {
+                val fileName = resolvePayloadFileName(payload)?.takeIf { it.isNotBlank() }
+                if (fileName == null) {
+                    Log.w(TAG, "File name is blank for type: $payloadType")
+                    return null
+                }
+                val normalizedType = if (payloadType.equals("image", ignoreCase = true)) {
+                    "Image"
+                } else {
+                    "File"
+                }
+                handleFilePayload(
+                    normalizedType,
+                    fileName,
+                    payload.hash ?: payload.legacyHash,
+                    payload.size ?: payload.legacySize,
+                    updateClipboard,
+                    requestEpoch
+                )
+            }
+            else -> {
+                Log.w(TAG, "Unsupported payload type: $payloadType")
+                null
+            }
         }
     }
 
@@ -469,7 +564,14 @@ class SyncClipboardManager(
     /**
      * 处理文本类型的 payload
      */
-    private fun handleTextPayload(text: String, updateClipboard: Boolean): HandledPullPayload {
+    private fun handleTextPayload(
+        text: String,
+        updateClipboard: Boolean,
+        requestEpoch: Long
+    ): HandledPullPayload {
+        if (!canApplyPullResponse(updateClipboard, requestEpoch)) {
+            return HandledPullPayload(text, clipboardApplied = false)
+        }
         // 远端内容变为文本时，清除历史中的文件条目与最近文件名记录
         try {
             clipboardStore?.clearFileEntries()
@@ -494,6 +596,9 @@ class SyncClipboardManager(
             }
             val cur = readClipboardText()
             if (text.isNotEmpty() && text != cur) {
+                if (!canApplyPullResponse(updateClipboard, requestEpoch)) {
+                    return HandledPullPayload(text, clipboardApplied = false)
+                }
                 val written = writeClipboardText(text)
                 if (!written) {
                     Log.w(TAG, "Clipboard port refused write, chars=${text.length} actor=${clipboardPort.actor}")
@@ -518,11 +623,25 @@ class SyncClipboardManager(
         return HandledPullPayload(text)
     }
 
+    private fun canApplyPullResponse(updateClipboard: Boolean, requestEpoch: Long): Boolean =
+        credentialsEpoch == requestEpoch &&
+            (!updateClipboard || (prefs.syncClipboardEnabled && !clipboardEffectsPaused))
+
     /**
      * 处理文件类型的 payload
      * 仅添加到历史记录，不自动下载
      */
-    private fun handleFilePayload(type: String, fileName: String): HandledPullPayload {
+    private fun handleFilePayload(
+        type: String,
+        fileName: String,
+        serverHash: String?,
+        serverSize: Long?,
+        updateClipboard: Boolean,
+        requestEpoch: Long
+    ): HandledPullPayload {
+        if (!canApplyPullResponse(updateClipboard, requestEpoch)) {
+            return HandledPullPayload(fileName, clipboardApplied = false)
+        }
         try {
             // 若文件名与最近一次处理的文件相同，则视为内容未更新，避免重复触发预览
             val prevName = try {
@@ -531,7 +650,13 @@ class SyncClipboardManager(
                 Log.e(TAG, "Failed to read last file name", e)
                 ""
             }
-            if (fileName.isNotEmpty() && fileName == prevName) {
+            val previousEntry = clipboardStore?.getHistory()?.firstOrNull {
+                it.type != EntryType.TEXT
+            }
+            val sameRemoteFile = fileName.isNotEmpty() && fileName == prevName &&
+                (serverHash.isNullOrBlank() ||
+                    previousEntry?.serverHash.equals(serverHash, ignoreCase = true))
+            if (sameRemoteFile) {
                 Log.d(TAG, "File payload unchanged, skip preview: $fileName")
                 return HandledPullPayload(fileName)
             }
@@ -544,6 +669,11 @@ class SyncClipboardManager(
 
             // 检查文件是否已下载
             val localFile = fileManager.getFile(fileName)
+            if (localFile.exists() && !serverHash.isNullOrBlank() &&
+                !previousEntry?.serverHash.equals(serverHash, ignoreCase = true)
+            ) {
+                fileManager.deleteFile(fileName)
+            }
             val downloadStatus = if (localFile.exists()) {
                 DownloadStatus.COMPLETED
             } else {
@@ -557,7 +687,8 @@ class SyncClipboardManager(
                 type = entryType,
                 fileName = fileName,
                 serverFileName = fileName,
-                fileSize = if (localFile.exists()) localFile.length() else null,
+                fileSize = serverSize ?: if (localFile.exists()) localFile.length() else null,
+                serverHash = serverHash,
                 localFilePath = localPath,
                 downloadStatus = downloadStatus
             )

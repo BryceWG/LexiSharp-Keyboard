@@ -3,15 +3,17 @@
 
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">مزامنة الحافظة</string>
-    <string name="label_enable_sync_clipboard">استخدام مشروع SyncClipboard لمزامنة الحافظة</string>
-    <string name="sc_mode_default_ime">الوضع: مزامنة خلفية عندما تكون BiBi لوحة الإدخال الافتراضية</string>
-    <string name="sc_mode_ime_bridge">الوضع: مزامنة بمساعدة IME Bridge</string>
-    <string name="sc_mode_manual_only">الوضع: يدوي فقط. فعّل IME Bridge متوافقاً أو اجعل BiBi لوحة الإدخال الافتراضية.</string>
+    <string name="label_enable_sync_clipboard">استخدام SyncClipboard لمزامنة الحافظة</string>
     <string name="label_sc_server_base">عنوان الخادم الأساسي (سيُلحق /SyncClipboard.json)</string>
     <string name="label_sc_username">اسم المستخدم</string>
     <string name="label_sc_password">كلمة المرور</string>
-    <string name="label_sc_auto_pull">سحب الحافظة دورياً</string>
-    <string name="label_sc_pull_interval">فترة السحب (ثانية، 1-600)</string>
+    <string name="label_sc_pull_interval">فترة السحب الدوري (ثانية، 1-600)</string>
+    <string name="label_sc_auto_receive">الاستقبال التلقائي</string>
+    <string name="summary_sc_auto_receive_off">متوقف: رفع فقط</string>
+    <string name="summary_sc_auto_receive_detecting">جارٍ اكتشاف ما يدعمه الخادم…</string>
+    <string name="summary_sc_auto_receive_realtime">مفعّل: الخادم يدعم المزامنة الفورية</string>
+    <string name="summary_sc_auto_receive_polling">مفعّل: استخدام السحب الدوري</string>
+    <string name="label_sc_keep_background_realtime">الحفاظ على اتصال فوري في الخلفية</string>
     <string name="btn_sc_test_pull">تحقق</string>
     <string name="sc_test_success">نجح السحب</string>
     <string name="sc_test_failed">فشل السحب. تحقّق من الرابط وبيانات الاعتماد.</string>

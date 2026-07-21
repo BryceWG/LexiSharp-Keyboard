@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.clipboard.ClipboardSyncRuntimeService
 import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.backup.WebDavBackupHelper
@@ -382,6 +383,11 @@ private suspend fun downloadFromWebdav(
 }
 
 private fun Context.refreshImeUi() {
+    try {
+        ClipboardSyncRuntimeService.notifyConfigChanged(this)
+    } catch (e: Exception) {
+        Log.e(TAG, "Failed to notify clipboard sync runtime", e)
+    }
     try {
         sendBroadcast(Intent(AsrKeyboardService.ACTION_REFRESH_IME_UI))
     } catch (e: Exception) {

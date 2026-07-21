@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.core.content.edit
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LEGACY_X_ASR_VENDOR_ID
+import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +62,39 @@ internal object PrefsInitTasks {
         ensureFunAsrItnDefaultIfMissing(sp)
         normalizeFunAsrVariantIfNeeded(sp)
         cleanupLegacyFunAsrModelsIfNeeded(appContext, sp)
+        migrateSyncClipboardReceiveModeIfNeeded(sp)
+    }
+
+    /**
+     * 将旧 realtime/auto-pull 组合迁移为互斥 Receive Mode。
+     * keepBackgroundRealtime 对所有升级用户默认 false。
+     */
+    internal fun migrateSyncClipboardReceiveModeIfNeeded(sp: SharedPreferences) {
+        try {
+            if (sp.contains(KEY_SC_RECEIVE_MODE)) {
+                if (!sp.contains(KEY_SC_KEEP_BACKGROUND_REALTIME)) {
+                    sp.edit { putBoolean(KEY_SC_KEEP_BACKGROUND_REALTIME, false) }
+                }
+                return
+            }
+            val realtime = try {
+                sp.getBoolean(KEY_SC_REALTIME, false)
+            } catch (_: ClassCastException) {
+                false
+            }
+            val autoPull = try {
+                sp.getBoolean(KEY_SC_AUTO_PULL, false)
+            } catch (_: ClassCastException) {
+                false
+            }
+            val mode = ClipboardSyncReceiveMode.fromLegacy(realtime, autoPull)
+            sp.edit {
+                putString(KEY_SC_RECEIVE_MODE, mode.id)
+                putBoolean(KEY_SC_KEEP_BACKGROUND_REALTIME, false)
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to migrate SyncClipboard receive mode", t)
+        }
     }
 
     private fun migrateRecordingAutoStopModeIfNeeded(sp: SharedPreferences) {

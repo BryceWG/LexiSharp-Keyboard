@@ -3,15 +3,17 @@
 
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">剪贴板同步</string>
-    <string name="label_enable_sync_clipboard">使用 SyncClipboard 项目来同步粘贴板</string>
-    <string name="sc_mode_default_ime">同步方式：说点啥默认输入法后台同步</string>
-    <string name="sc_mode_ime_bridge">同步方式：IME Bridge 辅助同步</string>
-    <string name="sc_mode_manual_only">同步方式：仅手动。请启用兼容的 IME Bridge，或将说点啥设为默认输入法。</string>
+    <string name="label_enable_sync_clipboard">使用 SyncClipboard 同步粘贴板</string>
     <string name="label_sc_server_base">服务器地址（会自动拼接 /SyncClipboard.json）</string>
     <string name="label_sc_username">用户名</string>
     <string name="label_sc_password">密码</string>
-    <string name="label_sc_auto_pull">定时拉取粘贴板内容</string>
-    <string name="label_sc_pull_interval">拉取间隔（秒，1-600）</string>
+    <string name="label_sc_pull_interval">定时拉取模式拉取间隔（秒，1-600）</string>
+    <string name="label_sc_auto_receive">自动接收</string>
+    <string name="summary_sc_auto_receive_off">已关闭：仅上传</string>
+    <string name="summary_sc_auto_receive_detecting">正在检测服务器支持的同步方式…</string>
+    <string name="summary_sc_auto_receive_realtime">已开启：服务器支持实时同步</string>
+    <string name="summary_sc_auto_receive_polling">已开启：使用定时拉取</string>
+    <string name="label_sc_keep_background_realtime">保持后台实时连接</string>
     <string name="btn_sc_test_pull">立即验证</string>
     <string name="sc_test_success">拉取成功</string>
     <string name="sc_test_failed">拉取失败，请检查地址与凭证</string>

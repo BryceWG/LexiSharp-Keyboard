@@ -27,10 +27,6 @@ import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.asr.ContinuousCaptureCoordinator
 import com.brycewg.asrkb.asr.ContinuousCaptureOwner
-import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
-import com.brycewg.asrkb.clipboard.SyncClipboardManager
-import com.brycewg.asrkb.clipboard.SystemClipboardActor
-import com.brycewg.asrkb.clipboard.SystemClipboardPortFactory
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.ui.SettingsActivity
@@ -45,10 +41,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 /**
  * 悬浮球语音识别服务
@@ -95,11 +88,6 @@ class FloatingAsrService : Service() {
     private var localPreloadTriggered: Boolean = false
     private var recordingForegroundActive: Boolean = false
     private var continuousCaptureForegroundActive: Boolean = false
-    @Volatile private var syncClipboardManager: SyncClipboardManager? = null
-    private var syncClipboardTargetPackage: String? = null
-    private var syncClipboardRefreshJob: kotlinx.coroutines.Job? = null
-    private val syncClipboardRefreshMutex = Mutex()
-    @Volatile private var syncClipboardDestroyed = false
     private val imeBridgeClient by lazy { ImeBridgeClient(applicationContext) }
 
     private val hintReceiver = object : android.content.BroadcastReceiver() {
@@ -207,7 +195,6 @@ class FloatingAsrService : Service() {
         }
 
         refreshBridgeImeVisibility("service_create")
-        refreshClipboardSync("service_create")
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -229,7 +216,6 @@ class FloatingAsrService : Service() {
             false
         }
         Log.d(TAG, "onStartCommand: action=${intent?.action}, floatingAsrEnabled=$enabled")
-        refreshClipboardSync("start_command")
 
         when (intent?.action) {
             ACTION_SHOW -> {
@@ -279,10 +265,6 @@ class FloatingAsrService : Service() {
             Log.w(TAG, "Failed to cancel notifier", e)
         }
         stopRecordingForeground(force = true)
-        syncClipboardDestroyed = true
-        syncClipboardRefreshJob?.cancel()
-        syncClipboardRefreshJob = null
-        stopClipboardSync()
 
         hideBall()
         viewManager.cleanup()
@@ -479,66 +461,6 @@ class FloatingAsrService : Service() {
     private fun handleAccessibilityImeVisibilityHint(visible: Boolean, src: String) {
         imeVisible = visible
         applyImeVisibilitySideEffects(src)
-        refreshClipboardSync("ime_hint:$src")
-    }
-
-    private fun refreshClipboardSync(src: String) {
-        if (syncClipboardDestroyed) return
-        syncClipboardRefreshJob?.cancel()
-        syncClipboardRefreshJob = serviceScope.launch(Dispatchers.IO) {
-            syncClipboardRefreshMutex.withLock {
-                coroutineContext.ensureActive()
-                val enabled = try {
-                    prefs.syncClipboardEnabled
-                } catch (e: Throwable) {
-                    Log.w(TAG, "Failed to read SyncClipboard enabled state", e)
-                    false
-                }
-                val currentIme = ImeBridgeClient.resolveCurrentImePackage(this@FloatingAsrService)
-                if (!enabled || currentIme == null || currentIme == packageName) {
-                    stopClipboardSync()
-                    return@withLock
-                }
-
-                val currentManager = syncClipboardManager
-                if (currentManager != null && syncClipboardTargetPackage == currentIme) {
-                    currentManager.stop()
-                    currentManager.start()
-                    return@withLock
-                }
-
-                stopClipboardSync()
-                val port = SystemClipboardPortFactory.create(this@FloatingAsrService, prefs)
-                coroutineContext.ensureActive()
-                if (port.actor != SystemClipboardActor.BRIDGE) {
-                    Log.d(TAG, "Clipboard bridge unavailable for $currentIme, src=$src")
-                    return@withLock
-                }
-                val manager = SyncClipboardManager(
-                    context = this@FloatingAsrService,
-                    prefs = prefs,
-                    scope = serviceScope,
-                    clipboardStore = ClipboardHistoryStore(this@FloatingAsrService, prefs),
-                    clipboardPort = port
-                )
-                if (syncClipboardDestroyed) return@withLock
-                syncClipboardTargetPackage = currentIme
-                syncClipboardManager = manager
-                manager.start()
-                manager.proactiveUploadIfChanged()
-                if (prefs.syncClipboardAutoPullEnabled) manager.pullNow(updateClipboard = true)
-            }
-        }
-    }
-
-    private fun stopClipboardSync() {
-        try {
-            syncClipboardManager?.stop()
-        } catch (e: Throwable) {
-            Log.w(TAG, "Failed to stop floating SyncClipboard", e)
-        }
-        syncClipboardManager = null
-        syncClipboardTargetPackage = null
     }
 
     private fun handleBridgeImeVisibilityHint(src: String, intent: Intent?) {
@@ -571,7 +493,6 @@ class FloatingAsrService : Service() {
             fallbackOnFailure
         }
         applyImeVisibilitySideEffects(src)
-        refreshClipboardSync("bridge_status:$src")
     }
 
     private fun bridgeHiddenFallbackFrom(intent: Intent?): Boolean? {

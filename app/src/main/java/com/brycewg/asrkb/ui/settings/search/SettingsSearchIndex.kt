@@ -205,7 +205,7 @@ object SettingsSearchIndex {
         item(R.string.label_sc_server_base, R.string.section_sync_clipboard, "syncclipboard")
         item(R.string.label_sc_username, R.string.section_sync_clipboard, "syncclipboard")
         item(R.string.label_sc_password, R.string.section_sync_clipboard, "syncclipboard")
-        item(R.string.label_sc_auto_pull, R.string.section_sync_clipboard, "syncclipboard")
+        item(R.string.label_sc_auto_receive, R.string.section_sync_clipboard, "syncclipboard")
         item(R.string.label_sc_pull_interval, R.string.section_sync_clipboard, "syncclipboard")
     }
 

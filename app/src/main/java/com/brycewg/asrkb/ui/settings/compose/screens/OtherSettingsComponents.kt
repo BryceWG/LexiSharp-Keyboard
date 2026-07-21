@@ -35,22 +35,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.clipboard.SystemClipboardActor
-import com.brycewg.asrkb.clipboard.SystemClipboardPortFactory
-import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButton
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButtonRow
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMaterialItemSurface
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsPreference
+import com.brycewg.asrkb.ui.settings.compose.model.SettingsEntry
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSectionContainer
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsTextField
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
-import com.brycewg.asrkb.ui.settings.compose.model.SettingsEntry
 import com.brycewg.asrkb.ui.settings.other.OtherSettingsViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -335,25 +331,16 @@ internal fun SyncClipboardSection(
     onServerChange: (String) -> Unit,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onAutoPullChange: (Boolean) -> Unit,
+    onAutoReceiveChange: (Boolean) -> Unit,
+    onKeepBackgroundRealtimeChange: (Boolean) -> Unit,
     onIntervalChange: (Int) -> Unit,
     onTestPull: () -> Unit,
     onOpenProject: () -> Unit
 ) {
-    val context = LocalContext.current
     var intervalText by remember(state.pullIntervalSec) {
         mutableStateOf(state.pullIntervalSec.toString())
     }
-    var availableActor by remember { mutableStateOf(SystemClipboardActor.UNAVAILABLE) }
-    LaunchedEffect(state.enabled) {
-        availableActor = if (state.enabled) {
-            withContext(Dispatchers.IO) {
-                SystemClipboardPortFactory.detectAvailableActor(context, Prefs(context))
-            }
-        } else {
-            SystemClipboardActor.UNAVAILABLE
-        }
-    }
+    val autoReceiveEnabled = state.receiveMode != ClipboardSyncReceiveMode.OFF
     OtherSection(uiMode = uiMode, titleRes = R.string.section_sync_clipboard) {
         SettingsPreference(
             SettingsEntry.Switch(
@@ -364,16 +351,6 @@ internal fun SyncClipboardSection(
             )
         )
         if (state.enabled) {
-            OtherBodyText(
-                text = stringResource(
-                    when (availableActor) {
-                        SystemClipboardActor.DIRECT -> R.string.sc_mode_default_ime
-                        SystemClipboardActor.BRIDGE -> R.string.sc_mode_ime_bridge
-                        SystemClipboardActor.UNAVAILABLE -> R.string.sc_mode_manual_only
-                    }
-                ),
-                uiMode = uiMode
-            )
             val fieldPadding = PaddingValues(
                 horizontal = SettingsLayoutMetrics.TextFieldHorizontalPadding,
                 vertical = SettingsLayoutMetrics.TextFieldLooseVerticalPadding
@@ -409,6 +386,20 @@ internal fun SyncClipboardSection(
                     applyEdgePadding = false,
                     contentPadding = fieldPadding
                 )
+                OtherTextField(
+                    value = intervalText,
+                    onValueChange = { raw ->
+                        intervalText = raw.filter { it.isDigit() }.take(3)
+                        intervalText.toIntOrNull()?.let { onIntervalChange(it.coerceIn(1, 600)) }
+                    },
+                    label = stringResource(R.string.label_sc_pull_interval),
+                    uiMode = uiMode,
+                    keyboardType = KeyboardType.Number,
+                    singleLine = true,
+                    materialContainer = false,
+                    applyEdgePadding = false,
+                    contentPadding = fieldPadding
+                )
             }
             when (uiMode) {
                 BibiUiMode.Material -> SettingsMaterialItemSurface {
@@ -421,25 +412,29 @@ internal fun SyncClipboardSection(
             }
             SettingsPreference(
                 SettingsEntry.Switch(
-                    id = "sync_clipboard_auto_pull",
-                    titleRes = R.string.label_sc_auto_pull,
-                    checked = state.autoPullEnabled,
-                    onCheckedChange = onAutoPullChange
+                    id = "sync_clipboard_auto_receive",
+                    titleRes = R.string.label_sc_auto_receive,
+                    summary = stringResource(
+                        when {
+                            state.detectingReceiveMode -> R.string.summary_sc_auto_receive_detecting
+                            !autoReceiveEnabled -> R.string.summary_sc_auto_receive_off
+                            state.receiveMode == ClipboardSyncReceiveMode.REALTIME ->
+                                R.string.summary_sc_auto_receive_realtime
+                            else -> R.string.summary_sc_auto_receive_polling
+                        }
+                    ),
+                    checked = autoReceiveEnabled,
+                    onCheckedChange = onAutoReceiveChange
                 )
             )
-            if (state.autoPullEnabled) {
-                OtherTextField(
-                    value = intervalText,
-                    onValueChange = { raw ->
-                        intervalText = raw.filter { it.isDigit() }.take(3)
-                        intervalText.toIntOrNull()?.let { onIntervalChange(it.coerceIn(1, 600)) }
-                    },
-                    label = stringResource(R.string.label_sc_pull_interval),
-                    uiMode = uiMode,
-                    keyboardType = KeyboardType.Number,
-                    singleLine = true,
-                    applyEdgePadding = false,
-                    contentPadding = fieldPadding
+            if (state.receiveMode == ClipboardSyncReceiveMode.REALTIME) {
+                SettingsPreference(
+                    SettingsEntry.Switch(
+                        id = "sync_clipboard_keep_background",
+                        titleRes = R.string.label_sc_keep_background_realtime,
+                        checked = state.keepBackgroundRealtimeEnabled,
+                        onCheckedChange = onKeepBackgroundRealtimeChange
+                    )
                 )
             }
             OtherButtonRow(uiMode = uiMode) {

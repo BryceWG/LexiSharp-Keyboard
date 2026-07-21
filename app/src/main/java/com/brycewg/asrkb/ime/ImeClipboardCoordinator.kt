@@ -8,9 +8,9 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
+import com.brycewg.asrkb.clipboard.ClipboardSyncRuntimeService
 import com.brycewg.asrkb.clipboard.EntryType
 import com.brycewg.asrkb.clipboard.SyncClipboardManager
-import com.brycewg.asrkb.clipboard.SystemClipboardPortFactory
 import com.brycewg.asrkb.clipboard.readClipboardText
 import com.brycewg.asrkb.store.Prefs
 import java.io.File
@@ -22,6 +22,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
+/**
+ * 主键盘剪贴板 UI 协调（预览/文件）。
+ * 自动同步生命周期由 [ClipboardSyncRuntimeService] 拥有，不经 FloatingAsrService。
+ */
 internal class ImeClipboardCoordinator(
     private val context: Context,
     private val prefs: Prefs,
@@ -39,90 +43,64 @@ internal class ImeClipboardCoordinator(
     @Volatile private var lastShownClipboardHash: String? = null
     private val clipboardWorkMutex = Mutex()
 
-    private var syncClipboardManager: SyncClipboardManager? = null
+    private val runtimeUiListener = object : SyncClipboardManager.Listener {
+        override fun onPulledNewContent(text: String) {
+            rootViewProvider()?.post { actionHandler.showClipboardPreview(text) }
+        }
 
-    fun startClipboardSync() {
-        if (prefs.syncClipboardEnabled) {
-            if (syncClipboardManager == null) {
-                syncClipboardManager = SyncClipboardManager(
-                    context,
-                    prefs,
-                    serviceScope,
-                    object : SyncClipboardManager.Listener {
-                        override fun onPulledNewContent(text: String) {
-                            rootViewProvider()?.post { actionHandler.showClipboardPreview(text) }
-                        }
+        override fun onUploadSuccess() = Unit
 
-                        override fun onUploadSuccess() {
-                            // 成功时不提示
-                        }
-
-                        override fun onUploadFailed(reason: String?) {
-                            rootViewProvider()?.post {
-                                // 失败时短暂提示，然后恢复到剪贴板预览，方便点击粘贴
-                                showStatusMessage(
-                                    context.getString(R.string.sc_status_upload_failed)
-                                )
-                                rootViewProvider()?.postDelayed({
-                                    actionHandler.reShowClipboardPreviewIfAny()
-                                }, 900)
-                            }
-                        }
-
-                        override fun onFilePulled(
-                            type: EntryType,
-                            fileName: String,
-                            serverFileName: String
-                        ) {
-                            rootViewProvider()?.post {
-                                // 刷新剪贴板列表显示新文件
-                                if (isClipboardPanelVisible()) {
-                                    refreshClipboardPanelList()
-                                }
-                                // 在键盘信息栏展示文件预览（文件名 + 格式）
-                                val store = clipStoreProvider()
-                                if (store != null) {
-                                    val all = store.getAll()
-                                    val entry = all.firstOrNull {
-                                        it.type != EntryType.TEXT &&
-                                            (
-                                                it.serverFileName == serverFileName ||
-                                                    it.fileName == fileName
-                                                )
-                                    }
-                                    if (entry != null) {
-                                        actionHandler.showClipboardFilePreview(entry)
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    clipStoreProvider(),
-                    clipboardPort = SystemClipboardPortFactory.create(context, prefs)
-                )
+        override fun onUploadFailed(reason: String?) {
+            rootViewProvider()?.post {
+                showStatusMessage(context.getString(R.string.sc_status_upload_failed))
+                rootViewProvider()?.postDelayed({
+                    actionHandler.reShowClipboardPreviewIfAny()
+                }, 900)
             }
-            syncClipboardManager?.start()
-            serviceScope.launch(Dispatchers.IO) {
-                syncClipboardManager?.proactiveUploadIfChanged()
-                syncClipboardManager?.pullNow(true)
+        }
+
+        override fun onFilePulled(type: EntryType, fileName: String, serverFileName: String) {
+            rootViewProvider()?.post {
+                if (isClipboardPanelVisible()) {
+                    refreshClipboardPanelList()
+                }
+                val store = clipStoreProvider()
+                if (store != null) {
+                    val all = store.getAll()
+                    val entry = all.firstOrNull {
+                        it.type != EntryType.TEXT &&
+                            (it.serverFileName == serverFileName || it.fileName == fileName)
+                    }
+                    if (entry != null) {
+                        actionHandler.showClipboardFilePreview(entry)
+                    }
+                }
             }
-        } else {
-            stopClipboardSyncSafely()
         }
     }
 
-    fun stopClipboardSyncSafely() {
-        try {
-            syncClipboardManager?.stop()
-        } catch (t: Throwable) {
-            android.util.Log.e("AsrKeyboardService", "Failed to stop SyncClipboardManager", t)
+    fun activateClipboardSyncRuntime() {
+        ClipboardSyncRuntimeService.setUiListener(runtimeUiListener)
+        if (prefs.syncClipboardEnabled) {
+            ClipboardSyncRuntimeService.activateDirect(context)
+        } else {
+            ClipboardSyncRuntimeService.deactivateDirect(context)
         }
+    }
+
+    fun deactivateClipboardSyncRuntime() {
+        ClipboardSyncRuntimeService.deactivateDirect(context)
+    }
+
+    fun notifyClipboardSyncConfigChanged() {
+        ClipboardSyncRuntimeService.setUiListener(runtimeUiListener)
+        ClipboardSyncRuntimeService.notifyConfigChanged(context)
     }
 
     fun downloadClipboardFile(entry: ClipboardHistoryStore.Entry) {
         serviceScope.launch(Dispatchers.IO) {
             try {
-                val success = syncClipboardManager?.downloadFile(entry.id) ?: false
+                val success = ClipboardSyncRuntimeService.downloadFile(entry.id)
                 rootViewProvider()?.post {
                     if (success) {
                         Toast.makeText(

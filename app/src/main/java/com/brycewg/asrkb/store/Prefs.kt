@@ -16,6 +16,7 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BackupAsrLocalResidency
 import com.brycewg.asrkb.asr.LlmVendor
+import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import kotlin.reflect.KProperty
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -1879,19 +1880,74 @@ class Prefs(context: Context) {
 
     var syncClipboardServerBase: String
         get() = sp.getString(KEY_SC_SERVER_BASE, "") ?: ""
-        set(value) = sp.edit { putString(KEY_SC_SERVER_BASE, value.trim()) }
+        set(value) = sp.edit {
+            putString(KEY_SC_SERVER_BASE, value.trim())
+            remove(KEY_SC_REALTIME_SUPPORTED)
+        }
 
     var syncClipboardUsername: String
         get() = sp.getString(KEY_SC_USERNAME, "") ?: ""
-        set(value) = sp.edit { putString(KEY_SC_USERNAME, value.trim()) }
+        set(value) = sp.edit {
+            putString(KEY_SC_USERNAME, value.trim())
+            remove(KEY_SC_REALTIME_SUPPORTED)
+        }
 
     var syncClipboardPassword: String
         get() = sp.getString(KEY_SC_PASSWORD, "") ?: ""
-        set(value) = sp.edit { putString(KEY_SC_PASSWORD, value.trim()) }
+        set(value) = sp.edit {
+            putString(KEY_SC_PASSWORD, value.trim())
+            remove(KEY_SC_REALTIME_SUPPORTED)
+        }
 
+    var syncClipboardReceiveMode: ClipboardSyncReceiveMode
+        get() = ClipboardSyncReceiveMode.fromId(
+            sp.getString(KEY_SC_RECEIVE_MODE, null)
+        )
+        set(value) {
+            sp.edit {
+                putString(KEY_SC_RECEIVE_MODE, value.id)
+                // 保持旧字段可读，供尚未升级的备份/调试工具对齐 POLLING。
+                putBoolean(KEY_SC_AUTO_PULL, value == ClipboardSyncReceiveMode.POLLING)
+                putBoolean(KEY_SC_REALTIME, value == ClipboardSyncReceiveMode.REALTIME)
+            }
+        }
+
+    var syncClipboardKeepBackgroundRealtimeEnabled: Boolean
+        get() = sp.getBoolean(KEY_SC_KEEP_BACKGROUND_REALTIME, false)
+        set(value) = sp.edit { putBoolean(KEY_SC_KEEP_BACKGROUND_REALTIME, value) }
+
+    var syncClipboardRealtimeSupported: Boolean?
+        get() = if (sp.contains(KEY_SC_REALTIME_SUPPORTED)) {
+            sp.getBoolean(KEY_SC_REALTIME_SUPPORTED, false)
+        } else {
+            null
+        }
+        set(value) = sp.edit {
+            if (value == null) remove(KEY_SC_REALTIME_SUPPORTED)
+            else putBoolean(KEY_SC_REALTIME_SUPPORTED, value)
+        }
+
+    /**
+     * 兼容旧设置页「自动拉取」开关：映射到 [syncClipboardReceiveMode] 的 POLLING/OFF。
+     * REALTIME 视为自动接收已开启。
+     */
     var syncClipboardAutoPullEnabled: Boolean
-        get() = sp.getBoolean(KEY_SC_AUTO_PULL, false)
-        set(value) = sp.edit { putBoolean(KEY_SC_AUTO_PULL, value) }
+        get() = when (syncClipboardReceiveMode) {
+            ClipboardSyncReceiveMode.POLLING -> true
+            ClipboardSyncReceiveMode.REALTIME -> true
+            ClipboardSyncReceiveMode.OFF -> false
+        }
+        set(value) {
+            when (syncClipboardReceiveMode) {
+                ClipboardSyncReceiveMode.REALTIME -> if (!value) {
+                    syncClipboardReceiveMode = ClipboardSyncReceiveMode.OFF
+                }
+                else -> {
+                    syncClipboardReceiveMode =
+                        if (value) ClipboardSyncReceiveMode.POLLING else ClipboardSyncReceiveMode.OFF
+                }
+            }
+        }
 
     var syncClipboardPullIntervalSec: Int
         get() = sp.getInt(KEY_SC_PULL_INTERVAL_SEC, 15).coerceIn(1, 600)

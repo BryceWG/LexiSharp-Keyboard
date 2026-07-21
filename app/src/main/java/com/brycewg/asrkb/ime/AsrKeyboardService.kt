@@ -32,6 +32,7 @@ import com.brycewg.asrkb.asr.isLocalAsrPrepared
 import com.brycewg.asrkb.asr.localModelErrorMessage
 import com.brycewg.asrkb.asr.partitionAsrVendorsByConfigured
 import com.brycewg.asrkb.asr.preloadLocalAsrIfConfigured
+import com.brycewg.asrkb.clipboard.ClipboardSyncRuntimeService
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.ui.AsrVendorUi
@@ -182,8 +183,7 @@ class AsrKeyboardService :
                 when (intent?.action) {
                     ACTION_REFRESH_IME_UI -> {
                         refreshCurrentInputViewTheme(recreateVisibleInputView = true)
-                        clipboardCoordinator?.stopClipboardSyncSafely()
-                        clipboardCoordinator?.startClipboardSync()
+                        clipboardCoordinator?.notifyClipboardSyncConfigChanged()
                     }
                 }
             }
@@ -208,12 +208,13 @@ class AsrKeyboardService :
     }
 
     override fun onDestroy() {
+        ClipboardSyncRuntimeService.setUiListener(null)
         super.onDestroy()
         ContinuousCaptureCoordinator.release(ContinuousCaptureOwner.Ime)
         asrManager.cleanup()
         serviceScope.cancel()
         clipboardCoordinator?.stopClipboardPreviewListener()
-        clipboardCoordinator?.stopClipboardSyncSafely()
+        clipboardCoordinator?.deactivateClipboardSyncRuntime()
         try {
             prefsReceiver?.let { unregisterReceiver(it) }
         } catch (e: Throwable) {
@@ -267,10 +268,9 @@ class AsrKeyboardService :
     private fun refreshCurrentInputViewTheme(recreateVisibleInputView: Boolean) {
         if (recreateVisibleInputView && imeViewVisible && rootView != null) {
             clipboardCoordinator?.stopClipboardPreviewListener()
-            clipboardCoordinator?.stopClipboardSyncSafely()
             val newView = createKeyboardView()
             setInputView(newView)
-            clipboardCoordinator?.startClipboardSync()
+            clipboardCoordinator?.activateClipboardSyncRuntime()
             clipboardCoordinator?.startClipboardPreviewListener()
             androidx.core.view.ViewCompat.requestApplyInsets(newView)
             scheduleInsetsWarmup(newView)
@@ -355,8 +355,8 @@ class AsrKeyboardService :
             actionHandler.restorePartialAsComposing(currentInputConnection)
         }
 
-        // 启动剪贴板同步
-        clipboardCoordinator?.startClipboardSync()
+        // 启动剪贴板同步 Runtime（默认节能：仅输入视图可见期间）
+        clipboardCoordinator?.activateClipboardSyncRuntime()
 
         // 监听系统剪贴板变更，IME 可见期间弹出预览
         clipboardCoordinator?.startClipboardPreviewListener()
@@ -413,8 +413,9 @@ class AsrKeyboardService :
         layoutController?.onInputViewFinished()
         super.onFinishInputView(finishingInput)
         DebugLogManager.log("ime", "finish_input_view")
-        // 停止剪贴板预览监听
+        // 停止剪贴板预览监听与默认节能下的自动同步
         clipboardCoordinator?.stopClipboardPreviewListener()
+        clipboardCoordinator?.deactivateClipboardSyncRuntime()
 
         resetPanelsToMainKeyboard()
 

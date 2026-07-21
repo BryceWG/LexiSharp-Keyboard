@@ -3,15 +3,17 @@
 
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">剪貼簿同步</string>
-    <string name="label_enable_sync_clipboard">使用 SyncClipboard 專案來同步剪貼簿</string>
-    <string name="sc_mode_default_ime">同步方式：說點啥預設輸入法背景同步</string>
-    <string name="sc_mode_ime_bridge">同步方式：IME Bridge 輔助同步</string>
-    <string name="sc_mode_manual_only">同步方式：僅手動。請啟用相容的 IME Bridge，或將說點啥設為預設輸入法。</string>
+    <string name="label_enable_sync_clipboard">使用 SyncClipboard 同步剪貼簿</string>
     <string name="label_sc_server_base">伺服器位址（會自動拼接 /SyncClipboard.json）</string>
     <string name="label_sc_username">使用者名稱</string>
     <string name="label_sc_password">密碼</string>
-    <string name="label_sc_auto_pull">定時拉取剪貼簿內容</string>
-    <string name="label_sc_pull_interval">拉取間隔（秒，1-600）</string>
+    <string name="label_sc_pull_interval">定時拉取模式拉取間隔（秒，1-600）</string>
+    <string name="label_sc_auto_receive">自動接收</string>
+    <string name="summary_sc_auto_receive_off">已關閉：僅上傳</string>
+    <string name="summary_sc_auto_receive_detecting">正在偵測伺服器支援的同步方式…</string>
+    <string name="summary_sc_auto_receive_realtime">已開啟：伺服器支援即時同步</string>
+    <string name="summary_sc_auto_receive_polling">已開啟：使用定時拉取</string>
+    <string name="label_sc_keep_background_realtime">保持背景即時連線</string>
     <string name="btn_sc_test_pull">立即驗證</string>
     <string name="sc_test_success">拉取成功</string>
     <string name="sc_test_failed">拉取失敗，請檢查位址與憑證</string>

@@ -29,14 +29,15 @@ class FloatingImeBridgeHintReceiver : BroadcastReceiver() {
             return
         }
 
-        val shouldForward = try {
+        val shouldForwardFloating = try {
             prefs.floatingImeBridgeEnabled &&
                 (prefs.floatingAsrEnabled || prefs.volumeKeyRecordingEnabled)
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to check bridge IME hint prefs", t)
             false
         }
-        if (!shouldForward) return
+        // 剪贴板自动同步由 Binder 激活；此处仅保留悬浮球相关转发，不再依赖悬浮球开关才能收到 hint。
+        if (!shouldForwardFloating) return
 
         val serviceIntent = Intent(appContext, FloatingAsrService::class.java).apply {
             action = ImeBridgeContract.ACTION_IME_WINDOW_VISIBILITY_CHANGED

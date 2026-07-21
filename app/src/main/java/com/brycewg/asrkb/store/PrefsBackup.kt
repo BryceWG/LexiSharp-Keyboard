@@ -8,6 +8,7 @@ package com.brycewg.asrkb.store
 import android.util.Log
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LlmVendor
+import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 
 /**
  * 设置备份/导入导出逻辑（从 [Prefs] 中拆出）。
@@ -191,7 +192,11 @@ internal object PrefsBackup {
         o.put(KEY_SC_SERVER_BASE, syncClipboardServerBase)
         o.put(KEY_SC_USERNAME, syncClipboardUsername)
         o.put(KEY_SC_PASSWORD, syncClipboardPassword)
-        o.put(KEY_SC_AUTO_PULL, syncClipboardAutoPullEnabled)
+        o.put(KEY_SC_RECEIVE_MODE, syncClipboardReceiveMode.id)
+        o.put(KEY_SC_KEEP_BACKGROUND_REALTIME, syncClipboardKeepBackgroundRealtimeEnabled)
+        // 旧字段：保持导出兼容，便于旧版导入
+        o.put(KEY_SC_AUTO_PULL, syncClipboardReceiveMode != ClipboardSyncReceiveMode.OFF)
+        o.put(KEY_SC_REALTIME, syncClipboardReceiveMode == ClipboardSyncReceiveMode.REALTIME)
         o.put(KEY_SC_PULL_INTERVAL_SEC, syncClipboardPullIntervalSec)
         // WebDAV（可选）
         o.put(KEY_WD_URL, webdavUrl)
@@ -522,7 +527,27 @@ internal object PrefsBackup {
             optString(KEY_SC_SERVER_BASE)?.let { syncClipboardServerBase = it }
             optString(KEY_SC_USERNAME)?.let { syncClipboardUsername = it }
             optString(KEY_SC_PASSWORD)?.let { syncClipboardPassword = it }
-            optBool(KEY_SC_AUTO_PULL)?.let { syncClipboardAutoPullEnabled = it }
+            val importedReceiveMode = optString(KEY_SC_RECEIVE_MODE)
+            if (importedReceiveMode != null) {
+                syncClipboardReceiveMode = ClipboardSyncReceiveMode.fromId(importedReceiveMode)
+                optBool(KEY_SC_KEEP_BACKGROUND_REALTIME)?.let {
+                    syncClipboardKeepBackgroundRealtimeEnabled = it
+                }
+            } else {
+                // 旧备份：仅有 realtime/auto-pull 时映射到 Receive Mode
+                val legacyRealtime = optBool(KEY_SC_REALTIME)
+                val legacyAutoPull = optBool(KEY_SC_AUTO_PULL)
+                if (legacyRealtime != null || legacyAutoPull != null) {
+                    val mode = ClipboardSyncReceiveMode.fromLegacy(
+                        realtime = legacyRealtime ?: false,
+                        autoPull = legacyAutoPull ?: false
+                    )
+                    syncClipboardReceiveMode = mode
+                    if (optBool(KEY_SC_KEEP_BACKGROUND_REALTIME) == null) {
+                        syncClipboardKeepBackgroundRealtimeEnabled = false
+                    }
+                }
+            }
             optInt(KEY_SC_PULL_INTERVAL_SEC)?.let { syncClipboardPullIntervalSec = it }
             // 隐私开关
             optBool(KEY_DISABLE_ASR_HISTORY)?.let { disableAsrHistory = it }

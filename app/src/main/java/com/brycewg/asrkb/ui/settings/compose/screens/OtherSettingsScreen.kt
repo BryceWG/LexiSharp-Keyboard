@@ -29,7 +29,7 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.ime.AsrKeyboardService
-import com.brycewg.asrkb.ui.floating.FloatingAsrService
+import com.brycewg.asrkb.clipboard.ClipboardSyncRuntimeService
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveScheduler
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveStarter
@@ -68,9 +68,12 @@ fun OtherSettingsScreen(
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    OtherSettingsViewModel(prefs) {
-                        notifySyncClipboardConfigChanged(context, prefs)
-                    } as T
+                    OtherSettingsViewModel(
+                        prefs = prefs,
+                        onSyncClipboardChanged = {
+                            notifySyncClipboardConfigChanged(context, prefs)
+                        }
+                    ) as T
             }
         }
     )
@@ -394,7 +397,9 @@ fun OtherSettingsScreen(
             onSyncClipboardServerChange = viewModel::updateSyncClipboardServerBase,
             onSyncClipboardUsernameChange = viewModel::updateSyncClipboardUsername,
             onSyncClipboardPasswordChange = viewModel::updateSyncClipboardPassword,
-            onSyncClipboardAutoPullChange = viewModel::updateSyncClipboardAutoPullEnabled,
+            onSyncClipboardAutoReceiveChange = viewModel::updateSyncClipboardAutoReceiveEnabled,
+            onSyncClipboardKeepBackgroundChange =
+                viewModel::updateSyncClipboardKeepBackgroundRealtimeEnabled,
             onSyncClipboardIntervalChange = viewModel::updateSyncClipboardPullIntervalSec,
             onTestClipboardSync = {
                 testClipboardSync(context, prefs, coroutineScope, ::showOtherMessage)
@@ -411,11 +416,5 @@ private fun notifySyncClipboardConfigChanged(context: Context, prefs: Prefs) {
     appContext.sendBroadcast(
         Intent(AsrKeyboardService.ACTION_REFRESH_IME_UI).setPackage(appContext.packageName)
     )
-    if (prefs.floatingAsrEnabled) {
-        appContext.startService(
-            Intent(appContext, FloatingAsrService::class.java).apply {
-                action = FloatingAsrService.ACTION_REFRESH_UI
-            }
-        )
-    }
+    ClipboardSyncRuntimeService.notifyConfigChanged(appContext)
 }

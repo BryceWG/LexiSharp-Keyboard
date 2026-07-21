@@ -3,8 +3,15 @@ package com.brycewg.asrkb.clipboard
 import androidx.test.core.app.ApplicationProvider
 import com.brycewg.asrkb.store.Prefs
 import java.security.MessageDigest
+import java.util.Collections
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -13,6 +20,8 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.Dispatcher
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,8 +37,10 @@ class SyncClipboardManagerTest {
     private lateinit var server: MockWebServer
     private lateinit var prefs: Prefs
     private lateinit var port: FakeSystemClipboardPort
+    private lateinit var historyStore: ClipboardHistoryStore
     private lateinit var httpClient: OkHttpClient
     private val pulledTexts = mutableListOf<String>()
+    private val pulledFiles = mutableListOf<String>()
     private val uploadSuccesses = mutableListOf<Unit>()
 
     @Before
@@ -39,23 +50,26 @@ class SyncClipboardManagerTest {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         prefs = Prefs(context)
         prefs.syncClipboardEnabled = true
-        prefs.syncClipboardAutoPullEnabled = false
+        prefs.syncClipboardReceiveMode = ClipboardSyncReceiveMode.OFF
         prefs.syncClipboardServerBase = server.url("/").toString().trimEnd('/')
         prefs.syncClipboardUsername = "user"
         prefs.syncClipboardPassword = "pass"
         prefs.syncClipboardLastUploadedHash = ""
         port = FakeSystemClipboardPort()
+        historyStore = ClipboardHistoryStore(context, prefs).apply { clearAll() }
         httpClient = OkHttpClient.Builder()
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(2, TimeUnit.SECONDS)
             .writeTimeout(2, TimeUnit.SECONDS)
             .build()
         pulledTexts.clear()
+        pulledFiles.clear()
         uploadSuccesses.clear()
     }
 
     @After
     fun tearDown() {
+        historyStore.clearAll()
         server.shutdown()
     }
 
@@ -77,6 +91,310 @@ class SyncClipboardManagerTest {
         assertEquals("hello-remote", port.text)
         assertEquals(listOf("hello-remote"), pulledTexts)
         assertEquals(sha256Hex("hello-remote"), prefs.syncClipboardLastUploadedHash)
+    }
+
+    @Test
+    fun applyRemoteProfileJson_writesTextThroughSharedPipeline() = runTest {
+        port.text = "local-old"
+        val manager = createManager(this)
+
+        val applied = manager.applyRemoteProfileJson(
+            """{"text":"signalr-remote","type":"Text"}"""
+        )
+
+        assertTrue(applied)
+        assertEquals(listOf("signalr-remote"), port.writeHistory)
+        assertEquals(listOf("signalr-remote"), pulledTexts)
+        assertEquals(sha256Hex("signalr-remote"), prefs.syncClipboardLastUploadedHash)
+    }
+
+    @Test
+    fun applyRemoteProfileJson_whenWriteFails_retriesSameText() = runTest {
+        port.text = "local"
+        port.writeSucceeds = false
+        val manager = createManager(this)
+        val profileJson = """{"text":"retry-remote","type":"Text"}"""
+
+        assertFalse(manager.applyRemoteProfileJson(profileJson))
+        assertEquals("", prefs.syncClipboardLastUploadedHash)
+
+        port.writeSucceeds = true
+        assertTrue(manager.applyRemoteProfileJson(profileJson))
+        assertEquals(listOf("retry-remote", "retry-remote"), port.writeHistory)
+        assertEquals(sha256Hex("retry-remote"), prefs.syncClipboardLastUploadedHash)
+    }
+
+    @Test
+    fun applyRemoteProfileJson_textWithData_downloadsBodyThroughSharedPipeline() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200).setBody("large remote text"))
+        port.text = "local"
+        val manager = createManager(this)
+
+        val applied = manager.applyRemoteProfileJson(
+            """{"type":"Text","hasData":true,"dataName":"profile.txt"}"""
+        )
+
+        assertTrue(applied)
+        assertEquals(listOf("large remote text"), port.writeHistory)
+        assertEquals("/file/profile.txt", server.takeRequest().path)
+    }
+
+    @Test
+    fun applyRemoteProfileJson_fileAndImage_updateHistoryWithoutClipboardWrite() = runTest {
+        val manager = createManager(this, historyStore)
+
+        assertTrue(
+            manager.applyRemoteProfileJson(
+                """{"type":"Image","hash":"hash-a","size":123,"hasData":true,"dataName":"remote.png"}"""
+            )
+        )
+        historyStore.getHistory().single().let { entry ->
+            assertEquals(EntryType.IMAGE, entry.type)
+            assertEquals("hash-a", entry.serverHash)
+            assertEquals(123L, entry.fileSize)
+        }
+
+        assertTrue(
+            manager.applyRemoteProfileJson(
+                """{"type":"File","hasData":true,"dataName":"remote.pdf"}"""
+            )
+        )
+        assertEquals(EntryType.FILE, historyStore.getHistory().single().type)
+        assertTrue(port.writeHistory.isEmpty())
+    }
+
+    @Test
+    fun applyRemoteProfileJson_sameFileNameWithNewHash_replacesHistory() = runTest {
+        val manager = createManager(this, historyStore)
+
+        assertTrue(
+            manager.applyRemoteProfileJson(
+                """{"type":"File","hash":"old","size":10,"dataName":"same.pdf"}"""
+            )
+        )
+        assertTrue(
+            manager.applyRemoteProfileJson(
+                """{"type":"File","hash":"new","size":20,"dataName":"same.pdf"}"""
+            )
+        )
+
+        historyStore.getHistory().single().let { entry ->
+            assertEquals("new", entry.serverHash)
+            assertEquals(20L, entry.fileSize)
+        }
+        assertEquals(listOf("same.pdf", "same.pdf"), pulledFiles)
+    }
+
+    @Test
+    fun directSession_serializesRealtimeProfilesInArrivalOrder() = runTest {
+        val oldDownloadStarted = CountDownLatch(1)
+        val releaseOldDownload = CountDownLatch(1)
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                if (request.path == "/file/old.txt") {
+                    oldDownloadStarted.countDown()
+                    releaseOldDownload.await(2, TimeUnit.SECONDS)
+                    return MockResponse().setResponseCode(200).setBody("old-A")
+                }
+                return MockResponse().setResponseCode(404)
+            }
+        }
+        port.text = "local"
+        val manager = createManager(this)
+        val resultOrder = Collections.synchronizedList(mutableListOf<String>())
+        val results = CountDownLatch(2)
+        val newerResult = CountDownLatch(1)
+        val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val session = DirectClipboardSyncRuntimeSession(
+            context = ApplicationProvider.getApplicationContext(),
+            prefs = prefs,
+            scope = sessionScope,
+            clipboardStore = null,
+            initialManager = manager
+        )
+
+        try {
+            session.applyRemoteProfile(
+                """{"type":"Text","hasData":true,"dataName":"old.txt"}"""
+            ) {
+                resultOrder += "A"
+                results.countDown()
+                false
+            }
+            assertTrue(oldDownloadStarted.await(2, TimeUnit.SECONDS))
+            session.applyRemoteProfile("""{"type":"Text","text":"new-B"}""") {
+                resultOrder += "B"
+                results.countDown()
+                newerResult.countDown()
+                false
+            }
+
+            val newerOvertook = newerResult.await(500, TimeUnit.MILLISECONDS)
+            releaseOldDownload.countDown()
+
+            assertTrue(results.await(2, TimeUnit.SECONDS))
+            assertFalse("new profile overtook blocked old profile", newerOvertook)
+            assertEquals(listOf("A", "B"), resultOrder)
+            assertEquals(listOf("old-A", "new-B"), port.writeHistory)
+            assertEquals(listOf("old-A", "new-B"), pulledTexts)
+            assertEquals("new-B", port.text)
+            assertEquals(sha256Hex("new-B"), prefs.syncClipboardLastUploadedHash)
+        } finally {
+            releaseOldDownload.countDown()
+            sessionScope.cancel()
+        }
+    }
+
+    @Test
+    fun directSession_serializesCatchUpBeforeFollowingRealtimeProfile() = runTest {
+        val catchUpStarted = CountDownLatch(1)
+        val releaseCatchUp = CountDownLatch(1)
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                if (request.path == "/SyncClipboard.json") {
+                    catchUpStarted.countDown()
+                    releaseCatchUp.await(2, TimeUnit.SECONDS)
+                    return MockResponse()
+                        .setResponseCode(200)
+                        .setBody("""{"type":"Text","text":"catchup-A"}""")
+                }
+                return MockResponse().setResponseCode(404)
+            }
+        }
+        port.text = "local"
+        val manager = createManager(this)
+        val profileApplied = CountDownLatch(1)
+        val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val session = DirectClipboardSyncRuntimeSession(
+            context = ApplicationProvider.getApplicationContext(),
+            prefs = prefs,
+            scope = sessionScope,
+            clipboardStore = null,
+            initialManager = manager
+        )
+
+        try {
+            session.catchUpPull()
+            assertTrue(catchUpStarted.await(2, TimeUnit.SECONDS))
+            session.applyRemoteProfile("""{"type":"Text","text":"profile-B"}""") {
+                profileApplied.countDown()
+                false
+            }
+
+            assertFalse(profileApplied.await(500, TimeUnit.MILLISECONDS))
+            releaseCatchUp.countDown()
+
+            assertTrue(profileApplied.await(2, TimeUnit.SECONDS))
+            assertEquals(listOf("catchup-A", "profile-B"), port.writeHistory)
+            assertEquals(listOf("catchup-A", "profile-B"), pulledTexts)
+            assertEquals("profile-B", port.text)
+        } finally {
+            releaseCatchUp.countDown()
+            sessionScope.cancel()
+        }
+    }
+
+    @Test
+    fun directSession_queuedProfileIsDroppedAfterManagerStops() = runTest {
+        val oldDownloadStarted = CountDownLatch(1)
+        val releaseOldDownload = CountDownLatch(1)
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                if (request.path == "/file/old.txt") {
+                    oldDownloadStarted.countDown()
+                    releaseOldDownload.await(2, TimeUnit.SECONDS)
+                    return MockResponse().setResponseCode(200).setBody("old-A")
+                }
+                return MockResponse()
+                    .setResponseCode(200)
+                    .setBody("""{"type":"Text","text":"fallback"}""")
+            }
+        }
+        port.text = "local"
+        val manager = createManager(this)
+        val queuedFinished = CountDownLatch(1)
+        val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val session = DirectClipboardSyncRuntimeSession(
+            context = ApplicationProvider.getApplicationContext(),
+            prefs = prefs,
+            scope = sessionScope,
+            clipboardStore = null,
+            initialManager = manager
+        )
+
+        try {
+            session.applyRemoteProfile(
+                """{"type":"Text","hasData":true,"dataName":"old.txt"}"""
+            ) { false }
+            assertTrue(oldDownloadStarted.await(2, TimeUnit.SECONDS))
+            session.applyRemoteProfile("""{"type":"Text","text":"queued-B"}""") {
+                queuedFinished.countDown()
+                true
+            }
+
+            manager.stop()
+            releaseOldDownload.countDown()
+
+            assertTrue(queuedFinished.await(2, TimeUnit.SECONDS))
+            assertTrue(port.writeHistory.isEmpty())
+            assertTrue(pulledTexts.isEmpty())
+            assertEquals(1, server.requestCount)
+        } finally {
+            releaseOldDownload.countDown()
+            sessionScope.cancel()
+        }
+    }
+
+    @Test
+    fun directSession_queuedCatchUpIsDroppedAfterReceivePathInvalidates() = runTest {
+        val oldDownloadStarted = CountDownLatch(1)
+        val releaseOldDownload = CountDownLatch(1)
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                if (request.path == "/file/old.txt") {
+                    oldDownloadStarted.countDown()
+                    releaseOldDownload.await(2, TimeUnit.SECONDS)
+                    return MockResponse().setResponseCode(200).setBody("old-A")
+                }
+                return MockResponse()
+                    .setResponseCode(200)
+                    .setBody("""{"type":"Text","text":"stale-catchup"}""")
+            }
+        }
+        port.text = "local"
+        val manager = createManager(this)
+        val queueDrained = CountDownLatch(1)
+        val sessionScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val session = DirectClipboardSyncRuntimeSession(
+            context = ApplicationProvider.getApplicationContext(),
+            prefs = prefs,
+            scope = sessionScope,
+            clipboardStore = null,
+            initialManager = manager
+        )
+
+        try {
+            session.applyRemoteProfile(
+                """{"type":"Text","hasData":true,"dataName":"old.txt"}"""
+            ) { false }
+            assertTrue(oldDownloadStarted.await(2, TimeUnit.SECONDS))
+            session.catchUpPull()
+            session.applyRemoteProfile("""{"type":"Text","text":"queued-barrier"}""") {
+                queueDrained.countDown()
+                false
+            }
+
+            manager.invalidateReceivePath()
+            releaseOldDownload.countDown()
+
+            assertTrue(queueDrained.await(2, TimeUnit.SECONDS))
+            assertTrue(port.writeHistory.isEmpty())
+            assertTrue(pulledTexts.isEmpty())
+            assertEquals(1, server.requestCount)
+        } finally {
+            releaseOldDownload.countDown()
+            sessionScope.cancel()
+        }
     }
 
     @Test
@@ -111,6 +429,158 @@ class SyncClipboardManagerTest {
         assertEquals(listOf("remote", "remote"), port.writeHistory)
         assertEquals(listOf("remote"), pulledTexts)
         assertEquals(sha256Hex("remote"), prefs.syncClipboardLastUploadedHash)
+    }
+
+    @Test
+    fun pullNow_whenPausedDuringRequest_doesNotWriteOrSuppressResumeRetry() = runTest {
+        val (requestStarted, releaseResponse) = blockRemoteTextResponse()
+        port.text = "local"
+        historyStore.addFileEntry(EntryType.FILE, "current.pdf", "current.pdf")
+        prefs.syncClipboardLastFileName = "current.pdf"
+
+        val manager = createManager(this, historyStore)
+        val inFlightPull = async(Dispatchers.IO) { manager.pullNow(updateClipboard = true) }
+        assertTrue(requestStarted.await(2, TimeUnit.SECONDS))
+        manager.pauseClipboardSideEffects()
+        releaseResponse.countDown()
+
+        assertFalse(inFlightPull.await().first)
+        assertTrue(port.writeHistory.isEmpty())
+        assertEquals(listOf("current.pdf"), historyStore.getHistory().map { it.fileName })
+        assertEquals("current.pdf", prefs.syncClipboardLastFileName)
+
+        manager.resumeClipboardSideEffects()
+        val resumedPull = manager.pullNow(updateClipboard = true)
+        assertTrue(resumedPull.first)
+        assertEquals(listOf("remote"), port.writeHistory)
+    }
+
+    @Test
+    fun stopPolling_dropsInFlightPollingResponse() = runTest {
+        val (requestStarted, releaseResponse) = blockRemoteTextResponse()
+        port.text = "local"
+        val manager = createManager(this)
+        val startJob = async(Dispatchers.IO) { manager.start(pollingEnabled = true) }
+        assertTrue(requestStarted.await(2, TimeUnit.SECONDS))
+
+        manager.setPollingEnabled(false)
+        releaseResponse.countDown()
+        startJob.await()
+
+        assertTrue(port.writeHistory.isEmpty())
+        manager.stop()
+    }
+
+    @Test
+    fun pullNow_whenStoppedDuringRequest_dropsResponseAndAllowsNextStart() = runTest {
+        val (requestStarted, releaseResponse) = blockRemoteTextResponse()
+        port.text = "local"
+        historyStore.addFileEntry(EntryType.FILE, "current.pdf", "current.pdf")
+        prefs.syncClipboardLastFileName = "current.pdf"
+
+        val manager = createManager(this, historyStore)
+        val inFlightPull = async(Dispatchers.IO) { manager.pullNow(updateClipboard = true) }
+        assertTrue(requestStarted.await(2, TimeUnit.SECONDS))
+        manager.stop()
+        releaseResponse.countDown()
+
+        assertFalse(inFlightPull.await().first)
+        assertTrue(port.writeHistory.isEmpty())
+        assertEquals(listOf("current.pdf"), historyStore.getHistory().map { it.fileName })
+        assertEquals("current.pdf", prefs.syncClipboardLastFileName)
+
+        manager.start()
+        val restartedPull = manager.pullNow(updateClipboard = true)
+        assertTrue(restartedPull.first)
+        assertEquals(listOf("remote"), port.writeHistory)
+        manager.stop()
+    }
+
+    @Test
+    fun pullNow_whenSyncDisabledDuringRequest_doesNotWrite() = runTest {
+        val (requestStarted, releaseResponse) = blockRemoteTextResponse()
+        port.text = "local"
+        historyStore.addFileEntry(EntryType.FILE, "current.pdf", "current.pdf")
+        prefs.syncClipboardLastFileName = "current.pdf"
+
+        val manager = createManager(this, historyStore)
+        val inFlightPull = async(Dispatchers.IO) { manager.pullNow(updateClipboard = true) }
+        assertTrue(requestStarted.await(2, TimeUnit.SECONDS))
+        prefs.syncClipboardEnabled = false
+        releaseResponse.countDown()
+
+        assertFalse(inFlightPull.await().first)
+        assertTrue(port.writeHistory.isEmpty())
+        assertEquals(listOf("current.pdf"), historyStore.getHistory().map { it.fileName })
+        assertEquals("current.pdf", prefs.syncClipboardLastFileName)
+    }
+
+    @Test
+    fun pullNow_whenCredentialsChangeDuringRequest_doesNotWrite() = runTest {
+        val (requestStarted, releaseResponse) = blockRemoteTextResponse()
+        port.text = "local"
+
+        val manager = createManager(this)
+        val inFlightPull = async(Dispatchers.IO) { manager.pullNow(updateClipboard = true) }
+        assertTrue(requestStarted.await(2, TimeUnit.SECONDS))
+        manager.invalidateReceivePath()
+        releaseResponse.countDown()
+
+        assertFalse(inFlightPull.await().first)
+        assertTrue(port.writeHistory.isEmpty())
+    }
+
+    @Test
+    fun pullNow_whenCredentialsChangeDuringRequest_doesNotClearCurrentFileHistory() = runTest {
+        historyStore.addFileEntry(EntryType.FILE, "current.pdf", "current.pdf")
+        prefs.syncClipboardLastFileName = "current.pdf"
+        val (requestStarted, releaseResponse) = blockRemoteTextResponse()
+
+        val manager = createManager(this, historyStore)
+        val inFlightPull = async(Dispatchers.IO) { manager.pullNow(updateClipboard = true) }
+        assertTrue(requestStarted.await(2, TimeUnit.SECONDS))
+        manager.invalidateReceivePath()
+        releaseResponse.countDown()
+
+        assertFalse(inFlightPull.await().first)
+        assertEquals(listOf("current.pdf"), historyStore.getHistory().map { it.fileName })
+        assertEquals("current.pdf", prefs.syncClipboardLastFileName)
+    }
+
+    @Test
+    fun pullNow_whenPausedDuringImageResponse_doesNotReplaceHistoryOrNotify() = runTest {
+        historyStore.addFileEntry(EntryType.FILE, "current.pdf", "current.pdf")
+        prefs.syncClipboardLastFileName = "current.pdf"
+        val (requestStarted, releaseResponse) = blockResponse(
+            """{"type":"Image","hasData":true,"dataName":"stale.png"}"""
+        )
+
+        val manager = createManager(this, historyStore)
+        val inFlightPull = async(Dispatchers.IO) { manager.pullNow(updateClipboard = true) }
+        assertTrue(requestStarted.await(2, TimeUnit.SECONDS))
+        manager.pauseClipboardSideEffects()
+        releaseResponse.countDown()
+
+        assertFalse(inFlightPull.await().first)
+        assertEquals(listOf("current.pdf"), historyStore.getHistory().map { it.fileName })
+        assertEquals("current.pdf", prefs.syncClipboardLastFileName)
+        assertTrue(pulledFiles.isEmpty())
+    }
+
+    @Test
+    fun pullNow_withoutClipboardUpdate_stillReportsSuccessfulFetch() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"text":"remote","type":"Text"}""")
+        )
+        port.text = "local"
+
+        val result = createManager(this).pullNow(updateClipboard = false)
+
+        assertTrue(result.first)
+        assertEquals("remote", result.second)
+        assertTrue(port.writeHistory.isEmpty())
     }
 
     @Test
@@ -180,7 +650,73 @@ class SyncClipboardManagerTest {
         assertEquals(0, server.requestCount)
     }
 
-    private fun createManager(scope: TestScope): SyncClipboardManager =
+    @Test
+    fun start_withPollingEnabled_runsPullLoop() = runTest {
+        prefs.syncClipboardPullIntervalSec = 1
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"text":"polled","type":"Text"}""")
+        )
+        port.text = "local"
+
+        val manager = createManager(this)
+        try {
+            manager.start(pollingEnabled = true)
+            // Unconfined IO：首轮 pull 在 delay 前已执行；勿 advanceUntilIdle（会吞掉无限 delay）
+            assertEquals(listOf("polled"), port.writeHistory)
+        } finally {
+            manager.stop()
+        }
+    }
+
+    @Test
+    fun start_withPollingDisabled_doesNotRunPullLoop() = runTest {
+        val manager = createManager(this)
+        try {
+            manager.start(pollingEnabled = false)
+            advanceTimeBy(5_000L)
+
+            assertEquals(0, server.requestCount)
+        } finally {
+            manager.stop()
+        }
+    }
+
+    @Test
+    fun invalidateReceivePath_stopsPollingImmediately() = runTest {
+        prefs.syncClipboardReceiveMode = ClipboardSyncReceiveMode.POLLING
+        prefs.syncClipboardPullIntervalSec = 1
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"text":"a","type":"Text"}""")
+        )
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"text":"b","type":"Text"}""")
+        )
+        port.text = "local"
+
+        val manager = createManager(this)
+        try {
+            manager.start(pollingEnabled = true)
+            assertEquals(1, server.requestCount)
+
+            prefs.syncClipboardEnabled = false
+            manager.invalidateReceivePath()
+            advanceTimeBy(5_000L)
+            assertEquals(1, server.requestCount)
+        } finally {
+            manager.stop()
+        }
+    }
+
+    private fun createManager(
+        scope: TestScope,
+        clipboardStore: ClipboardHistoryStore? = null
+    ): SyncClipboardManager =
         SyncClipboardManager(
             context = ApplicationProvider.getApplicationContext(),
             prefs = prefs,
@@ -200,13 +736,34 @@ class SyncClipboardManagerTest {
                     type: EntryType,
                     fileName: String,
                     serverFileName: String
-                ) = Unit
+                ) {
+                    pulledFiles += fileName
+                }
             },
-            clipboardStore = null,
+            clipboardStore = clipboardStore,
             clipboardPort = port,
             httpClient = httpClient,
             ioDispatcher = UnconfinedTestDispatcher(scope.testScheduler)
         )
+
+    private fun blockRemoteTextResponse(): Pair<CountDownLatch, CountDownLatch> {
+        return blockResponse("""{"text":"remote","type":"Text"}""")
+    }
+
+    private fun blockResponse(body: String): Pair<CountDownLatch, CountDownLatch> {
+        val requestStarted = CountDownLatch(1)
+        val releaseResponse = CountDownLatch(1)
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                requestStarted.countDown()
+                assertTrue(releaseResponse.await(2, TimeUnit.SECONDS))
+                return MockResponse()
+                    .setResponseCode(200)
+                    .setBody(body)
+            }
+        }
+        return requestStarted to releaseResponse
+    }
 
     private fun sha256Hex(s: String): String {
         val md = MessageDigest.getInstance("SHA-256")

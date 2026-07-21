@@ -53,7 +53,8 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
         val localFilePath: String? = null, // 本地文件路径
         val downloadStatus: DownloadStatus = DownloadStatus.NONE,
         // 服务器上的文件名（用于下载）
-        val serverFileName: String? = null
+        val serverFileName: String? = null,
+        val serverHash: String? = null
     ) {
         /**
          * 用于列表 / 信息栏展示的文本。
@@ -295,6 +296,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
         fileName: String,
         serverFileName: String,
         fileSize: Long? = null,
+        serverHash: String? = null,
         mimeType: String? = null,
         localFilePath: String? = null,
         downloadStatus: DownloadStatus = DownloadStatus.NONE
@@ -312,6 +314,7 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
                 type = type,
                 fileName = fileName,
                 fileSize = fileSize,
+                serverHash = serverHash,
                 mimeType = mimeType,
                 localFilePath = localFilePath,
                 downloadStatus = downloadStatus,

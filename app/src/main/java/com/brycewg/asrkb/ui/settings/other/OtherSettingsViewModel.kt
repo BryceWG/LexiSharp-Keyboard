@@ -3,6 +3,7 @@ package com.brycewg.asrkb.ui.settings.other
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.SpeechPreset
 import kotlinx.coroutines.Job
@@ -33,6 +34,16 @@ class OtherSettingsViewModel(
     private val _syncClipboardState = MutableStateFlow(buildSyncClipboardStateSafely())
     val syncClipboardState: StateFlow<SyncClipboardState> = _syncClipboardState.asStateFlow()
     private var speechPresetPersistJob: Job? = null
+    private var syncClipboardCapabilityObserverJob: Job? = null
+
+    init {
+        if (_syncClipboardState.value.enabled &&
+            _syncClipboardState.value.receiveMode != ClipboardSyncReceiveMode.OFF &&
+            prefs.syncClipboardRealtimeSupported == null
+        ) {
+            requestSyncClipboardCapabilityProbe()
+        }
+    }
 
     data class SpeechPresetsState(
         val presets: List<SpeechPreset> = emptyList(),
@@ -46,7 +57,9 @@ class OtherSettingsViewModel(
         val serverBase: String = "",
         val username: String = "",
         val password: String = "",
-        val autoPullEnabled: Boolean = false,
+        val receiveMode: ClipboardSyncReceiveMode = ClipboardSyncReceiveMode.OFF,
+        val detectingReceiveMode: Boolean = false,
+        val keepBackgroundRealtimeEnabled: Boolean = false,
         val pullIntervalSec: Int = 15
     )
 
@@ -217,7 +230,8 @@ class OtherSettingsViewModel(
         serverBase = prefs.syncClipboardServerBase,
         username = prefs.syncClipboardUsername,
         password = prefs.syncClipboardPassword,
-        autoPullEnabled = prefs.syncClipboardAutoPullEnabled,
+        receiveMode = prefs.syncClipboardReceiveMode,
+        keepBackgroundRealtimeEnabled = prefs.syncClipboardKeepBackgroundRealtimeEnabled,
         pullIntervalSec = prefs.syncClipboardPullIntervalSec
     )
 
@@ -233,7 +247,19 @@ class OtherSettingsViewModel(
             try {
                 prefs.syncClipboardEnabled = enabled
                 _syncClipboardState.value = _syncClipboardState.value.copy(enabled = enabled)
-                onSyncClipboardChanged()
+                if (!enabled) {
+                    syncClipboardCapabilityObserverJob?.cancel()
+                    _syncClipboardState.value = _syncClipboardState.value.copy(
+                        detectingReceiveMode = false
+                    )
+                    onSyncClipboardChanged()
+                } else if (_syncClipboardState.value.receiveMode != ClipboardSyncReceiveMode.OFF &&
+                    prefs.syncClipboardRealtimeSupported == null
+                ) {
+                    requestSyncClipboardCapabilityProbe()
+                } else {
+                    onSyncClipboardChanged()
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update sync clipboard enabled", e)
             }
@@ -245,6 +271,7 @@ class OtherSettingsViewModel(
             try {
                 prefs.syncClipboardServerBase = serverBase
                 _syncClipboardState.value = _syncClipboardState.value.copy(serverBase = serverBase)
+                onSyncClipboardConnectionConfigChanged()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update sync clipboard server base", e)
             }
@@ -256,6 +283,7 @@ class OtherSettingsViewModel(
             try {
                 prefs.syncClipboardUsername = username
                 _syncClipboardState.value = _syncClipboardState.value.copy(username = username)
+                onSyncClipboardConnectionConfigChanged()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update sync clipboard username", e)
             }
@@ -267,21 +295,86 @@ class OtherSettingsViewModel(
             try {
                 prefs.syncClipboardPassword = password
                 _syncClipboardState.value = _syncClipboardState.value.copy(password = password)
+                onSyncClipboardConnectionConfigChanged()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update sync clipboard password", e)
             }
         }
     }
 
-    fun updateSyncClipboardAutoPullEnabled(enabled: Boolean) {
+    fun updateSyncClipboardAutoReceiveEnabled(enabled: Boolean) {
         viewModelScope.launch {
             try {
-                prefs.syncClipboardAutoPullEnabled = enabled
+                syncClipboardCapabilityObserverJob?.cancel()
+                if (!enabled) {
+                    prefs.syncClipboardReceiveMode = ClipboardSyncReceiveMode.OFF
+                    _syncClipboardState.value = _syncClipboardState.value.copy(
+                        receiveMode = ClipboardSyncReceiveMode.OFF,
+                        detectingReceiveMode = false
+                    )
+                    onSyncClipboardChanged()
+                } else {
+                    val cached = prefs.syncClipboardRealtimeSupported
+                    if (cached == null) {
+                        requestSyncClipboardCapabilityProbe()
+                    } else {
+                        val mode = if (cached) ClipboardSyncReceiveMode.REALTIME
+                        else ClipboardSyncReceiveMode.POLLING
+                        prefs.syncClipboardReceiveMode = mode
+                        _syncClipboardState.value = _syncClipboardState.value.copy(
+                            receiveMode = mode,
+                            detectingReceiveMode = false
+                        )
+                        onSyncClipboardChanged()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update automatic clipboard receive", e)
+            }
+        }
+    }
+
+    private fun onSyncClipboardConnectionConfigChanged() {
+        if (_syncClipboardState.value.receiveMode != ClipboardSyncReceiveMode.OFF) {
+            requestSyncClipboardCapabilityProbe()
+        } else {
+            onSyncClipboardChanged()
+        }
+    }
+
+    private fun requestSyncClipboardCapabilityProbe() {
+        syncClipboardCapabilityObserverJob?.cancel()
+        prefs.syncClipboardReceiveMode = ClipboardSyncReceiveMode.POLLING
+        _syncClipboardState.value = _syncClipboardState.value.copy(
+            receiveMode = ClipboardSyncReceiveMode.POLLING,
+            detectingReceiveMode = true
+        )
+        onSyncClipboardChanged()
+        syncClipboardCapabilityObserverJob = viewModelScope.launch {
+            while (_syncClipboardState.value.enabled &&
+                _syncClipboardState.value.receiveMode != ClipboardSyncReceiveMode.OFF
+            ) {
+                if (prefs.syncClipboardRealtimeSupported != null) {
+                    _syncClipboardState.value = _syncClipboardState.value.copy(
+                        receiveMode = prefs.syncClipboardReceiveMode,
+                        detectingReceiveMode = false
+                    )
+                    return@launch
+                }
+                delay(250L)
+            }
+        }
+    }
+
+    fun updateSyncClipboardKeepBackgroundRealtimeEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                prefs.syncClipboardKeepBackgroundRealtimeEnabled = enabled
                 _syncClipboardState.value =
-                    _syncClipboardState.value.copy(autoPullEnabled = enabled)
+                    _syncClipboardState.value.copy(keepBackgroundRealtimeEnabled = enabled)
                 onSyncClipboardChanged()
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to update sync clipboard auto pull enabled", e)
+                Log.e(TAG, "Failed to update keep background realtime", e)
             }
         }
     }
@@ -301,6 +394,7 @@ class OtherSettingsViewModel(
     }
 
     override fun onCleared() {
+        syncClipboardCapabilityObserverJob?.cancel()
         flushPendingSpeechPreset()
         super.onCleared()
     }

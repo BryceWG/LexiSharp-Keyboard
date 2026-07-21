@@ -99,6 +99,18 @@
         </service>
 
 
+        <!-- Clipboard Sync Runtime（独立于悬浮球；主 IME / Bridge 激活） -->
+        <service
+            android:name=".clipboard.ClipboardSyncRuntimeService"
+            android:exported="false" />
+
+        <service
+            android:name=".imebridge.ImeBridgeClipboardSyncService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.brycewg.asrkb.imebridge.action.BIND_CLIPBOARD_SYNC_RUNTIME" />
+            </intent-filter>
+        </service>
 
         <!-- 悬浮球语音识别服务 -->
         <service

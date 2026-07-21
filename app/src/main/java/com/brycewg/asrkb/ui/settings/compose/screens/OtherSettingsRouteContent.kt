@@ -59,7 +59,8 @@ internal fun OtherSettingsRouteContent(
     onSyncClipboardServerChange: (String) -> Unit,
     onSyncClipboardUsernameChange: (String) -> Unit,
     onSyncClipboardPasswordChange: (String) -> Unit,
-    onSyncClipboardAutoPullChange: (Boolean) -> Unit,
+    onSyncClipboardAutoReceiveChange: (Boolean) -> Unit,
+    onSyncClipboardKeepBackgroundChange: (Boolean) -> Unit,
     onSyncClipboardIntervalChange: (Int) -> Unit,
     onTestClipboardSync: () -> Unit,
     onOpenSyncClipboardProject: () -> Unit
@@ -143,7 +144,8 @@ internal fun OtherSettingsRouteContent(
                 onServerChange = onSyncClipboardServerChange,
                 onUsernameChange = onSyncClipboardUsernameChange,
                 onPasswordChange = onSyncClipboardPasswordChange,
-                onAutoPullChange = onSyncClipboardAutoPullChange,
+                onAutoReceiveChange = onSyncClipboardAutoReceiveChange,
+                onKeepBackgroundRealtimeChange = onSyncClipboardKeepBackgroundChange,
                 onIntervalChange = onSyncClipboardIntervalChange,
                 onTestPull = onTestClipboardSync,
                 onOpenProject = onOpenSyncClipboardProject
