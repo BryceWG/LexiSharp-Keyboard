@@ -1,5 +1,20 @@
 # Changelog
 
+## v4.2.1 (2026-07-22)
+
+### New Features
+
+- **Clipboard Realtime Sync**: SyncClipboard Auto Receive uses realtime sync when the server supports it, otherwise periodic pull; optionally keep the realtime connection alive in the background
+
+### Improvements
+
+- **Target API Version**: Updated Target API version to 3
+- **Clipboard Sync Runtime**: IME Bridge clipboard sync now runs as an independent background service and no longer depends on the floating ball
+- **IME Hook Module Updates**: Optimized IME Hook module toggle and status copy; recording-area availability is controlled by the bridge module; added multiple module settings and support for real-time module settings changes
+- **Settings Switch Explanations**: More settings switches show feature explanations when toggled, making on/off effects clearer
+
+---
+
 ## v4.2.0 (2026-07-20)
 
 ### New Features
