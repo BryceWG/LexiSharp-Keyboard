@@ -62,4 +62,8 @@
     <!-- Volcengine - Model version -->
     <string name="feature_volc_model_v2_off_desc">Uses Doubao ASR 1.0 model. Compatible with earlier API versions.</string>
     <string name="feature_volc_model_v2_on_desc">Uses Doubao ASR 2.0 model (default). Better recognition accuracy and more language support.</string>
+
+    <!-- Volcengine - New auth -->
+    <string name="feature_volc_use_new_auth_off_desc">Uses the classic App Key / Access Key authentication.</string>
+    <string name="feature_volc_use_new_auth_on_desc">Uses the newer X-Api-Key authentication. Choose the method that matches your Volcano Engine console credentials.</string>
 </resources>

@@ -38,6 +38,7 @@ internal fun CurrentLocalAsrVendorConfig(
     viewModel: AsrSettingsViewModel,
     onOpenGuide: () -> Unit,
     onOpenPunctuationGuide: () -> Unit,
+    applySwitch: AsrExplainedSwitchApplier,
     primaryIndexOffset: Int = 0,
     primaryGroupCount: Int? = null
 ) {
@@ -58,6 +59,7 @@ internal fun CurrentLocalAsrVendorConfig(
             localModelState = localModelState,
             viewModel = viewModel,
             onOpenGuide = onOpenGuide,
+            applySwitch = applySwitch,
             primaryIndexOffset = primaryIndexOffset,
             primaryGroupCount = primaryGroupCount
         )
@@ -68,6 +70,7 @@ internal fun CurrentLocalAsrVendorConfig(
             localModelState = localModelState,
             viewModel = viewModel,
             onOpenGuide = onOpenGuide,
+            applySwitch = applySwitch,
             primaryIndexOffset = primaryIndexOffset,
             primaryGroupCount = primaryGroupCount
         )
@@ -78,6 +81,7 @@ internal fun CurrentLocalAsrVendorConfig(
             localModelState = localModelState,
             viewModel = viewModel,
             onOpenGuide = onOpenGuide,
+            applySwitch = applySwitch,
             primaryIndexOffset = primaryIndexOffset,
             primaryGroupCount = primaryGroupCount
         )
@@ -208,6 +212,7 @@ private fun FunAsrNanoConfig(
     localModelState: AsrLocalModelRouteState,
     viewModel: AsrSettingsViewModel,
     onOpenGuide: () -> Unit,
+    applySwitch: AsrExplainedSwitchApplier,
     primaryIndexOffset: Int = 0,
     primaryGroupCount: Int? = null
 ) {
@@ -258,8 +263,16 @@ private fun FunAsrNanoConfig(
         checked = uiState.fnUseItn,
         index = itemIndex++,
         count = itemCount,
-        onCheckedChange = {
-            viewModel.updateFnUseItn(it)
+        onCheckedChange = { checked ->
+            applySwitch(
+                checked,
+                R.string.label_fn_use_itn,
+                R.string.feature_fn_use_itn_off_desc,
+                R.string.feature_fn_use_itn_on_desc,
+                uiState.fnUseItn,
+                "fn_use_itn_explained",
+                viewModel::updateFnUseItn
+            )
         }
     )
     AsrSwitchPreference(
@@ -268,8 +281,16 @@ private fun FunAsrNanoConfig(
         checked = uiState.fnPreloadEnabled,
         index = itemIndex++,
         count = itemCount,
-        onCheckedChange = {
-            viewModel.updateFnPreload(it)
+        onCheckedChange = { checked ->
+            applySwitch(
+                checked,
+                R.string.label_fn_preload,
+                R.string.feature_fn_preload_off_desc,
+                R.string.feature_fn_preload_on_desc,
+                uiState.fnPreloadEnabled,
+                "fn_preload_explained",
+                viewModel::updateFnPreload
+            )
         }
     )
     KeepAlivePreference(
@@ -308,6 +329,7 @@ private fun Qwen3AsrConfig(
     localModelState: AsrLocalModelRouteState,
     viewModel: AsrSettingsViewModel,
     onOpenGuide: () -> Unit,
+    applySwitch: AsrExplainedSwitchApplier,
     primaryIndexOffset: Int = 0,
     primaryGroupCount: Int? = null
 ) {
@@ -343,8 +365,16 @@ private fun Qwen3AsrConfig(
         checked = uiState.qwPreloadEnabled,
         index = itemIndex++,
         count = itemCount,
-        onCheckedChange = {
-            viewModel.updateQwPreload(it)
+        onCheckedChange = { checked ->
+            applySwitch(
+                checked,
+                R.string.label_qw_preload,
+                R.string.feature_qw_preload_off_desc,
+                R.string.feature_qw_preload_on_desc,
+                uiState.qwPreloadEnabled,
+                "qw_preload_explained",
+                viewModel::updateQwPreload
+            )
         }
     )
     AsrSwitchPreference(
@@ -382,6 +412,7 @@ private fun ParakeetConfig(
     localModelState: AsrLocalModelRouteState,
     viewModel: AsrSettingsViewModel,
     onOpenGuide: () -> Unit,
+    applySwitch: AsrExplainedSwitchApplier,
     primaryIndexOffset: Int = 0,
     primaryGroupCount: Int? = null
 ) {
@@ -417,8 +448,16 @@ private fun ParakeetConfig(
         checked = uiState.pkPreloadEnabled,
         index = itemIndex++,
         count = itemCount,
-        onCheckedChange = {
-            viewModel.updatePkPreload(it)
+        onCheckedChange = { checked ->
+            applySwitch(
+                checked,
+                R.string.label_pk_preload,
+                R.string.feature_pk_preload_off_desc,
+                R.string.feature_pk_preload_on_desc,
+                uiState.pkPreloadEnabled,
+                "pk_preload_explained",
+                viewModel::updatePkPreload
+            )
         }
     )
     KeepAlivePreference(

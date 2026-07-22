@@ -53,6 +53,8 @@
     <!-- Keyboard height -->
     <string name="label_keyboard_height">鍵盤縮放</string>
     <string name="label_ime_tablet_floating_keyboard">懸浮鍵盤</string>
+    <string name="feature_ime_tablet_floating_keyboard_off_desc">大螢幕上鍵盤仍固定在底部。</string>
+    <string name="feature_ime_tablet_floating_keyboard_on_desc">大螢幕上鍵盤可懸浮並自由調整位置，方便單手操作。</string>
     <string name="keyboard_height_small">小</string>
     <string name="keyboard_height_medium">中</string>
     <string name="keyboard_height_large">大</string>

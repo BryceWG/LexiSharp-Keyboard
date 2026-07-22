@@ -6,6 +6,8 @@
     <string name="label_mimo_asr_model">モデル</string>
     <string name="label_mimo_asr_prompt">System Prompt（v2.5のみ）</string>
     <string name="label_mimo_disable_thinking">推論を無効化</string>
+    <string name="feature_mimo_disable_thinking_off_desc">モデル既定の思考モードを使います。より慎重になる一方で遅くなりやすいです。</string>
+    <string name="feature_mimo_disable_thinking_on_desc">思考を無効化し、元の音声により近い、より速い文字起こしを行います。</string>
     <string name="mimo_endpoint_cn">Token Plan（中国大陸）</string>
     <string name="mimo_endpoint_sgp">Token Plan（シンガポール）</string>
     <string name="mimo_endpoint_ams">Token Plan（ヨーロッパ）</string>

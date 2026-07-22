@@ -285,6 +285,7 @@ internal fun AsrSettingsRouteContent(
                         onOpenPunctuationGuide = {
                             onOpenUrl(PUNCTUATION_MODEL_GUIDE_URL)
                         },
+                        applySwitch = applyVolcSwitch,
                         primaryIndexOffset = 1,
                         primaryGroupCount = vendorGroupCount
                     )

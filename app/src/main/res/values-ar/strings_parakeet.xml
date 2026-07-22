@@ -8,6 +8,8 @@
     <string name="pk_model_06b_v2_int8">0.6B V2 Int8 إنجليزي (451MB)</string>
     <string name="label_pk_threads">عدد الخيوط (1-8)</string>
     <string name="label_pk_preload">تحميل النموذج بقوة</string>
+    <string name="feature_pk_preload_off_desc">يُحمَّل النموذج عند الحاجة فقط، وقد يسبب تأخيراً في أول استخدام.</string>
+    <string name="feature_pk_preload_on_desc">يُحمَّل النموذج مسبقاً عند ظهور لوحة المفاتيح لتقليل تأخير أول استخدام.</string>
     <string name="label_pk_keep_alive">سياسة إلغاء تحميل النموذج</string>
     <string name="btn_pk_download_model">تنزيل النموذج بنقرة</string>
     <string name="btn_pk_import_model">استيراد النموذج من ملف محلي</string>

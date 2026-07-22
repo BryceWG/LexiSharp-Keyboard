@@ -6,6 +6,8 @@
     <string name="label_mimo_asr_model">Model</string>
     <string name="label_mimo_asr_prompt">System Prompt (v2.5 only)</string>
     <string name="label_mimo_disable_thinking">Disable thinking</string>
+    <string name="feature_mimo_disable_thinking_off_desc">Uses the model default thinking mode, which may be more careful but slower.</string>
+    <string name="feature_mimo_disable_thinking_on_desc">Disables thinking for faster transcription that stays closer to the original audio.</string>
     <string name="mimo_endpoint_cn">Token Plan (Mainland China)</string>
     <string name="mimo_endpoint_sgp">Token Plan (Singapore)</string>
     <string name="mimo_endpoint_ams">Token Plan (Europe)</string>

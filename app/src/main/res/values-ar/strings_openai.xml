@@ -30,4 +30,8 @@
     <!-- OpenAI - Streaming -->
     <string name="feature_openai_streaming_off_desc">يستخدم النسخ النصي عبر رفع الملفات. تُعاد النتائج بعد إيقاف التسجيل.</string>
     <string name="feature_openai_streaming_on_desc">يستخدم بث Realtime عبر WebSocket. يعرض نتائج جزئية أثناء الكلام. يتطلّب دعم Realtime API من المزود.</string>
+
+    <!-- OpenAI - Use Completions -->
+    <string name="feature_openai_use_completions_off_desc">يستخدم نقطة نهاية النسخ النصي للتعرّف.</string>
+    <string name="feature_openai_use_completions_on_desc">يستخدم بدلاً من ذلك نقطة نهاية متوافقة مع Completions. مطلوب لبعض المزودين المتوافقين أو عمليات النشر المخصصة.</string>
 </resources>

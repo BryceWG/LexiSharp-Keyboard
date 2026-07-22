@@ -5,16 +5,22 @@
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">クリップボード同期</string>
     <string name="label_enable_sync_clipboard">SyncClipboardを使用してクリップボードを同期</string>
+    <string name="feature_sync_clipboard_off_desc">SyncClipboard サーバーとクリップボードを同期しません。</string>
+    <string name="feature_sync_clipboard_on_desc">SyncClipboard サーバーとクリップボードを同期し、端末間でテキストをやり取りできます。</string>
     <string name="label_sc_server_base">サーバーベースURL（/SyncClipboard.jsonを追加）</string>
     <string name="label_sc_username">ユーザー名</string>
     <string name="label_sc_password">パスワード</string>
     <string name="label_sc_pull_interval">定期プルの間隔（秒、1-600）</string>
     <string name="label_sc_auto_receive">自動受信</string>
+    <string name="feature_sc_auto_receive_off_desc">ローカルのクリップボード変更のみをアップロードし、遠隔の更新は取得しません。</string>
+    <string name="feature_sc_auto_receive_on_desc">サーバーからのクリップボード更新も受信します（対応時はリアルタイム、それ以外は定期プル）。</string>
     <string name="summary_sc_auto_receive_off">オフ：アップロードのみ</string>
     <string name="summary_sc_auto_receive_detecting">サーバーの対応方式を確認中…</string>
     <string name="summary_sc_auto_receive_realtime">オン：サーバーはリアルタイム同期に対応</string>
     <string name="summary_sc_auto_receive_polling">オン：定期プルを使用</string>
     <string name="label_sc_keep_background_realtime">バックグラウンドでリアルタイム接続を維持</string>
+    <string name="feature_sc_keep_background_realtime_off_desc">リアルタイム同期は、アプリや関連サービスが稼働している間だけ維持されます。</string>
+    <string name="feature_sc_keep_background_realtime_on_desc">バックグラウンドでも SyncClipboard のリアルタイム接続を維持しようとします。</string>
     <string name="btn_sc_test_pull">検証</string>
     <string name="sc_test_success">プル成功</string>
     <string name="sc_test_failed">プル失敗。URLと認証情報を確認してください。</string>

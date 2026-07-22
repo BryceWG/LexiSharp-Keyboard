@@ -42,9 +42,13 @@
     <string name="fn_lang_sv">瑞典語</string>
     <string name="label_fn_threads">執行緒數（1-8）</string>
     <string name="label_fn_use_itn">啟用 ITN（數字智慧識別）</string>
+    <string name="feature_fn_use_itn_off_desc">保留口語寫法，例如「一千二百三十四」。</string>
+    <string name="feature_fn_use_itn_on_desc">自動將支援的中文數字、日期與時間改成常用書面寫法，例如將「一千二百三十四」寫成「1234」。</string>
     <string name="label_fn_user_prompt">User Prompt（提示詞）</string>
     <string name="fn_user_prompt_hint">較長的 Prompt 可能會拖慢處理速度。</string>
     <string name="label_fn_preload">積極載入模型</string>
+    <string name="feature_fn_preload_off_desc">僅在需要時載入模型，首次使用可能有延遲。</string>
+    <string name="feature_fn_preload_on_desc">鍵盤顯示時預載入模型，減少首次使用延遲。</string>
     <string name="label_fn_keep_alive">模型卸載策略</string>
     <string name="btn_fn_download_model">一鍵下載模型</string>
     <string name="btn_fn_import_model">從本機匯入模型</string>

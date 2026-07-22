@@ -53,6 +53,8 @@
     <!-- Keyboard height -->
     <string name="label_keyboard_height">键盘比例</string>
     <string name="label_ime_tablet_floating_keyboard">悬浮键盘</string>
+    <string name="feature_ime_tablet_floating_keyboard_off_desc">大屏上键盘仍固定在底部。</string>
+    <string name="feature_ime_tablet_floating_keyboard_on_desc">大屏上键盘可悬浮并自由调整位置，方便单手操作。</string>
     <string name="keyboard_height_small">小</string>
     <string name="keyboard_height_medium">中</string>
     <string name="keyboard_height_large">大</string>

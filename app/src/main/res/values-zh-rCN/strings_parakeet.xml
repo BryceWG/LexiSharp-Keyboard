@@ -8,6 +8,8 @@
     <string name="pk_model_06b_v2_int8">0.6B V2 Int8 English（451MB）</string>
     <string name="label_pk_threads">线程数（1-8）</string>
     <string name="label_pk_preload">积极加载模型</string>
+    <string name="feature_pk_preload_off_desc">仅在需要时加载模型，首次使用可能有延迟。</string>
+    <string name="feature_pk_preload_on_desc">键盘显示时预加载模型，减少首次使用延迟。</string>
     <string name="label_pk_keep_alive">模型卸载策略</string>
     <string name="btn_pk_download_model">一键下载模型</string>
     <string name="btn_pk_import_model">从本地导入模型</string>

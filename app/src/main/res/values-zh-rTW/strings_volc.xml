@@ -62,4 +62,8 @@
     <!-- 火山引擎 - 模型版本 -->
     <string name="feature_volc_model_v2_off_desc">使用豆包語音識別 1.0 模型。相容早期 API 版本。</string>
     <string name="feature_volc_model_v2_on_desc">使用豆包語音識別 2.0 模型（預設）。識別準確度更好，支援更多語言。</string>
+
+    <!-- 新驗證方式 - New auth -->
+    <string name="feature_volc_use_new_auth_off_desc">使用經典的 App Key / Access Key 驗證方式。</string>
+    <string name="feature_volc_use_new_auth_on_desc">使用較新的 X-Api-Key 驗證方式。請選擇與火山引擎控制台憑證一致的方式。</string>
 </resources>

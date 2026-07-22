@@ -14,4 +14,6 @@
     <string name="stepaudio_lang_en">English</string>
     <string name="stepaudio_lang_auto">Auto</string>
     <string name="label_stepaudio_use_itn">Enable ITN (smart number recognition)</string>
+    <string name="feature_stepaudio_use_itn_off_desc">Keeps spoken forms, such as “one thousand two hundred thirty-four”.</string>
+    <string name="feature_stepaudio_use_itn_on_desc">Converts supported Chinese numbers, dates, and times to common written forms, such as “1234”.</string>
 </resources>

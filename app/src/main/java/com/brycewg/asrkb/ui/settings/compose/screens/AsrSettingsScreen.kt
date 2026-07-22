@@ -370,6 +370,36 @@ fun AsrSettingsScreen(
         )
     }
 
+    fun applyStepAudioUseItnSwitch(target: Boolean) {
+        featureExplainerDialog = settingsFeatureExplainerDialogState(
+            context = context,
+            titleRes = R.string.label_stepaudio_use_itn,
+            offDescRes = R.string.feature_stepaudio_use_itn_off_desc,
+            onDescRes = R.string.feature_stepaudio_use_itn_on_desc,
+            currentState = onlineFields.stepAudioUseItn,
+            preferenceKey = "stepaudio_use_itn_explained",
+            onConfirm = {
+                onlineFields.stepAudioUseItn = target
+                prefs.stepAudioUseItn = target
+            }
+        )
+    }
+
+    fun applyMimoDisableThinkingSwitch(target: Boolean) {
+        featureExplainerDialog = settingsFeatureExplainerDialogState(
+            context = context,
+            titleRes = R.string.label_mimo_disable_thinking,
+            offDescRes = R.string.feature_mimo_disable_thinking_off_desc,
+            onDescRes = R.string.feature_mimo_disable_thinking_on_desc,
+            currentState = onlineFields.mimoDisableThinking,
+            preferenceKey = "mimo_disable_thinking_explained",
+            onConfirm = {
+                onlineFields.mimoDisableThinking = target
+                prefs.mimoAsrDisableThinking = target
+            }
+        )
+    }
+
     fun applyOpenAiStreamingSwitch(target: Boolean) {
         featureExplainerDialog = settingsFeatureExplainerDialogState(
             context = context,
@@ -381,6 +411,22 @@ fun AsrSettingsScreen(
             onConfirm = {
                 onlineFields.openAiStreaming = target
                 viewModel.updateOpenAiStreaming(target)
+            }
+        )
+    }
+
+    fun applyOpenAiUseCompletionsSwitch(target: Boolean) {
+        featureExplainerDialog = settingsFeatureExplainerDialogState(
+            context = context,
+            titleRes = R.string.label_openai_use_completions,
+            offDescRes = R.string.feature_openai_use_completions_off_desc,
+            onDescRes = R.string.feature_openai_use_completions_on_desc,
+            currentState = onlineFields.openAiUseCompletions,
+            preferenceKey = "openai_use_completions_explained",
+            onConfirm = {
+                onlineFields.openAiUseCompletions = target
+                prefs.oaAsrUseCompletions = target
+                viewModel.refreshOpenAiProfileState()
             }
         )
     }
@@ -609,10 +655,13 @@ fun AsrSettingsScreen(
                 applyDashSemanticPunctSwitch = ::applyDashSemanticPunctSwitch,
                 applyElevenStreamingSwitch = ::applyElevenStreamingSwitch,
                 applyGeminiThinkingSwitch = ::applyGeminiThinkingSwitch,
+                applyMimoDisableThinkingSwitch = ::applyMimoDisableThinkingSwitch,
                 applyOpenAiStreamingSwitch = ::applyOpenAiStreamingSwitch,
+                applyOpenAiUseCompletionsSwitch = ::applyOpenAiUseCompletionsSwitch,
                 applyOpenAiUsePromptSwitch = ::applyOpenAiUsePromptSwitch,
                 applySonioxStreamingSwitch = ::applySonioxStreamingSwitch,
                 applySonioxLanguageStrictSwitch = ::applySonioxLanguageStrictSwitch,
+                applyStepAudioUseItnSwitch = ::applyStepAudioUseItnSwitch,
                 openAiDefaultProfileName = { index ->
                     context.getString(R.string.openai_profile_default_name, index)
                 }

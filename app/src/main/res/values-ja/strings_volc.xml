@@ -62,4 +62,8 @@
     <!-- 火山引擎 - モデルバージョン -->
     <string name="feature_volc_model_v2_off_desc">Doubao ASR 1.0モデルを使用します。以前のAPIバージョンとの互換性があります。</string>
     <string name="feature_volc_model_v2_on_desc">Doubao ASR 2.0モデルを使用します（既定）。認識精度が向上し、より多くの言語をサポートします。</string>
+
+    <!-- Volcengine - 新しい認証 -->
+    <string name="feature_volc_use_new_auth_off_desc">従来の App Key / Access Key 認証を使用します。</string>
+    <string name="feature_volc_use_new_auth_on_desc">新しい X-Api-Key 認証を使用します。Volcano Engine コンソールの認証情報に合う方式を選んでください。</string>
 </resources>

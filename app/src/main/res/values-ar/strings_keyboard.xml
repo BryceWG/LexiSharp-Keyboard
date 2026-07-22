@@ -53,6 +53,8 @@
     <!-- Keyboard height -->
     <string name="label_keyboard_height">مقياس لوحة المفاتيح</string>
     <string name="label_ime_tablet_floating_keyboard">لوحة مفاتيح عائمة</string>
+    <string name="feature_ime_tablet_floating_keyboard_off_desc">تبقى لوحة المفاتيح مثبتة في الأسفل على الشاشات الكبيرة.</string>
+    <string name="feature_ime_tablet_floating_keyboard_on_desc">على الشاشات الكبيرة، يمكن تعويم لوحة المفاتيح وإعادة وضعها لتسهيل الاستخدام بيد واحدة.</string>
     <string name="keyboard_height_small">صغير</string>
     <string name="keyboard_height_medium">متوسط</string>
     <string name="keyboard_height_large">كبير</string>

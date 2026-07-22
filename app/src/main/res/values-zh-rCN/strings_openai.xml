@@ -31,4 +31,8 @@
     <!-- 流式识别 - Streaming -->
     <string name="feature_openai_streaming_off_desc">关闭时使用文件上传识别，停止录音后返回结果。</string>
     <string name="feature_openai_streaming_on_desc">开启后使用 Realtime WebSocket 流式识别，说话时实时显示中间结果。需要服务商支持 Realtime API。</string>
+
+    <!-- 使用 Completions - Use Completions -->
+    <string name="feature_openai_use_completions_off_desc">使用转写接口进行识别。</string>
+    <string name="feature_openai_use_completions_on_desc">改为使用 Completions 兼容接口。部分兼容服务商或自建部署需要此选项。</string>
 </resources>

@@ -187,10 +187,13 @@ internal class AsrOnlineSettingsFields(
         applyDashSemanticPunctSwitch: (Boolean) -> Unit,
         applyElevenStreamingSwitch: (Boolean) -> Unit,
         applyGeminiThinkingSwitch: (Boolean) -> Unit,
+        applyMimoDisableThinkingSwitch: (Boolean) -> Unit,
         applyOpenAiStreamingSwitch: (Boolean) -> Unit,
+        applyOpenAiUseCompletionsSwitch: (Boolean) -> Unit,
         applyOpenAiUsePromptSwitch: (Boolean) -> Unit,
         applySonioxStreamingSwitch: (Boolean) -> Unit,
         applySonioxLanguageStrictSwitch: (Boolean) -> Unit,
+        applyStepAudioUseItnSwitch: (Boolean) -> Unit,
         openAiDefaultProfileName: (Int) -> String
     ): AsrOnlineSettingsRouteState = AsrOnlineSettingsRouteState(
         volcAppKey = volcAppKey,
@@ -289,8 +292,7 @@ internal class AsrOnlineSettingsFields(
         },
         stepAudioUseItn = stepAudioUseItn,
         onStepAudioUseItnChange = { checked ->
-            stepAudioUseItn = checked
-            prefs.stepAudioUseItn = checked
+            applyStepAudioUseItnSwitch(checked)
         },
         zhipuApiKey = zhipuApiKey,
         onZhipuApiKeyChange = { value ->
@@ -407,8 +409,7 @@ internal class AsrOnlineSettingsFields(
         mimoPromptEnabled = shouldShowMimoPrompt(mimoModel),
         mimoDisableThinking = mimoDisableThinking,
         onMimoDisableThinkingChange = { checked ->
-            mimoDisableThinking = checked
-            prefs.mimoAsrDisableThinking = checked
+            applyMimoDisableThinkingSwitch(checked)
         },
         openAiProviders = openAiProviders,
         openAiActiveProviderId = openAiActiveProviderId,
@@ -487,9 +488,7 @@ internal class AsrOnlineSettingsFields(
         },
         openAiUseCompletions = openAiUseCompletions,
         onOpenAiUseCompletionsChange = { checked ->
-            openAiUseCompletions = checked
-            prefs.oaAsrUseCompletions = checked
-            viewModel.refreshOpenAiProfileState()
+            applyOpenAiUseCompletionsSwitch(checked)
         },
         openAiUsePrompt = openAiUsePrompt,
         onOpenAiUsePromptChange = { checked ->

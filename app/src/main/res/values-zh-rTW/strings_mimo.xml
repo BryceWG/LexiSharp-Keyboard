@@ -6,6 +6,8 @@
     <string name="label_mimo_asr_model">模型</string>
     <string name="label_mimo_asr_prompt">System Prompt（僅 v2.5 支援）</string>
     <string name="label_mimo_disable_thinking">停用推理</string>
+    <string name="feature_mimo_disable_thinking_off_desc">使用模型預設的思考模式，可能更仔細但較慢。</string>
+    <string name="feature_mimo_disable_thinking_on_desc">關閉思考，轉寫更快，也更貼近原始音訊內容。</string>
     <string name="mimo_endpoint_cn">Token Plan（中國大陸）</string>
     <string name="mimo_endpoint_sgp">Token Plan（新加坡）</string>
     <string name="mimo_endpoint_ams">Token Plan（歐洲）</string>

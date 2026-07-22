@@ -14,4 +14,6 @@
     <string name="stepaudio_lang_en">英文</string>
     <string name="stepaudio_lang_auto">自動</string>
     <string name="label_stepaudio_use_itn">啟用 ITN（數字智慧識別）</string>
+    <string name="feature_stepaudio_use_itn_off_desc">保留口語寫法，例如「一千二百三十四」。</string>
+    <string name="feature_stepaudio_use_itn_on_desc">自動將支援的中文數字、日期與時間改成常用書面寫法，例如將「一千二百三十四」寫成「1234」。</string>
 </resources>

@@ -10,6 +10,8 @@
     <string name="label_qw_use_itn">تفعيل ITN (تعرّف ذكي على الأرقام)</string>
     <string name="feature_qw_use_itn_off_desc">يحتفظ بالصيغ المنطوقة، مثل «ألف ومئتان وأربعة وثلاثون».</string>
     <string name="feature_qw_use_itn_on_desc">يحوّل الأرقام والتواريخ والأوقات الصينية المدعومة إلى صيغ مكتوبة شائعة، مثل «1234».</string>
+    <string name="feature_qw_preload_off_desc">يُحمَّل النموذج عند الحاجة فقط، وقد يسبب تأخيراً في أول استخدام.</string>
+    <string name="feature_qw_preload_on_desc">يُحمَّل النموذج مسبقاً عند ظهور لوحة المفاتيح لتقليل تأخير أول استخدام.</string>
     <string name="label_qw_keep_alive">سياسة إلغاء تحميل النموذج</string>
     <string name="btn_qw_download_model">تنزيل النموذج بنقرة</string>
     <string name="btn_qw_import_model">استيراد النموذج من ملف محلي</string>

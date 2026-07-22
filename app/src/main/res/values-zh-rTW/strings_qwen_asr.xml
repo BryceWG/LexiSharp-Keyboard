@@ -10,6 +10,8 @@
     <string name="label_qw_use_itn">啟用 ITN（數字智慧識別）</string>
     <string name="feature_qw_use_itn_off_desc">保留口語寫法，例如「一千二百三十四」。</string>
     <string name="feature_qw_use_itn_on_desc">自動將支援的中文數字、日期與時間改成常用書面寫法，例如將「一千二百三十四」寫成「1234」。</string>
+    <string name="feature_qw_preload_off_desc">僅在需要時載入模型，首次使用可能有延遲。</string>
+    <string name="feature_qw_preload_on_desc">鍵盤顯示時預載入模型，減少首次使用延遲。</string>
     <string name="label_qw_keep_alive">模型卸載策略</string>
     <string name="btn_qw_download_model">一鍵下載模型</string>
     <string name="btn_qw_import_model">從本機匯入模型</string>

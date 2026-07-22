@@ -53,6 +53,8 @@
     <!-- Keyboard height -->
     <string name="label_keyboard_height">Keyboard scale</string>
     <string name="label_ime_tablet_floating_keyboard">Floating keyboard</string>
+    <string name="feature_ime_tablet_floating_keyboard_off_desc">The keyboard stays docked at the bottom on large screens.</string>
+    <string name="feature_ime_tablet_floating_keyboard_on_desc">On large screens, the keyboard can float and be repositioned for easier one-handed use.</string>
     <string name="keyboard_height_small">Small</string>
     <string name="keyboard_height_medium">Medium</string>
     <string name="keyboard_height_large">Large</string>

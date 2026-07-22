@@ -55,7 +55,17 @@ internal fun AsrVolcRouteSection(
         apiKey = apiKey,
         onApiKeyChange = onApiKeyChange,
         useNewAuth = uiState.volcUseNewAuth,
-        onUseNewAuthChange = onUpdateUseNewAuth,
+        onUseNewAuthChange = { checked ->
+            applySwitch(
+                checked,
+                R.string.label_volc_use_new_auth,
+                R.string.feature_volc_use_new_auth_off_desc,
+                R.string.feature_volc_use_new_auth_on_desc,
+                uiState.volcUseNewAuth,
+                "volc_use_new_auth_explained",
+                onUpdateUseNewAuth
+            )
+        },
         streaming = uiState.volcStreamingEnabled,
         onStreamingChange = { checked ->
             applySwitch(

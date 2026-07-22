@@ -4,16 +4,22 @@
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">Clipboard Sync</string>
     <string name="label_enable_sync_clipboard">Use SyncClipboard to sync clipboard</string>
+    <string name="feature_sync_clipboard_off_desc">Clipboard is not synced with a SyncClipboard server.</string>
+    <string name="feature_sync_clipboard_on_desc">Syncs clipboard with your SyncClipboard server so text can move across devices.</string>
     <string name="label_sc_server_base">Server base URL (will append /SyncClipboard.json)</string>
     <string name="label_sc_username">Username</string>
     <string name="label_sc_password">Password</string>
     <string name="label_sc_pull_interval">Periodic pull interval (sec, 1-600)</string>
     <string name="label_sc_auto_receive">Automatic receive</string>
+    <string name="feature_sc_auto_receive_off_desc">Only uploads local clipboard changes; does not pull remote updates.</string>
+    <string name="feature_sc_auto_receive_on_desc">Also receives clipboard updates from the server (realtime when supported, otherwise periodic pull).</string>
     <string name="summary_sc_auto_receive_off">Off: upload only</string>
     <string name="summary_sc_auto_receive_detecting">Detecting server support…</string>
     <string name="summary_sc_auto_receive_realtime">On: server supports realtime sync</string>
     <string name="summary_sc_auto_receive_polling">On: using periodic pull</string>
     <string name="label_sc_keep_background_realtime">Keep background realtime connection</string>
+    <string name="feature_sc_keep_background_realtime_off_desc">Realtime sync only stays active while the app or related services keep it running.</string>
+    <string name="feature_sc_keep_background_realtime_on_desc">Tries to keep the realtime SyncClipboard connection alive in the background.</string>
     <string name="btn_sc_test_pull">Validate</string>
     <string name="sc_test_success">Pull succeeded</string>
     <string name="sc_test_failed">Pull failed. Please check URL and credentials.</string>

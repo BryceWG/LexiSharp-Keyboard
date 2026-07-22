@@ -42,9 +42,13 @@
     <string name="fn_lang_sv">السويدية</string>
     <string name="label_fn_threads">عدد الخيوط (1-8)</string>
     <string name="label_fn_use_itn">تفعيل ITN (تعرّف ذكي على الأرقام)</string>
+    <string name="feature_fn_use_itn_off_desc">يحتفظ بالصيغ المنطوقة، مثل «ألف ومئتان وأربعة وثلاثون».</string>
+    <string name="feature_fn_use_itn_on_desc">يحوّل الأرقام والتواريخ والأوقات الصينية المدعومة إلى صيغ مكتوبة شائعة، مثل «1234».</string>
     <string name="label_fn_user_prompt">موجّه المستخدم</string>
     <string name="fn_user_prompt_hint">الموجّهات الطويلة قد تبطئ المعالجة.</string>
     <string name="label_fn_preload">تحميل النموذج بقوة</string>
+    <string name="feature_fn_preload_off_desc">يُحمَّل النموذج عند الحاجة فقط، وقد يسبب تأخيراً في أول استخدام.</string>
+    <string name="feature_fn_preload_on_desc">يُحمَّل النموذج مسبقاً عند ظهور لوحة المفاتيح لتقليل تأخير أول استخدام.</string>
     <string name="label_fn_keep_alive">سياسة إلغاء تحميل النموذج</string>
     <string name="btn_fn_download_model">تنزيل النموذج بنقرة</string>
     <string name="btn_fn_import_model">استيراد النموذج من ملف محلي</string>

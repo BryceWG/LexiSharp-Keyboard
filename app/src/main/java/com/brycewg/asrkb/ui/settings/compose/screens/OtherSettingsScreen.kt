@@ -29,6 +29,7 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.ime.AsrKeyboardService
+import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import com.brycewg.asrkb.clipboard.ClipboardSyncRuntimeService
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveScheduler
@@ -393,13 +394,39 @@ fun OtherSettingsScreen(
                     )
                 }
             },
-            onSyncClipboardEnabledChange = viewModel::updateSyncClipboardEnabled,
+            onSyncClipboardEnabledChange = { target ->
+                applyExplainedSwitch(
+                    current = syncState.enabled,
+                    target = target,
+                    titleRes = R.string.label_enable_sync_clipboard,
+                    offDescRes = R.string.feature_sync_clipboard_off_desc,
+                    onDescRes = R.string.feature_sync_clipboard_on_desc,
+                    preferenceKey = "sync_clipboard_explained"
+                ) { viewModel.updateSyncClipboardEnabled(it) }
+            },
             onSyncClipboardServerChange = viewModel::updateSyncClipboardServerBase,
             onSyncClipboardUsernameChange = viewModel::updateSyncClipboardUsername,
             onSyncClipboardPasswordChange = viewModel::updateSyncClipboardPassword,
-            onSyncClipboardAutoReceiveChange = viewModel::updateSyncClipboardAutoReceiveEnabled,
-            onSyncClipboardKeepBackgroundChange =
-                viewModel::updateSyncClipboardKeepBackgroundRealtimeEnabled,
+            onSyncClipboardAutoReceiveChange = { target ->
+                applyExplainedSwitch(
+                    current = syncState.receiveMode != ClipboardSyncReceiveMode.OFF,
+                    target = target,
+                    titleRes = R.string.label_sc_auto_receive,
+                    offDescRes = R.string.feature_sc_auto_receive_off_desc,
+                    onDescRes = R.string.feature_sc_auto_receive_on_desc,
+                    preferenceKey = "sc_auto_receive_explained"
+                ) { viewModel.updateSyncClipboardAutoReceiveEnabled(it) }
+            },
+            onSyncClipboardKeepBackgroundChange = { target ->
+                applyExplainedSwitch(
+                    current = syncState.keepBackgroundRealtimeEnabled,
+                    target = target,
+                    titleRes = R.string.label_sc_keep_background_realtime,
+                    offDescRes = R.string.feature_sc_keep_background_realtime_off_desc,
+                    onDescRes = R.string.feature_sc_keep_background_realtime_on_desc,
+                    preferenceKey = "sc_keep_background_realtime_explained"
+                ) { viewModel.updateSyncClipboardKeepBackgroundRealtimeEnabled(it) }
+            },
             onSyncClipboardIntervalChange = viewModel::updateSyncClipboardPullIntervalSec,
             onTestClipboardSync = {
                 testClipboardSync(context, prefs, coroutineScope, ::showOtherMessage)

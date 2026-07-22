@@ -30,4 +30,8 @@
     <!-- OpenAI - ストリーミング -->
     <string name="feature_openai_streaming_off_desc">オフの場合、録音終了後に音声ファイルをアップロードして結果を取得します。</string>
     <string name="feature_openai_streaming_on_desc">オンの場合、Realtime WebSocket で音声を送信し、話している間に中間結果を表示します。プロバイダー側が Realtime API に対応している必要があります。</string>
+
+    <!-- OpenAI - Completions を使用 -->
+    <string name="feature_openai_use_completions_off_desc">認識には文字起こしエンドポイントを使用します。</string>
+    <string name="feature_openai_use_completions_on_desc">代わりに Completions 互換エンドポイントを使用します。一部の互換プロバイダーや独自デプロイで必要です。</string>
 </resources>

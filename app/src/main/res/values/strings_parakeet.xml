@@ -8,6 +8,8 @@
     <string name="pk_model_06b_v2_int8">0.6B V2 Int8 English (451MB)</string>
     <string name="label_pk_threads">Threads (1-8)</string>
     <string name="label_pk_preload">Aggressive model loading</string>
+    <string name="feature_pk_preload_off_desc">Loads the model only when needed, which may cause delay on first use.</string>
+    <string name="feature_pk_preload_on_desc">Preloads the model when the keyboard appears to reduce first-use latency.</string>
     <string name="label_pk_keep_alive">Model unload policy</string>
     <string name="btn_pk_download_model">One-click download model</string>
     <string name="btn_pk_import_model">Import model from local file</string>

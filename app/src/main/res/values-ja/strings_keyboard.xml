@@ -54,6 +54,8 @@
     <!-- Keyboard height -->
     <string name="label_keyboard_height">キーボードスケール</string>
     <string name="label_ime_tablet_floating_keyboard">フローティングキーボード</string>
+    <string name="feature_ime_tablet_floating_keyboard_off_desc">大画面でもキーボードは下部に固定されたままです。</string>
+    <string name="feature_ime_tablet_floating_keyboard_on_desc">大画面ではキーボードをフローティング表示し、位置を変えて片手操作しやすくできます。</string>
     <string name="keyboard_height_small">小</string>
     <string name="keyboard_height_medium">中</string>
     <string name="keyboard_height_large">大</string>

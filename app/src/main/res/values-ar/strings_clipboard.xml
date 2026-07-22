@@ -4,16 +4,22 @@
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">مزامنة الحافظة</string>
     <string name="label_enable_sync_clipboard">استخدام SyncClipboard لمزامنة الحافظة</string>
+    <string name="feature_sync_clipboard_off_desc">لا تتم مزامنة الحافظة مع خادم SyncClipboard.</string>
+    <string name="feature_sync_clipboard_on_desc">يزامن الحافظة مع خادم SyncClipboard لديك حتى يمكن نقل النص بين الأجهزة.</string>
     <string name="label_sc_server_base">عنوان الخادم الأساسي (سيُلحق /SyncClipboard.json)</string>
     <string name="label_sc_username">اسم المستخدم</string>
     <string name="label_sc_password">كلمة المرور</string>
     <string name="label_sc_pull_interval">فترة السحب الدوري (ثانية، 1-600)</string>
     <string name="label_sc_auto_receive">الاستقبال التلقائي</string>
+    <string name="feature_sc_auto_receive_off_desc">يرفع تغييرات الحافظة المحلية فقط؛ ولا يسحب التحديثات البعيدة.</string>
+    <string name="feature_sc_auto_receive_on_desc">يستقبل أيضاً تحديثات الحافظة من الخادم (فورياً عند الدعم، وإلا بالسحب الدوري).</string>
     <string name="summary_sc_auto_receive_off">متوقف: رفع فقط</string>
     <string name="summary_sc_auto_receive_detecting">جارٍ اكتشاف ما يدعمه الخادم…</string>
     <string name="summary_sc_auto_receive_realtime">مفعّل: الخادم يدعم المزامنة الفورية</string>
     <string name="summary_sc_auto_receive_polling">مفعّل: استخدام السحب الدوري</string>
     <string name="label_sc_keep_background_realtime">الحفاظ على اتصال فوري في الخلفية</string>
+    <string name="feature_sc_keep_background_realtime_off_desc">تبقى المزامنة الفورية نشطة فقط بينما يبقيها التطبيق أو الخدمات ذات الصلة قيد التشغيل.</string>
+    <string name="feature_sc_keep_background_realtime_on_desc">يحاول إبقاء اتصال SyncClipboard الفوري حياً في الخلفية.</string>
     <string name="btn_sc_test_pull">تحقق</string>
     <string name="sc_test_success">نجح السحب</string>
     <string name="sc_test_failed">فشل السحب. تحقّق من الرابط وبيانات الاعتماد.</string>

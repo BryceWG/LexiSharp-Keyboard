@@ -14,4 +14,6 @@
     <string name="stepaudio_lang_en">英語</string>
     <string name="stepaudio_lang_auto">自動</string>
     <string name="label_stepaudio_use_itn">ITNを有効化（数字スマート認識）</string>
+    <string name="feature_stepaudio_use_itn_off_desc">「千二百三十四」のような話し言葉の表記を保ちます。</string>
+    <string name="feature_stepaudio_use_itn_on_desc">対応する中国語の数字、日付、時刻を「1234」のような一般的な書面表記に変換します。</string>
 </resources>

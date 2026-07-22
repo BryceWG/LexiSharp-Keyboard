@@ -4,16 +4,22 @@
     <!-- SyncClipboard settings -->
     <string name="section_sync_clipboard">剪貼簿同步</string>
     <string name="label_enable_sync_clipboard">使用 SyncClipboard 同步剪貼簿</string>
+    <string name="feature_sync_clipboard_off_desc">不與 SyncClipboard 伺服器同步剪貼簿。</string>
+    <string name="feature_sync_clipboard_on_desc">與您的 SyncClipboard 伺服器同步剪貼簿，方便文字跨裝置流轉。</string>
     <string name="label_sc_server_base">伺服器位址（會自動拼接 /SyncClipboard.json）</string>
     <string name="label_sc_username">使用者名稱</string>
     <string name="label_sc_password">密碼</string>
     <string name="label_sc_pull_interval">定時拉取模式拉取間隔（秒，1-600）</string>
     <string name="label_sc_auto_receive">自動接收</string>
+    <string name="feature_sc_auto_receive_off_desc">僅上傳本機剪貼簿變更，不拉取遠端更新。</string>
+    <string name="feature_sc_auto_receive_on_desc">同時從伺服器接收剪貼簿更新（支援時用即時同步，否則定時拉取）。</string>
     <string name="summary_sc_auto_receive_off">已關閉：僅上傳</string>
     <string name="summary_sc_auto_receive_detecting">正在偵測伺服器支援的同步方式…</string>
     <string name="summary_sc_auto_receive_realtime">已開啟：伺服器支援即時同步</string>
     <string name="summary_sc_auto_receive_polling">已開啟：使用定時拉取</string>
     <string name="label_sc_keep_background_realtime">保持背景即時連線</string>
+    <string name="feature_sc_keep_background_realtime_off_desc">僅在應用或相關服務保持執行時維持即時同步。</string>
+    <string name="feature_sc_keep_background_realtime_on_desc">嘗試在背景保持 SyncClipboard 即時連線。</string>
     <string name="btn_sc_test_pull">立即驗證</string>
     <string name="sc_test_success">拉取成功</string>
     <string name="sc_test_failed">拉取失敗，請檢查位址與憑證</string>

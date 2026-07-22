@@ -6,6 +6,8 @@
     <string name="label_mimo_asr_model">النموذج</string>
     <string name="label_mimo_asr_prompt">موجّه النظام (v2.5 فقط)</string>
     <string name="label_mimo_disable_thinking">تعطيل التفكير</string>
+    <string name="feature_mimo_disable_thinking_off_desc">يستخدم وضع التفكير الافتراضي للنموذج، وقد يكون أدق لكنه أبطأ.</string>
+    <string name="feature_mimo_disable_thinking_on_desc">يعطّل التفكير لنسخ أسرع يبقى أقرب إلى الصوت الأصلي.</string>
     <string name="mimo_endpoint_cn">Token Plan (الصين القارية)</string>
     <string name="mimo_endpoint_sgp">Token Plan (سنغافورة)</string>
     <string name="mimo_endpoint_ams">Token Plan (أوروبا)</string>

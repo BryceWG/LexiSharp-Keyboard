@@ -63,4 +63,8 @@
     <!-- 模型版本 - Model version -->
     <string name="feature_volc_model_v2_off_desc">使用豆包语音识别 1.0 模型。兼容早期 API 版本。</string>
     <string name="feature_volc_model_v2_on_desc">使用豆包语音识别 2.0 模型（默认）。识别准确度更好，支持更多语言。</string>
+
+    <!-- 新鉴权方式 - New auth -->
+    <string name="feature_volc_use_new_auth_off_desc">使用经典的 App Key / Access Key 鉴权方式。</string>
+    <string name="feature_volc_use_new_auth_on_desc">使用较新的 X-Api-Key 鉴权方式。请选择与火山引擎控制台凭证一致的方式。</string>
 </resources>

@@ -62,4 +62,8 @@
     <!-- Volcengine - Model version -->
     <string name="feature_volc_model_v2_off_desc">يستخدم نموذج Doubao ASR 1.0. متوافق مع إصدارات API الأقدم.</string>
     <string name="feature_volc_model_v2_on_desc">يستخدم نموذج Doubao ASR 2.0 (افتراضي). دقة أفضل ودعم لغات أوسع.</string>
+
+    <!-- Volcengine - New auth -->
+    <string name="feature_volc_use_new_auth_off_desc">يستخدم مصادقة App Key / Access Key التقليدية.</string>
+    <string name="feature_volc_use_new_auth_on_desc">يستخدم مصادقة X-Api-Key الأحدث. اختر الطريقة التي تطابق بيانات اعتماد وحدة تحكم Volcano Engine.</string>
 </resources>

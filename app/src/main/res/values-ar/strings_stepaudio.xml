@@ -14,4 +14,6 @@
     <string name="stepaudio_lang_en">الإنجليزية</string>
     <string name="stepaudio_lang_auto">تلقائي</string>
     <string name="label_stepaudio_use_itn">تفعيل ITN (تعرّف ذكي على الأرقام)</string>
+    <string name="feature_stepaudio_use_itn_off_desc">يحتفظ بالصيغ المنطوقة، مثل «ألف ومئتان وأربعة وثلاثون».</string>
+    <string name="feature_stepaudio_use_itn_on_desc">يحوّل الأرقام والتواريخ والأوقات الصينية المدعومة إلى صيغ مكتوبة شائعة، مثل «1234».</string>
 </resources>

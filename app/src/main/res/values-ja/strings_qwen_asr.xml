@@ -10,6 +10,8 @@
     <string name="label_qw_use_itn">ITNを有効化（数字スマート認識）</string>
     <string name="feature_qw_use_itn_off_desc">「千二百三十四」のような話し言葉の表記を保ちます。</string>
     <string name="feature_qw_use_itn_on_desc">対応する中国語の数字、日付、時刻を「1234」のような一般的な書面表記に変換します。</string>
+    <string name="feature_qw_preload_off_desc">必要なときにのみモデルを読み込むため、初回使用時に遅延が発生する可能性があります。</string>
+    <string name="feature_qw_preload_on_desc">キーボードが表示されたときにモデルを事前読み込みし、初回使用の遅延を減らします。</string>
     <string name="label_qw_keep_alive">モデルアンロード方針</string>
     <string name="btn_qw_download_model">モデルをワンクリックでダウンロード</string>
     <string name="btn_qw_import_model">ローカルファイルからモデルをインポート</string>

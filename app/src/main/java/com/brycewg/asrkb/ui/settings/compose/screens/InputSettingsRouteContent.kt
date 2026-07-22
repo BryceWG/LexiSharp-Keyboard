@@ -441,17 +441,22 @@ internal fun InputSettingsRouteContent(
                         context.sendImeRefreshBroadcast()
                     }
                 )
-                SettingsPreference(
-                    entry = SettingsEntry.Switch(
-                        id = "ime_tablet_floating_keyboard",
-                        titleRes = R.string.label_ime_tablet_floating_keyboard,
-                        checked = uiState.imeTabletFloatingKeyboard,
-                        onCheckedChange = { enabled ->
-                            prefs.imeTabletFloatingKeyboardEnabled = enabled
-                            onUiStateChange(uiState.copy(imeTabletFloatingKeyboard = enabled))
-                            context.sendImeRefreshBroadcast()
-                        }
-                    ),
+                InputExplainedSwitch(
+                    id = "ime_tablet_floating_keyboard",
+                    titleRes = R.string.label_ime_tablet_floating_keyboard,
+                    checked = uiState.imeTabletFloatingKeyboard,
+                    onToggle = { target ->
+                        onApplyExplainedSwitch(
+                            uiState.imeTabletFloatingKeyboard,
+                            target,
+                            R.string.label_ime_tablet_floating_keyboard,
+                            R.string.feature_ime_tablet_floating_keyboard_off_desc,
+                            R.string.feature_ime_tablet_floating_keyboard_on_desc,
+                            "ime_tablet_floating_keyboard_explained",
+                            null,
+                            { context.sendImeRefreshBroadcast() }
+                        ) { prefs.imeTabletFloatingKeyboardEnabled = it }
+                    },
                     index = 1,
                     count = 6
                 )
