@@ -1,11 +1,11 @@
 {
-  "version": "4.2.0",
-  "version_code": 165,
-  "download_url": "https://github.com/BryceWG/BiBi-Keyboard/releases/tag/v4.2.0",
-  "release_notes": "### 新增功能\n\n- **悬浮球长按录音**：悬浮球设置新增长按录音模式，按住开始录音、松手停止\n- **Cohere ASR**：新增 Cohere 语音识别供应商\n- **阿拉伯语界面**：应用界面新增阿拉伯语语言选项\n- **识别历史音频与重跑**：识别时可缓存音频；历史详情可查看原文与最终结果，并支持重新识别或重新后处理；其他设置可配置音频保留数量\n- **IME Bridge 剪贴板同步**：剪贴板同步支持通过 IME Bridge，在目标输入法进程存活期间辅助同步\n\n### 改进优化\n\n- **录音音频焦点**：统一录音会话的音频焦点管理，失去焦点时更可靠地停止录音\n- **设置页交互**：优化对话框退出动画，以及多处 UI 细节\n\n### 问题修复\n\n- **IME Bridge 联动**：修复服务关闭时过早取消仍在收尾的会话，避免丢失待交付的识别结果",
-  "release_notes_en": "### New Features\n\n- **Floating Ball Hold-to-Record**: Added a hold-to-record mode for the floating ball—press and hold to record, release to stop\n- **Cohere ASR**: Added Cohere as a speech recognition vendor\n- **Arabic UI**: Added Arabic as an app language option\n- **History Audio & Rerun**: Recognition sessions can cache audio; history details show the raw transcript and final result, with re-recognize and re-process actions; Other settings can configure audio retention count\n- **IME Bridge Clipboard Sync**: Clipboard sync can use IME Bridge assistance while the target IME process is alive\n\n### Improvements\n\n- **Recording Audio Focus**: Unified audio-focus handling for recording sessions so recording stops more reliably when focus is lost\n- **Settings Interactions**: Smoother dialog exit animations and various UI improvements\n\n### Bug Fixes\n\n- **IME Bridge Coordination**: Fixed premature cancellation of finishing sessions during service shutdown, which could drop pending recognition results",
+  "version": "4.2.1",
+  "version_code": 166,
+  "download_url": "https://github.com/BryceWG/BiBi-Keyboard/releases/tag/v4.2.1",
+  "release_notes": "### 新增功能\n\n- **剪贴板实时同步**：SyncClipboard「自动接收」在服务端支持时使用 Realtime 实时同步，否则定时拉取；并可选择保持后台实时连接\n\n### 改进优化\n\n- **Target API 版本**：更新 Target API 版本至 36\n- **剪贴板同步运行时**：IME Bridge 剪贴板同步改为独立后台服务，不再依赖悬浮球运行\n- **IME Hook 模块更新**：优化输入法 Hook 模块设置开关与状态说明；录音区域可用性由桥接模块侧控制；新增多种模块设置，并支持模块设置更改实时生效\n- **设置开关说明**：更多设置项在开关时展示功能说明",
+  "release_notes_en": "### New Features\n\n- **Clipboard Realtime Sync**: SyncClipboard Auto Receive uses realtime sync when the server supports it, otherwise periodic pull; optionally keep the realtime connection alive in the background\n\n### Improvements\n\n- **Target API Version**: Updated Target API version to 3\n- **Clipboard Sync Runtime**: IME Bridge clipboard sync now runs as an independent background service and no longer depends on the floating ball\n- **IME Hook Module Updates**: Optimized IME Hook module toggle and status copy; recording-area availability is controlled by the bridge module; added multiple module settings and support for real-time module settings changes\n- **Settings Switch Explanations**: More settings switches show feature explanations when toggled, making on/off effects clearer",
   "important_notice": "1. 4.0.0 版本将迎来大量重构和众多更新，欢迎下载尝鲜\n2. BiBi Keyboard Pro版本已上架，欢迎在3.8.6后版本-关于页面中了解详情。\n3. 官方网站和使用文档均已上线,网址分别为: bibi.brycewg.com bibidocs.brycewg.com",
   "notice_level": "info",
   "min_supported_version": "2.6.5",
-  "update_time": "2026-07-20T13:44:20Z"
+  "update_time": "2026-07-22T10:27:07Z"
 }
