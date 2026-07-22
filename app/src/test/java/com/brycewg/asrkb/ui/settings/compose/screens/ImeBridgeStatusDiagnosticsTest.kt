@@ -7,11 +7,9 @@ import org.junit.Test
 
 class ImeBridgeStatusDiagnosticsTest {
     @Test
-    fun shouldQueryStatusWhenEitherBridgeFeatureIsEnabled() {
-        assertFalse(shouldQueryImeBridgeStatus(textInsertionEnabled = false, pcmRecordingEnabled = false))
-        assertTrue(shouldQueryImeBridgeStatus(textInsertionEnabled = true, pcmRecordingEnabled = false))
-        assertTrue(shouldQueryImeBridgeStatus(textInsertionEnabled = false, pcmRecordingEnabled = true))
-        assertTrue(shouldQueryImeBridgeStatus(textInsertionEnabled = true, pcmRecordingEnabled = true))
+    fun shouldQueryStatusOnlyWhenMasterSwitchEnabled() {
+        assertFalse(shouldQueryImeBridgeStatus(bridgeEnabled = false))
+        assertTrue(shouldQueryImeBridgeStatus(bridgeEnabled = true))
     }
 
     @Test

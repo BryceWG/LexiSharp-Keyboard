@@ -290,8 +290,13 @@ internal fun FloatingPackagesField(
 }
 
 @Composable
-internal fun FloatingSubsectionGap() {
-    Spacer(Modifier.height(SettingsLayoutMetrics.SectionSpacing - SettingsLayoutMetrics.MaterialSectionItemSpacing))
+internal fun FloatingSubsectionGap(compact: Boolean = false) {
+    val height = if (compact) {
+        SettingsLayoutMetrics.SectionSpacing / 2
+    } else {
+        SettingsLayoutMetrics.SectionSpacing - SettingsLayoutMetrics.MaterialSectionItemSpacing
+    }
+    Spacer(Modifier.height(height))
 }
 
 internal fun Float.roundFloatingToStep(step: Int): Float = (this / step.toFloat()).roundToInt().coerceAtLeast(0) * step.toFloat()

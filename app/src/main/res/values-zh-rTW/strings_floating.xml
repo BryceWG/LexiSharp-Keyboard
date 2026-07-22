@@ -16,9 +16,9 @@
     <string name="label_floating_keep_alive_foreground">前台服務保活</string>
     <string name="label_floating_keep_alive_privileged">Shizuku / Root 增強保活</string>
     <string name="label_request_battery_whitelist">申請電池最佳化白名單</string>
-    <string name="label_floating_ime_bridge">輸入法橋接文字回填</string>
+    <string name="label_floating_ime_bridge">輸入法 Hook 模組</string>
     <string name="label_ime_bridge_pcm_recording">在橋接輸入法內錄音</string>
-    <string name="label_floating_ime_bridge_status">輸入法橋接狀態</string>
+    <string name="label_floating_ime_bridge_status">輸入法 Hook 模組狀態</string>
     <string name="status_floating_ime_bridge_unknown">點擊重新整理</string>
     <string name="status_floating_ime_bridge_unknown_target">目前鍵盤</string>
     <string name="status_floating_ime_bridge_disabled">已關閉</string>
@@ -27,16 +27,16 @@
     <string name="status_floating_ime_bridge_waiting">已偵測到，等待輸入欄位：%1$s</string>
     <string name="status_floating_ime_bridge_no_active_ime">沒有目前輸入法。請先切換並開啟已橋接的輸入法。</string>
     <string name="status_floating_ime_bridge_no_input_connection">沒有活動輸入連線：%1$s。請點進文字欄位並保持鍵盤開啟。</string>
-    <string name="status_floating_ime_bridge_pcm_unsupported">目前橋接模組未回報 PCM 錄音支援：%1$s。請更新 LSPosed/LSPatch 模組。</string>
+    <string name="status_floating_ime_bridge_pcm_unsupported">%1$s 的錄音區域不可用。請在橋接模組設定中開啟，或檢查麥克風權限與鍵盤視窗相容性。</string>
     <string name="status_floating_ime_bridge_not_found">未收到橋接回應：%1$s</string>
     <string name="status_floating_ime_bridge_sensitive">已阻止敏感輸入欄位：%1$s</string>
     <string name="status_floating_ime_bridge_error">%1$s 橋接錯誤：%2$s</string>
     <string name="status_floating_ime_bridge_recording_enabled">輸入法內錄音：已啟用</string>
     <string name="status_floating_ime_bridge_recording_disabled">輸入法內錄音：已關閉。橋接文字回填仍可保持開啟。</string>
-    <string name="status_floating_ime_bridge_module_summary">模組：%1$s · PCM：%2$s · 剪貼簿：%3$s</string>
+    <string name="status_floating_ime_bridge_module_summary">模組：%1$s · 錄音區域：%2$s · 剪貼簿：%3$s</string>
     <string name="status_floating_ime_bridge_module_unknown">未知版本</string>
-    <string name="status_floating_ime_bridge_pcm_supported">支援</string>
-    <string name="status_floating_ime_bridge_pcm_not_supported">不支援</string>
+    <string name="status_floating_ime_bridge_pcm_supported">可用</string>
+    <string name="status_floating_ime_bridge_pcm_not_supported">不可用</string>
     <string name="status_floating_ime_bridge_clipboard_supported">支援</string>
     <string name="status_floating_ime_bridge_clipboard_not_supported">不支援</string>
     <string name="status_floating_ime_bridge_input_summary">鍵盤可見：%1$s · 輸入連線：%2$s · 敏感輸入欄位：%3$s</string>
@@ -139,8 +139,8 @@
     <string name="feature_volume_key_stop_on_ime_hidden_on_desc">音量鍵錄音期間如果鍵盤消失，會自動停止錄音。</string>
 
     <!-- 懸浮球寫入文字相容性模式 -->
-    <string name="feature_floating_ime_bridge_off_desc">懸浮球會透過無障礙服務輸入辨識結果；直接輸入失敗時，可改用剪貼簿方式。</string>
-    <string name="feature_floating_ime_bridge_on_desc">安裝相容的 LSPosed 或 LSPatch 橋接模組後，懸浮球結果會由目前的第三方輸入法直接輸入，可改善輸入相容性與鍵盤顯示狀態偵測。此功能不會讀取你已輸入的文字。</string>
+    <string name="feature_floating_ime_bridge_off_desc">停止接受所有 Hook 聯動請求；主鍵盤與懸浮球的非 Hook 功能不受影響。</string>
+    <string name="feature_floating_ime_bridge_on_desc">在用戶端啟用相容 LSPosed/LSPatch 模組提供的輸入法可見性、文字插入、錄音與剪貼簿能力，不影響模組自身設定與狀態。</string>
     <string name="feature_ime_bridge_pcm_recording_off_desc">橋接模組仍可輸入辨識結果，但無法在第三方輸入法中長按錄音。</string>
     <string name="feature_ime_bridge_pcm_recording_on_desc">可在相容的第三方輸入法中長按錄音，並將錄音交給說點啥辨識。錄音失敗時不會自動改用懸浮球或本應用程式的麥克風。</string>
     <string name="feature_floating_write_compat_off_desc">辨識結果會直接寫入輸入框，適用於大多數應用程式。</string>

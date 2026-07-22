@@ -205,8 +205,7 @@ fun FloatingSettingsScreen(
             imeBridgeStatusText = formatImeBridgeStatus(
                 context = context,
                 result = result,
-                textInsertionEnabled = uiState.imeBridgeEnabled,
-                pcmRecordingEnabled = uiState.imeBridgePcmRecordingEnabled
+                bridgeEnabled = uiState.imeBridgeEnabled
             )
         }
     }
@@ -216,7 +215,6 @@ fun FloatingSettingsScreen(
         uiState.asrEnabled,
         uiState.volumeKeyRecordingEnabled,
         uiState.imeBridgeEnabled,
-        uiState.imeBridgePcmRecordingEnabled,
         uiState.onlyWhenImeVisible
     ) {
         if (!settingsLoaded || autoAccessibilityRequested) return@LaunchedEffect
@@ -226,9 +224,9 @@ fun FloatingSettingsScreen(
         }
     }
 
-    LaunchedEffect(settingsLoaded, uiState.imeBridgeEnabled, uiState.imeBridgePcmRecordingEnabled) {
+    LaunchedEffect(settingsLoaded, uiState.imeBridgeEnabled) {
         if (!settingsLoaded) return@LaunchedEffect
-        if (shouldQueryImeBridgeStatus(uiState.imeBridgeEnabled, uiState.imeBridgePcmRecordingEnabled)) {
+        if (shouldQueryImeBridgeStatus(uiState.imeBridgeEnabled)) {
             refreshImeBridgeStatus()
         } else {
             imeBridgeStatusText = context.getString(R.string.status_floating_ime_bridge_disabled)
@@ -658,7 +656,7 @@ fun FloatingSettingsScreen(
                                 preferenceKey = "floating_ime_bridge_explained"
                             ) {
                                 prefs.floatingImeBridgeEnabled = it
-                                if (shouldQueryImeBridgeStatus(it, uiState.imeBridgePcmRecordingEnabled)) {
+                                if (shouldQueryImeBridgeStatus(it)) {
                                     refreshImeBridgeStatus()
                                 } else {
                                     imeBridgeStatusText =
@@ -667,57 +665,25 @@ fun FloatingSettingsScreen(
                             }
                         },
                         index = 0,
-                        count = 3
+                        count = if (uiState.imeBridgeEnabled) 2 else 1
                     )
-                    FloatingExplainedSwitch(
-                        id = "ime_bridge_pcm_recording",
-                        titleRes = R.string.label_ime_bridge_pcm_recording,
-                        checked = uiState.imeBridgePcmRecordingEnabled,
-                        onToggle = { target ->
-                            applyExplainedSwitch(
-                                current = uiState.imeBridgePcmRecordingEnabled,
-                                target = target,
-                                titleRes = R.string.label_ime_bridge_pcm_recording,
-                                offDescRes = R.string.feature_ime_bridge_pcm_recording_off_desc,
-                                onDescRes = R.string.feature_ime_bridge_pcm_recording_on_desc,
-                                preferenceKey = "ime_bridge_pcm_recording_explained"
-                            ) {
-                                prefs.imeBridgePcmRecordingEnabled = it
-                                if (shouldQueryImeBridgeStatus(uiState.imeBridgeEnabled, it)) {
-                                    refreshImeBridgeStatus()
-                                } else {
-                                    imeBridgeStatusText =
-                                        context.getString(R.string.status_floating_ime_bridge_disabled)
-                                }
-                            }
-                        },
-                        index = 1,
-                        count = 3
-                    )
-                    FloatingValuePreference(
-                        titleRes = R.string.label_floating_ime_bridge_status,
-                        value = if (imeBridgeStatusText.isEmpty()) {
-                            stringResource(R.string.status_floating_ime_bridge_unknown)
-                        } else {
-                            imeBridgeStatusText
-                        },
-                        uiMode = uiMode,
-                        index = 2,
-                        count = 3,
-                        onClick = {
-                            if (shouldQueryImeBridgeStatus(
-                                    uiState.imeBridgeEnabled,
-                                    uiState.imeBridgePcmRecordingEnabled
-                                )
-                            ) {
-                                refreshImeBridgeStatus()
+                    if (uiState.imeBridgeEnabled) {
+                        FloatingValuePreference(
+                            titleRes = R.string.label_floating_ime_bridge_status,
+                            value = if (imeBridgeStatusText.isEmpty()) {
+                                stringResource(R.string.status_floating_ime_bridge_unknown)
                             } else {
-                                imeBridgeStatusText =
-                                    context.getString(R.string.status_floating_ime_bridge_disabled)
+                                imeBridgeStatusText
+                            },
+                            uiMode = uiMode,
+                            index = 1,
+                            count = 2,
+                            onClick = {
+                                refreshImeBridgeStatus()
                             }
-                        }
-                    )
-                    FloatingSubsectionGap()
+                        )
+                    }
+                    FloatingSubsectionGap(compact = !uiState.imeBridgeEnabled)
                     FloatingExplainedSwitch(
                         id = "floating_write_compat",
                         titleRes = R.string.label_floating_write_compat,

@@ -17,6 +17,7 @@ import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BackupAsrLocalResidency
 import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
+import com.brycewg.asrkb.imebridge.ImeBridgeRuntimeShutdown
 import kotlin.reflect.KProperty
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -559,12 +560,18 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_FLOATING_WRITE_PASTE_PACKAGES, "") ?: ""
         set(value) = sp.edit { putString(KEY_FLOATING_WRITE_PASTE_PACKAGES, value) }
 
-    // 悬浮球：优先通过 LSPosed/LSPatch 输入法桥接写入最终文本，默认关闭
+    // 输入法 Hook 模块总开关：可见性 / 文字插入 / PCM / 剪贴板 Actor，默认关闭
     var floatingImeBridgeEnabled: Boolean
         get() = sp.getBoolean(KEY_FLOATING_IME_BRIDGE_ENABLED, false)
-        set(value) = sp.edit { putBoolean(KEY_FLOATING_IME_BRIDGE_ENABLED, value) }
+        set(value) {
+            val previous = sp.getBoolean(KEY_FLOATING_IME_BRIDGE_ENABLED, false)
+            sp.edit { putBoolean(KEY_FLOATING_IME_BRIDGE_ENABLED, value) }
+            if (previous && !value) {
+                ImeBridgeRuntimeShutdown.onMasterEnabledChanged(false)
+            }
+        }
 
-    // 输入法桥接：允许被 Hook 的当前默认输入法向主 app 推送 PCM，默认关闭
+    // 兼容旧备份键：自 v4.1.1 起曾作为独立 PCM 子开关；现由总开关统一门控
     var imeBridgePcmRecordingEnabled: Boolean
         get() = sp.getBoolean(KEY_IME_BRIDGE_PCM_RECORDING_ENABLED, false)
         set(value) = sp.edit { putBoolean(KEY_IME_BRIDGE_PCM_RECORDING_ENABLED, value) }

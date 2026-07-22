@@ -18,6 +18,11 @@ class ImeBridgeClipboardSyncService : Service() {
     @Volatile private var activeSessionId: String? = null
     @Volatile private var activeTargetPackage: String? = null
 
+    override fun onCreate() {
+        super.onCreate()
+        activeInstance = this
+    }
+
     override fun onBind(intent: Intent?): IBinder = binder
 
     override fun onUnbind(intent: Intent?): Boolean {
@@ -28,7 +33,17 @@ class ImeBridgeClipboardSyncService : Service() {
 
     override fun onDestroy() {
         finishActiveSession(actorDied = true)
+        if (activeInstance === this) activeInstance = null
         super.onDestroy()
+    }
+
+    companion object {
+        @Volatile
+        private var activeInstance: ImeBridgeClipboardSyncService? = null
+
+        fun finishActiveForShutdownIfPresent() {
+            activeInstance?.finishActiveSession(actorDied = false)
+        }
     }
 
     private val binder = object : Binder() {

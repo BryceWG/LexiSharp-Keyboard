@@ -32,8 +32,7 @@ internal data class FloatingSettingsUiState(
     val volumeKeyStopOnImeHidden: Boolean,
     val writeCompatEnabled: Boolean,
     val writePasteEnabled: Boolean,
-    val imeBridgeEnabled: Boolean,
-    val imeBridgePcmRecordingEnabled: Boolean
+    val imeBridgeEnabled: Boolean
 ) {
     companion object {
         val placeholder: FloatingSettingsUiState = FloatingSettingsUiState(
@@ -49,8 +48,7 @@ internal data class FloatingSettingsUiState(
             volumeKeyStopOnImeHidden = true,
             writeCompatEnabled = false,
             writePasteEnabled = false,
-            imeBridgeEnabled = false,
-            imeBridgePcmRecordingEnabled = false
+            imeBridgeEnabled = false
         )
 
         fun fromPrefs(prefs: Prefs): FloatingSettingsUiState = FloatingSettingsUiState(
@@ -66,8 +64,7 @@ internal data class FloatingSettingsUiState(
             volumeKeyStopOnImeHidden = prefs.volumeKeyStopOnImeHidden,
             writeCompatEnabled = prefs.floatingWriteTextCompatEnabled,
             writePasteEnabled = prefs.floatingWriteTextPasteEnabled,
-            imeBridgeEnabled = prefs.floatingImeBridgeEnabled,
-            imeBridgePcmRecordingEnabled = prefs.imeBridgePcmRecordingEnabled
+            imeBridgeEnabled = prefs.floatingImeBridgeEnabled
         )
     }
 }
@@ -78,10 +75,7 @@ internal enum class ImeBridgeFailureKind {
     Other
 }
 
-internal fun shouldQueryImeBridgeStatus(
-    textInsertionEnabled: Boolean,
-    pcmRecordingEnabled: Boolean
-): Boolean = textInsertionEnabled || pcmRecordingEnabled
+internal fun shouldQueryImeBridgeStatus(bridgeEnabled: Boolean): Boolean = bridgeEnabled
 
 internal fun classifyImeBridgeRecordingFailure(lastError: String?): ImeBridgeFailureKind {
     val normalized = lastError?.lowercase().orEmpty()
@@ -105,10 +99,9 @@ internal fun classifyImeBridgeRecordingFailure(lastError: String?): ImeBridgeFai
 internal fun formatImeBridgeStatus(
     context: Context,
     result: ImeBridgeResult?,
-    textInsertionEnabled: Boolean,
-    pcmRecordingEnabled: Boolean
+    bridgeEnabled: Boolean
 ): String {
-    if (!shouldQueryImeBridgeStatus(textInsertionEnabled, pcmRecordingEnabled)) {
+    if (!shouldQueryImeBridgeStatus(bridgeEnabled)) {
         return context.getString(R.string.status_floating_ime_bridge_disabled)
     }
     if (result == null) return context.getString(R.string.status_floating_ime_bridge_unknown)
@@ -129,9 +122,6 @@ internal fun formatImeBridgeStatus(
 
         !result.isBridgePresent ->
             context.getString(R.string.status_floating_ime_bridge_not_found, target)
-
-        pcmRecordingEnabled && result.isSuccess && !result.supportsPcmRecording ->
-            context.getString(R.string.status_floating_ime_bridge_pcm_unsupported, target)
 
         !result.isImeWindowVisible ->
             context.getString(R.string.status_floating_ime_bridge_hidden, target)
@@ -169,13 +159,8 @@ internal fun formatImeBridgeStatus(
         context.yesNo(result.hasInputConnection),
         context.yesNo(result.isSensitiveField)
     )
-    val recordingText = if (pcmRecordingEnabled) {
-        context.getString(R.string.status_floating_ime_bridge_recording_enabled)
-    } else {
-        context.getString(R.string.status_floating_ime_bridge_recording_disabled)
-    }
     val lastFailure = formatImeBridgeLastFailure(context, result.lastError)
-    return listOfNotNull(headline, recordingText, moduleText, inputText, lastFailure).joinToString("\n")
+    return listOfNotNull(headline, moduleText, inputText, lastFailure).joinToString("\n")
 }
 
 private fun formatImeBridgeLastFailure(context: Context, lastError: String?): String? {

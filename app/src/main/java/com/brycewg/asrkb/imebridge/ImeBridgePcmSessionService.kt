@@ -17,7 +17,7 @@ class ImeBridgePcmSessionService : Service() {
     private val bridgeClient by lazy { ImeBridgeClient(this) }
     private val controller by lazy {
         ImeBridgePcmSessionController(
-            featureGate = BridgePcmFeatureGate { prefs.imeBridgePcmRecordingEnabled },
+            featureGate = BridgePcmFeatureGate { prefs.floatingImeBridgeEnabled },
             currentImePackageProvider = CurrentImePackageProvider {
                 ImeBridgeClient.resolveCurrentImePackage(this)
             },
@@ -25,14 +25,24 @@ class ImeBridgePcmSessionService : Service() {
             sessionFactory = ImeBridgePcmExternalSessionFactory(this, prefs, bridgeClient),
             audioFocusPolicy = BridgePcmAudioFocusPolicy { prefs.duckMediaOnRecordEnabled },
             logSink = ApiLogBridgePcmSessionLogSink
-        )
+        ).also { activeController = it }
     }
 
     override fun onBind(intent: Intent?): IBinder = binder
 
     override fun onDestroy() {
         controller.cancelActiveForShutdown()
+        if (activeController === controller) activeController = null
         super.onDestroy()
+    }
+
+    companion object {
+        @Volatile
+        private var activeController: ImeBridgePcmSessionController? = null
+
+        fun cancelActiveForShutdownIfPresent() {
+            activeController?.cancelActiveForShutdown()
+        }
     }
 
     private val binder = object : Binder() {
