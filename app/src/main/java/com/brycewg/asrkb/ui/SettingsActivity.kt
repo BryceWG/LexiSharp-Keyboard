@@ -98,6 +98,7 @@ class SettingsActivity : BaseActivity() {
     private val testInputSheetVisible = mutableStateOf(false)
     private val systemActionDialogState = mutableStateOf<SettingsMessageDialogState?>(null)
     private val proPromoDialogState = mutableStateOf<ProPromoDialogUiState>(ProPromoDialogUiState.Hidden)
+    private val pendingInitialRoute = mutableStateOf<BibiSettingsRoute?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -121,13 +122,17 @@ class SettingsActivity : BaseActivity() {
         updateCoordinator = SettingsUpdateCoordinator(this)
 
         val actionController = SettingsActionController(this)
-        val initialRoute = consumeInitialRouteExtra(intent)
+        pendingInitialRoute.value = consumeInitialRouteExtra(intent)
         setContent {
             val viewModel: SettingsHostViewModel = viewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val routeToOpen = pendingInitialRoute.value
 
-            LaunchedEffect(initialRoute) {
-                initialRoute?.let { route -> viewModel.openRoute(route) }
+            LaunchedEffect(routeToOpen) {
+                routeToOpen?.let { route ->
+                    viewModel.openRoute(route)
+                    pendingInitialRoute.value = null
+                }
             }
 
             BibiSettingsTheme(
@@ -189,6 +194,7 @@ class SettingsActivity : BaseActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        pendingInitialRoute.value = consumeInitialRouteExtra(intent)
         imePickerController.consumeShowImePickerExtraIfPresent(intent)
         imePickerController.handleShowImePickerFromTile(hasWindowFocus())
     }

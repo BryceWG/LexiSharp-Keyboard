@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Static app shortcuts for common settings destinations. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="asr_settings"
+        android:enabled="true"
+        android:icon="@mipmap/ic_shortcut_mic"
+        android:shortcutShortLabel="@string/title_asr_settings"
+        android:shortcutLongLabel="@string/title_asr_settings">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.brycewg.asrkb"
+            android:targetClass="com.brycewg.asrkb.ui.SettingsActivity">
+            <extra
+                android:name="extra_initial_settings_route"
+                android:value="asr" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="ai_settings"
+        android:enabled="true"
+        android:icon="@mipmap/ic_shortcut_auto_awesome"
+        android:shortcutShortLabel="@string/title_ai_settings"
+        android:shortcutLongLabel="@string/title_ai_settings">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.brycewg.asrkb"
+            android:targetClass="com.brycewg.asrkb.ui.SettingsActivity">
+            <extra
+                android:name="extra_initial_settings_route"
+                android:value="ai" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="asr_history"
+        android:enabled="true"
+        android:icon="@mipmap/ic_shortcut_history"
+        android:shortcutShortLabel="@string/title_asr_history"
+        android:shortcutLongLabel="@string/title_asr_history">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.brycewg.asrkb"
+            android:targetClass="com.brycewg.asrkb.ui.SettingsActivity">
+            <extra
+                android:name="extra_initial_settings_route"
+                android:value="history" />
+        </intent>
+    </shortcut>
+</shortcuts>
