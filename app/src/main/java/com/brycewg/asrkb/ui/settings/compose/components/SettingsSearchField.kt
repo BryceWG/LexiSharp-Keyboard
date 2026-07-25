@@ -7,7 +7,12 @@
 
 package com.brycewg.asrkb.ui.settings.compose.components
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -15,18 +20,26 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
@@ -34,8 +47,10 @@ import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.LocalSettingsHapticTap
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import kotlinx.coroutines.delay
+import top.yukonga.miuix.kmp.basic.Card as MiuixCard
 import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
 import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
+import top.yukonga.miuix.kmp.basic.Text as MiuixText
 import top.yukonga.miuix.kmp.basic.TextField as MiuixTextField
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -66,18 +81,53 @@ internal fun SettingsSearchField(
     }
 
     when (uiMode) {
-        BibiUiMode.Material -> OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = fieldModifier,
-            label = { Text(label) },
-            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-            trailingIcon = clearSearchAction(value, onValueChange, clearLabel, uiMode),
-            singleLine = true,
-            shape = RoundedCornerShape(SettingsLayoutMetrics.TextFieldCorner),
-            keyboardOptions = keyboardOptions,
-            keyboardActions = keyboardActions
-        )
+        BibiUiMode.Material -> {
+            val containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+                SettingsLayoutMetrics.HomeSearchBarElevation
+            )
+            val contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = fieldModifier.heightIn(min = SettingsLayoutMetrics.HomeSearchBarMinHeight),
+                placeholder = {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = contentColor
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Rounded.Search,
+                        contentDescription = null,
+                        tint = contentColor
+                    )
+                },
+                trailingIcon = clearSearchAction(value, onValueChange, clearLabel, uiMode),
+                singleLine = true,
+                shape = RoundedCornerShape(SettingsLayoutMetrics.HomeSearchBarCorner),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = containerColor,
+                    unfocusedContainerColor = containerColor,
+                    disabledContainerColor = containerColor,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    disabledBorderColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedLeadingIconColor = contentColor,
+                    unfocusedLeadingIconColor = contentColor,
+                    focusedTrailingIconColor = contentColor,
+                    unfocusedTrailingIconColor = contentColor,
+                    focusedPlaceholderColor = contentColor,
+                    unfocusedPlaceholderColor = contentColor,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                ),
+                keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions
+            )
+        }
 
         BibiUiMode.Miuix -> MiuixTextField(
             value = value,
@@ -90,6 +140,98 @@ internal fun SettingsSearchField(
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions
         )
+    }
+}
+
+/**
+ * 设置首页顶部搜索入口：外观对齐各主题搜索条，点按进入搜索页，不承接真实输入。
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun SettingsHomeSearchEntry(
+    uiMode: BibiUiMode,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val hapticTap = LocalSettingsHapticTap.current
+    val label = stringResource(R.string.hint_settings_search)
+    val clickWithHaptic = {
+        hapticTap()
+        onClick()
+    }
+    val layoutModifier = modifier
+        .fillMaxWidth()
+        .heightIn(min = SettingsLayoutMetrics.HomeSearchBarMinHeight)
+
+    when (uiMode) {
+        BibiUiMode.Material -> {
+            val shape = RoundedCornerShape(SettingsLayoutMetrics.HomeSearchBarCorner)
+            Surface(
+                onClick = clickWithHaptic,
+                modifier = layoutModifier,
+                shape = shape,
+                color = MaterialTheme.colorScheme.surfaceColorAtElevation(
+                    SettingsLayoutMetrics.HomeSearchBarElevation
+                ),
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ) {
+                HomeSearchEntryContent(
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    labelContent = {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                )
+            }
+        }
+
+        BibiUiMode.Miuix -> MiuixCard(
+            modifier = layoutModifier.clickable(role = Role.Button, onClick = clickWithHaptic)
+        ) {
+            HomeSearchEntryContent(
+                leadingIcon = {
+                    MiuixIcon(
+                        imageVector = Icons.Rounded.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MiuixTheme.colorScheme.onSurfaceVariantActions
+                    )
+                },
+                labelContent = {
+                    MiuixText(
+                        text = label,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantActions
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeSearchEntryContent(
+    leadingIcon: @Composable () -> Unit,
+    labelContent: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = SettingsLayoutMetrics.HomeSearchBarMinHeight)
+            .padding(horizontal = SettingsLayoutMetrics.HomeSearchBarHorizontalPadding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(SettingsLayoutMetrics.HomeSearchBarIconSpacing)
+    ) {
+        leadingIcon()
+        labelContent()
     }
 }
 

@@ -14,7 +14,13 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -29,7 +35,6 @@ import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.RocketLaunch
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.TouchApp
@@ -42,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -53,6 +59,7 @@ import com.brycewg.asrkb.store.ApiLogStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.AsrVendorUi
 import com.brycewg.asrkb.ui.floating.floatingInputNeedsAccessibility
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsHomeSearchEntry
 import com.brycewg.asrkb.ui.settings.compose.core.BibiSettingsRoute
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsActionController
@@ -203,33 +210,57 @@ fun SettingsHomeScreen(
             onSelectTab(page)
         }
     ) { innerPadding, scrollModifier ->
-        val contentPadding = SettingsLayoutMetrics.pageContentPadding(innerPadding)
-        HorizontalPager(
-            state = pagerState,
-            beyondViewportPageCount = 0,
-            modifier = Modifier.fillMaxSize()
-        ) { page ->
-            when (page) {
-                0 -> SettingsSectionList(
-                    sections = inputPageSections,
-                    uiMode = uiMode,
-                    modifier = scrollModifier,
-                    contentPadding = contentPadding
-                )
+        val layoutDirection = LocalLayoutDirection.current
+        val searchBarPadding = Modifier.padding(
+            start = innerPadding.calculateStartPadding(layoutDirection) +
+                SettingsLayoutMetrics.PageHorizontalPadding,
+            top = innerPadding.calculateTopPadding() + SettingsLayoutMetrics.SearchTopPadding,
+            end = innerPadding.calculateEndPadding(layoutDirection) +
+                SettingsLayoutMetrics.PageHorizontalPadding
+        )
+        val listContentPadding = PaddingValues(
+            start = innerPadding.calculateStartPadding(layoutDirection) +
+                SettingsLayoutMetrics.PageHorizontalPadding,
+            top = SettingsLayoutMetrics.PageVerticalPadding,
+            end = innerPadding.calculateEndPadding(layoutDirection) +
+                SettingsLayoutMetrics.PageHorizontalPadding,
+            bottom = innerPadding.calculateBottomPadding() + SettingsLayoutMetrics.PageVerticalPadding
+        )
+        Column(modifier = Modifier.fillMaxSize()) {
+            SettingsHomeSearchEntry(
+                uiMode = uiMode,
+                onClick = { onPushRoute(BibiSettingsRoute.Search) },
+                modifier = searchBarPadding.fillMaxWidth()
+            )
+            HorizontalPager(
+                state = pagerState,
+                beyondViewportPageCount = 0,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) { page ->
+                when (page) {
+                    0 -> SettingsSectionList(
+                        sections = inputPageSections,
+                        uiMode = uiMode,
+                        modifier = scrollModifier,
+                        contentPadding = listContentPadding
+                    )
 
-                1 -> SettingsSectionList(
-                    sections = smartPageSections,
-                    uiMode = uiMode,
-                    modifier = scrollModifier,
-                    contentPadding = contentPadding
-                )
+                    1 -> SettingsSectionList(
+                        sections = smartPageSections,
+                        uiMode = uiMode,
+                        modifier = scrollModifier,
+                        contentPadding = listContentPadding
+                    )
 
-                else -> SettingsSectionList(
-                    sections = systemPageSections,
-                    uiMode = uiMode,
-                    modifier = scrollModifier,
-                    contentPadding = contentPadding
-                )
+                    else -> SettingsSectionList(
+                        sections = systemPageSections,
+                        uiMode = uiMode,
+                        modifier = scrollModifier,
+                        contentPadding = listContentPadding
+                    )
+                }
             }
         }
     }
@@ -249,14 +280,6 @@ private fun inputSections(
                 summary = snapshot.oneClickSetupSummary,
                 icon = Icons.Rounded.RocketLaunch,
                 onClick = actions::startOneClickSetup
-            ),
-            SettingsEntry.Action(
-                id = "settings_search",
-                titleRes = R.string.btn_settings_search,
-                icon = Icons.Rounded.Search,
-                onClick = {
-                    onPushRoute(BibiSettingsRoute.Search)
-                }
             ),
             SettingsEntry.Action(
                 id = "test_input",

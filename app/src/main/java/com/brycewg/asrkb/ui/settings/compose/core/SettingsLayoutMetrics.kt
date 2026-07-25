@@ -102,6 +102,12 @@ internal object SettingsLayoutMetrics {
     val SearchResultTextSpacing = 4.dp
     val SearchEmptyHorizontalPadding = 20.dp
     val SearchResultElevation = 1.dp
+    /** Material3 SearchBar 风格首页入口高度与圆角。 */
+    val HomeSearchBarMinHeight = 56.dp
+    val HomeSearchBarCorner = MaterialSectionShape
+    val HomeSearchBarElevation = MaterialSectionElevation
+    val HomeSearchBarHorizontalPadding = 16.dp
+    val HomeSearchBarIconSpacing = 12.dp
     val BackupSectionContentPadding = 16.dp
     val BackupSectionContentSpacing = 12.dp
     val AboutSectionContentTopPadding = 20.dp
