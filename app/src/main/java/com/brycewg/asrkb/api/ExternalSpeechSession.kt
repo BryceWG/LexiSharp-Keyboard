@@ -93,7 +93,7 @@ internal class ExternalSpeechSession(
 
     @Volatile private var processingTimeoutJob: Job? = null
 
-    @Volatile private var finished: Boolean = false
+    private val terminalGate = ExternalSpeechSessionTerminalGate()
 
     @Volatile private var canceled: Boolean = false
 
@@ -250,10 +250,10 @@ internal class ExternalSpeechSession(
                             "awaitLocalAsrReady returned false, fallback to immediate timeout countdown"
                         )
                     }
-                    if (canceled || finished) return@launch
+                    if (canceled || terminalGate.isFinished) return@launch
                 }
                 delay(timeoutMs)
-                if (canceled || finished) return@launch
+                if (canceled || !terminalGate.tryFinish()) return@launch
 
                 val msg = try {
                     context.getString(R.string.error_asr_timeout)
@@ -262,7 +262,6 @@ internal class ExternalSpeechSession(
                     "timeout"
                 }
                 Log.w(TAG, "Processing timeout fired (audioMs=$audioMs, timeoutMs=$timeoutMs)")
-                finished = true
                 historyAudioCapture?.discard()
                 historyAudioCapture = null
                 (engine as? AudioFrameSinkOwner)?.audioFrameSink = null
@@ -363,7 +362,7 @@ internal class ExternalSpeechSession(
             cancelLocalModelReadyWait()
             canceled = false
             hasAsrPartial = false
-            finished = false
+            terminalGate.reset()
             cancelProcessingTimeout()
             historyRecordId = UUID.randomUUID().toString()
             historyAudioCapture?.discard()
@@ -381,7 +380,7 @@ internal class ExternalSpeechSession(
     }
 
     fun stop() {
-        if (canceled || finished) return
+        if (canceled || terminalGate.isFinished) return
         releaseAutoStopSuppression()
         // 记录一次会话录音时长（用于超时与统计）；部分引擎 stop() 不会回调 onStopped（如外部推流的本地流式），因此这里也做一次兜底快照。
         if (sessionStartUptimeMs > 0L) {
@@ -408,8 +407,9 @@ internal class ExternalSpeechSession(
     }
 
     fun cancel() {
+        if (canceled) return
         canceled = true
-        finished = true
+        terminalGate.markFinished()
         releaseAutoStopSuppression()
         cancelLocalModelReadyWait()
         cancelProcessingTimeout()
@@ -449,8 +449,7 @@ internal class ExternalSpeechSession(
     }
 
     override fun onFinal(text: String) {
-        if (canceled || finished) return
-        finished = true
+        if (canceled || !terminalGate.tryFinish()) return
         releaseAutoStopSuppression()
         cancelProcessingTimeout()
         processingEndUptimeMs = SystemClock.uptimeMillis()
@@ -738,8 +737,7 @@ internal class ExternalSpeechSession(
     }
 
     override fun onError(message: String) {
-        if (canceled || finished) return
-        finished = true
+        if (canceled || !terminalGate.tryFinish()) return
         releaseAutoStopSuppression()
         processingEndUptimeMs = SystemClock.uptimeMillis()
         cancelLocalModelReadyWait()
@@ -761,7 +759,7 @@ internal class ExternalSpeechSession(
     }
 
     override fun onPartial(text: String) {
-        if (canceled || finished) return
+        if (canceled || terminalGate.isFinished) return
         if (text.isNotEmpty()) {
             hasAsrPartial = true
             safe { callbacks.onPartial(id, text) }
@@ -769,7 +767,7 @@ internal class ExternalSpeechSession(
     }
 
     override fun onStopped() {
-        if (canceled || finished) return
+        if (canceled || terminalGate.isFinished) return
         // 计算一次会话录音时长
         if (sessionStartUptimeMs > 0L) {
             try {
@@ -790,17 +788,17 @@ internal class ExternalSpeechSession(
     }
 
     override fun onAmplitude(amplitude: Float) {
-        if (canceled || finished) return
+        if (canceled || terminalGate.isFinished) return
         safe { callbacks.onAmplitude(id, amplitude) }
     }
 
     override fun onBackupAsrLoading(backupVendor: AsrVendor) {
-        if (canceled || finished) return
+        if (canceled || terminalGate.isFinished) return
         safe { callbacks.onState(id, STATE_PROCESSING, context.getString(R.string.status_backup_asr_loading)) }
     }
 
     override fun onBackupAsrRecognizing(backupVendor: AsrVendor) {
-        if (canceled || finished) return
+        if (canceled || terminalGate.isFinished) return
         safe {
             callbacks.onState(
                 id,
