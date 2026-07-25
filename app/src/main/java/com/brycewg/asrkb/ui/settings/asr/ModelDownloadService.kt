@@ -31,8 +31,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import okhttp3.Call
 
 /**
  * 本地模型下载/解压 前台服务：
@@ -134,6 +133,9 @@ class ModelDownloadService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val tasks = ConcurrentHashMap<DownloadKey, kotlinx.coroutines.Job>()
     private val notificationHandlers = ConcurrentHashMap<DownloadKey, NotificationHandler>()
+    private val activeCalls = ConcurrentHashMap<DownloadKey, Call>()
+    /** 用户点取消的 key：catch 里无论何种异常都不得再覆盖为「失败」 */
+    private val userCancelledKeys = ConcurrentHashMap.newKeySet<DownloadKey>()
     private lateinit var nm: NotificationManager
 
     override fun onCreate() {
@@ -153,6 +155,7 @@ class ModelDownloadService : Service() {
                 val key = DownloadKey.fromSerializedKey(serializedKey)
 
                 if (!tasks.containsKey(key)) {
+                    userCancelledKeys.remove(key)
                     if (tasks.isEmpty()) startAsForegroundSummary()
 
                     val notificationHandler = NotificationHandler(
@@ -201,14 +204,21 @@ class ModelDownloadService : Service() {
             ACTION_CANCEL -> {
                 val serializedKey = intent.getStringExtra(EXTRA_KEY) ?: return START_NOT_STICKY
                 val key = DownloadKey.fromSerializedKey(serializedKey)
+                val cancelledText = getString(R.string.error_model_download_cancelled)
 
+                userCancelledKeys.add(key)
+                // 先移除 handler，避免 doDownloadTask catch 再次弹出「失败」通知
+                val handler = notificationHandlers.remove(key)
+                // 立即掐断 OkHttp，避免卡在 read 导致 finally/stopForeground 迟迟不跑
+                try {
+                    activeCalls.remove(key)?.cancel()
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Error cancelling active download call", t)
+                }
                 tasks.remove(key)?.cancel()
-                // 由各自 handler 决定文案
-                notificationHandlers[key]?.notifyFailed(
-                    notificationHandlers[key]?.getFailedText()
-                        ?: getString(R.string.sv_download_status_failed)
-                )
-                notificationHandlers.remove(key)
+                handler?.notifyFailed(cancelledText)
+                // 任务已从 map 移除：立刻收起固定的「模型下载」前台 summary
+                stopIfNoTasks("ACTION_CANCEL")
             }
         }
         return START_STICKY
@@ -245,6 +255,10 @@ class ModelDownloadService : Service() {
     ) {
         // 仅支持 .zip 下载源；非 .zip 直接报错（提示更新下载链接）
         val cacheFile = File(cacheDir, key.toSafeFileName() + ".zip")
+        // 仅在下载未完成（失败/取消）时保留部分 zip，供断点续传
+        var keepPartialCache = true
+        var downloadCompleted = false
+        pruneDownloadCaches("doDownloadTask", cacheFile, url)
 
         try {
             if (!url.lowercase().substringBefore('#').substringBefore('?').endsWith(".zip")) {
@@ -253,6 +267,9 @@ class ModelDownloadService : Service() {
 
             // 下载文件
             downloadFile(url, cacheFile, notificationHandler)
+            downloadCompleted = true
+            // zip 已完整；解压/校验失败时不应再当作可续传部分文件
+            keepPartialCache = false
 
             // 解压归档
             val modelDir = extractArchive(cacheFile, key, variant, modelType, notificationHandler)
@@ -273,9 +290,17 @@ class ModelDownloadService : Service() {
         } catch (t: Throwable) {
             Log.e(TAG, "Download task failed for key=$key, url=$url", t)
             val onlyZipMsg = getString(R.string.error_only_zip_supported)
+            val userCancelled = userCancelledKeys.contains(key)
             val failText = when {
-                t is ModelIntegrityException -> t.message ?: getString(R.string.error_local_model_integrity_failed, "")
+                userCancelled || t is CancellationException ->
+                    getString(R.string.error_model_download_cancelled)
+                t is IncompleteDownloadException ->
+                    getString(R.string.error_model_download_incomplete)
+                t is ModelIntegrityException ->
+                    t.message ?: getString(R.string.error_local_model_integrity_failed, "")
                 t.message == onlyZipMsg -> onlyZipMsg
+                downloadCompleted ->
+                    getString(R.string.error_model_package_verify_failed)
                 modelType == "x_asr" -> getString(R.string.x_asr_download_status_failed)
                 modelType == "firered_asr" -> getString(R.string.fr_download_status_failed)
                 modelType == "punctuation" -> getString(R.string.punct_download_status_failed)
@@ -284,24 +309,24 @@ class ModelDownloadService : Service() {
                 modelType == "parakeet" -> getString(R.string.pk_download_status_failed)
                 else -> getString(R.string.sv_download_status_failed)
             }
-            notificationHandler.notifyFailed(failText)
+            // 用户取消：ACTION_CANCEL 已展示「已取消下载」，禁止被 OkHttp IOException 等覆盖成失败
+            if (!userCancelled) {
+                notificationHandler.notifyFailed(failText)
+            } else if (keepPartialCache && cacheFile.exists()) {
+                ModelDownloadCache.touch(cacheFile)
+            }
         } finally {
+            activeCalls.remove(key)
             tasks.remove(key)
             notificationHandlers.remove(key)
-
-            // 若无任务，结束前台与自身
-            if (tasks.isEmpty()) {
+            userCancelledKeys.remove(key)
+            stopIfNoTasks("doDownloadTask.finally")
+            if (!keepPartialCache) {
                 try {
-                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    cacheFile.delete()
                 } catch (e: Throwable) {
-                    Log.w(TAG, "Error stopping foreground in finally", e)
+                    Log.w(TAG, "Error deleting cache file: ${cacheFile.path}", e)
                 }
-                stopSelf()
-            }
-            try {
-                cacheFile.delete()
-            } catch (e: Throwable) {
-                Log.w(TAG, "Error deleting cache file: ${cacheFile.path}", e)
             }
         }
     }
@@ -416,16 +441,7 @@ class ModelDownloadService : Service() {
         } finally {
             tasks.remove(key)
             notificationHandlers.remove(key)
-
-            // 若无任务，结束前台与自身
-            if (tasks.isEmpty()) {
-                try {
-                    stopForeground(STOP_FOREGROUND_REMOVE)
-                } catch (e: Throwable) {
-                    Log.w(TAG, "Error stopping foreground in finally", e)
-                }
-                stopSelf()
-            }
+            stopIfNoTasks("doImportTask.finally")
             try {
                 cacheFile.delete()
             } catch (e: Throwable) {
@@ -580,7 +596,7 @@ class ModelDownloadService : Service() {
     }
 
     /**
-     * 下载文件到本地缓存
+     * 下载文件到本地缓存（服务器支持 Range 时断点续传）
      */
     private suspend fun downloadFile(
         url: String,
@@ -588,55 +604,73 @@ class ModelDownloadService : Service() {
         notificationHandler: NotificationHandler
     ) = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting download from: $url")
+        val key = notificationHandler.key
 
         val cancelIntent = notificationHandler.createCancelIntent()
         notificationHandler.notifyDownloadProgress(0, cancelIntent)
 
-        val ok = OkHttpClient()
-        val req = Request.Builder().url(url).build()
-        val call = ok.newCall(req)
-
         try {
-            call.execute().use { resp ->
-                if (!resp.isSuccessful) {
-                    throw IllegalStateException("HTTP ${resp.code}")
-                }
-
-                val body = resp.body
-                val total = body.contentLength()
-
-                cacheFile.outputStream().use { out ->
-                    var readSum = 0L
-                    val buf = ByteArray(128 * 1024)
-
-                    body.byteStream().use { ins ->
-                        while (true) {
-                            if (!coroutineContext.isActive) {
-                                call.cancel()
-                                throw CancellationException("Download cancelled")
-                            }
-
-                            val n = ins.read(buf)
-                            if (n <= 0) break
-
-                            out.write(buf, 0, n)
-                            readSum += n
-
-                            if (total > 0L) {
-                                val progress = ((readSum * 100) / total).toInt().coerceIn(0, 100)
-                                notificationHandler.notifyDownloadProgress(progress, cancelIntent)
-                            }
-                        }
-                    }
-                }
-            }
+            ResumableHttpDownloader.download(
+                client = ResumableHttpDownloader.defaultClient(),
+                url = url,
+                destFile = cacheFile,
+                isActive = { coroutineContext.isActive },
+                onProgress = { progress ->
+                    notificationHandler.notifyDownloadProgress(progress, cancelIntent)
+                },
+                onCallCreated = { call -> activeCalls[key] = call }
+            )
         } finally {
-            if (!coroutineContext.isActive) {
-                call.cancel()
-            }
+            activeCalls.remove(key)
         }
 
         Log.d(TAG, "Download completed: ${cacheFile.path}")
+    }
+
+    /** 清理过期/超量的未完成下载 zip，保留当前任务与活跃任务缓存 */
+    private suspend fun pruneDownloadCaches(
+        reason: String,
+        sourceFile: File,
+        sourceUrl: String
+    ) = withContext(Dispatchers.IO) {
+        try {
+            ResumableHttpDownloader.discardIfSourceChanged(sourceFile, sourceUrl)
+            val protect = buildSet {
+                add(sourceFile.name)
+                tasks.keys.forEach { add(it.toSafeFileName() + ".zip") }
+                notificationHandlers.keys.forEach { add(it.toSafeFileName() + ".zip") }
+            }
+            val result = ModelDownloadCache.prune(
+                cacheDir = cacheDir,
+                protectFileNames = protect
+            )
+            if (result.deletedCount > 0) {
+                Log.i(
+                    TAG,
+                    "Pruned ${result.deletedCount} stale download cache file(s), freed=${result.freedBytes} ($reason)"
+                )
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to prune download caches ($reason)", t)
+        }
+    }
+
+    /** 无进行中任务时收起固定 summary 前台通知并 stopSelf */
+    private fun stopIfNoTasks(reason: String) {
+        if (!tasks.isEmpty()) {
+            return
+        }
+        try {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } catch (e: Throwable) {
+            Log.w(TAG, "Error stopping foreground ($reason)", e)
+        }
+        try {
+            nm.cancel(SUMMARY_ID)
+        } catch (e: Throwable) {
+            Log.w(TAG, "Error cancelling summary notification ($reason)", e)
+        }
+        stopSelf()
     }
 
     /**
@@ -1237,6 +1271,7 @@ class ModelDownloadService : Service() {
         Log.w(TAG, "Failed to get display name from uri: $uri", e)
         null
     }
+
 }
 
 /**
@@ -1454,16 +1489,6 @@ class NotificationHandler(
             throttle = false,
             force = true
         )
-    }
-
-    fun getFailedText(): String = when (modelType) {
-        "x_asr" -> context.getString(R.string.x_asr_download_status_failed)
-        "firered_asr" -> context.getString(R.string.fr_download_status_failed)
-        "punctuation" -> context.getString(R.string.punct_download_status_failed)
-        "funasr_nano" -> context.getString(R.string.fn_download_status_failed)
-        "qwen3_asr" -> context.getString(R.string.qw_download_status_failed)
-        "parakeet" -> context.getString(R.string.pk_download_status_failed)
-        else -> context.getString(R.string.sv_download_status_failed)
     }
 
     private fun notifyProgress(

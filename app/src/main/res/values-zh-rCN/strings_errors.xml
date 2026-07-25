@@ -25,6 +25,9 @@
     <string name="error_asr_timeout">识别超时，请稍后重试</string>
     <string name="error_recognize_failed_with_reason">识别失败: %1$s</string>
     <string name="error_local_model_integrity_failed">本地模型文件完整性异常：%1$s。请删除后重新下载或导入模型。</string>
+    <string name="error_model_download_incomplete">下载未完成，请重试以继续下载。</string>
+    <string name="error_model_package_verify_failed">下载包校验失败，请重新下载。</string>
+    <string name="error_model_download_cancelled">已取消下载</string>
 
     <!-- User-facing ASR error toasts (floating + keyboard) -->
     <string name="asr_error_empty_result">未识别到内容，请再说一遍</string>

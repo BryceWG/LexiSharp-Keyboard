@@ -25,6 +25,9 @@
     <string name="error_asr_timeout">Recognition timed out. Please try again.</string>
     <string name="error_recognize_failed_with_reason">Recognition failed: %1$s</string>
     <string name="error_local_model_integrity_failed">Local model file integrity check failed: %1$s. Please delete and re-download/import the model.</string>
+    <string name="error_model_download_incomplete">Download incomplete. Please try again to resume.</string>
+    <string name="error_model_package_verify_failed">Downloaded package verification failed. Please download again.</string>
+    <string name="error_model_download_cancelled">Download canceled</string>
 
     <!-- User-facing ASR error toasts (floating + keyboard) -->
     <string name="asr_error_empty_result">No speech recognized. Please try again.</string>

@@ -25,6 +25,9 @@
     <string name="error_asr_timeout">識別逾時，請稍後重試</string>
     <string name="error_recognize_failed_with_reason">識別失敗：%1$s</string>
     <string name="error_local_model_integrity_failed">本機模型檔案完整性異常：%1$s。請刪除後重新下載或匯入模型。</string>
+    <string name="error_model_download_incomplete">下載未完成，請重試以繼續下載。</string>
+    <string name="error_model_package_verify_failed">下載包校驗失敗，請重新下載。</string>
+    <string name="error_model_download_cancelled">已取消下載</string>
 
     <!-- User-facing ASR error toasts (floating + keyboard) -->
     <string name="asr_error_empty_result">未識別到內容，請再說一遍</string>
