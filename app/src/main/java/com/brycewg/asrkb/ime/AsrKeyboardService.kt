@@ -69,6 +69,10 @@ internal fun isLocalAsrPreloadEnabled(
 internal fun localAsrMissingModelErrorRes(vendor: AsrVendor): Int? =
     AsrLocalModelCatalog.missingModelErrorRes(vendor)
 
+internal fun stopRecordingIfActive(isRunning: Boolean, stopRecording: () -> Unit) {
+    if (isRunning) stopRecording()
+}
+
 /**
  * ASR 键盘服务
  *
@@ -341,19 +345,8 @@ class AsrKeyboardService :
         extensionButtonsController?.applyConfig()
         refreshPermissionUi()
         resetPanelsToMainKeyboard()
-        // 如果此时引擎仍在运行（键盘收起期间继续录音），需要把 UI 恢复为 Listening
-        if (asrManager.isRunning()) {
-            uiRenderer?.forceStructuralRenderOnNextFrame()
-            onStateChanged(actionHandler.getCurrentState())
-        }
-
         // 同步系统栏颜色
         rootView?.post { syncSystemBarsToKeyboardBackground(rootView) }
-
-        // 若正在录音，恢复中间结果为 composing
-        if (asrManager.isRunning()) {
-            actionHandler.restorePartialAsComposing(currentInputConnection)
-        }
 
         // 启动剪贴板同步 Runtime（默认节能：仅输入视图可见期间）
         clipboardCoordinator?.activateClipboardSyncRuntime()
@@ -411,6 +404,7 @@ class AsrKeyboardService :
     override fun onFinishInputView(finishingInput: Boolean) {
         imeViewVisible = false
         layoutController?.onInputViewFinished()
+        stopImeRecordingIfRunning()
         super.onFinishInputView(finishingInput)
         DebugLogManager.log("ime", "finish_input_view")
         // 停止剪贴板预览监听与默认节能下的自动同步
@@ -838,9 +832,7 @@ class AsrKeyboardService :
     }
 
     private fun hideKeyboardPanel() {
-        if (asrManager.isRunning()) {
-            asrManager.stopRecording()
-        }
+        stopImeRecordingIfRunning()
         uiRenderer?.render(KeyboardState.Idle)
         // 开启「收起后切换」时，由 requestHideSelf 在显示中交接目标 IME（并拉起其面板）
         try {
@@ -857,7 +849,7 @@ class AsrKeyboardService :
 
     private fun handleImeSwitchClick() {
         if (prefs.fcitx5ReturnOnImeSwitch) {
-            if (asrManager.isRunning()) asrManager.stopRecording()
+            stopImeRecordingIfRunning()
             // 显示中主动切换：目标 IME 会接管面板，无需事后 re-show
             suppressReturnPrevImeOnHideOnce = true
             val switched = switchToConfiguredImeOrPrevious()
@@ -880,6 +872,7 @@ class AsrKeyboardService :
         if (suppressReturnPrevImeOnHideOnce) return false
         if (!isInputViewShown && !imeViewVisible) return false
 
+        stopImeRecordingIfRunning()
         suppressReturnPrevImeOnHideOnce = true
         val switched = switchToConfiguredImeOrPrevious()
         if (!switched) {
@@ -893,6 +886,10 @@ class AsrKeyboardService :
         )
         // 显示中 switch 通常会让目标 IME 直接接管面板；此处不再强制 re-show，避免与目标 IME 抢状态。
         return true
+    }
+
+    private fun stopImeRecordingIfRunning() {
+        stopRecordingIfActive(asrManager.isRunning()) { asrManager.stopRecording() }
     }
 
     /**

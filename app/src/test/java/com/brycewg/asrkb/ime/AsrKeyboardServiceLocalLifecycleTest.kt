@@ -96,6 +96,24 @@ class AsrKeyboardServiceLocalLifecycleTest {
         assertFalse(isLocalAsrPreloadEnabled(AsrVendor.OpenAI, flagsWith(senseVoice = true)))
     }
 
+    @Test
+    fun activeImeRecordingIsStopped() {
+        var stopCalls = 0
+
+        stopRecordingIfActive(isRunning = true) { stopCalls++ }
+
+        assertEquals(1, stopCalls)
+    }
+
+    @Test
+    fun inactiveImeRecordingIsNotStopped() {
+        var stopCalls = 0
+
+        stopRecordingIfActive(isRunning = false) { stopCalls++ }
+
+        assertEquals(0, stopCalls)
+    }
+
     private fun flagsWith(
         senseVoice: Boolean = false,
         funAsrNano: Boolean = false,
