@@ -186,7 +186,13 @@ Apache 2.0 License - Free to use, modify, distribute, must retain copyright noti
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=BryceWG/BiBi-Keyboard&type=date&legend=top-left)](https://www.star-history.com/#BryceWG/BiBi-Keyboard&type=date&legend=top-left)
+<a href="https://www.star-history.com/?type=date&legend=top-left&repos=BryceWG%2FBiBi-Keyboard">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=BryceWG/BiBi-Keyboard&type=date&theme=dark&legend=top-left&sealed_token=Qzk3vW5gzhrFU38x3S-wQ2YRnP03Q4pKh5p4GSqlL0Y9Lq2CX8eCvAK8C_-K08ofqKJV5xmmXgEIzM48LKBX8Ptp41I_7sKYlE33OcG_bFxIit_u3jIvtw" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=BryceWG/BiBi-Keyboard&type=date&legend=top-left&sealed_token=Qzk3vW5gzhrFU38x3S-wQ2YRnP03Q4pKh5p4GSqlL0Y9Lq2CX8eCvAK8C_-K08ofqKJV5xmmXgEIzM48LKBX8Ptp41I_7sKYlE33OcG_bFxIit_u3jIvtw" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=BryceWG/BiBi-Keyboard&type=date&legend=top-left&sealed_token=Qzk3vW5gzhrFU38x3S-wQ2YRnP03Q4pKh5p4GSqlL0Y9Lq2CX8eCvAK8C_-K08ofqKJV5xmmXgEIzM48LKBX8Ptp41I_7sKYlE33OcG_bFxIit_u3jIvtw" />
+ </picture>
+</a>
 
 ## 👥 Contributors
 
