@@ -27,7 +27,7 @@
     <string name="download_source_latency_value">延迟：%1$d ms</string>
     <string name="download_source_latency_timeout">延迟：超时</string>
     <string name="download_source_latency_failed">延迟：不可用</string>
-    <string name="download_source_latency_note">延迟数据仅作为可达性参考，不能反映实际下载速度。</string>
+    <string name="download_source_latency_note">所示延迟为 HTTP 响应耗时，仅作可达性参考，不能反映实际下载吞吐。</string>
     <string name="update_timestamp_label">更新时间：%1$s</string>
     <string name="update_release_notes_label">更新说明：\n%1$s</string>
     <string name="error_open_browser">无法打开浏览器</string>

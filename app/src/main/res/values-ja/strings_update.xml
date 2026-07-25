@@ -46,5 +46,5 @@
     <string name="download_source_latency_value">遅延: %1$d ms</string>
     <string name="download_source_latency_timeout">遅延: タイムアウト</string>
     <string name="download_source_latency_failed">遅延: 利用不可</string>
-    <string name="download_source_latency_note">遅延データは到達性の参考であり、実際のダウンロード速度を反映しません。</string>
+    <string name="download_source_latency_note">表示される遅延は HTTP 応答時間であり、到達性の参考です。実際のダウンロード速度は反映しません。</string>
 </resources>

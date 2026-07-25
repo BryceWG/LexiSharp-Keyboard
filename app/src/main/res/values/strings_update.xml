@@ -27,7 +27,7 @@
     <string name="download_source_latency_value">Latency: %1$d ms</string>
     <string name="download_source_latency_timeout">Latency: timeout</string>
     <string name="download_source_latency_failed">Latency: unavailable</string>
-    <string name="download_source_latency_note">Latency data is only for reachability reference and doesn\'t reflect actual download speed.</string>
+    <string name="download_source_latency_note">Shown latency is HTTP response time for reachability reference and doesn\'t reflect actual download throughput.</string>
     <string name="update_timestamp_label">Release time: %1$s</string>
     <string name="update_release_notes_label">Release notes:\n%1$s</string>
     <string name="error_open_browser">Unable to open browser</string>

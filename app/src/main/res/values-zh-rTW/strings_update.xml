@@ -45,5 +45,5 @@
     <string name="download_source_latency_value">延遲：%1$d ms</string>
     <string name="download_source_latency_timeout">延遲：超時</string>
     <string name="download_source_latency_failed">延遲：不可用</string>
-    <string name="download_source_latency_note">延遲資料僅作為可達性參考，不能反映實際下載速度。</string>
+    <string name="download_source_latency_note">所示延遲為 HTTP 回應耗時，僅作可達性參考，不能反映實際下載吞吐。</string>
 </resources>

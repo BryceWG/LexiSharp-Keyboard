@@ -27,7 +27,7 @@
     <string name="download_source_latency_value">زمن الاستجابة: %1$d مللي ثانية</string>
     <string name="download_source_latency_timeout">زمن الاستجابة: انتهت المهلة</string>
     <string name="download_source_latency_failed">زمن الاستجابة: غير متاح</string>
-    <string name="download_source_latency_note">بيانات زمن الاستجابة للمراجع فقط ولا تعكس سرعة التنزيل الفعلية.</string>
+    <string name="download_source_latency_note">زمن الاستجابة المعروض هو وقت استجابة HTTP للمراجع فقط ولا يعكس معدل التنزيل الفعلي.</string>
     <string name="update_timestamp_label">وقت الإصدار: %1$s</string>
     <string name="update_release_notes_label">ملاحظات الإصدار:\n%1$s</string>
     <string name="error_open_browser">تعذّر فتح المتصفح</string>
