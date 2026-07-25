@@ -23,10 +23,11 @@ internal class ParakeetFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null
-) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration),
+) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration, progressiveChunkingEnabled = true),
     PcmBatchRecognizer {
 
     override val maxRecordDurationMillis: Int = 5 * 60 * 1000
+    override val progressiveVendor: AsrVendor = AsrVendor.Parakeet
 
     private fun showToast(resId: Int) {
         try {
@@ -82,7 +83,7 @@ internal class ParakeetFileAsrEngine(
 
     override suspend fun recognize(pcm: ByteArray) {
         val t0 = System.currentTimeMillis()
-        val localLog = LocalAsrCallLogger.startInference(
+        val localLog = if (isProgressiveChunkDecode) null else LocalAsrCallLogger.startInference(
             prefs = prefs,
             vendor = AsrVendor.Parakeet,
             source = "file",
@@ -107,7 +108,7 @@ internal class ParakeetFileAsrEngine(
             if (!manager.isOnnxAvailable()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_local_asr_not_ready)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -121,7 +122,7 @@ internal class ParakeetFileAsrEngine(
                     modelCheck,
                     R.string.error_parakeet_model_missing
                 )
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -130,7 +131,7 @@ internal class ParakeetFileAsrEngine(
             if (samples.isEmpty()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_audio_empty)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -180,12 +181,12 @@ internal class ParakeetFileAsrEngine(
             if (text.isNullOrBlank()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_asr_empty_result)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
             } else {
                 reportDuration()
                 val finalText = text.trim()
-                localLog.successWithText(finalText)
+                localLog?.successWithText(finalText)
                 listener.onFinal(finalText)
             }
         } catch (t: Throwable) {
@@ -197,7 +198,7 @@ internal class ParakeetFileAsrEngine(
             )
             loadLog?.failure(t.message ?: msg)
             loadLog = null
-            localLog.failure(msg)
+            localLog?.failure(msg)
             listener.onError(msg)
         } finally {
             loadLog?.failure("Model load did not complete")

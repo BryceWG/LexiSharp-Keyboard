@@ -23,11 +23,12 @@ class SenseVoiceFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null
-) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration),
+) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration, progressiveChunkingEnabled = true),
     PcmBatchRecognizer {
 
     // 本地 SenseVoice：为降低内存占用，主动限制为 5 分钟
     override val maxRecordDurationMillis: Int = 5 * 60 * 1000
+    override val progressiveVendor: AsrVendor = AsrVendor.SenseVoice
 
     interface LocalModelLoadUi {
         fun onLocalModelLoadStart()
@@ -93,7 +94,7 @@ class SenseVoiceFileAsrEngine(
 
     override suspend fun recognize(pcm: ByteArray) {
         val t0 = System.currentTimeMillis()
-        val localLog = LocalAsrCallLogger.startInference(
+        val localLog = if (isProgressiveChunkDecode) null else LocalAsrCallLogger.startInference(
             prefs = prefs,
             vendor = AsrVendor.SenseVoice,
             source = "file",
@@ -117,7 +118,7 @@ class SenseVoiceFileAsrEngine(
             if (!manager.isOnnxAvailable()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_local_asr_not_ready)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -130,7 +131,7 @@ class SenseVoiceFileAsrEngine(
                     resolvedModelCheck,
                     R.string.error_sensevoice_model_missing
                 )
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -140,7 +141,7 @@ class SenseVoiceFileAsrEngine(
             if (samples.isEmpty()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_audio_empty)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -203,12 +204,12 @@ class SenseVoiceFileAsrEngine(
             if (text.isNullOrBlank()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_asr_empty_result)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
             } else {
                 val raw = text.trim()
                 reportDuration()
-                localLog.successWithText(raw)
+                localLog?.successWithText(raw)
                 listener.onFinal(raw)
             }
         } catch (t: Throwable) {
@@ -220,7 +221,7 @@ class SenseVoiceFileAsrEngine(
             )
             loadLog?.failure(t.message ?: msg)
             loadLog = null
-            localLog.failure(msg)
+            localLog?.failure(msg)
             listener.onError(msg)
         } finally {
             loadLog?.failure("Model load did not complete")

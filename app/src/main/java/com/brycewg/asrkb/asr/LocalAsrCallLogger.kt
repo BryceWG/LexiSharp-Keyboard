@@ -19,7 +19,8 @@ internal object LocalAsrCallLogger {
         vendor: AsrVendor,
         source: String,
         audioBytes: Int,
-        sampleRate: Int
+        sampleRate: Int,
+        startedMs: Long = SystemClock.uptimeMillis()
     ): Session {
         val durationMs = if (sampleRate > 0) {
             (audioBytes / PCM_BYTES_PER_SAMPLE) * 1_000L / sampleRate
@@ -34,7 +35,8 @@ internal object LocalAsrCallLogger {
                 method = "INFER",
                 path = "/local/infer",
                 requestSummary = "audio=pcm16le; bytes=$audioBytes; durationMs=$durationMs; sampleRate=$sampleRate; source=$source"
-            )
+            ),
+            startedMs = startedMs
         )
     }
 
@@ -63,9 +65,9 @@ internal object LocalAsrCallLogger {
     }
 
     class Session internal constructor(
-        private val recordBase: RecordBase
+        private val recordBase: RecordBase,
+        private val startedMs: Long = SystemClock.uptimeMillis()
     ) {
-        private val startedMs = SystemClock.uptimeMillis()
         private val recorded = AtomicBoolean(false)
 
         fun success(responseSummary: String = "ok=true") {

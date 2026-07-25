@@ -38,6 +38,9 @@ internal data class AsrPushPcmEnginePlan(
     val externalPcmMode: Boolean
         get() = family == AsrPushPcmEngineFamily.NativeStream ||
             family == AsrPushPcmEngineFamily.LocalStream
+
+    val progressiveChunkingEnabled: Boolean
+        get() = wrappedFileRecognizerKey?.progressiveChunkingEnabled == true
 }
 
 internal enum class AsrPushPcmEngineFamily {
@@ -264,14 +267,7 @@ internal object RealAsrPushPcmEngineConstructorTable : AsrPushPcmEngineConstruct
         request: AsrPushPcmEngineRequest
     ): StreamingAsrEngine = when (plan.constructorKey) {
         AsrPushPcmEngineConstructorKey.GenericFileAdapter ->
-            GenericPushFileAsrAdapter(
-                context = request.context,
-                scope = request.scope,
-                prefs = request.prefs,
-                listener = request.listener,
-                recognizer = createFileRecognizer(plan.wrappedFileRecognizerKey, request),
-                applyVoiceFilter = request.applyVoiceFilter
-            )
+            createFileAdapter(plan, request)
         AsrPushPcmEngineConstructorKey.VolcStream ->
             VolcStreamAsrEngine(request.context, request.scope, request.prefs, request.listener, externalPcmMode = true)
         AsrPushPcmEngineConstructorKey.ElevenLabsStream ->
@@ -304,9 +300,43 @@ internal object RealAsrPushPcmEngineConstructorTable : AsrPushPcmEngineConstruct
 
     private fun createFileRecognizer(
         key: AsrFileRecognizerKey?,
-        request: AsrPushPcmEngineRequest
+        request: AsrPushPcmEngineRequest,
+        listener: StreamingAsrEngine.Listener,
+        onRequestDuration: ((Long) -> Unit)?
     ): PcmBatchRecognizer = RealAsrFileRecognizerConstructorTable.create(
         key ?: error("Push PCM file adapter requires a wrapped file recognizer"),
-        request.toFileRecognizerRequest()
+        request.toFileRecognizerRequest().copy(
+            listener = listener,
+            onRequestDuration = onRequestDuration
+        )
     )
+
+    private fun createFileAdapter(
+        plan: AsrPushPcmEnginePlan,
+        request: AsrPushPcmEngineRequest
+    ): GenericPushFileAsrAdapter {
+        val progressiveResults = plan.wrappedFileRecognizerKey
+            ?.takeIf(AsrFileRecognizerKey::progressiveChunkingEnabled)
+            ?.let {
+                createNonStreamingChunkResultCollector(
+                    context = request.context,
+                    listener = request.listener,
+                    onRequestDuration = request.onRequestDuration
+                )
+            }
+        return GenericPushFileAsrAdapter(
+            context = request.context,
+            scope = request.scope,
+            prefs = request.prefs,
+            listener = request.listener,
+            recognizer = createFileRecognizer(
+                plan.wrappedFileRecognizerKey,
+                request,
+                progressiveResults ?: request.listener,
+                if (progressiveResults == null) request.onRequestDuration else null
+            ),
+            applyVoiceFilter = request.applyVoiceFilter,
+            progressiveResults = progressiveResults
+        )
+    }
 }

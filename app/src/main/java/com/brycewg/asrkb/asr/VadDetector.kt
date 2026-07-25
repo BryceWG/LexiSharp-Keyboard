@@ -91,9 +91,7 @@ class VadDetector(
 
         private val poolLock = Any()
 
-        @Volatile
-        private var poolKey: VadPoolKey? = null
-        private val vadPool: ArrayDeque<Vad> = ArrayDeque()
+        private val vadPools = HashMap<VadPoolKey, ArrayDeque<Vad>>()
 
         private fun buildVadModelConfig(sampleRate: Int, tuning: VadTuning): VadModelConfig {
             val tenConfig = TenVadModelConfig(
@@ -120,25 +118,9 @@ class VadDetector(
         private fun acquireFromPool(context: Context, sampleRate: Int, tuning: VadTuning): Vad {
             val key = VadPoolKey(sampleRate = sampleRate, tuning = tuning)
 
-            var take: Vad? = null
-            var toRelease: List<Vad> = emptyList()
-            synchronized(poolLock) {
-                if (poolKey != null && poolKey != key && vadPool.isNotEmpty()) {
-                    toRelease = vadPool.toList()
-                    vadPool.clear()
-                }
-                if (poolKey == null || poolKey != key) {
-                    poolKey = key
-                }
-                if (vadPool.isNotEmpty()) {
-                    take = vadPool.removeFirst()
-                }
-            }
-            toRelease.forEach { v ->
-                try {
-                    v.release()
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Failed to release pooled VAD", t)
+            val take = synchronized(poolLock) {
+                vadPools[key]?.let { pool ->
+                    if (pool.isEmpty()) null else pool.removeFirst()
                 }
             }
 
@@ -153,19 +135,6 @@ class VadDetector(
         }
 
         private fun recycleToPool(key: VadPoolKey, vad: Vad) {
-            val shouldPool = synchronized(poolLock) {
-                (poolKey == key) && (vadPool.size < MAX_POOL_SIZE)
-            }
-
-            if (!shouldPool) {
-                try {
-                    vad.release()
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Failed to release VAD", t)
-                }
-                return
-            }
-
             try {
                 vad.reset()
                 while (!vad.empty()) vad.pop()
@@ -173,12 +142,14 @@ class VadDetector(
                 Log.w(TAG, "Failed to reset VAD before pooling", t)
             }
 
-            synchronized(poolLock) {
-                if (poolKey == key && vadPool.size < MAX_POOL_SIZE) {
-                    vadPool.addLast(vad)
-                    return
+            val pooled = synchronized(poolLock) {
+                val pool = vadPools.getOrPut(key) { ArrayDeque() }
+                if (pool.size >= MAX_POOL_SIZE) false else {
+                    pool.addLast(vad)
+                    true
                 }
             }
+            if (pooled) return
             try {
                 vad.release()
             } catch (t: Throwable) {
@@ -196,23 +167,7 @@ class VadDetector(
                 val tuning = VadTuning.tuningForLevel(sensitivityLevel)
                 val key = VadPoolKey(sampleRate = sampleRate, tuning = tuning)
 
-                var alreadyReady = false
-                var toRelease: List<Vad> = emptyList()
-                synchronized(poolLock) {
-                    alreadyReady = (poolKey == key && vadPool.isNotEmpty())
-                    if (poolKey != null && poolKey != key && vadPool.isNotEmpty()) {
-                        toRelease = vadPool.toList()
-                        vadPool.clear()
-                    }
-                    poolKey = key
-                }
-                toRelease.forEach { v ->
-                    try {
-                        v.release()
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Failed to release pooled VAD during preload", t)
-                    }
-                }
+                val alreadyReady = synchronized(poolLock) { vadPools[key]?.isNotEmpty() == true }
                 if (alreadyReady) return
 
                 val vad = createVad(context, sampleRate, tuning)
@@ -228,9 +183,8 @@ class VadDetector(
             try {
                 val toRelease: List<Vad>
                 synchronized(poolLock) {
-                    toRelease = vadPool.toList()
-                    vadPool.clear()
-                    poolKey = null
+                    toRelease = vadPools.values.flatMap { it.toList() }
+                    vadPools.clear()
                 }
                 toRelease.forEach { v ->
                     try {

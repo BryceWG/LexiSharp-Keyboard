@@ -23,11 +23,12 @@ class FunAsrNanoFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null
-) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration),
+) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration, progressiveChunkingEnabled = true),
     PcmBatchRecognizer {
 
     // FunASR Nano 本地：同 SenseVoice/FireRedASR，默认限制为 5 分钟以控制内存与处理时长
     override val maxRecordDurationMillis: Int = 5 * 60 * 1000
+    override val progressiveVendor: AsrVendor = AsrVendor.FunAsrNano
 
     private fun showToast(resId: Int) {
         try {
@@ -83,7 +84,7 @@ class FunAsrNanoFileAsrEngine(
 
     override suspend fun recognize(pcm: ByteArray) {
         val t0 = System.currentTimeMillis()
-        val localLog = LocalAsrCallLogger.startInference(
+        val localLog = if (isProgressiveChunkDecode) null else LocalAsrCallLogger.startInference(
             prefs = prefs,
             vendor = AsrVendor.FunAsrNano,
             source = "file",
@@ -107,7 +108,7 @@ class FunAsrNanoFileAsrEngine(
             if (!manager.isOnnxAvailable()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_local_asr_not_ready)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -121,16 +122,16 @@ class FunAsrNanoFileAsrEngine(
                     resolvedModelCheck,
                     R.string.error_funasr_model_missing
                 )
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
 
-            val samples = pcmToFloatArray(pcm)
-            if (samples.isEmpty()) {
+            val chunks = splitLocalOfflinePcm16WithVad(context, prefs, pcm, sampleRate)
+            if (chunks.isEmpty()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_audio_empty)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -163,50 +164,56 @@ class FunAsrNanoFileAsrEngine(
                 false
             }
 
-            val text = manager.decodeOffline(
-                assetManager = null,
-                encoderAdaptor = resolvedModel.encoderAdaptorPath,
-                llm = resolvedModel.llmPath,
-                embedding = resolvedModel.embeddingPath,
-                tokenizerDir = resolvedModel.tokenizerDirPath,
-                userPrompt = userPrompt,
-                language = language,
-                useItn = useItn,
-                provider = "cpu",
-                numThreads = try {
-                    prefs.fnNumThreads
-                } catch (t: Throwable) {
-                    Log.w("FunAsrNanoFileAsrEngine", "Failed to get num threads", t)
-                    2
-                },
-                samples = samples,
-                sampleRate = sampleRate,
-                keepAliveMs = keepMs,
-                alwaysKeep = alwaysKeep,
-                onLoadStart = {
-                    loadLog = LocalAsrCallLogger.startLoad(
-                        prefs = prefs,
-                        vendor = AsrVendor.FunAsrNano,
-                        source = "inference_load"
-                    )
-                    notifyLoadStart()
-                },
-                onLoadDone = {
-                    loadLog?.success("loaded=true")
-                    loadLog = null
-                    notifyLoadDone()
-                }
-            )
+            val numThreads = try {
+                prefs.fnNumThreads
+            } catch (t: Throwable) {
+                Log.w("FunAsrNanoFileAsrEngine", "Failed to get num threads", t)
+                2
+            }
+            val texts = ArrayList<String>(chunks.size)
+            for (chunk in chunks) {
+                val text = manager.decodeOffline(
+                    assetManager = null,
+                    encoderAdaptor = resolvedModel.encoderAdaptorPath,
+                    llm = resolvedModel.llmPath,
+                    embedding = resolvedModel.embeddingPath,
+                    tokenizerDir = resolvedModel.tokenizerDirPath,
+                    userPrompt = userPrompt,
+                    language = language,
+                    useItn = useItn,
+                    provider = "cpu",
+                    numThreads = numThreads,
+                    samples = pcmToFloatArray(chunk),
+                    sampleRate = sampleRate,
+                    keepAliveMs = keepMs,
+                    alwaysKeep = alwaysKeep,
+                    onLoadStart = {
+                        loadLog = LocalAsrCallLogger.startLoad(
+                            prefs = prefs,
+                            vendor = AsrVendor.FunAsrNano,
+                            source = "inference_load"
+                        )
+                        notifyLoadStart()
+                    },
+                    onLoadDone = {
+                        loadLog?.success("loaded=true")
+                        loadLog = null
+                        notifyLoadDone()
+                    }
+                )
+                if (!text.isNullOrBlank()) texts += text.trim()
+            }
+            val text = joinNonStreamingChunkTexts(texts)
 
-            if (text.isNullOrBlank()) {
+            if (text.isBlank()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_asr_empty_result)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
             } else {
                 reportDuration()
                 val finalText = text.trim()
-                localLog.successWithText(finalText)
+                localLog?.successWithText(finalText)
                 listener.onFinal(finalText)
             }
         } catch (t: Throwable) {
@@ -218,7 +225,7 @@ class FunAsrNanoFileAsrEngine(
             )
             loadLog?.failure(t.message ?: msg)
             loadLog = null
-            localLog.failure(msg)
+            localLog?.failure(msg)
             listener.onError(msg)
         } finally {
             loadLog?.failure("Model load did not complete")

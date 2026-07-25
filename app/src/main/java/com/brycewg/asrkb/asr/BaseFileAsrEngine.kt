@@ -2,6 +2,7 @@ package com.brycewg.asrkb.asr
 
 import android.content.Context
 import android.media.AudioFormat
+import android.os.SystemClock
 import android.util.Log
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
@@ -13,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -25,8 +27,9 @@ abstract class BaseFileAsrEngine(
     protected val context: Context,
     private val scope: CoroutineScope,
     protected val prefs: Prefs,
-    protected val listener: StreamingAsrEngine.Listener,
-    protected val onRequestDuration: ((Long) -> Unit)? = null
+    listener: StreamingAsrEngine.Listener,
+    onRequestDuration: ((Long) -> Unit)? = null,
+    private val progressiveChunkingEnabled: Boolean = false
 ) : StreamingAsrEngine, AudioFrameSinkOwner {
 
     companion object {
@@ -34,6 +37,23 @@ abstract class BaseFileAsrEngine(
     }
 
     private val running = AtomicBoolean(false)
+    private val chunkResults = createNonStreamingChunkResultCollector(
+        context = context,
+        listener = listener,
+        onRequestDuration = onRequestDuration
+    )
+    protected val listener: StreamingAsrEngine.Listener = chunkResults
+    protected val onRequestDuration: ((Long) -> Unit)? = if (progressiveChunkingEnabled) {
+        { _ -> }
+    } else {
+        onRequestDuration
+    }
+    protected open val progressiveVendor: AsrVendor? = null
+    protected val isProgressiveChunkDecode: Boolean
+        get() = progressiveChunkDecode
+
+    @Volatile private var progressiveChunkDecode = false
+    @Volatile private var progressiveStoppedAtMs = 0L
     override var audioFrameSink: AudioFrameSink? = null
 
     @Volatile private var stopRequested: Boolean = false
@@ -43,6 +63,7 @@ abstract class BaseFileAsrEngine(
     private var processingJob: Job? = null
     private var segmentChan: Channel<RecordedSegment>? = null
     private var lastSegmentForRetry: RecordedSegment? = null
+    private var progressiveRetryPcm: ByteArrayOutputStream? = null
 
     @Volatile private var discardOnStop: Boolean = false
 
@@ -63,18 +84,29 @@ abstract class BaseFileAsrEngine(
 
     override fun start() {
         if (running.get()) return
+        if (audioJob?.isCompleted == false || processingJob?.isCompleted == false) {
+            Log.w(TAG, "start ignored while previous file recognition is still draining")
+            return
+        }
         if (!ensureReady()) return
         running.set(true)
         stopRequested = false
         stoppedDelivered = false
         discardOnStop = false
-        audioJob?.cancel()
-        processingJob?.cancel()
+        if (progressiveChunkingEnabled) {
+            chunkResults.start()
+            progressiveRetryPcm = ByteArrayOutputStream()
+            progressiveStoppedAtMs = 0L
+        }
         // 使用有界队列并在溢出时丢弃最旧的数据，避免内存溢出
-        val chan = Channel<RecordedSegment>(
-            capacity = 10,
-            onBufferOverflow = BufferOverflow.DROP_OLDEST
-        )
+        val chan: Channel<RecordedSegment> = if (progressiveChunkingEnabled) {
+            Channel(Channel.UNLIMITED)
+        } else {
+            Channel(
+                capacity = 10,
+                onBufferOverflow = BufferOverflow.DROP_OLDEST
+            )
+        }
         segmentChan = chan
         // 顺序消费识别请求，确保结果按段落顺序提交
         processingJob = scope.launch(Dispatchers.IO) {
@@ -95,7 +127,7 @@ abstract class BaseFileAsrEngine(
                                     pcm = processed,
                                     sampleRate = sampleRate
                                 )
-                                recognize(denoised)
+                                recognizeProgressiveChunk(denoised)
                             }
                             is RecordedSegment.Encoded -> {
                                 lastSegmentForRetry = seg
@@ -115,9 +147,34 @@ abstract class BaseFileAsrEngine(
                             Log.e(TAG, "Failed to notify recognition error", e)
                         }
                     }
+                    if (progressiveChunkingEnabled && chunkResults.hasFatalError) {
+                        running.set(false)
+                        if (!stoppedDelivered) {
+                            markProgressiveStopped()
+                            listener.onStopped()
+                            stoppedDelivered = true
+                        }
+                        chan.cancel()
+                        audioJob?.cancelAndJoin()
+                        break
+                    }
                 }
             } finally {
+                if (progressiveChunkingEnabled) {
+                    val retryPcm = progressiveRetryPcm?.toByteArray()
+                    if (retryPcm != null && retryPcm.isNotEmpty()) {
+                        lastSegmentForRetry = RecordedSegment.Pcm(retryPcm)
+                    }
+                    progressiveRetryPcm = null
+                    if (discardOnStop) {
+                        chunkResults.cancel()
+                    } else {
+                        val audioBytes = retryPcm?.size ?: 0
+                        finishProgressiveResults(chunkResults, audioBytes)
+                    }
+                }
                 processingJob = null
+                segmentChan = null
             }
         }
         // 持续录音并按上限切段，投递到识别队列
@@ -150,6 +207,7 @@ abstract class BaseFileAsrEngine(
                         DebugLogManager.log("asr", "engine_stop_implied")
                     } catch (_: Throwable) { }
                     try {
+                        markProgressiveStopped()
                         listener.onStopped()
                     } catch (t: Throwable) {
                         Log.e(TAG, "Failed to notify implied onStopped", t)
@@ -170,6 +228,7 @@ abstract class BaseFileAsrEngine(
     override fun stop() {
         val wasRunning = running.getAndSet(false)
         stopRequested = true
+        markProgressiveStopped()
         // 主动停止采集：取消录音协程以触发 finally 冲刷尾段并关闭通道
         try {
             audioJob?.cancel()
@@ -240,11 +299,34 @@ abstract class BaseFileAsrEngine(
         )
         val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
         var vadLevelerFinishReason = "capture_end"
+        val progressiveChunker = if (progressiveChunkingEnabled) {
+            NonStreamingPcmChunker(sampleRate)
+        } else {
+            null
+        }
+        val sentenceVadDetector = if (progressiveChunkingEnabled) {
+            createNonStreamingSentenceVad(context, sampleRate)
+        } else null
 
         // 计算分段阈值
         val maxBytes = (maxRecordDurationMillis / 1000.0 * sampleRate * bytesPerSample).toInt()
         val currentSeg = ByteArrayOutputStream()
         val pendingList = java.util.ArrayDeque<ByteArray>()
+
+        fun enqueuePcm(pcm: ByteArray) {
+            if (pcm.isEmpty()) return
+            progressiveRetryPcm?.write(pcm)
+            logUncompressedUploadSegment(pcm)
+            while (!pendingList.isEmpty()) {
+                val head = pendingList.peekFirst() ?: break
+                if (chan.trySend(RecordedSegment.Pcm(head)).isSuccess) {
+                    pendingList.removeFirst()
+                } else {
+                    break
+                }
+            }
+            if (!chan.trySend(RecordedSegment.Pcm(pcm)).isSuccess) pendingList.addLast(pcm)
+        }
 
         try {
             audioManager.startCapture().collect { audioChunk ->
@@ -259,7 +341,15 @@ abstract class BaseFileAsrEngine(
                     Log.w(TAG, "Failed to calculate amplitude", t)
                 }
 
-                currentSeg.write(audioChunk)
+                if (progressiveChunker == null) {
+                    currentSeg.write(audioChunk)
+                } else {
+                    val isSpeech = sentenceVadDetector
+                        ?.analyzeFrame(leveled.leveledPcm, leveled.leveledPcm.size)
+                        ?.isSpeech
+                        ?: true
+                    progressiveChunker.append(audioChunk, isSpeech).forEach(::enqueuePcm)
+                }
 
                 val stopReason = when {
                     vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true ->
@@ -275,30 +365,16 @@ abstract class BaseFileAsrEngine(
                     running.set(false)
                     Log.d(TAG, stopReason)
                     try {
+                        markProgressiveStopped()
                         listener.onStopped()
                         stoppedDelivered = true
                     } catch (t: Throwable) {
                         Log.e(TAG, "Failed to notify stopped", t)
                     }
 
-                    val last = currentSeg.toByteArray()
+                    val last = progressiveChunker?.finish() ?: currentSeg.toByteArray()
                     if (last.isNotEmpty()) {
-                        logUncompressedUploadSegment(last)
-                        // 刷出已有待发送
-                        while (!pendingList.isEmpty()) {
-                            val head = pendingList.peekFirst() ?: break
-                            val ok = chan.trySend(RecordedSegment.Pcm(head)).isSuccess
-                            if (ok) {
-                                pendingList.removeFirst()
-                            } else {
-                                break
-                            }
-                        }
-                        // 尝试直接投递最后一段；不成则加入待发送
-                        val ok2 = chan.trySend(RecordedSegment.Pcm(last)).isSuccess
-                        if (!ok2) {
-                            pendingList.addLast(last)
-                        }
+                        enqueuePcm(last)
                         // 已投递/入队最后一段后，重置缓冲，避免 finally 重复推送
                         currentSeg.reset()
                         Log.d(TAG, "Final segment enqueued (${last.size} bytes)")
@@ -325,7 +401,7 @@ abstract class BaseFileAsrEngine(
                 }
 
                 // 达到上限：切出一个片段，不打断录音
-                if (currentSeg.size() >= maxBytes) {
+                if (progressiveChunker == null && currentSeg.size() >= maxBytes) {
                     val out = currentSeg.toByteArray()
                     currentSeg.reset()
                     logUncompressedUploadSegment(out)
@@ -381,11 +457,10 @@ abstract class BaseFileAsrEngine(
                     break
                 }
             }
-            val tail = currentSeg.toByteArray()
+            val tail = progressiveChunker?.finish() ?: currentSeg.toByteArray()
             if (tail.isNotEmpty()) {
                 try {
-                    logUncompressedUploadSegment(tail)
-                    chan.trySend(RecordedSegment.Pcm(tail))
+                    enqueuePcm(tail)
                     Log.d(TAG, "Final buffer sent (${tail.size} bytes)")
                 } catch (t: Throwable) {
                     Log.e(TAG, "Failed to send final buffer during cleanup", t)
@@ -397,6 +472,11 @@ abstract class BaseFileAsrEngine(
                 vadDetector?.release()
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to release VAD detector", t)
+            }
+            try {
+                sentenceVadDetector?.release()
+            } catch (t: Throwable) {
+                Log.e(TAG, "Failed to release sentence-boundary VAD", t)
             }
         }
     }
@@ -529,6 +609,7 @@ abstract class BaseFileAsrEngine(
                     running.set(false)
                     Log.d(TAG, stopReason)
                     try {
+                        markProgressiveStopped()
                         listener.onStopped()
                         stoppedDelivered = true
                     } catch (t: Throwable) {
@@ -722,6 +803,8 @@ abstract class BaseFileAsrEngine(
     fun markDiscardOnStop() {
         discardOnStop = true
         lastSegmentForRetry = null
+        progressiveRetryPcm = null
+        if (progressiveChunkingEnabled) chunkResults.cancel()
         try {
             processingJob?.cancel()
         } catch (t: Throwable) {
@@ -745,16 +828,39 @@ abstract class BaseFileAsrEngine(
             return
         }
         scope.launch(Dispatchers.IO) {
+            if (progressiveChunkingEnabled) {
+                chunkResults.start()
+                chunkResults.onStopped()
+                progressiveStoppedAtMs = SystemClock.uptimeMillis()
+            }
             try {
                 when (data) {
                     is RecordedSegment.Pcm -> {
-                        val denoised = OfflineSpeechDenoiserManager.denoiseIfEnabled(
-                            context = context,
-                            prefs = prefs,
-                            pcm = data.pcm,
-                            sampleRate = sampleRate
-                        )
-                        recognize(denoised)
+                        val chunks = if (progressiveChunkingEnabled) {
+                            splitLocalOfflinePcm16WithVad(
+                                context = context,
+                                prefs = prefs,
+                                pcm = data.pcm,
+                                sampleRate = sampleRate
+                            )
+                        } else {
+                            listOf(data.pcm)
+                        }
+                        for (chunk in chunks) {
+                            val pcm = if (progressiveChunkingEnabled) {
+                                processPcmForRecognition(chunk) ?: continue
+                            } else {
+                                chunk
+                            }
+                            val denoised = OfflineSpeechDenoiserManager.denoiseIfEnabled(
+                                context = context,
+                                prefs = prefs,
+                                pcm = pcm,
+                                sampleRate = sampleRate
+                            )
+                            recognizeProgressiveChunk(denoised)
+                            if (progressiveChunkingEnabled && chunkResults.hasFatalError) break
+                        }
                     }
                     is RecordedSegment.Encoded -> recognizeEncoded(data.audio)
                 }
@@ -770,9 +876,73 @@ abstract class BaseFileAsrEngine(
                 } catch (e: Throwable) {
                     Log.e(TAG, "Failed to notify recognition error (retry)", e)
                 }
+            } finally {
+                if (progressiveChunkingEnabled) {
+                    val audioBytes = (data as? RecordedSegment.Pcm)?.pcm?.size ?: 0
+                    finishProgressiveResults(chunkResults, audioBytes)
+                }
             }
         }
     }
+
+    internal suspend fun recognizeProgressiveChunk(pcm: ByteArray) {
+        progressiveChunkDecode = true
+        try {
+            recognize(pcm)
+        } finally {
+            progressiveChunkDecode = false
+        }
+    }
+
+    internal fun markProgressiveStopped() {
+        if (progressiveChunkingEnabled && progressiveStoppedAtMs == 0L) {
+            progressiveStoppedAtMs = SystemClock.uptimeMillis()
+        }
+    }
+
+    internal fun beginExternalProgressiveSession() {
+        progressiveStoppedAtMs = 0L
+    }
+
+    internal suspend fun finalizeProgressiveResult(text: String): String {
+        return try {
+            finalizeCombinedProgressiveText(text)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to finalize combined progressive result", t)
+            text
+        }
+    }
+
+    internal suspend fun finishProgressiveResults(
+        results: NonStreamingChunkResultCollector,
+        audioBytes: Int
+    ) {
+        results.finish(
+            transformFinal = { finalizeProgressiveResult(it) },
+            onFinalized = { logProgressiveSuccess(it, audioBytes) },
+            onError = { logProgressiveFailure(it, audioBytes) }
+        )
+    }
+
+    internal fun logProgressiveSuccess(text: String, audioBytes: Int) {
+        progressiveLog(audioBytes).successWithText(text)
+    }
+
+    internal fun logProgressiveFailure(message: String, audioBytes: Int) {
+        progressiveLog(audioBytes).failure(message)
+    }
+
+    protected open suspend fun finalizeCombinedProgressiveText(text: String): String = text
+
+    private fun progressiveLog(audioBytes: Int): LocalAsrCallLogger.Session =
+        LocalAsrCallLogger.startInference(
+            prefs = prefs,
+            vendor = checkNotNull(progressiveVendor),
+            source = "file",
+            audioBytes = audioBytes,
+            sampleRate = sampleRate,
+            startedMs = progressiveStoppedAtMs.takeIf { it > 0L } ?: SystemClock.uptimeMillis()
+        )
 
     private sealed interface RecordedSegment {
         data class Pcm(val pcm: ByteArray) : RecordedSegment

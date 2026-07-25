@@ -9,24 +9,26 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.Channel
 
 /**
  * 通用的“推送 PCM” -> 非流式识别 适配器。
  *
  * 用法：传入具体供应商的 File 引擎实例（其实现 PcmBatchRecognizer），本适配器将：
  * - start(): 标记运行中；
- * - appendPcm(): 校验 16k/单声道并累计，同时回调振幅；
- * - stop(): onStopped -> 一次性提交 PCM 给底层引擎识别；
+ * - appendPcm(): 校验 16k/单声道并累计；启用渐进分段时同步投递已封闭片段；
+ * - stop(): onStopped -> 提交尾段，全部完成后交付一次最终结果；
  *
  * 目的：将“推送 PCM”的通用部分抽象出来，避免在每个供应商重复粘贴聚合/回调逻辑。
  */
-class GenericPushFileAsrAdapter(
+internal class GenericPushFileAsrAdapter(
     private val context: Context,
     private val scope: CoroutineScope,
     private val prefs: Prefs,
     private val listener: StreamingAsrEngine.Listener,
     private val recognizer: PcmBatchRecognizer,
-    private val applyVoiceFilter: Boolean = true
+    private val applyVoiceFilter: Boolean = true,
+    private val progressiveResults: NonStreamingChunkResultCollector? = null
 ) : StreamingAsrEngine,
     ExternalPcmConsumer,
     CancelableAsrEngine {
@@ -38,15 +40,62 @@ class GenericPushFileAsrAdapter(
     private val running = AtomicBoolean(false)
     private val bos = ByteArrayOutputStream()
     private val vadInputLeveler = VadInputLevelerBranch(sampleRate = 16_000)
+    private val progressiveRecognizer = recognizer as? BaseFileAsrEngine
     private var recognitionJob: kotlinx.coroutines.Job? = null
+    private var progressiveChunker: NonStreamingPcmChunker? = null
+    private var sentenceVadDetector: VadDetector? = null
+    private var chunkChannel: Channel<ByteArray>? = null
+    private var progressiveAudioBytes = 0
 
     override val isRunning: Boolean
         get() = running.get()
 
     override fun start() {
         if (running.get()) return
+        if (recognitionJob?.isCompleted == false) {
+            Log.w(TAG, "start ignored while previous Push PCM recognition is still draining")
+            return
+        }
         running.set(true)
+        bos.reset()
         vadInputLeveler.reset()
+        val results = progressiveResults ?: return
+        results.start()
+        progressiveAudioBytes = 0
+        progressiveRecognizer?.beginExternalProgressiveSession()
+        progressiveChunker = NonStreamingPcmChunker(sampleRate = 16_000)
+        sentenceVadDetector = createNonStreamingSentenceVad(context, 16_000)
+        val channel = Channel<ByteArray>(Channel.UNLIMITED)
+        chunkChannel = channel
+        recognitionJob = scope.launch(Dispatchers.IO) {
+            try {
+                for (pcm in channel) {
+                    recognizePcm(pcm, progressive = true)
+                    if (results.hasFatalError) break
+                }
+            } catch (t: Throwable) {
+                if (t !is kotlinx.coroutines.CancellationException) {
+                    Log.e(TAG, "progressive recognizeFromPcm failed", t)
+                    results.onError(recognitionError(t))
+                }
+            } finally {
+                if (results.hasFatalError && running.getAndSet(false)) {
+                    try {
+                        results.onStopped()
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "notify stopped after progressive error failed", t)
+                    }
+                } else {
+                    running.set(false)
+                }
+                channel.cancel()
+                releaseSentenceVad()
+                progressiveRecognizer?.finishProgressiveResults(results, progressiveAudioBytes)
+                    ?: results.finish()
+                chunkChannel = null
+                recognitionJob = null
+            }
+        }
     }
 
     override fun stop() {
@@ -54,9 +103,21 @@ class GenericPushFileAsrAdapter(
         running.set(false)
         vadInputLeveler.finishDebugSession("stop")
         try {
-            listener.onStopped()
+            (progressiveResults ?: listener).onStopped()
         } catch (t: Throwable) {
             Log.w(TAG, "notify stopped failed", t)
+        }
+        val chunker = progressiveChunker
+        if (chunker != null) {
+            progressiveRecognizer?.markProgressiveStopped()
+            if (progressiveAudioBytes == 0) {
+                progressiveResults?.onError(context.getString(R.string.error_audio_empty))
+            }
+            chunker.finish()?.let { chunkChannel?.trySend(it) }
+            progressiveChunker = null
+            chunkChannel?.close()
+            releaseSentenceVad()
+            return
         }
         val data = bos.toByteArray()
         bos.reset()
@@ -70,45 +131,11 @@ class GenericPushFileAsrAdapter(
         }
         recognitionJob = scope.launch(Dispatchers.IO) {
             try {
-                val processed = if (applyVoiceFilter) {
-                    RecordedAudioVoiceFilter.processIfEnabled(
-                        context = context,
-                        prefs = prefs,
-                        pcm = data,
-                        sampleRate = 16000,
-                        chunkMillis = 200
-                    )
-                } else {
-                    RecordedAudioVoiceFilter.Result(
-                        pcm = data,
-                        hasSpeech = data.isNotEmpty(),
-                        droppedAsEmptyAudio = false,
-                        originalDurationMs = data.size / 2 * 1_000L / 16000,
-                        outputDurationMs = data.size / 2 * 1_000L / 16000
-                    )
-                }
-                if (processed.droppedAsEmptyAudio) {
-                    try {
-                        listener.onError(context.getString(R.string.error_audio_empty_skipped))
-                    } catch (_: Throwable) { }
-                    return@launch
-                }
-                val denoised = OfflineSpeechDenoiserManager.denoiseIfEnabled(
-                    context = context,
-                    prefs = prefs,
-                    pcm = processed.pcm,
-                    sampleRate = 16000
-                )
-                recognizer.recognizeFromPcm(denoised)
+                recognizePcm(data)
             } catch (t: Throwable) {
                 Log.e(TAG, "recognizeFromPcm failed", t)
                 try {
-                    listener.onError(
-                        context.getString(
-                            R.string.error_recognize_failed_with_reason,
-                            t.message ?: ""
-                        )
-                    )
+                    listener.onError(recognitionError(t))
                 } catch (_: Throwable) { }
             }
         }
@@ -118,12 +145,16 @@ class GenericPushFileAsrAdapter(
         running.set(false)
         vadInputLeveler.finishDebugSession("cancel")
         bos.reset()
+        progressiveChunker = null
+        progressiveAudioBytes = 0
+        chunkChannel?.cancel()
+        chunkChannel = null
+        progressiveResults?.cancel()
+        releaseSentenceVad()
         try {
             recognitionJob?.cancel()
         } catch (t: Throwable) {
             Log.w(TAG, "cancel recognition job failed", t)
-        } finally {
-            recognitionJob = null
         }
     }
 
@@ -141,10 +172,73 @@ class GenericPushFileAsrAdapter(
         ) {
             Log.w(TAG, "amp cb failed", t)
         }
-        try {
-            bos.write(pcm)
-        } catch (t: Throwable) {
-            Log.e(TAG, "buffer write failed", t)
+        val chunker = progressiveChunker
+        if (chunker == null) {
+            try {
+                bos.write(pcm)
+            } catch (t: Throwable) {
+                Log.e(TAG, "buffer write failed", t)
+            }
+            return
+        }
+        val isSpeech = sentenceVadDetector
+            ?.analyzeFrame(leveled.leveledPcm, leveled.leveledPcm.size)
+            ?.isSpeech
+            ?: true
+        progressiveAudioBytes += pcm.size
+        chunker.append(pcm, isSpeech).forEach { chunkChannel?.trySend(it) }
+    }
+
+    private suspend fun recognizePcm(data: ByteArray, progressive: Boolean = false) {
+        val processed = if (applyVoiceFilter) {
+            RecordedAudioVoiceFilter.processIfEnabled(
+                context = context,
+                prefs = prefs,
+                pcm = data,
+                sampleRate = 16000,
+                chunkMillis = 200
+            )
+        } else {
+            RecordedAudioVoiceFilter.Result(
+                pcm = data,
+                hasSpeech = data.isNotEmpty(),
+                droppedAsEmptyAudio = false,
+                originalDurationMs = data.size / 2 * 1_000L / 16000,
+                outputDurationMs = data.size / 2 * 1_000L / 16000
+            )
+        }
+        if (processed.droppedAsEmptyAudio) {
+            (progressiveResults ?: listener).onError(
+                context.getString(R.string.error_audio_empty_skipped)
+            )
+            return
+        }
+        val denoised = OfflineSpeechDenoiserManager.denoiseIfEnabled(
+            context = context,
+            prefs = prefs,
+            pcm = processed.pcm,
+            sampleRate = 16000
+        )
+        if (progressive) {
+            progressiveRecognizer?.recognizeProgressiveChunk(denoised)
+                ?: recognizer.recognizeFromPcm(denoised)
+        } else {
+            recognizer.recognizeFromPcm(denoised)
         }
     }
+
+    private fun releaseSentenceVad() {
+        try {
+            sentenceVadDetector?.release()
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to release sentence-boundary VAD", t)
+        } finally {
+            sentenceVadDetector = null
+        }
+    }
+
+    private fun recognitionError(t: Throwable): String = context.getString(
+        R.string.error_recognize_failed_with_reason,
+        t.message ?: ""
+    )
 }

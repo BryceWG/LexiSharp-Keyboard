@@ -39,6 +39,9 @@ internal data class AsrDirectMicrophoneEnginePlan(
 
     val family: AsrDirectMicrophoneEngineFamily
         get() = fileRecognizerKey?.family?.toDirectMicrophoneFamily() ?: constructorKey.family
+
+    val progressiveChunkingEnabled: Boolean
+        get() = fileRecognizerKey?.progressiveChunkingEnabled == true
 }
 
 internal data class AsrDirectMicrophoneEngineIdentity(

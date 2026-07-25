@@ -81,6 +81,39 @@ class AsrDirectMicrophoneEngineFactoryTest {
     }
 
     @Test
+    fun progressiveChunkingIsLimitedToResolvedLocalFileModes() {
+        val localFileVendors = setOf(
+            AsrVendor.SenseVoice,
+            AsrVendor.FunAsrNano,
+            AsrVendor.Qwen3Asr,
+            AsrVendor.Parakeet,
+            AsrVendor.FireRedAsr
+        )
+        AsrVendor.entries.forEach { vendor ->
+            val plan = factory.resolvePlan(
+                vendor = vendor,
+                preferences = AsrEngineModePreferences(),
+                source = AsrEngineConstructionSource.App
+            )
+            assertEquals(vendor in localFileVendors, plan.progressiveChunkingEnabled)
+        }
+        assertFalse(
+            factory.resolvePlan(
+                AsrVendor.SenseVoice,
+                AsrEngineModePreferences(senseVoicePseudoStreamEnabled = true),
+                AsrEngineConstructionSource.App
+            ).progressiveChunkingEnabled
+        )
+        assertFalse(
+            factory.resolvePlan(
+                AsrVendor.FireRedAsr,
+                AsrEngineModePreferences(fireRedPseudoStreamEnabled = true),
+                AsrEngineConstructionSource.App
+            ).progressiveChunkingEnabled
+        )
+    }
+
+    @Test
     fun identityIsStableForEquivalentDirectConstructionPlan() {
         val first = factory.resolvePlan(
             vendor = AsrVendor.Volc,

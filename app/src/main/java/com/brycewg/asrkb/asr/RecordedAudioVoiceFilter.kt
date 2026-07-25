@@ -39,6 +39,7 @@ object RecordedAudioVoiceFilter {
     private const val PRE_ROLL_MS = 350
     private const val POST_ROLL_MS = 500
     private const val MIN_SILENT_RUN_TO_TRIM_MS = 800
+    private const val MIN_SILENT_RUN_TO_SPLIT_MS = 300
     private const val NEAR_SILENCE_MAX_ABS_THRESHOLD = 220
     private const val NEAR_SILENCE_RMS_THRESHOLD = 90
     private const val VAD_DOMINANT_MAX_ABS_THRESHOLD = 1_500
@@ -128,6 +129,69 @@ object RecordedAudioVoiceFilter {
                 detector.release()
             } catch (t: Throwable) {
                 Log.w(TAG, "Failed to release VAD analyzer", t)
+            }
+        }
+    }
+
+    internal fun findSilenceRangesForLocalOfflineChunking(
+        context: Context,
+        prefs: Prefs,
+        pcm: ByteArray,
+        sampleRate: Int,
+        chunkMillis: Int = 100
+    ): List<IntRange> {
+        if (pcm.isEmpty() || sampleRate <= 0) return emptyList()
+        val detector = try {
+            VadDetector(
+                context = context,
+                sampleRate = sampleRate,
+                windowMs = prefs.autoStopSilenceWindowMs,
+                tuning = VadTuning.ConservativeFilter
+            )
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to create VAD chunk analyzer", t)
+            return emptyList()
+        }
+        if (!detector.isAvailable()) {
+            detector.release()
+            return emptyList()
+        }
+
+        return try {
+            val marks = buildChunkMarks(
+                detector = detector,
+                pcm = pcm,
+                sampleRate = sampleRate,
+                chunkMillis = chunkMillis.coerceAtLeast(20)
+            )
+            buildList {
+                var index = 0
+                while (index < marks.size) {
+                    if (marks[index].isSpeech) {
+                        index++
+                        continue
+                    }
+                    val start = index
+                    var durationMs = 0
+                    while (index < marks.size && !marks[index].isSpeech) {
+                        durationMs += marks[index].durationMs
+                        index++
+                    }
+                    if (durationMs >= MIN_SILENT_RUN_TO_SPLIT_MS) {
+                        val first = marks[start]
+                        val last = marks[index - 1]
+                        add(first.offset until (last.offset + last.length))
+                    }
+                }
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "VAD chunk analysis failed", t)
+            emptyList()
+        } finally {
+            try {
+                detector.release()
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to release VAD chunk analyzer", t)
             }
         }
     }

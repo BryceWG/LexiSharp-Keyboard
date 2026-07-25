@@ -23,10 +23,11 @@ internal class Qwen3AsrFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null
-) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration),
+) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration, progressiveChunkingEnabled = true),
     PcmBatchRecognizer {
 
     override val maxRecordDurationMillis: Int = 5 * 60 * 1000
+    override val progressiveVendor: AsrVendor = AsrVendor.Qwen3Asr
 
     private fun showToast(resId: Int) {
         try {
@@ -82,7 +83,7 @@ internal class Qwen3AsrFileAsrEngine(
 
     override suspend fun recognize(pcm: ByteArray) {
         val t0 = System.currentTimeMillis()
-        val localLog = LocalAsrCallLogger.startInference(
+        val localLog = if (isProgressiveChunkDecode) null else LocalAsrCallLogger.startInference(
             prefs = prefs,
             vendor = AsrVendor.Qwen3Asr,
             source = "file",
@@ -106,7 +107,7 @@ internal class Qwen3AsrFileAsrEngine(
             if (!manager.isOnnxAvailable()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_local_asr_not_ready)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -120,16 +121,16 @@ internal class Qwen3AsrFileAsrEngine(
                     resolvedModelCheck,
                     R.string.error_qwen3_asr_model_missing
                 )
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
 
-            val samples = qwen3AsrPcmToFloatArray(pcm)
-            if (samples.isEmpty()) {
+            val chunks = splitLocalOfflinePcm16WithVad(context, prefs, pcm, sampleRate)
+            if (chunks.isEmpty()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_audio_empty)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -149,48 +150,49 @@ internal class Qwen3AsrFileAsrEngine(
                 3
             }
 
-            val text = manager.decodeOffline(
-                assetManager = null,
-                convFrontend = resolvedModel.convFrontendPath,
-                encoder = resolvedModel.encoderPath,
-                decoder = resolvedModel.decoderPath,
-                tokenizerDir = resolvedModel.tokenizerDirPath,
-                provider = "cpu",
-                numThreads = numThreads,
-                samples = samples,
-                sampleRate = sampleRate,
-                keepAliveMs = keepMs,
-                alwaysKeep = alwaysKeep,
-                onLoadStart = {
-                    loadLog = LocalAsrCallLogger.startLoad(
-                        prefs = prefs,
-                        vendor = AsrVendor.Qwen3Asr,
-                        source = "inference_load"
-                    )
-                    notifyLoadStart()
-                },
-                onLoadDone = {
-                    loadLog?.success("loaded=true")
-                    loadLog = null
-                    notifyLoadDone()
-                }
-            )
+            val texts = ArrayList<String>(chunks.size)
+            for (chunk in chunks) {
+                val text = manager.decodeOffline(
+                    assetManager = null,
+                    convFrontend = resolvedModel.convFrontendPath,
+                    encoder = resolvedModel.encoderPath,
+                    decoder = resolvedModel.decoderPath,
+                    tokenizerDir = resolvedModel.tokenizerDirPath,
+                    provider = "cpu",
+                    numThreads = numThreads,
+                    samples = qwen3AsrPcmToFloatArray(chunk),
+                    sampleRate = sampleRate,
+                    keepAliveMs = keepMs,
+                    alwaysKeep = alwaysKeep,
+                    onLoadStart = {
+                        loadLog = LocalAsrCallLogger.startLoad(
+                            prefs = prefs,
+                            vendor = AsrVendor.Qwen3Asr,
+                            source = "inference_load"
+                        )
+                        notifyLoadStart()
+                    },
+                    onLoadDone = {
+                        loadLog?.success("loaded=true")
+                        loadLog = null
+                        notifyLoadDone()
+                    }
+                )
+                if (!text.isNullOrBlank()) texts += text.trim()
+            }
+            val text = joinNonStreamingChunkTexts(texts)
 
-            if (text.isNullOrBlank()) {
+            if (text.isBlank()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_asr_empty_result)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
             } else {
-                val useItn = try {
-                    prefs.qwUseItn
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Failed to get qwUseItn", t)
-                    false
+                val finalText = if (isProgressiveChunkDecode) text.trim() else {
+                    finalizeCombinedProgressiveText(text)
                 }
-                val finalText = if (useItn) ChineseItn.normalize(text.trim()) else text.trim()
                 reportDuration()
-                localLog.successWithText(finalText)
+                localLog?.successWithText(finalText)
                 listener.onFinal(finalText)
             }
         } catch (t: Throwable) {
@@ -202,7 +204,7 @@ internal class Qwen3AsrFileAsrEngine(
             )
             loadLog?.failure(t.message ?: msg)
             loadLog = null
-            localLog.failure(msg)
+            localLog?.failure(msg)
             listener.onError(msg)
         } finally {
             loadLog?.failure("Model load did not complete")
@@ -212,6 +214,17 @@ internal class Qwen3AsrFileAsrEngine(
 
     override suspend fun recognizeFromPcm(pcm: ByteArray) {
         recognize(pcm)
+    }
+
+    override suspend fun finalizeCombinedProgressiveText(text: String): String {
+        val trimmed = text.trim()
+        val useItn = try {
+            prefs.qwUseItn
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to get qwUseItn", t)
+            false
+        }
+        return if (useItn) ChineseItn.normalize(trimmed) else trimmed
     }
 
     private companion object {

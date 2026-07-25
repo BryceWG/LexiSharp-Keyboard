@@ -23,10 +23,11 @@ internal class FireRedAsrFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null
-) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration),
+) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration, progressiveChunkingEnabled = true),
     PcmBatchRecognizer {
 
     override val maxRecordDurationMillis: Int = 5 * 60 * 1000
+    override val progressiveVendor: AsrVendor = AsrVendor.FireRedAsr
 
     private fun showToast(resId: Int) {
         try {
@@ -82,7 +83,7 @@ internal class FireRedAsrFileAsrEngine(
 
     override suspend fun recognize(pcm: ByteArray) {
         val t0 = System.currentTimeMillis()
-        val localLog = LocalAsrCallLogger.startInference(
+        val localLog = if (isProgressiveChunkDecode) null else LocalAsrCallLogger.startInference(
             prefs = prefs,
             vendor = AsrVendor.FireRedAsr,
             source = "file",
@@ -112,7 +113,7 @@ internal class FireRedAsrFileAsrEngine(
             if (!manager.isOnnxAvailable()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_local_asr_not_ready)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -126,7 +127,7 @@ internal class FireRedAsrFileAsrEngine(
                     modelFilesCheck,
                     R.string.error_firered_asr_model_missing
                 )
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -135,7 +136,7 @@ internal class FireRedAsrFileAsrEngine(
             if (samples.isEmpty()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_audio_empty)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
                 return
             }
@@ -186,28 +187,14 @@ internal class FireRedAsrFileAsrEngine(
             if (sanitizedText.isNullOrEmpty()) {
                 reportDuration()
                 val msg = context.getString(R.string.error_asr_empty_result)
-                localLog.failure(msg)
+                localLog?.failure(msg)
                 listener.onError(msg)
             } else {
-                val useItn = try {
-                    prefs.frUseItn
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Failed to get frUseItn", t)
-                    false
-                }
-                val normalized = if (useItn) ChineseItn.normalize(sanitizedText) else sanitizedText
-                val finalText = try {
-                    SherpaPunctuationManager.getInstance().addOfflinePunctuation(
-                        context = context,
-                        text = normalized,
-                        numThreads = numThreads
-                    )
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to apply offline punctuation", t)
-                    normalized
+                val finalText = if (isProgressiveChunkDecode) sanitizedText else {
+                    finalizeCombinedProgressiveText(sanitizedText)
                 }
                 reportDuration()
-                localLog.successWithText(finalText)
+                localLog?.successWithText(finalText)
                 listener.onFinal(finalText)
             }
         } catch (t: Throwable) {
@@ -219,7 +206,7 @@ internal class FireRedAsrFileAsrEngine(
             )
             loadLog?.failure(t.message ?: msg)
             loadLog = null
-            localLog.failure(msg)
+            localLog?.failure(msg)
             listener.onError(msg)
         } finally {
             loadLog?.failure("Model load did not complete")
@@ -229,6 +216,32 @@ internal class FireRedAsrFileAsrEngine(
 
     override suspend fun recognizeFromPcm(pcm: ByteArray) {
         recognize(pcm)
+    }
+
+    override suspend fun finalizeCombinedProgressiveText(text: String): String {
+        val useItn = try {
+            prefs.frUseItn
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to get frUseItn", t)
+            false
+        }
+        val normalized = if (useItn) ChineseItn.normalize(text) else text
+        val numThreads = try {
+            prefs.frNumThreads
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to get num threads", t)
+            2
+        }
+        return try {
+            SherpaPunctuationManager.getInstance().addOfflinePunctuation(
+                context = context,
+                text = normalized,
+                numThreads = numThreads
+            )
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to apply offline punctuation", t)
+            normalized
+        }
     }
 
     private companion object {

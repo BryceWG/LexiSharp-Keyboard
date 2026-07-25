@@ -61,11 +61,44 @@ class AsrPushPcmEngineFactoryTest {
             pushedPcmInvocationCases.forEach { invocationCase ->
                 val plan = assertPlanMatchesBaseline(vendor, invocationCase, preferences)
 
-            assertSame(AsrPushPcmEngineFamily.PseudoStream, plan.family)
-            assertFalse(plan.externalPcmMode)
-            assertNull(plan.wrappedRecognizerClassName)
+                assertSame(AsrPushPcmEngineFamily.PseudoStream, plan.family)
+                assertFalse(plan.externalPcmMode)
+                assertNull(plan.wrappedRecognizerClassName)
+            }
         }
     }
+
+    @Test
+    fun progressiveChunkingIsLimitedToResolvedLocalFileAdapters() {
+        val localFileVendors = setOf(
+            AsrVendor.SenseVoice,
+            AsrVendor.FunAsrNano,
+            AsrVendor.Qwen3Asr,
+            AsrVendor.Parakeet,
+            AsrVendor.FireRedAsr
+        )
+        AsrVendor.entries.forEach { vendor ->
+            val plan = factory.resolvePlan(
+                vendor = vendor,
+                invocationMode = AsrEngineInvocationMode.PushPcm,
+                preferences = AsrEngineModePreferences()
+            )
+            assertEquals(vendor in localFileVendors, plan.progressiveChunkingEnabled)
+        }
+        assertFalse(
+            factory.resolvePlan(
+                AsrVendor.SenseVoice,
+                AsrEngineInvocationMode.PushPcm,
+                AsrEngineModePreferences(senseVoicePseudoStreamEnabled = true)
+            ).progressiveChunkingEnabled
+        )
+        assertFalse(
+            factory.resolvePlan(
+                AsrVendor.FireRedAsr,
+                AsrEngineInvocationMode.PushPcm,
+                AsrEngineModePreferences(fireRedPseudoStreamEnabled = true)
+            ).progressiveChunkingEnabled
+        )
     }
 
     @Test

@@ -20,7 +20,8 @@ internal enum class AsrFileRecognizerFamily {
 
 internal enum class AsrFileRecognizerKey(
     val engineClassName: String,
-    val family: AsrFileRecognizerFamily
+    val family: AsrFileRecognizerFamily,
+    val progressiveChunkingEnabled: Boolean = family == AsrFileRecognizerFamily.LocalFile
 ) {
     VolcFile("VolcFileAsrEngine", AsrFileRecognizerFamily.File),
     VolcStandardFile("VolcStandardFileAsrEngine", AsrFileRecognizerFamily.File),
