@@ -18,18 +18,23 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/BryceWG/BiBi-Keyboard)
 ![GitHub all releases](https://img.shields.io/github/downloads/BryceWG/BiBi-Keyboard/total)
 
-[功能特性](#-功能特性) • [快速开始](#-快速开始)
+[功能特性](#-功能特性) • [界面预览](#-界面预览) • [快速开始](#-快速开始)
 
 </div>
 
-## 🌟 Pro 版已上架
+## 📱 界面预览
 
-> 💎 **「说点啥」Pro 版**现已正式上架 Play 商店，买断价仅 $5.49！
+<div align="center">
+<img src="images/readme-showcase.png" width="100%" alt="说点啥的新手引导、语音键盘与智能设置界面">
+</div>
 
-Pro 版提供更多高级功能和更优质的使用体验（热词、简繁转换、畅说模式、WebDAV 自动备份等）。
-欢迎在应用「关于 → 了解 Pro」或 [Pro 功能](https://bibidocs.brycewg.com/pro/features.html) 文档中了解更多内容。我们非常欢迎你的体验反馈，帮助我们打磨出更好的产品！
-
-如果你对「说点啥」感兴趣，也加入我们的 [Telegram 群组](https://t.me/+UGFobXqi2bYzMDFl)了解更多信息
+<table>
+<tr>
+<td width="33%" align="center"><b>开箱即用</b><br/><sub>分步引导完成输入法与权限配置</sub></td>
+<td width="34%" align="center"><b>语音即输</b><br/><sub>打开键盘，长按麦克风即可自然表达</sub></td>
+<td width="33%" align="center"><b>智能增强</b><br/><sub>识别、AI 后处理与历史记录集中管理</sub></td>
+</tr>
+</table>
 
 ## ✨ 功能特性
 
@@ -90,44 +95,14 @@ Pro 版提供更多高级功能和更优质的使用体验（热词、简繁转�
 </tr>
 </table>
 
-## 📱 UI 展示
+## 🌟 Pro 版已上架
 
-<table>
-<tr>
-<td width="50%" align="center">
-<img src="images/keyboard_view.png" alt="键盘视图" style="max-height: 200px; width: auto;"/>
-<img src="images/edit_keyboard_view.png" alt="编辑键盘视图" style="max-height: 200px; width: auto;"/>
-<img src="images/numpad_keyboard_view.jpg" alt="小键盘视图" style="max-height: 200px; width: auto;"/>
-<br/>
-<b>🎹 键盘视图</b>
-<br/>
-<sub>简洁的键盘界面，支持语音输入、键盘切换和自定义按键</sub>
-</td>
-<td width="50%" align="center">
-<img src="images/settings.jpg" alt="设置界面" style="max-height: 500px; width: auto;"/>
-<br/>
-<b>⚙️ 设置界面</b>
-<br/>
-<sub>丰富的配置选项，支持多种 ASR 引擎和 LLM 后处理</sub>
-</td>
-</tr>
-<tr>
-<td width="50%" align="center">
-<img src="images/floating_ball.jpg" alt="悬浮球功能" style="max-height: 500px; width: auto;"/>
-<br/>
-<b>🟣 悬浮球功能</b>
-<br/>
-<sub>跨输入法语音识别，随时随地语音输入</sub>
-</td>
-<td width="50%" align="center">
-<img src="images/post_processing.jpg" alt="AI 后处理" style="max-height: 500px; width: auto;"/>
-<br/>
-<b>🤖 AI 后处理</b>
-<br/>
-<sub>LLM 智能优化识别结果，提升文本质量</sub>
-</td>
-</tr>
-</table>
+> 💎 **「说点啥」Pro 版**现已正式上架 Play 商店，买断价仅 $5.49！
+
+Pro 版提供更多高级功能和更优质的使用体验（热词、简繁转换、畅说模式、WebDAV 自动备份等）。
+欢迎在应用「关于 → 了解 Pro」或 [Pro 功能](https://bibidocs.brycewg.com/pro/features.html) 文档中了解更多内容。我们非常欢迎你的体验反馈，帮助我们打磨出更好的产品！
+
+如果你对「说点啥」感兴趣，也加入我们的 [Telegram 群组](https://t.me/+UGFobXqi2bYzMDFl)了解更多信息
 
 ## 🚀 快速开始
 
@@ -193,42 +168,6 @@ Apache 2.0 License - 自由使用、修改、分发，需保留版权声明
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=BryceWG/BiBi-Keyboard&type=date&legend=top-left&sealed_token=Qzk3vW5gzhrFU38x3S-wQ2YRnP03Q4pKh5p4GSqlL0Y9Lq2CX8eCvAK8C_-K08ofqKJV5xmmXgEIzM48LKBX8Ptp41I_7sKYlE33OcG_bFxIit_u3jIvtw" />
  </picture>
 </a>
-
-## 👥 贡献者
-
-感谢所有为本项目做出贡献的开发者！
-
-<table>
-<tr>
-<td align="center">
-<a href="https://github.com/BryceWG">
-<img src="https://github.com/BryceWG.png" width="60px;" alt="BryceWG"/>
-<br />
-<sub><b>BryceWG</b></sub>
-</a>
-<br />
-<sub>项目创建者</sub>
-</td>
-<td align="center">
-  <a href="https://github.com/flyhunterl">
-    <img src="https://github.com/flyhunterl.png" width="60px;" alt="flyhunterl" />
-    <br />
-    <sub><b>flyhunterl</b></sub>
-  </a>
-  <br />
-  <sub>功能建议/实现</sub>
-</td>
-<td align="center">
-  <a href="https://github.com/kc0ed">
-    <img src="https://github.com/kc0ed.png" width="60px;" alt="kc0ed" />
-    <br />
-    <sub><b>kc0ed</b></sub>
-  </a>
-  <br />
-  <sub>功能建议/实现</sub>
-</td>
-</tr>
-</table>
 
 ## ☕ 赞赏支持
 

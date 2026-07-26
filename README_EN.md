@@ -18,18 +18,23 @@ English | [简体中文](README.md)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/BryceWG/BiBi-Keyboard)
 ![GitHub all releases](https://img.shields.io/github/downloads/BryceWG/BiBi-Keyboard/total)
 
-[Features](#-features) • [Quick Start](#-quick-start)
+[Features](#-features) • [UI Showcase](#-ui-showcase) • [Quick Start](#-quick-start)
 
 </div>
 
-## 🌟 Pro Version Released
+## 📱 UI Showcase
 
-> 💎 **BiBi Keyboard Pro** is now officially available on the Play Store for a one-time purchase of just $5.49!
+<div align="center">
+<img src="images/readme-showcase-en.png" width="100%" alt="BiBi Keyboard onboarding, voice keyboard, and smart settings">
+</div>
 
-The Pro version offers more advanced features and a better experience (hotwords, Simplified/Traditional conversion, continuous dictation, WebDAV auto-backup, and more).
-You can learn more in **About → Learn about Pro**, or in the [Pro Features](https://bibidocs.brycewg.com/en/pro/features.html) documentation. We welcome your feedback to help us polish a better product!
-
-If you are interested in BiBi Keyboard, join our [Telegram Group](https://t.me/+UGFobXqi2bYzMDFl) for more information.
+<table>
+<tr>
+<td width="33%" align="center"><b>Easy Setup</b><br/><sub>Step-by-step guidance for IME and permission setup</sub></td>
+<td width="34%" align="center"><b>Voice-first Typing</b><br/><sub>Open the keyboard and hold the microphone to speak</sub></td>
+<td width="33%" align="center"><b>Smart Enhancements</b><br/><sub>Manage recognition, AI post-processing, and history</sub></td>
+</tr>
+</table>
 
 ## ✨ Features
 
@@ -90,44 +95,14 @@ If you are interested in BiBi Keyboard, join our [Telegram Group](https://t.me/+
 </tr>
 </table>
 
-## 📱 UI Showcase
+## 🌟 Pro Version Released
 
-<table>
-<tr>
-<td width="50%" align="center">
-<img src="images/keyboard_view_en.png" alt="Keyboard View" style="max-height: 200px; width: auto;"/>
-<img src="images/edit_keyboard_view.png" alt="Editing Keyboard View" style="max-height: 200px; width: auto;"/>
-<img src="images/numpad_keyboard_view.jpg" alt="NumPad View" style="max-height: 200px; width: auto;"/>
-<br/>
-<b>🎹 Keyboard View</b>
-<br/>
-<sub>Clean keyboard interface with voice input, IME switching, and custom keys</sub>
-</td>
-<td width="50%" align="center">
-<img src="images/settings_en.jpg" alt="Settings Interface" style="max-height: 500px; width: auto;"/>
-<br/>
-<b>⚙️ Settings Interface</b>
-<br/>
-<sub>Rich configuration options with multiple ASR engines and LLM post-processing</sub>
-</td>
-</tr>
-<tr>
-<td width="50%" align="center">
-<img src="images/floating_ball_en.jpg" alt="Floating Ball Feature" style="max-height: 500px; width: auto;"/>
-<br/>
-<b>🟣 Floating Ball Feature</b>
-<br/>
-<sub>Cross-IME voice recognition, voice input anytime, anywhere</sub>
-</td>
-<td width="50%" align="center">
-<img src="images/post_processing_en.jpg" alt="AI Post-Processing" style="max-height: 500px; width: auto;"/>
-<br/>
-<b>🤖 AI Post-Processing</b>
-<br/>
-<sub>LLM intelligently optimizes recognition results to improve text quality</sub>
-</td>
-</tr>
-</table>
+> 💎 **BiBi Keyboard Pro** is now officially available on the Play Store for a one-time purchase of just $5.49!
+
+The Pro version offers more advanced features and a better experience (hotwords, Simplified/Traditional conversion, continuous dictation, WebDAV auto-backup, and more).
+You can learn more in **About → Learn about Pro**, or in the [Pro Features](https://bibidocs.brycewg.com/en/pro/features.html) documentation. We welcome your feedback to help us polish a better product!
+
+If you are interested in BiBi Keyboard, join our [Telegram Group](https://t.me/+UGFobXqi2bYzMDFl) for more information.
 
 ## 🚀 Quick Start
 
@@ -194,42 +169,6 @@ Apache 2.0 License - Free to use, modify, distribute, must retain copyright noti
  </picture>
 </a>
 
-## 👥 Contributors
-
-Thanks to all the developers who have contributed to this project!
-
-<table>
-<tr>
-<td align="center">
-<a href="https://github.com/BryceWG">
-<img src="https://github.com/BryceWG.png" width="60px;" alt="BryceWG"/>
-<br />
-<sub><b>BryceWG</b></sub>
-</a>
-<br />
-<sub>Project Creator</sub>
-</td>
-<td align="center">
-  <a href="https://github.com/flyhunterl">
-    <img src="https://github.com/flyhunterl.png" width="60px;" alt="flyhunterl" />
-    <br />
-    <sub><b>flyhunterl</b></sub>
-  </a>
-  <br />
-  <sub>Feature Suggestions/Implementation</sub>
-</td>
-<td align="center">
-  <a href="https://github.com/kc0ed">
-    <img src="https://github.com/kc0ed.png" width="60px;" alt="kc0ed" />
-    <br />
-    <sub><b>kc0ed</b></sub>
-  </a>
-  <br />
-  <sub>Feature Suggestions/Implementation</sub>
-</td>
-</tr>
-</table>
-
 ## ☕ Support & Appreciation
 
 If this project helps you, please give it a Star ⭐️ and feel free to buy me a coffee ☕️
@@ -239,24 +178,6 @@ If this project helps you, please give it a Star ⭐️ and feel free to buy me 
 <br/>
 <sub>Scan with WeChat to appreciate</sub>
 </div>
-
-## 💝 Appreciation List
-
-Thanks to the following users for their support and appreciation. Your encouragement is the driving force for the project's continuous development!
-
-Anonymous - 50 RMB
-
-王千郡 - 26.66 RMB
-
-天凉好个秋 - 16.66 RMB
-
-Return - 16.66 RMB
-
-树人 - 10.24 RMB
-
-x 年 - 10 RMB
-
-flyhunterl - 6.66 RMB
 
 ---
 
