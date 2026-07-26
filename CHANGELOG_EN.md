@@ -1,5 +1,30 @@
 # Changelog
 
+## v4.3.0 (2026-07-26)
+
+### New Features
+
+- **App Shortcuts**: Long-press the app icon for quick access to ASR settings, AI settings, and recognition history
+- **Fcitx5 / Trime Clipboard Sync**: AIDL-linked Fcitx5 and Trime forks can join SayWhat's clipboard sync
+- **[Pro] Automatic Hotword Learning**: Corrections after voice input can be learned as hotwords, with pending confirmation or auto-add; works with modified IMEs, IME bridge, and accessibility floating ball
+
+### Improvements
+
+- **Local Model Downloads**: Resumable downloads with local caching for more reliable recovery after interruptions
+- **Download Source Latency**: Download source latency checks use HTTP probing
+- **Settings Home Search**: Refined home search entry and search field styling
+- **Recognition History**: Optimizes list/detail layout
+- **Local Non-Streaming Recognition**: Long audio is progressively recognized in silence-based chunks for better local non-streaming recognition speed, and fixes the error of Qwen ASR and FunASR Nano local non-streaming recognition of long audio
+
+- **Companion Module Updates**: LSPosed IME Bridge and Fcitx5 / Trime forks updated alongside the app for clipboard sync and (Pro) hotword learning
+
+### Bug Fixes
+
+- **[Pro] AI Assistant Wake Word**: Fixed the problem of custom wake word being forcibly overridden by app language automatic synchronization
+- **Stop Recording on Keyboard Dismiss**: Recording stops reliably when the keyboard is dismissed, avoiding a stuck recording state on reopening
+
+---
+
 ## v4.2.1 (2026-07-22)
 
 ### New Features
