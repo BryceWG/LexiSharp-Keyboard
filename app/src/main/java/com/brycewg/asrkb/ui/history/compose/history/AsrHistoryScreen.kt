@@ -554,20 +554,18 @@ private fun HistoryItemContent(
         modifier = Modifier.padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // 复制按钮只与时间戳同行，避免与正文并排时在右侧占满一列高度。
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                HistoryText(text = timestamp, uiMode = uiMode, compact = true)
-                HistoryText(
-                    text = record.text,
-                    uiMode = uiMode,
-                    modifier = Modifier.padding(top = 6.dp),
-                    maxLines = 4
-                )
-            }
+            HistoryText(
+                text = timestamp,
+                uiMode = uiMode,
+                compact = true,
+                modifier = Modifier.weight(1f)
+            )
             SettingsAssistChip(
                 uiMode = uiMode,
                 label = stringResource(R.string.btn_copy),
@@ -575,6 +573,11 @@ private fun HistoryItemContent(
                 onClick = { onCopy(record.text) }
             )
         }
+        HistoryText(
+            text = record.text,
+            uiMode = uiMode,
+            maxLines = 4
+        )
         HistoryText(
             text = buildMeta(record, vendorOptions),
             uiMode = uiMode,
@@ -651,11 +654,9 @@ private fun HistoryDetailsDialog(
 
     val content: @Composable () -> Unit = {
         SelectionContainer {
+            // 外层不滚动：长文只在 HistoryResultSection 正文区域内滚动。
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 480.dp)
-                    .verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 HistoryResultSection(
