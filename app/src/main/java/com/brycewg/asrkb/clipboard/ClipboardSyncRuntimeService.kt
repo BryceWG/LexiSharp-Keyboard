@@ -12,6 +12,7 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.imebridge.ImeBridgeClient
+import com.brycewg.asrkb.imebridge.ImeBridgeClipboardSyncService
 import com.brycewg.asrkb.store.Prefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -273,11 +274,24 @@ class ClipboardSyncRuntimeService : Service() {
     }
 
     private fun activateBridgePath(target: String, sessionId: String) {
+        val currentIme = try {
+            ImeBridgeClient.resolveCurrentImePackage(this)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to verify bridge target", t)
+            null
+        }
+        if (resolveClipboardActor(packageName, currentIme, false, null, target) !=
+            SystemClipboardActor.BRIDGE
+        ) {
+            Log.w(TAG, "Ignoring stale bridge activation for $target; current IME=$currentIme")
+            ImeBridgeClipboardSyncService.rejectActivationIfActive(target, sessionId)
+            return
+        }
         val sameBridgeSession = owner == ClipboardSyncOwner.Bridge(target, sessionId) &&
             runtime != null
         if (!sameBridgeSession) {
             tearDownRuntime()
-            ensureRuntime()
+            ensureRuntime(activatedBridgeTargetPackage = target)
         }
         owner = ClipboardSyncOwner.Bridge(target, sessionId)
         runtime?.activateSession()
@@ -295,13 +309,14 @@ class ClipboardSyncRuntimeService : Service() {
         }
     }
 
-    private fun ensureRuntime() {
+    private fun ensureRuntime(activatedBridgeTargetPackage: String? = null) {
         if (runtime != null) return
         val createdSession = DirectClipboardSyncRuntimeSession(
             context = this,
             prefs = prefs,
             scope = serviceScope,
-            initialListener = pendingUiListener
+            initialListener = pendingUiListener,
+            activatedBridgeTargetPackage = activatedBridgeTargetPackage
         )
         lateinit var createdRuntime: ClipboardSyncRuntime
         createdRuntime = ClipboardSyncRuntime(

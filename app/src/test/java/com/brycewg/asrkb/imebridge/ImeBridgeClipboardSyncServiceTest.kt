@@ -1,6 +1,8 @@
 package com.brycewg.asrkb.imebridge
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ImeBridgeClipboardSyncServiceTest {
@@ -29,7 +31,7 @@ class ImeBridgeClipboardSyncServiceTest {
     fun `activation rejects malformed protocol and identity`() {
         assertEquals(
             ImeBridgeClipboardSyncContract.RESULT_PROTOCOL_MISMATCH,
-            validate(protocolVersion = 2)
+            validate(protocolVersion = 3)
         )
         assertEquals(
             ImeBridgeClipboardSyncContract.RESULT_BAD_REQUEST,
@@ -38,6 +40,27 @@ class ImeBridgeClipboardSyncServiceTest {
         assertEquals(
             ImeBridgeClipboardSyncContract.RESULT_BAD_REQUEST,
             validate(targetIme = "")
+        )
+    }
+
+    @Test
+    fun `native IME activation does not require the hook bridge switch`() {
+        assertEquals(
+            ImeBridgeClipboardSyncContract.RESULT_OK,
+            validate(protocolVersion = 2, bridgeEnabled = false)
+        )
+    }
+
+    @Test
+    fun `stale rejection only clears the matching bridge session`() {
+        assertTrue(
+            isSameBridgeSession("session-1", "third.party.ime", "session-1", "third.party.ime")
+        )
+        assertFalse(
+            isSameBridgeSession("session-2", "third.party.ime", "session-1", "third.party.ime")
+        )
+        assertFalse(
+            isSameBridgeSession("session-1", "other.ime", "session-1", "third.party.ime")
         )
     }
 

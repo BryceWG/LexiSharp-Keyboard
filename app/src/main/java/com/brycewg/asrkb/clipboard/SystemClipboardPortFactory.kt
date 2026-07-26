@@ -13,16 +13,25 @@ import com.brycewg.asrkb.store.Prefs
 
 object SystemClipboardPortFactory {
     private const val TAG = "ClipboardPortFactory"
+    private val unavailablePort = object : SystemClipboardPort {
+        override val actor = SystemClipboardActor.UNAVAILABLE
+        override fun readText(): ClipboardTextRead? = null
+        override fun writeText(text: String): Boolean = false
+        override fun startObserving(onChanged: () -> Unit) = Unit
+        override fun stopObserving() = Unit
+    }
 
     /**
      * - 当前默认 IME 是说点啥本体 → Direct
      * - 开启输入法桥接且模块声明 supportsClipboard → Bridge
-     * - 否则 → Direct（主键盘可见等场景的既有尽力路径）
+     * - Native Bridge 已激活但目标不再是当前 IME → Unavailable（禁止串读剪贴板）
+     * - 其他情况 → Direct（主键盘可见等场景的既有尽力路径）
      */
     fun create(
         context: Context,
         prefs: Prefs,
-        bridgeClient: ImeBridgeClient = ImeBridgeClient(context)
+        bridgeClient: ImeBridgeClient = ImeBridgeClient(context),
+        activatedBridgeTargetPackage: String? = null
     ): SystemClipboardPort {
         val selfPackage = context.packageName
         val currentIme = try {
@@ -38,7 +47,9 @@ object SystemClipboardPortFactory {
             false
         }
 
-        val status = if (currentIme != null && currentIme != selfPackage && bridgeEnabled) {
+        val status = if (activatedBridgeTargetPackage == null &&
+            currentIme != null && currentIme != selfPackage && bridgeEnabled
+        ) {
             try {
                 bridgeClient.queryStatus()
             } catch (e: Throwable) {
@@ -53,7 +64,8 @@ object SystemClipboardPortFactory {
             selfPackage = selfPackage,
             currentImePackage = currentIme,
             bridgeEnabled = bridgeEnabled,
-            bridgeStatus = status
+            bridgeStatus = status,
+            activatedBridgeTargetPackage = activatedBridgeTargetPackage
         )
         if (actor == SystemClipboardActor.DIRECT && status != null) {
             Log.d(
@@ -66,10 +78,10 @@ object SystemClipboardPortFactory {
             SystemClipboardActor.BRIDGE -> BridgeSystemClipboardPort(
                 context = context,
                 bridgeClient = ImeBridgeClipboardClientAdapter(bridgeClient),
-                expectedTargetPackage = currentIme
+                expectedTargetPackage = activatedBridgeTargetPackage ?: currentIme
             )
-            SystemClipboardActor.DIRECT,
-            SystemClipboardActor.UNAVAILABLE -> DirectSystemClipboardPort(context)
+            SystemClipboardActor.DIRECT -> DirectSystemClipboardPort(context)
+            SystemClipboardActor.UNAVAILABLE -> unavailablePort
         }
     }
 
@@ -104,8 +116,18 @@ internal fun resolveClipboardActor(
     selfPackage: String,
     currentImePackage: String?,
     bridgeEnabled: Boolean,
-    bridgeStatus: ImeBridgeResult?
+    bridgeStatus: ImeBridgeResult?,
+    activatedBridgeTargetPackage: String? = null
 ): SystemClipboardActor {
+    if (activatedBridgeTargetPackage != null) {
+        return if (currentImePackage == activatedBridgeTargetPackage &&
+            currentImePackage != selfPackage
+        ) {
+            SystemClipboardActor.BRIDGE
+        } else {
+            SystemClipboardActor.UNAVAILABLE
+        }
+    }
     if (currentImePackage == null || currentImePackage == selfPackage) {
         return SystemClipboardActor.DIRECT
     }

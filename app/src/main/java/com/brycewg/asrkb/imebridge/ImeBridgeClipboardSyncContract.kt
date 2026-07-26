@@ -7,6 +7,9 @@
 package com.brycewg.asrkb.imebridge
 
 internal object ImeBridgeClipboardSyncContract {
+    const val HOOK_PROTOCOL_VERSION: Int = 1
+    const val NATIVE_IME_PROTOCOL_VERSION: Int = 2
+
     const val ACTION_BIND_SERVICE: String =
         "com.brycewg.asrkb.imebridge.action.BIND_CLIPBOARD_SYNC_RUNTIME"
     const val DESCRIPTOR: String =
@@ -14,6 +17,7 @@ internal object ImeBridgeClipboardSyncContract {
 
     const val TRANSACTION_ACTIVATE: Int = android.os.IBinder.FIRST_CALL_TRANSACTION + 0
     const val TRANSACTION_DEACTIVATE: Int = android.os.IBinder.FIRST_CALL_TRANSACTION + 1
+    /** 仅通知窗口已隐藏；同步会话和剪贴板订阅继续保持。 */
     const val TRANSACTION_WINDOW_HIDDEN: Int = android.os.IBinder.FIRST_CALL_TRANSACTION + 2
 
     const val RESULT_OK: Int = 1

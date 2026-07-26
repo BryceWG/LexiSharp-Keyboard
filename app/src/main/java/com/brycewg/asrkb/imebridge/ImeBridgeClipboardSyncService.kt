@@ -44,6 +44,10 @@ class ImeBridgeClipboardSyncService : Service() {
         fun finishActiveForShutdownIfPresent() {
             activeInstance?.finishActiveSession(actorDied = false)
         }
+
+        fun rejectActivationIfActive(targetImePackage: String, sessionId: String) {
+            activeInstance?.rejectActivation(targetImePackage, sessionId)
+        }
     }
 
     private val binder = object : Binder() {
@@ -117,6 +121,20 @@ class ImeBridgeClipboardSyncService : Service() {
     }
 
     @Synchronized
+    private fun rejectActivation(targetImePackage: String, sessionId: String) {
+        if (
+            isSameBridgeSession(
+                activeSessionId = activeSessionId,
+                activeTargetPackage = activeTargetPackage,
+                sessionId = sessionId,
+                targetImePackage = targetImePackage
+            )
+        ) {
+            finishActiveSession(actorDied = false)
+        }
+    }
+
+    @Synchronized
     private fun activateBridge(
         protocolVersion: Int,
         sessionId: String,
@@ -149,6 +167,13 @@ class ImeBridgeClipboardSyncService : Service() {
     }
 }
 
+internal fun isSameBridgeSession(
+    activeSessionId: String?,
+    activeTargetPackage: String?,
+    sessionId: String,
+    targetImePackage: String
+): Boolean = activeSessionId == sessionId && activeTargetPackage == targetImePackage
+
 internal fun validateBridgeActivation(
     protocolVersion: Int,
     sessionId: String,
@@ -158,11 +183,14 @@ internal fun validateBridgeActivation(
     syncEnabled: Boolean,
     bridgeEnabled: Boolean
 ): Int = when {
-    protocolVersion != 1 -> ImeBridgeClipboardSyncContract.RESULT_PROTOCOL_MISMATCH
+    protocolVersion != ImeBridgeClipboardSyncContract.HOOK_PROTOCOL_VERSION &&
+        protocolVersion != ImeBridgeClipboardSyncContract.NATIVE_IME_PROTOCOL_VERSION ->
+        ImeBridgeClipboardSyncContract.RESULT_PROTOCOL_MISMATCH
     sessionId.isBlank() || targetImePackage.isBlank() ->
         ImeBridgeClipboardSyncContract.RESULT_BAD_REQUEST
     !syncEnabled -> ImeBridgeClipboardSyncContract.RESULT_SYNC_DISABLED
-    !bridgeEnabled -> ImeBridgeClipboardSyncContract.RESULT_BRIDGE_UNAVAILABLE
+    protocolVersion == ImeBridgeClipboardSyncContract.HOOK_PROTOCOL_VERSION && !bridgeEnabled ->
+        ImeBridgeClipboardSyncContract.RESULT_BRIDGE_UNAVAILABLE
     currentImePackage != targetImePackage -> ImeBridgeClipboardSyncContract.RESULT_IME_MISMATCH
     targetImePackage !in callerPackages -> ImeBridgeClipboardSyncContract.RESULT_CALLER_REJECTED
     else -> ImeBridgeClipboardSyncContract.RESULT_OK

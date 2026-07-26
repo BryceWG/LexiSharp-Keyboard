@@ -34,6 +34,34 @@ class SystemClipboardPortFactoryTest {
     }
 
     @Test
+    fun activeNativeBridgeDoesNotDependOnHookCapabilityProbe() {
+        assertEquals(
+            SystemClipboardActor.BRIDGE,
+            resolveClipboardActor(
+                selfPackage = "com.brycewg.asrkb",
+                currentImePackage = "com.example.third.ime",
+                bridgeEnabled = false,
+                bridgeStatus = null,
+                activatedBridgeTargetPackage = "com.example.third.ime"
+            )
+        )
+    }
+
+    @Test
+    fun staleNativeBridgeTargetIsUnavailableInsteadOfDirect() {
+        assertEquals(
+            SystemClipboardActor.UNAVAILABLE,
+            resolveClipboardActor(
+                selfPackage = "com.brycewg.asrkb",
+                currentImePackage = "com.example.other.ime",
+                bridgeEnabled = false,
+                bridgeStatus = null,
+                activatedBridgeTargetPackage = "com.example.third.ime"
+            )
+        )
+    }
+
+    @Test
     fun fallBackToDirectWhenBridgeDisabled() {
         assertEquals(
             SystemClipboardActor.DIRECT,
