@@ -66,7 +66,10 @@ class AsrHistoryStore(context: Context) {
         val raw = sp.getString(KEY_ASR_HISTORY_JSON, "").orEmpty()
         if (raw.isBlank()) return mutableListOf()
         return try {
-            json.decodeFromString<List<AsrHistoryRecord>>(raw).toMutableList()
+            json.decodeFromString<List<AsrHistoryRecord>>(raw)
+                .sortedByDescending { it.timestamp }
+                .distinctBy { it.id }
+                .toMutableList()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse history JSON", e)
             mutableListOf()
@@ -85,6 +88,7 @@ class AsrHistoryStore(context: Context) {
     fun add(record: AsrHistoryRecord) {
         synchronized(HISTORY_LOCK) {
             val list = readAllInternal()
+            list.removeAll { it.id == record.id }
             list.add(record)
             // 按时间倒序裁剪
             val ordered = list.sortedByDescending { it.timestamp }

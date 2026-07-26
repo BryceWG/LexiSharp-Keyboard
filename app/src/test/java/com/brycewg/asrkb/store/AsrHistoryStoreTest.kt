@@ -61,6 +61,37 @@ class AsrHistoryStoreTest {
     }
 
     @Test
+    fun duplicateIdsAreCollapsedAndNewAddsReplaceTheOldRecord() {
+        store.add(record("same", "old raw", "old", 1))
+        store.add(record("same", "new raw", "new", 2))
+
+        val records = store.listAll()
+
+        assertEquals(1, records.size)
+        assertEquals("new", records.single().text)
+    }
+
+    @Test
+    fun legacyJsonWithDuplicateIdsDoesNotExposeDuplicateRecords() {
+        context.getSharedPreferences("asr_prefs", Context.MODE_PRIVATE).edit()
+            .putString(
+                "asr_history",
+                """
+                    [
+                      {"id":"same","timestamp":2,"text":"new","vendorId":"volc","audioMs":1,"source":"ime","aiProcessed":false,"charCount":3},
+                      {"id":"same","timestamp":1,"text":"old","vendorId":"volc","audioMs":1,"source":"ime","aiProcessed":false,"charCount":3}
+                    ]
+                """.trimIndent()
+            )
+            .commit()
+
+        val records = store.listAll()
+
+        assertEquals(1, records.size)
+        assertEquals("new", records.single().text)
+    }
+
+    @Test
     fun audioRetentionDefaultsAndClamps() {
         val prefs = Prefs(context)
         assertEquals(10, prefs.audioHistoryRetentionCount)
