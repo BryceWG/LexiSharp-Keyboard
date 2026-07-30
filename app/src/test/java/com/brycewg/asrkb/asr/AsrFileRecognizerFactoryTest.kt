@@ -237,6 +237,7 @@ class AsrFileRecognizerFactoryTest {
                 AsrEngineModePreferences(fireRedPseudoStreamEnabled = true),
                 CurrentAsrConstructionSettings(pseudoStreamEnabled = true)
             ),
+            fileCase(AsrVendor.Tencent),
             streamingCase(AsrVendor.XAsr, AsrEngineModePreferences())
         )
 

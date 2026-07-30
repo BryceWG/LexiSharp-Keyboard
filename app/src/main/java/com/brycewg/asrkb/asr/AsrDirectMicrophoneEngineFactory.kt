@@ -70,6 +70,7 @@ internal enum class AsrDirectMicrophoneEngineConstructorKey(
     OpenAiRealtime("OpenAiRealtimeAsrEngine", AsrDirectMicrophoneEngineFamily.Stream),
     DashscopeStream("DashscopeStreamAsrEngine", AsrDirectMicrophoneEngineFamily.Stream),
     SonioxStream("SonioxStreamAsrEngine", AsrDirectMicrophoneEngineFamily.Stream),
+    TencentStream("TencentStreamAsrEngine", AsrDirectMicrophoneEngineFamily.Stream),
     SenseVoicePseudoStream("SenseVoicePseudoStreamAsrEngine", AsrDirectMicrophoneEngineFamily.LocalPseudoStream),
     FireRedAsrPseudoStream("FireRedAsrPseudoStreamAsrEngine", AsrDirectMicrophoneEngineFamily.LocalPseudoStream),
     XAsrStream("XAsrStreamAsrEngine", AsrDirectMicrophoneEngineFamily.Stream)
@@ -194,6 +195,7 @@ internal class AsrDirectMicrophoneEngineFactory(
         AsrVendor.OpenAI -> AsrDirectMicrophoneEngineConstructorKey.OpenAiRealtime
         AsrVendor.DashScope -> AsrDirectMicrophoneEngineConstructorKey.DashscopeStream
         AsrVendor.Soniox -> AsrDirectMicrophoneEngineConstructorKey.SonioxStream
+        AsrVendor.Tencent -> AsrDirectMicrophoneEngineConstructorKey.TencentStream
         AsrVendor.XAsr -> AsrDirectMicrophoneEngineConstructorKey.XAsrStream
         else -> error("$vendor has no direct stream engine")
     }
@@ -274,6 +276,8 @@ internal object RealAsrDirectMicrophoneEngineConstructorTable : AsrDirectMicroph
             DashscopeStreamAsrEngine(request.context, request.scope, request.prefs, request.listener)
         AsrDirectMicrophoneEngineConstructorKey.SonioxStream ->
             SonioxStreamAsrEngine(request.context, request.scope, request.prefs, request.listener)
+        AsrDirectMicrophoneEngineConstructorKey.TencentStream ->
+            TencentStreamAsrEngine(request.context, request.scope, request.prefs, request.listener)
         AsrDirectMicrophoneEngineConstructorKey.SenseVoicePseudoStream ->
             SenseVoicePseudoStreamAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
         AsrDirectMicrophoneEngineConstructorKey.FireRedAsrPseudoStream ->
@@ -296,6 +300,7 @@ internal fun Prefs.asrEngineModePreferencesSnapshot(): AsrEngineModePreferences 
         openAiStreamingEnabled = isOpenAiStreamingEffective(),
         dashScopeStreamingEnabled = isDashStreamingModelSelected(),
         sonioxStreamingEnabled = sonioxStreamingEnabled,
+        tencentStreamingEnabled = tencentStreamingEnabled,
         senseVoicePseudoStreamEnabled = svPseudoStreamEnabled,
         fireRedPseudoStreamEnabled = frPseudoStreamEnabled
     )

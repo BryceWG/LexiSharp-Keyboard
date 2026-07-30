@@ -131,6 +131,11 @@ internal object CurrentAsrConstructionBaseline {
         AsrVendor.StepAudio -> file("StepAudioFileAsrEngine")
         AsrVendor.Zhipu -> file("ZhipuFileAsrEngine")
         AsrVendor.Cohere -> file("CohereFileAsrEngine")
+        AsrVendor.Tencent -> if (settings.streamingEnabled) {
+            stream("TencentStreamAsrEngine")
+        } else {
+            file("TencentFileAsrEngine")
+        }
         AsrVendor.SenseVoice -> if (settings.pseudoStreamEnabled) {
             localPseudo("SenseVoicePseudoStreamAsrEngine")
         } else {
@@ -199,6 +204,11 @@ internal object CurrentAsrConstructionBaseline {
         AsrVendor.StepAudio -> pushAdapter("StepAudioFileAsrEngine")
         AsrVendor.Zhipu -> pushAdapter("ZhipuFileAsrEngine")
         AsrVendor.Cohere -> pushAdapter("CohereFileAsrEngine")
+        AsrVendor.Tencent -> if (settings.streamingEnabled) {
+            pushStream("TencentStreamAsrEngine")
+        } else {
+            pushAdapter("TencentFileAsrEngine")
+        }
         AsrVendor.SenseVoice -> if (settings.pseudoStreamEnabled) {
             use(CurrentAsrEngineFamily.PushPcmPseudoStream, "SenseVoicePushPcmPseudoStreamAsrEngine")
         } else {
@@ -225,6 +235,7 @@ internal object CurrentAsrConstructionBaseline {
         AsrVendor.ElevenLabs,
         AsrVendor.OpenAI -> settings.streamingEnabled
         AsrVendor.XAsr -> true
+        AsrVendor.Tencent -> settings.streamingEnabled
         AsrVendor.SenseVoice,
         AsrVendor.FireRedAsr -> settings.pseudoStreamEnabled
         AsrVendor.SiliconFlow,
