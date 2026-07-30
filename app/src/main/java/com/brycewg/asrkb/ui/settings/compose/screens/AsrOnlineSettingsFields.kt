@@ -207,6 +207,7 @@ internal class AsrOnlineSettingsFields(
         applySonioxLanguageStrictSwitch: (Boolean) -> Unit,
         applyStepAudioUseItnSwitch: (Boolean) -> Unit,
         applyTencentStreamingSwitch: (Boolean) -> Unit,
+        applyTencentVadSwitch: (Boolean) -> Unit,
         openAiDefaultProfileName: (Int) -> String
     ): AsrOnlineSettingsRouteState = AsrOnlineSettingsRouteState(
         volcAppKey = volcAppKey,
@@ -562,8 +563,7 @@ internal class AsrOnlineSettingsFields(
         },
         tencentVadEnabled = tencentVadEnabled,
         onTencentVadEnabledChange = { checked ->
-            tencentVadEnabled = checked
-            prefs.tencentVadEnabled = checked
+            applyTencentVadSwitch(checked)
         },
     )
 }
