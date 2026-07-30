@@ -91,8 +91,6 @@ class AsrSettingsViewModel : ViewModel() {
             // Soniox settings
             sonioxStreamingEnabled = prefs.sonioxStreamingEnabled,
             sonioxLanguages = prefs.getSonioxLanguages(),
-            // Tencent settings
-            tencentStreamingEnabled = prefs.tencentStreamingEnabled,
             // SenseVoice settings
             svModelVariant = prefs.svModelVariant,
             svNumThreads = prefs.svNumThreads,
@@ -132,7 +130,9 @@ class AsrSettingsViewModel : ViewModel() {
             xAsrNumThreads = prefs.xAsrNumThreads,
             xAsrKeepAliveMinutes = prefs.xAsrKeepAliveMinutes,
             xAsrPreloadEnabled = prefs.xAsrPreloadEnabled,
-            xAsrUseItn = prefs.xAsrUseItn
+            xAsrUseItn = prefs.xAsrUseItn,
+            // Tencent settings
+            tencentStreamingEnabled = prefs.tencentStreamingEnabled
         )
     }
 
@@ -970,8 +970,6 @@ data class AsrSettingsUiState(
     // Soniox settings
     val sonioxStreamingEnabled: Boolean = false,
     val sonioxLanguages: List<String> = emptyList(),
-    // Tencent settings
-    val tencentStreamingEnabled: Boolean = false,
     // SenseVoice settings
     val svModelVariant: String = "small-int8",
     val svNumThreads: Int = 2,
@@ -1011,7 +1009,9 @@ data class AsrSettingsUiState(
     val xAsrNumThreads: Int = 2,
     val xAsrKeepAliveMinutes: Int = -1,
     val xAsrPreloadEnabled: Boolean = true,
-    val xAsrUseItn: Boolean = false
+    val xAsrUseItn: Boolean = false,
+    // Tencent settings
+    val tencentStreamingEnabled: Boolean = false
 ) {
     // Computed visibility properties based on selected vendor
     val isVolcVisible: Boolean get() = selectedVendor == AsrVendor.Volc

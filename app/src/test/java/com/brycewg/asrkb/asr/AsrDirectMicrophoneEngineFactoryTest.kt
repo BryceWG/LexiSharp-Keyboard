@@ -289,8 +289,8 @@ class AsrDirectMicrophoneEngineFactoryTest {
                 AsrVendor.OpenAI -> openAiStreamingEnabled
                 AsrVendor.DashScope -> dashScopeStreamingEnabled
                 AsrVendor.Soniox -> sonioxStreamingEnabled
-                AsrVendor.Tencent -> tencentStreamingEnabled
                 AsrVendor.XAsr -> true
+                AsrVendor.Tencent -> tencentStreamingEnabled
                 else -> false
             },
             volcStandardFileEnabled = volcStandardFileEnabled,

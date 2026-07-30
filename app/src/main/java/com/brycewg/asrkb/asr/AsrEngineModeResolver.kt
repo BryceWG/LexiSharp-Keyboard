@@ -8,9 +8,9 @@ internal data class AsrEngineModePreferences(
     val openAiStreamingEnabled: Boolean = false,
     val dashScopeStreamingEnabled: Boolean = false,
     val sonioxStreamingEnabled: Boolean = false,
-    val tencentStreamingEnabled: Boolean = false,
     val senseVoicePseudoStreamEnabled: Boolean = false,
-    val fireRedPseudoStreamEnabled: Boolean = false
+    val fireRedPseudoStreamEnabled: Boolean = false,
+    val tencentStreamingEnabled: Boolean = false
 )
 
 internal enum class AsrEngineConstructionSource {
@@ -202,8 +202,8 @@ internal object AsrEngineModeResolver {
             AsrVendor.OpenAI -> openAiStreamingEnabled
             AsrVendor.DashScope -> dashScopeStreamingEnabled
             AsrVendor.Soniox -> sonioxStreamingEnabled
-            AsrVendor.Tencent -> tencentStreamingEnabled
             AsrVendor.XAsr -> true
+            AsrVendor.Tencent -> tencentStreamingEnabled
             else -> false
         }
 

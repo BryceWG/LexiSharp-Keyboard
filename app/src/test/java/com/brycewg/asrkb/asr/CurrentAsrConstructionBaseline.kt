@@ -131,11 +131,6 @@ internal object CurrentAsrConstructionBaseline {
         AsrVendor.StepAudio -> file("StepAudioFileAsrEngine")
         AsrVendor.Zhipu -> file("ZhipuFileAsrEngine")
         AsrVendor.Cohere -> file("CohereFileAsrEngine")
-        AsrVendor.Tencent -> if (settings.streamingEnabled) {
-            stream("TencentStreamAsrEngine")
-        } else {
-            file("TencentFileAsrEngine")
-        }
         AsrVendor.SenseVoice -> if (settings.pseudoStreamEnabled) {
             localPseudo("SenseVoicePseudoStreamAsrEngine")
         } else {
@@ -150,6 +145,11 @@ internal object CurrentAsrConstructionBaseline {
             localFile("FireRedAsrFileAsrEngine")
         }
         AsrVendor.XAsr -> stream("XAsrStreamAsrEngine")
+        AsrVendor.Tencent -> if (settings.streamingEnabled) {
+            stream("TencentStreamAsrEngine")
+        } else {
+            file("TencentFileAsrEngine")
+        }
     }
 
     private fun describeExternalDirect(
@@ -204,11 +204,6 @@ internal object CurrentAsrConstructionBaseline {
         AsrVendor.StepAudio -> pushAdapter("StepAudioFileAsrEngine")
         AsrVendor.Zhipu -> pushAdapter("ZhipuFileAsrEngine")
         AsrVendor.Cohere -> pushAdapter("CohereFileAsrEngine")
-        AsrVendor.Tencent -> if (settings.streamingEnabled) {
-            pushStream("TencentStreamAsrEngine")
-        } else {
-            pushAdapter("TencentFileAsrEngine")
-        }
         AsrVendor.SenseVoice -> if (settings.pseudoStreamEnabled) {
             use(CurrentAsrEngineFamily.PushPcmPseudoStream, "SenseVoicePushPcmPseudoStreamAsrEngine")
         } else {
@@ -223,6 +218,11 @@ internal object CurrentAsrConstructionBaseline {
             pushAdapter("FireRedAsrFileAsrEngine")
         }
         AsrVendor.XAsr -> pushStream("XAsrStreamAsrEngine")
+        AsrVendor.Tencent -> if (settings.streamingEnabled) {
+            pushStream("TencentStreamAsrEngine")
+        } else {
+            pushAdapter("TencentFileAsrEngine")
+        }
     }
 
     private fun isRecordingTestPushPcmMode(
