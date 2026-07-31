@@ -166,7 +166,7 @@ internal object ImeKeyboardViewFactory {
         }
         root.findViewById<TextView>(R.id.txtStatusText)?.setTextColor(theme.panelContent)
         root.findViewById<TextView>(R.id.txtAiEditInfo)?.setTextColor(theme.panelContent)
-        root.findViewById<TextView>(R.id.clip_txtCount)?.setTextColor(theme.panelSummary)
+        root.findViewById<TextView>(R.id.clip_txtCount)?.setTextColor(theme.panelContent)
     }
 
     fun applyKeyboardPanelBackground(root: View, prefs: Prefs, floating: Boolean) {
@@ -268,7 +268,7 @@ internal object ImeKeyboardViewFactory {
         id = R.id.layoutClipboardPanel
         orientation = LinearLayout.VERTICAL
         background = ContextCompat.getDrawable(context, R.drawable.bg_keyboard_container)
-        setPadding(0, dp(context, 6), 0, 0)
+        setPadding(0, dp(context, 4), 0, 0)
         visibility = View.GONE
         layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -282,7 +282,7 @@ internal object ImeKeyboardViewFactory {
                 id = R.id.clip_list
                 overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
                 clipToPadding = false
-                setPadding(0, dp(context, 4), 0, dp(context, 4))
+                setPadding(dp(context, 2), dp(context, 4), dp(context, 2), dp(context, 8))
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     0
@@ -297,8 +297,9 @@ internal object ImeKeyboardViewFactory {
         val header = ConstraintLayout(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(context, 44)
+                dp(context, 48)
             )
+            setPadding(dp(context, 2), 0, dp(context, 2), 0)
         }
         header.addView(
             imageButton(context, R.id.clip_btnBack, R.string.cd_clipboard_back, R.drawable.arrow_left_toggle)
@@ -312,13 +313,17 @@ internal object ImeKeyboardViewFactory {
             TextView(context).apply {
                 id = R.id.clip_txtCount
                 gravity = Gravity.CENTER
-                setTextColor(UiColors.get(context, UiColorTokens.panelFgVariant))
+                includeFontPadding = false
+                setTextColor(UiColors.get(context, UiColorTokens.panelFg))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                setTypeface(typeface, Typeface.BOLD)
                 layoutParams = ConstraintLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                     startToEnd = R.id.clip_btnBack
                     endToStart = R.id.clip_btnDelete
                     topToTop = ConstraintLayout.LayoutParams.PARENT_ID
                     bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+                    marginStart = dp(context, 4)
+                    marginEnd = dp(context, 4)
                 }
             }
         )
@@ -328,7 +333,6 @@ internal object ImeKeyboardViewFactory {
                     endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
                     topToTop = ConstraintLayout.LayoutParams.PARENT_ID
                     bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-                    marginStart = dp(context, 6)
                 }
         )
         return header

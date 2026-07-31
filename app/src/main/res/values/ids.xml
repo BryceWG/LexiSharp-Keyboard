@@ -41,6 +41,7 @@
     <item name="btnSettings" type="id" />
     <item name="clip_btnBack" type="id" />
     <item name="clip_btnDelete" type="id" />
+    <item name="clip_itemIcon" type="id" />
     <item name="clip_list" type="id" />
     <item name="clip_txtCount" type="id" />
     <item name="containerPunct" type="id" />
@@ -91,6 +92,5 @@
     <item name="txtAiEditInfo" type="id" />
     <item name="txtStatus" type="id" />
     <item name="txtStatusText" type="id" />
-    <item name="viewPinned" type="id" />
     <item name="waveformView" type="id" />
 </resources>

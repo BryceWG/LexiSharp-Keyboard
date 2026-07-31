@@ -60,6 +60,9 @@
     <string name="clip_unpinned">固定を解除しました</string>
     <string name="clip_deleted">削除しました</string>
     <string name="clip_cannot_delete_pinned">固定済みです。右スワイプで解除してください</string>
+    <string name="clip_swipe_delete">削除</string>
+    <string name="clip_swipe_pin">固定</string>
+    <string name="clip_swipe_unpin">固定解除</string>
 
     <!-- クリップボードファイルの同期 / ダウンロード -->
     <string name="clip_file_download_success">ファイルをダウンロードしました</string>

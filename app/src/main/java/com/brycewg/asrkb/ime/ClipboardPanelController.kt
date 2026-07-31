@@ -1,6 +1,7 @@
 package com.brycewg.asrkb.ime
 
 import android.content.Context
+import android.graphics.Rect
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
@@ -135,68 +136,50 @@ internal class ClipboardPanelController(
 
         views.clipList?.layoutManager = LinearLayoutManager(context)
         views.clipList?.adapter = adapter
+        views.clipList?.addItemDecoration(ClipboardItemSpacingDecoration(context))
 
-        val callback = object : ItemTouchHelper.SimpleCallback(
-            0,
-            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
-        ) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ): Boolean = false
+        val callback = ClipboardSwipeActionCallback(
+            context = context,
+            entryAt = { pos -> adapter?.currentList?.getOrNull(pos) },
+            onThresholdReached = { v -> performKeyHaptic(v) },
+            onSwiped = { pos, direction -> handleSwipeAction(pos, direction) }
+        )
+        ItemTouchHelper(callback).attachToRecyclerView(views.clipList)
+    }
 
-            override fun getSwipeDirs(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder
-            ): Int {
-                val pos = viewHolder.bindingAdapterPosition
-                val item = adapter?.currentList?.getOrNull(pos)
-                return if (item != null && item.pinned) {
-                    ItemTouchHelper.RIGHT
-                } else {
-                    ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
-                }
+    private fun handleSwipeAction(pos: Int, direction: Int) {
+        val item = adapter?.currentList?.getOrNull(pos) ?: run {
+            refreshList()
+            return
+        }
+        if (direction == ItemTouchHelper.RIGHT) {
+            val pinnedNow = store.togglePin(item.id)
+            val msg = if (pinnedNow) {
+                context.getString(R.string.clip_pinned)
+            } else {
+                context.getString(R.string.clip_unpinned)
             }
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val pos = viewHolder.bindingAdapterPosition
-                val item = adapter?.currentList?.getOrNull(pos)
-                if (item != null) {
-                    if (direction == ItemTouchHelper.RIGHT) {
-                        val pinnedNow = store.togglePin(item.id)
-                        val msg = if (pinnedNow) {
-                            context.getString(
-                                R.string.clip_pinned
-                            )
-                        } else {
-                            context.getString(R.string.clip_unpinned)
-                        }
-                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                    } else if (direction == ItemTouchHelper.LEFT) {
-                        if (item.pinned) {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.clip_cannot_delete_pinned),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            adapter?.notifyItemChanged(pos)
-                        } else {
-                            val deleted = store.deleteHistoryById(item.id)
-                            if (deleted) {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.clip_deleted),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        } else if (direction == ItemTouchHelper.LEFT) {
+            if (item.pinned) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.clip_cannot_delete_pinned),
+                    Toast.LENGTH_SHORT
+                ).show()
+                adapter?.notifyItemChanged(pos)
+            } else {
+                val deleted = store.deleteHistoryById(item.id)
+                if (deleted) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.clip_deleted),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-                refreshList()
             }
         }
-        ItemTouchHelper(callback).attachToRecyclerView(views.clipList)
+        refreshList()
     }
 
     private fun showDeleteMenu() {
@@ -221,5 +204,22 @@ internal class ClipboardPanelController(
             true
         }
         showPopupMenuKeepingIme(popup)
+    }
+}
+
+/** 剪贴板列表项垂直间距，避免 Miuix 大圆角条目贴合时出现锯齿空隙。 */
+private class ClipboardItemSpacingDecoration(context: Context) : RecyclerView.ItemDecoration() {
+    private val gapPx = (6f * context.resources.displayMetrics.density + 0.5f).toInt()
+
+    override fun getItemOffsets(
+        outRect: Rect,
+        view: View,
+        parent: RecyclerView,
+        state: RecyclerView.State
+    ) {
+        val position = parent.getChildAdapterPosition(view)
+        if (position > 0) {
+            outRect.top = gapPx
+        }
     }
 }

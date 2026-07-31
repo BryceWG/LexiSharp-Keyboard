@@ -58,6 +58,9 @@
     <string name="clip_unpinned">أُلغي التثبيت</string>
     <string name="clip_deleted">محذوف</string>
     <string name="clip_cannot_delete_pinned">مثبّت. اسحب يميناً لإلغاء التثبيت</string>
+    <string name="clip_swipe_delete">حذف</string>
+    <string name="clip_swipe_pin">تثبيت</string>
+    <string name="clip_swipe_unpin">إلغاء التثبيت</string>
 
     <!-- Clipboard file sync / download -->
     <string name="clip_file_download_success">تم تنزيل الملف</string>

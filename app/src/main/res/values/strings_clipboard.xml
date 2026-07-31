@@ -59,6 +59,9 @@
     <string name="clip_unpinned">Unpinned</string>
     <string name="clip_deleted">Deleted</string>
     <string name="clip_cannot_delete_pinned">Pinned. Swipe right to unpin</string>
+    <string name="clip_swipe_delete">Delete</string>
+    <string name="clip_swipe_pin">Pin</string>
+    <string name="clip_swipe_unpin">Unpin</string>
 
     <!-- Clipboard file sync / download -->
     <string name="clip_file_download_success">File downloaded</string>

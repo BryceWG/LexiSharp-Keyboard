@@ -58,6 +58,9 @@
     <string name="clip_unpinned">已取消固定</string>
     <string name="clip_deleted">已刪除</string>
     <string name="clip_cannot_delete_pinned">該記錄已固定，請右滑取消固定</string>
+    <string name="clip_swipe_delete">刪除</string>
+    <string name="clip_swipe_pin">固定</string>
+    <string name="clip_swipe_unpin">取消固定</string>
 
     <!-- 剪貼簿檔案同步 / 下載 -->
     <string name="clip_file_download_success">檔案下載成功</string>
