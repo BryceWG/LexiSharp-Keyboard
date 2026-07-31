@@ -171,6 +171,7 @@ internal data class AsrSettingsRouteActions(
     val showSfFreeModelPicker: () -> Unit,
     val showSfPaidModelPicker: () -> Unit,
     val showDashModelPicker: () -> Unit,
+    val showDashLanguagePicker: () -> Unit,
     val showStepAudioModelPicker: () -> Unit,
     val showSonioxLanguagePicker: () -> Unit,
     val onPrimaryVendorSelected: (AsrVendor) -> Unit,

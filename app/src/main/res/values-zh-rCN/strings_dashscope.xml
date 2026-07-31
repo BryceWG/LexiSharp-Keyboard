@@ -8,14 +8,16 @@
     <string name="label_dash_model">ASR 模型</string>
     <string name="dash_model_qwen_file">Qwen3-ASR-Flash（非流式）</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash（非流式）</string>
+    <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash（非流式）</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash（非流式）</string>
     <string name="dash_model_qwen35_omni_plus">Qwen3.5-Omni-Plus（非流式）</string>
     <string name="dash_model_qwen_realtime">Qwen3-ASR-Flash-Realtime（流式）</string>
     <string name="dash_model_fun_realtime">Fun-ASR-Realtime（流式）</string>
+    <string name="dash_model_qwen_audio_realtime">Qwen-Audio-3.0-ASR-Flash-Streaming（流式）</string>
     <string name="label_dash_prompt">自定义提示词/识别上下文（可选）</string>
     <string name="label_dash_language">识别语言</string>
+    <string name="dash_language_max_4">最多选择 4 种语言</string>
     <string name="label_dash_streaming">流式识别</string>
-    <string name="dash_streaming_note">模型选择决定是否流式。Qwen3 与 Qwen3.5-Omni 模型支持自定义提示词/上下文；Qwen3.5-Omni 与 Fun-ASR-Flash 不支持识别语言设置，Fun-ASR 模型不支持自定义提示词。</string>
     <string name="label_dash_fun_asr">使用 Fun-ASR 模型进行识别（fun-asr-realtime）</string>
     <string name="label_dash_funasr_semantic_punct">使用语义断句（Fun-ASR）</string>
     <string name="dash_lang_auto">自动识别</string>

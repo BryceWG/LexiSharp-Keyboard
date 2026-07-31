@@ -158,7 +158,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     implementation("org.apache.commons:commons-compress:1.28.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-    implementation("com.alibaba:dashscope-sdk-java:2.22.18")
+    implementation("com.alibaba:dashscope-sdk-java:2.22.27")
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.1")
     implementation("top.yukonga.miuix.kmp:miuix-icons-android:0.9.1")
     implementation("top.yukonga.miuix.kmp:miuix-preference-android:0.9.1")

@@ -19,6 +19,7 @@ import com.alibaba.dashscope.audio.omni.OmniRealtimeTranscriptionParam
 import com.alibaba.dashscope.common.ResultCallback
 import com.alibaba.dashscope.utils.Constants
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.store.DashScopePrefsCompat
 import com.brycewg.asrkb.store.Prefs
 import com.google.gson.JsonObject
 import java.nio.ByteBuffer
@@ -34,7 +35,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * DashScope Qwen3-ASR-Flash 实时流式引擎（SDK）。
  *
  * - 使用 OmniRealtimeConversation + OmniRealtimeCallback 实现。
- * - 模型：默认 qwen3-asr-flash-realtime；可选 fun-asr-realtime（见设置页开关）
+ * - 模型：支持 Qwen3 Realtime，以及共用 Recognition 协议的 Fun-ASR / Qwen-Audio 3.0。
  * - 每 ~100ms 发送一帧 PCM（16kHz/16bit/mono），Base64 编码。
  * - 使用手动模式（enableTurnDetection=false），用户停止时调用 commit() 触发最终识别。
  * - text 事件的 text+stash 字段从录音开始持续累积，用于实时预览。
@@ -55,7 +56,6 @@ class DashscopeStreamAsrEngine(
     companion object {
         private const val TAG = "DashscopeStreamAsrEngine"
         private const val MODEL_QWEN3 = Prefs.DASH_MODEL_QWEN3_REALTIME
-        private const val MODEL_FUN_ASR = Prefs.DASH_MODEL_FUN_ASR_REALTIME
         private const val WS_URL_CN = "wss://dashscope.aliyuncs.com/api-ws/v1/realtime"
         private const val WS_URL_INTL = "wss://dashscope-intl.aliyuncs.com/api-ws/v1/realtime"
         private const val WS_URL_INFER_CN = "wss://dashscope.aliyuncs.com/api-ws/v1/inference"
@@ -73,7 +73,8 @@ class DashscopeStreamAsrEngine(
 
     private var conversation: OmniRealtimeConversation? = null
     private var recognizer: Recognition? = null
-    private var useFunAsrModel: Boolean = false
+    private var useRecognitionProtocol: Boolean = false
+    private var selectedModel: String = Prefs.DASH_MODEL_QWEN3_REALTIME
 
     // 用于识别结果
     // currentTurnText: 当前已确定的文本（来自 text 事件的 text 字段，用于实时预览）
@@ -112,7 +113,8 @@ class DashscopeStreamAsrEngine(
             return
         }
 
-        useFunAsrModel = prefs.dashAsrModel.equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true)
+        selectedModel = prefs.dashAsrModel
+        useRecognitionProtocol = DashScopePrefsCompat.isRecognitionStreamingModel(selectedModel)
 
         running.set(true)
         externalVadInputLeveler.reset()
@@ -127,8 +129,8 @@ class DashscopeStreamAsrEngine(
         controlJob?.cancel()
         controlJob = scope.launch(Dispatchers.IO) {
             try {
-                if (useFunAsrModel) {
-                    startFunAsrStreaming()
+                if (useRecognitionProtocol) {
+                    startRecognitionStreaming(selectedModel)
                     return@launch
                 }
 
@@ -160,10 +162,7 @@ class DashscopeStreamAsrEngine(
                 transcriptionParam.setInputSampleRate(sampleRate)
                 transcriptionParam.setInputAudioFormat("pcm")
                 // 可选：设置语言以提升准确度
-                val lang = prefs.dashLanguage
-                if (lang.isNotBlank()) {
-                    transcriptionParam.setLanguage(lang)
-                }
+                prefs.getDashLanguages().firstOrNull()?.let(transcriptionParam::setLanguage)
                 // 可选：设置语料文本
                 val corpus = prefs.dashPrompt
                 if (corpus.isNotBlank()) {
@@ -245,8 +244,8 @@ class DashscopeStreamAsrEngine(
         }
     }
 
-    private fun startFunAsrStreaming() {
-        // Fun-ASR 使用 Recognition SDK：需要通过 Constants.baseWebsocketApiUrl 指定地域 endpoint
+    private fun startRecognitionStreaming(model: String) {
+        // Fun-ASR 与 Qwen-Audio 3.0 使用 Recognition SDK 和 inference endpoint。
         val wsUrl = if (prefs.dashRegion.equals(
                 "intl",
                 ignoreCase = true
@@ -258,7 +257,7 @@ class DashscopeStreamAsrEngine(
         }
         prepareApiLog(
             wsUrl = wsUrl,
-            model = MODEL_FUN_ASR,
+            model = model,
             requestStructure = "SDK WebSocket recognition; format=pcm, sample_rate=16000, language_hints?, semantic_punctuation_enabled?"
         )
         try {
@@ -267,29 +266,13 @@ class DashscopeStreamAsrEngine(
             Log.w(TAG, "Failed to set baseWebsocketApiUrl", t)
         }
 
-        val builder = RecognitionParam.builder()
-            .model(MODEL_FUN_ASR)
-            .apiKey(prefs.dashApiKey)
-            .format("pcm")
-            .sampleRate(sampleRate)
-
-        val lang = prefs.dashLanguage.trim()
-        if (lang.isNotBlank()) {
-            try {
-                builder.parameter("language_hints", arrayOf(lang))
-            } catch (t: Throwable) {
-                Log.w(TAG, "Failed to set language_hints", t)
-            }
-        }
-
-        // 语义断句：开启时使用 LLM 语义断句，关闭时使用 VAD 断句
-        try {
-            builder.parameter("semantic_punctuation_enabled", prefs.dashFunAsrSemanticPunctEnabled)
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to set semantic_punctuation_enabled", t)
-        }
-
-        val param = builder.build()
+        val param = buildDashRecognitionParam(
+            model = model,
+            apiKey = prefs.dashApiKey,
+            sampleRate = sampleRate,
+            languages = prefs.getDashLanguages(),
+            semanticPunctuationEnabled = prefs.dashFunAsrSemanticPunctEnabled
+        )
         val rec = Recognition()
         recognizer = rec
         conversation = null
@@ -297,15 +280,15 @@ class DashscopeStreamAsrEngine(
         convReady = false
         val callback = object : ResultCallback<RecognitionResult>() {
             override fun onEvent(result: RecognitionResult) {
-                handleFunAsrEvent(result)
+                handleRecognitionEvent(result)
             }
 
             override fun onComplete() {
-                handleFunAsrComplete()
+                handleRecognitionComplete()
             }
 
             override fun onError(e: Exception) {
-                handleFunAsrError(e)
+                handleRecognitionError(e)
             }
         }
 
@@ -318,7 +301,7 @@ class DashscopeStreamAsrEngine(
         }
     }
 
-    private fun handleFunAsrEvent(result: RecognitionResult) {
+    private fun handleRecognitionEvent(result: RecognitionResult) {
         val sentenceText = result.getSentence()?.getText().orEmpty()
         if (sentenceText.isBlank()) return
 
@@ -341,7 +324,7 @@ class DashscopeStreamAsrEngine(
         }
     }
 
-    private fun handleFunAsrComplete() {
+    private fun handleRecognitionComplete() {
         val finalText = (currentTurnText + currentTurnStash).trim()
         finalTranscript = finalText
         finalResultDeferred?.complete(finalText)
@@ -356,9 +339,9 @@ class DashscopeStreamAsrEngine(
         }
     }
 
-    private fun handleFunAsrError(e: Exception) {
+    private fun handleRecognitionError(e: Exception) {
         val msg = e.message ?: "Recognition error"
-        Log.e(TAG, "Fun-ASR streaming error: $msg", e)
+        Log.e(TAG, "DashScope Recognition streaming error: $msg", e)
         recordApiLogOnce(success = false, error = msg)
         if (running.get()) {
             running.set(false)
@@ -539,7 +522,7 @@ class DashscopeStreamAsrEngine(
      * 发送音频帧（Base64 编码）
      */
     private fun sendAudioFrame(audioChunk: ByteArray) {
-        if (useFunAsrModel) {
+        if (useRecognitionProtocol) {
             try {
                 recognizer?.sendAudioFrame(ByteBuffer.wrap(audioChunk))
             } catch (t: Throwable) {
@@ -601,8 +584,8 @@ class DashscopeStreamAsrEngine(
                 }
                 audioJob = null
 
-                if (useFunAsrModel) {
-                    // Fun-ASR：调用 stop() 触发最终回调（onComplete）
+                if (useRecognitionProtocol) {
+                    // Recognition 协议：调用 stop() 触发最终回调（onComplete）
                     try {
                         Log.d(TAG, "Calling recognizer.stop() to trigger final recognition")
                         recognizer?.stop()
@@ -808,4 +791,31 @@ class DashscopeStreamAsrEngine(
     ) {
         apiLogSession?.complete(success = success, code = code, error = error)
     }
+}
+
+internal fun buildDashRecognitionParam(
+    model: String,
+    apiKey: String,
+    sampleRate: Int,
+    languages: List<String>,
+    semanticPunctuationEnabled: Boolean
+): RecognitionParam {
+    val builder = RecognitionParam.builder()
+        .model(model)
+        .apiKey(apiKey)
+        .format("pcm")
+        .sampleRate(sampleRate)
+    val normalizedLanguages = DashScopePrefsCompat.parseDashLanguages(languages.joinToString(","))
+    val languageHints = if (DashScopePrefsCompat.isQwenAudioModel(model)) {
+        normalizedLanguages
+    } else {
+        normalizedLanguages.take(1)
+    }
+    if (languageHints.isNotEmpty()) {
+        builder.parameter("language_hints", languageHints.toTypedArray())
+    }
+    if (model.equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true)) {
+        builder.parameter("semantic_punctuation_enabled", semanticPunctuationEnabled)
+    }
+    return builder.build()
 }

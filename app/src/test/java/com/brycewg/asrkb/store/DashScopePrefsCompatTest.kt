@@ -31,4 +31,28 @@ class DashScopePrefsCompatTest {
             DashScopePrefsCompat.getDashMultimodalGenerationEndpoint("intl")
         )
     }
+
+    @Test
+    fun qwenAudioModelsReuseGenerationAndRecognitionProtocols() {
+        assertEquals(true, DashScopePrefsCompat.isGenerationAsrModel(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH))
+        assertEquals(
+            true,
+            DashScopePrefsCompat.isRecognitionStreamingModel(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME)
+        )
+        assertEquals(true, DashScopePrefsCompat.isStreamingModel(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME))
+        assertEquals(false, DashScopePrefsCompat.isPromptSupported(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH))
+        assertEquals(true, DashScopePrefsCompat.isLanguageSupported(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH))
+    }
+
+    @Test
+    fun dashLanguagesKeepAtMostFourDistinctHints() {
+        assertEquals(
+            listOf("zh", "en", "ja", "de"),
+            DashScopePrefsCompat.parseDashLanguages(" zh, en,zh, ja, de, fr ")
+        )
+        assertEquals(
+            "zh,en,ja,de",
+            DashScopePrefsCompat.serializeDashLanguages(listOf(" zh ", "en,ja", "zh", "de", "fr"))
+        )
+    }
 }

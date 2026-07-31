@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.store.DashScopePrefsCompat
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.AsrVendorUi
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsUiState
@@ -135,6 +136,8 @@ internal fun AsrSettingsRouteContent(
                                 onlineState.onDashLanguageChange(language)
                             },
                             languageVisible = isDashLanguageSupported(onlineState.dashModel),
+                            languageMultiSelect = DashScopePrefsCompat.isQwenAudioModel(onlineState.dashModel),
+                            onChooseLanguages = showDashLanguagePicker,
                             selectedRegion = onlineState.dashRegion,
                             onRegionSelected = { region ->
                                 onlineState.onDashRegionChange(region)

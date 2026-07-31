@@ -8,14 +8,16 @@
     <string name="label_dash_model">ASR モデル</string>
     <string name="dash_model_qwen_file">Qwen3-ASR-Flash（非ストリーミング）</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash（非ストリーミング）</string>
+    <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash（非ストリーミング）</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash（非ストリーミング）</string>
     <string name="dash_model_qwen35_omni_plus">Qwen3.5-Omni-Plus（非ストリーミング）</string>
     <string name="dash_model_qwen_realtime">Qwen3-ASR-Flash-Realtime（ストリーミング）</string>
     <string name="dash_model_fun_realtime">Fun-ASR-Realtime（ストリーミング）</string>
+    <string name="dash_model_qwen_audio_realtime">Qwen-Audio-3.0-ASR-Flash-Streaming（ストリーミング）</string>
     <string name="label_dash_prompt">カスタムプロンプト/コンテキスト（オプション）</string>
     <string name="label_dash_language">認識言語</string>
+    <string name="dash_language_max_4">最大4言語まで選択できます</string>
     <string name="label_dash_streaming">ストリーミング認識</string>
-    <string name="dash_streaming_note">モデル選択でストリーミング動作が決まります。Qwen3 と Qwen3.5-Omni はカスタムプロンプト/コンテキストに対応します。Qwen3.5-Omni と Fun-ASR-Flash は認識言語の設定に非対応で、Fun-ASR モデルはカスタムプロンプトに非対応です。</string>
     <string name="label_dash_fun_asr">Fun-ASR モデルを使用（fun-asr-realtime）</string>
     <string name="label_dash_funasr_semantic_punct">セマンティック区切りを使用（Fun-ASR）</string>
     <string name="dash_lang_auto">自動識別）</string>

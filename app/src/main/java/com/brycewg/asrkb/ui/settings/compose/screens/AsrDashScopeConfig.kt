@@ -8,6 +8,7 @@
 package com.brycewg.asrkb.ui.settings.compose.screens
 
 import android.content.Context
+import android.icu.text.ListFormatter
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -30,6 +31,8 @@ internal fun DashScopeConfig(
     selectedLanguage: String,
     onLanguageSelected: (String) -> Unit,
     languageVisible: Boolean,
+    languageMultiSelect: Boolean,
+    onChooseLanguages: () -> Unit,
     selectedRegion: String,
     onRegionSelected: (String) -> Unit,
     semanticPunct: Boolean,
@@ -64,16 +67,28 @@ internal fun DashScopeConfig(
         onClick = onChooseModel
     )
     if (languageVisible) {
-        AsrDropdownPreference(
-            titleRes = R.string.label_dash_language,
-            options = dashLanguageOptions(context).map { option ->
-                DropdownOption(option.value, option.label)
-            },
-            selectedOptionId = selectedLanguage,
-            index = itemIndex++,
-            count = itemCount,
-            onSelectedOptionChange = onLanguageSelected
-        )
+        if (languageMultiSelect) {
+            AsrValuePreference(
+                titleRes = R.string.label_dash_language,
+                value = dashLanguageSummary(context, selectedLanguage),
+                uiMode = uiMode,
+                index = itemIndex++,
+                count = itemCount,
+                onClick = onChooseLanguages
+            )
+        } else {
+            AsrDropdownPreference(
+                titleRes = R.string.label_dash_language,
+                options = dashLanguageOptions(context).map { option ->
+                    DropdownOption(option.value, option.label)
+                },
+                selectedOptionId = DashScopePrefsCompat.parseDashLanguages(selectedLanguage)
+                    .firstOrNull().orEmpty(),
+                index = itemIndex++,
+                count = itemCount,
+                onSelectedOptionChange = onLanguageSelected
+            )
+        }
     }
     AsrDropdownPreference(
         titleRes = R.string.label_dash_region,
@@ -129,6 +144,10 @@ internal fun dashModelOptions(context: Context): List<DashChoice> = listOf(
     DashChoice(Prefs.DEFAULT_DASH_MODEL, context.getString(R.string.dash_model_qwen_file)),
     DashChoice(Prefs.DASH_MODEL_FUN_ASR_FLASH, context.getString(R.string.dash_model_fun_flash)),
     DashChoice(
+        Prefs.DASH_MODEL_QWEN_AUDIO_FLASH,
+        context.getString(R.string.dash_model_qwen_audio_flash)
+    ),
+    DashChoice(
         Prefs.DASH_MODEL_QWEN35_OMNI_FLASH,
         context.getString(R.string.dash_model_qwen35_omni_flash)
     ),
@@ -137,7 +156,11 @@ internal fun dashModelOptions(context: Context): List<DashChoice> = listOf(
         context.getString(R.string.dash_model_qwen35_omni_plus)
     ),
     DashChoice(Prefs.DASH_MODEL_QWEN3_REALTIME, context.getString(R.string.dash_model_qwen_realtime)),
-    DashChoice(Prefs.DASH_MODEL_FUN_ASR_REALTIME, context.getString(R.string.dash_model_fun_realtime))
+    DashChoice(Prefs.DASH_MODEL_FUN_ASR_REALTIME, context.getString(R.string.dash_model_fun_realtime)),
+    DashChoice(
+        Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME,
+        context.getString(R.string.dash_model_qwen_audio_realtime)
+    )
 )
 
 internal fun dashModelLabel(context: Context, model: String): String {
@@ -167,6 +190,16 @@ internal fun dashLanguageLabel(context: Context, language: String): String {
         ?: context.getString(R.string.dash_lang_auto)
 }
 
+internal fun dashLanguageSummary(context: Context, languages: String): String {
+    val selected = DashScopePrefsCompat.parseDashLanguages(languages)
+    if (selected.isEmpty()) return context.getString(R.string.dash_lang_auto)
+    val labels = dashLanguageOptions(context).associate { it.value to it.label }
+    val selectedLabels = selected.mapNotNull(labels::get)
+    if (selectedLabels.isEmpty()) return context.getString(R.string.dash_lang_auto)
+    val locale = context.resources.configuration.locales[0]
+    return ListFormatter.getInstance(locale).format(selectedLabels)
+}
+
 internal fun dashRegionOptions(context: Context): List<DashChoice> = listOf(
     DashChoice("cn", context.getString(R.string.dash_region_cn)),
     DashChoice("intl", context.getString(R.string.dash_region_intl))
@@ -186,25 +219,14 @@ internal fun normalizeDashRegion(region: String): String = if (region.equals("in
     "cn"
 }
 
-internal fun isDashFunAsrModel(model: String): Boolean = normalizeDashModel(model)
-    .startsWith("fun-asr", ignoreCase = true)
-
 internal fun isDashFunAsrRealtimeModel(model: String): Boolean = normalizeDashModel(model)
     .equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true)
 
-internal fun isDashFunAsrFlashModel(model: String): Boolean = normalizeDashModel(model)
-    .equals(Prefs.DASH_MODEL_FUN_ASR_FLASH, ignoreCase = true)
-
-internal fun isDashOmniModel(model: String): Boolean {
-    val normalized = normalizeDashModel(model)
-    return normalized.equals(Prefs.DASH_MODEL_QWEN35_OMNI_FLASH, ignoreCase = true) ||
-        normalized.equals(Prefs.DASH_MODEL_QWEN35_OMNI_PLUS, ignoreCase = true)
-}
-
-internal fun isDashPromptSupported(model: String): Boolean = !isDashFunAsrModel(model)
+internal fun isDashPromptSupported(model: String): Boolean =
+    DashScopePrefsCompat.isPromptSupported(model)
 
 internal fun isDashLanguageSupported(model: String): Boolean =
-    !isDashOmniModel(model) && !isDashFunAsrFlashModel(model)
+    DashScopePrefsCompat.isLanguageSupported(model)
 
 internal const val DASH_SCOPE_ASR_GUIDE_URL: String =
     "https://bibidocs.brycewg.com/getting-started/asr-providers.html#%E9%98%BF%E9%87%8C%E4%BA%91%E7%99%BE%E7%82%BC-dashscope-qwen"

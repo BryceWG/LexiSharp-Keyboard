@@ -28,6 +28,7 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LocalModelCheck
 import com.brycewg.asrkb.asr.VadDetector
+import com.brycewg.asrkb.store.DashScopePrefsCompat
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.DownloadSourceConfig
 import com.brycewg.asrkb.ui.DownloadSourceOption
@@ -224,12 +225,16 @@ fun AsrSettingsScreen(
         }
     }
 
-    fun showAsrMessage(messageRes: Int) {
+    fun showAsrMessageText(message: String) {
         messageDialog = SettingsMessageDialogState(
             title = context.getString(R.string.title_asr_settings),
-            message = context.getString(messageRes),
+            message = message,
             confirmText = context.getString(android.R.string.ok)
         )
+    }
+
+    fun showAsrMessage(messageRes: Int) {
+        showAsrMessageText(context.getString(messageRes))
     }
 
     fun showVendorPicker(
@@ -566,6 +571,28 @@ fun AsrSettingsScreen(
         )
     }
 
+    fun showDashLanguagePicker() {
+        val options = dashLanguageOptions(context).filter { it.value.isNotBlank() }
+        val selected = DashScopePrefsCompat.parseDashLanguages(onlineFields.dashLanguage)
+        multiChoiceSheet = SettingsMultiChoiceSheetState(
+            title = context.getString(R.string.label_dash_language),
+            items = options.map { it.label },
+            checkedIndices = options.mapIndexedNotNull { index, option ->
+                index.takeIf { option.value in selected }
+            }.toSet(),
+            confirmText = context.getString(R.string.btn_confirm),
+            cancelText = context.getString(R.string.btn_cancel),
+            maxSelectionCount = DashScopePrefsCompat.MAX_QWEN_AUDIO_LANGUAGE_HINTS,
+            maxSelectionMessage = context.getString(R.string.dash_language_max_4),
+            onSelectionRejected = { showAsrMessageText(it) },
+            onConfirm = { selectedIndices ->
+                prefs.setDashLanguages(selectedIndices.mapNotNull { options.getOrNull(it)?.value })
+                onlineFields.dashLanguage = prefs.dashLanguage
+                true
+            }
+        )
+    }
+
     fun showLocalModelDownloadSource(spec: AsrLocalModelSpec, variant: String) {
         val url = spec.downloadUrl(variant)
         downloadSourceRequest = AsrLocalDownloadRequest(
@@ -690,6 +717,7 @@ fun AsrSettingsScreen(
                 showSfFreeModelPicker = ::showSfFreeModelPicker,
                 showSfPaidModelPicker = ::showSfPaidModelPicker,
                 showDashModelPicker = ::showDashModelPicker,
+                showDashLanguagePicker = ::showDashLanguagePicker,
                 showStepAudioModelPicker = ::showStepAudioModelPicker,
                 showSonioxLanguagePicker = ::showSonioxLanguagePicker,
                 onPrimaryVendorSelected = { vendor ->

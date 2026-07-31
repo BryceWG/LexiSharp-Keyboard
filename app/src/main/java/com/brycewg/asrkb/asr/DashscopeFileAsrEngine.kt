@@ -16,6 +16,7 @@ import com.alibaba.dashscope.common.Role
 import com.alibaba.dashscope.utils.Constants
 import com.alibaba.dashscope.utils.JsonUtils
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.store.DashScopePrefsCompat
 import com.brycewg.asrkb.store.Prefs
 import java.io.File
 import java.io.FileOutputStream
@@ -31,7 +32,7 @@ import org.json.JSONObject
 /**
  * 使用阿里云百炼（DashScope）的非流式 ASR 引擎。
  * - 旧版 Qwen3-ASR-Flash 继续走 DashScope Java SDK 文件上传。
- * - Fun-ASR-Flash 走 DashScope REST multimodal-generation + WAV Base64。
+ * - Fun-ASR-Flash 与 Qwen-Audio 3.0 走 DashScope REST multimodal-generation + WAV Base64。
  * - Qwen3.5-Omni 非实时模型走 OpenAI 兼容 chat/completions + Base64 音频输入。
  */
 class DashscopeFileAsrEngine(
@@ -78,7 +79,7 @@ class DashscopeFileAsrEngine(
         val model = prefs.dashAsrModel.trim().ifBlank { Prefs.DEFAULT_DASH_MODEL }
         val audio = encodePcmForUploadIfEnabled(pcm, model)
         when {
-            prefs.isDashFunAsrFlashModelId(model) -> recognizeWithFunAsrFlash(audio, model)
+            prefs.isDashGenerationAsrModelId(model) -> recognizeWithGenerationApi(audio, model)
             prefs.isDashOmniModelId(model) -> recognizeWithOmni(audio, model)
             else -> recognizeWithLegacySdk(audio, model)
         }
@@ -87,7 +88,7 @@ class DashscopeFileAsrEngine(
     override suspend fun recognizeEncoded(audio: UploadAudioData) {
         val model = prefs.dashAsrModel.trim().ifBlank { Prefs.DEFAULT_DASH_MODEL }
         when {
-            prefs.isDashFunAsrFlashModelId(model) -> recognizeWithFunAsrFlash(audio, model)
+            prefs.isDashGenerationAsrModelId(model) -> recognizeWithGenerationApi(audio, model)
             prefs.isDashOmniModelId(model) -> recognizeWithOmni(audio, model)
             else -> recognizeWithLegacySdk(audio, model)
         }
@@ -98,7 +99,7 @@ class DashscopeFileAsrEngine(
     }
 
     private fun uploadAudioEncodingSpecForModel(model: String): UploadAudioEncodingSpec? = when {
-        prefs.isDashFunAsrFlashModelId(model) -> null
+        prefs.isDashGenerationAsrModelId(model) -> null
         prefs.isDashOmniModelId(model) -> UploadAudioEncodingSpec.AAC_ADTS
         else -> UploadAudioEncodingSpec.M4A_AAC_LC
     }
@@ -150,8 +151,7 @@ class DashscopeFileAsrEngine(
 
             val asrOptions = HashMap<String, Any>(4).apply {
                 put("enable_itn", true)
-                val lang = prefs.dashLanguage.trim()
-                if (lang.isNotEmpty()) put("language", lang)
+                prefs.getDashLanguages().firstOrNull()?.let { put("language", it) }
             }
 
             val param = MultiModalConversationParam.builder()
@@ -188,12 +188,18 @@ class DashscopeFileAsrEngine(
     }
 
     /**
-     * Fun-ASR-Flash 非流式 REST 路径。开源版不发送文本上下文增强。
+     * Fun-ASR-Flash / Qwen-Audio 3.0 非流式 REST 路径。开源版不发送文本上下文增强。
      */
-    private fun recognizeWithFunAsrFlash(audio: UploadAudioData, model: String) {
+    private fun recognizeWithGenerationApi(audio: UploadAudioData, model: String) {
         try {
             val base64Audio = Base64.encodeToString(audio.bytes, Base64.NO_WRAP)
-            val body = buildDashFunAsrFlashRequestBody(model, base64Audio, audio)
+            val body = buildDashGenerationAsrRequestBody(
+                model = model,
+                base64Audio = base64Audio,
+                audio = audio,
+                sampleRate = sampleRate,
+                languages = prefs.getDashLanguages()
+            )
             val request = Request.Builder()
                 .url(prefs.getDashMultimodalGenerationEndpoint())
                 .tag(
@@ -226,7 +232,7 @@ class DashscopeFileAsrEngine(
                 dispatchFinalText(parseDashscopeGenerationText(bodyStr), t0)
             }
         } catch (t: Throwable) {
-            Log.e(TAG, "DashScope Fun-ASR-Flash recognition failed", t)
+            Log.e(TAG, "DashScope generation ASR recognition failed", t)
             listener.onError(
                 context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
             )
@@ -287,46 +293,6 @@ class DashscopeFileAsrEngine(
                 context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
             )
         }
-    }
-
-    private fun buildDashFunAsrFlashRequestBody(
-        model: String,
-        base64Audio: String,
-        audio: UploadAudioData
-    ): String {
-        val userMessage = JSONObject().apply {
-            put("role", "user")
-            put(
-                "content",
-                JSONArray().put(
-                    JSONObject().apply {
-                        put("type", "input_audio")
-                        put(
-                            "input_audio",
-                            JSONObject().apply {
-                                put("data", "data:${audio.mimeType};base64,$base64Audio")
-                            }
-                        )
-                    }
-                )
-            )
-        }
-        return JSONObject().apply {
-            put("model", model)
-            put(
-                "input",
-                JSONObject().apply {
-                    put("messages", JSONArray().put(userMessage))
-                }
-            )
-            put(
-                "parameters",
-                JSONObject().apply {
-                    put("format", audio.format)
-                    put("sample_rate", sampleRate.toString())
-                }
-            )
-        }.toString()
     }
 
     private fun buildDashOmniRequestBody(
@@ -563,4 +529,45 @@ class DashscopeFileAsrEngine(
             body.take(200).trim()
         }
     }
+}
+
+internal fun buildDashGenerationAsrRequestBody(
+    model: String,
+    base64Audio: String,
+    audio: UploadAudioData,
+    sampleRate: Int,
+    languages: List<String>
+): String {
+    val languageHints = DashScopePrefsCompat.parseDashLanguages(languages.joinToString(","))
+    val userMessage = JSONObject().apply {
+        put("role", "user")
+        put(
+            "content",
+            JSONArray().put(
+                JSONObject().apply {
+                    put("type", "input_audio")
+                    put(
+                        "input_audio",
+                        JSONObject().apply {
+                            put("data", "data:${audio.mimeType};base64,$base64Audio")
+                        }
+                    )
+                }
+            )
+        )
+    }
+    return JSONObject().apply {
+        put("model", model)
+        put("input", JSONObject().put("messages", JSONArray().put(userMessage)))
+        put(
+            "parameters",
+            JSONObject().apply {
+                put("format", audio.format)
+                put("sample_rate", sampleRate.toString())
+                if (DashScopePrefsCompat.isQwenAudioModel(model) && languageHints.isNotEmpty()) {
+                    put("language_hints", JSONArray(languageHints))
+                }
+            }
+        )
+    }.toString()
 }
