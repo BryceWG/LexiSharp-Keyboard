@@ -590,7 +590,7 @@ internal object PrefsBackup {
         val streaming = dashStreamingEnabled
         if (!streaming) return Prefs.DEFAULT_DASH_MODEL
         val funAsr = dashFunAsrEnabled
-        return if (funAsr) Prefs.DASH_MODEL_FUN_ASR_REALTIME else Prefs.DASH_MODEL_QWEN3_REALTIME
+        return if (funAsr) Prefs.DASH_MODEL_FUN_ASR_REALTIME else Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME
     }
 
     private fun Prefs.asVendorFieldStore(): VendorFieldStore = object : VendorFieldStore {

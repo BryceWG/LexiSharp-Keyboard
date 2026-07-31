@@ -25,6 +25,7 @@
     <string name="error_asr_empty_result">空のASR結果</string>
     <string name="error_asr_timeout">認識がタイムアウトしました。しばらくしてから再試行してください。</string>
     <string name="error_recognize_failed_with_reason">認識失敗：%1$s</string>
+    <string name="error_dashscope_unsupported_model">サポートされていない DashScope ASR モデル：%1$s</string>
     <string name="error_local_model_integrity_failed">ローカルモデルファイルの整合性チェックに失敗しました：%1$s。モデルを削除して再ダウンロードまたは再インポートしてください。</string>
     <string name="error_model_download_incomplete">ダウンロードが完了していません。再試行して続きから取得してください。</string>
     <string name="error_model_package_verify_failed">ダウンロードしたパッケージの検証に失敗しました。再ダウンロードしてください。</string>

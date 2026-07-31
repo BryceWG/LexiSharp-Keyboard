@@ -24,6 +24,7 @@
     <string name="error_asr_empty_result">Empty ASR result</string>
     <string name="error_asr_timeout">Recognition timed out. Please try again.</string>
     <string name="error_recognize_failed_with_reason">Recognition failed: %1$s</string>
+    <string name="error_dashscope_unsupported_model">Unsupported DashScope ASR model: %1$s</string>
     <string name="error_local_model_integrity_failed">Local model file integrity check failed: %1$s. Please delete and re-download/import the model.</string>
     <string name="error_model_download_incomplete">Download incomplete. Please try again to resume.</string>
     <string name="error_model_package_verify_failed">Downloaded package verification failed. Please download again.</string>

@@ -97,6 +97,7 @@ class PrefsAsrVendorFieldsTest {
         assertTrue(KEY_COHERE_API_KEY in keys)
         assertTrue(KEY_COHERE_ASR_MODEL in keys)
         assertTrue(KEY_COHERE_ASR_LANGUAGE in keys)
+        assertTrue(KEY_DASH_ASR_MODEL in keys)
 
         assertFalse(KEY_OA_ASR_PROVIDERS in keys)
         assertFalse(KEY_OA_ASR_ACTIVE_ID in keys)
@@ -126,6 +127,10 @@ class PrefsAsrVendorFieldsTest {
             AsrVendor.ElevenLabs,
             VendorFieldRole.Language
         ).map { it.key }
+        val dashModels = PrefsAsrVendorFields.fieldsByRole(
+            AsrVendor.DashScope,
+            VendorFieldRole.Model
+        )
         val volcStreaming = PrefsAsrVendorFields.fieldsByRole(
             AsrVendor.Volc,
             VendorFieldRole.StreamingToggle
@@ -139,6 +144,8 @@ class PrefsAsrVendorFieldsTest {
         assertEquals(listOf(KEY_APP_KEY, KEY_ACCESS_KEY), volcCredentials)
         assertEquals(listOf(KEY_OPENROUTER_ASR_ENDPOINT), openRouterEndpoints)
         assertEquals(listOf(KEY_ELEVEN_LANGUAGE_CODE), elevenLanguages)
+        assertEquals(listOf(KEY_DASH_ASR_MODEL), dashModels.map { it.key })
+        assertEquals(Prefs.DEFAULT_DASH_MODEL, dashModels.single().default)
         assertTrue(KEY_VOLC_STREAMING_ENABLED in volcStreaming)
         assertTrue(KEY_VOLC_NONSTREAM_ENABLED in volcStreaming)
         assertTrue(KEY_SV_MODEL_DIR in senseVoiceLocal)

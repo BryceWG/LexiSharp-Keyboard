@@ -24,6 +24,7 @@
     <string name="error_asr_empty_result">نتيجة ASR فارغة</string>
     <string name="error_asr_timeout">انتهت مهلة التعرّف. أعد المحاولة.</string>
     <string name="error_recognize_failed_with_reason">فشل التعرّف: %1$s</string>
+    <string name="error_dashscope_unsupported_model">نموذج DashScope ASR غير مدعوم: %1$s</string>
     <string name="error_local_model_integrity_failed">فشل التحقق من سلامة ملف النموذج المحلي: %1$s. احذف النموذج وأعد تنزيله/استيراده.</string>
     <string name="error_model_download_incomplete">التنزيل غير مكتمل. أعد المحاولة للاستئناف.</string>
     <string name="error_model_package_verify_failed">فشل التحقق من الحزمة المُنزَّلة. يُرجى التنزيل مرة أخرى.</string>

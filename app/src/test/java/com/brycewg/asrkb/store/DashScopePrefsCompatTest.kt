@@ -5,10 +5,18 @@ import org.junit.Test
 
 class DashScopePrefsCompatTest {
     @Test
-    fun normalizeDashAsrModelMigratesVersionedQwenRealtimeId() {
+    fun normalizeDashAsrModelMigratesRemovedQwenRealtimeId() {
         assertEquals(
-            Prefs.DASH_MODEL_QWEN3_REALTIME,
+            Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME,
             DashScopePrefsCompat.normalizeDashAsrModel("qwen3-asr-flash-realtime-2026-02-10")
+        )
+    }
+
+    @Test
+    fun normalizeDashAsrModelMigratesRemovedQwenFileId() {
+        assertEquals(
+            Prefs.DASH_MODEL_QWEN_AUDIO_FLASH,
+            DashScopePrefsCompat.normalizeDashAsrModel("qwen3-asr-flash")
         )
     }
 

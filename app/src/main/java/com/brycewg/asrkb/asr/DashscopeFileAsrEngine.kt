@@ -8,18 +8,9 @@ package com.brycewg.asrkb.asr
 import android.content.Context
 import android.util.Base64
 import android.util.Log
-import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversation
-import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam
-import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationResult
-import com.alibaba.dashscope.common.MultiModalMessage
-import com.alibaba.dashscope.common.Role
-import com.alibaba.dashscope.utils.Constants
-import com.alibaba.dashscope.utils.JsonUtils
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.DashScopePrefsCompat
 import com.brycewg.asrkb.store.Prefs
-import java.io.File
-import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import okhttp3.MediaType.Companion.toMediaType
@@ -31,7 +22,6 @@ import org.json.JSONObject
 
 /**
  * 使用阿里云百炼（DashScope）的非流式 ASR 引擎。
- * - 旧版 Qwen3-ASR-Flash 继续走 DashScope Java SDK 文件上传。
  * - Fun-ASR-Flash 与 Qwen-Audio 3.0 走 DashScope REST multimodal-generation + WAV Base64。
  * - Qwen3.5-Omni 非实时模型走 OpenAI 兼容 chat/completions + Base64 音频输入。
  */
@@ -81,7 +71,7 @@ class DashscopeFileAsrEngine(
         when {
             prefs.isDashGenerationAsrModelId(model) -> recognizeWithGenerationApi(audio, model)
             prefs.isDashOmniModelId(model) -> recognizeWithOmni(audio, model)
-            else -> recognizeWithLegacySdk(audio, model)
+            else -> reportUnsupportedModel(model)
         }
     }
 
@@ -90,7 +80,7 @@ class DashscopeFileAsrEngine(
         when {
             prefs.isDashGenerationAsrModelId(model) -> recognizeWithGenerationApi(audio, model)
             prefs.isDashOmniModelId(model) -> recognizeWithOmni(audio, model)
-            else -> recognizeWithLegacySdk(audio, model)
+            else -> reportUnsupportedModel(model)
         }
     }
 
@@ -104,6 +94,15 @@ class DashscopeFileAsrEngine(
         else -> UploadAudioEncodingSpec.M4A_AAC_LC
     }
 
+    private fun reportUnsupportedModel(model: String) {
+        listener.onError(
+            context.getString(
+                R.string.error_recognize_failed_with_reason,
+                context.getString(R.string.error_dashscope_unsupported_model, model)
+            )
+        )
+    }
+
     private fun encodePcmForUploadIfEnabled(pcm: ByteArray, model: String): UploadAudioData {
         val encodingSpec = uploadAudioEncodingSpecForModel(model)
         return if (prefs.uploadAudioCompressionEnabled && encodingSpec != null) {
@@ -115,75 +114,6 @@ class DashscopeFileAsrEngine(
             )
         } else {
             pcmToWavUploadAudio(pcm)
-        }
-    }
-
-    /**
-     * 旧版 DashScope SDK 文件识别路径。
-     */
-    private fun recognizeWithLegacySdk(audio: UploadAudioData, model: String) {
-        val tmp = try {
-            File.createTempFile("asr_dash_", ".${audio.container.extension}", context.cacheDir).also { f ->
-                FileOutputStream(f).use { it.write(audio.bytes) }
-            }
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to create DashScope temp upload audio", e)
-            listener.onError(
-                context.getString(R.string.error_recognize_failed_with_reason, e.message ?: "")
-            )
-            return
-        }
-
-        try {
-            Constants.baseHttpApiUrl = prefs.getDashHttpBaseUrl()
-
-            val audioPath = "file://" + tmp.absolutePath
-            val userMessage = MultiModalMessage.builder()
-                .role(Role.USER.getValue())
-                .content(listOf(mapOf("audio" to audioPath)))
-                .build()
-
-            val sysPrompt = prefs.dashPrompt.trim()
-            val systemMessage = MultiModalMessage.builder()
-                .role(Role.SYSTEM.getValue())
-                .content(listOf(mapOf("text" to sysPrompt)))
-                .build()
-
-            val asrOptions = HashMap<String, Any>(4).apply {
-                put("enable_itn", true)
-                prefs.getDashLanguages().firstOrNull()?.let { put("language", it) }
-            }
-
-            val param = MultiModalConversationParam.builder()
-                .apiKey(prefs.dashApiKey)
-                .model(model)
-                .message(userMessage)
-                .message(systemMessage)
-                .parameter("asr_options", asrOptions)
-                .build()
-
-            val conv = MultiModalConversation()
-            val t0 = System.nanoTime()
-            val result: MultiModalConversationResult = conv.call(param)
-            val json = try {
-                JsonUtils.toJson(result)
-            } catch (e: Throwable) {
-                ""
-            }
-            dispatchFinalText(parseDashscopeSdkText(json), t0)
-        } catch (t: Throwable) {
-            Log.e(TAG, "DashScope SDK recognition failed", t)
-            listener.onError(
-                context.getString(R.string.error_recognize_failed_with_reason, t.message ?: "")
-            )
-        } finally {
-            try {
-                if (!tmp.delete()) {
-                    tmp.deleteOnExit()
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "Failed to delete DashScope temp wav", t)
-            }
         }
     }
 

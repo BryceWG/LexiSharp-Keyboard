@@ -6,12 +6,10 @@
     <!-- DashScope configuration -->
     <string name="label_dash_api_key">DashScope API Key (Bearer)</string>
     <string name="label_dash_model">ASR Model</string>
-    <string name="dash_model_qwen_file">Qwen3-ASR-Flash (non-streaming)</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash (non-streaming)</string>
     <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash (non-streaming)</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash (non-streaming)</string>
     <string name="dash_model_qwen35_omni_plus">Qwen3.5-Omni-Plus (non-streaming)</string>
-    <string name="dash_model_qwen_realtime">Qwen3-ASR-Flash-Realtime (streaming)</string>
     <string name="dash_model_fun_realtime">Fun-ASR-Realtime (streaming)</string>
     <string name="dash_model_qwen_audio_realtime">Qwen-Audio-3.0-ASR-Flash-Streaming</string>
     <string name="label_dash_prompt">Custom prompt / context (optional)</string>
@@ -43,11 +41,11 @@
     <!-- ============================================== -->
 
     <!-- DashScope - Streaming -->
-    <string name="feature_dash_streaming_off_desc">Uses non-streaming recognition. Processing starts after recording ends, which may cause delays. Available for Qwen3-ASR-Flash and Qwen3.5-Omni models.</string>
-    <string name="feature_dash_streaming_on_desc">Uses streaming recognition. Transcription results are displayed in real-time as you speak. Defaults to Qwen3-ASR-Flash-Realtime; you can optionally switch to Fun-ASR-Realtime below.</string>
+    <string name="feature_dash_streaming_off_desc">Uses non-streaming recognition. Processing starts after recording ends, which may cause delays. Available for Qwen-Audio-3.0-ASR-Flash, Fun-ASR-Flash, and Qwen3.5-Omni models.</string>
+    <string name="feature_dash_streaming_on_desc">Uses streaming recognition. Transcription results are displayed in real-time as you speak. Defaults to Qwen-Audio-3.0-ASR-Flash-Streaming; you can optionally switch to Fun-ASR-Realtime below.</string>
 
     <!-- DashScope - Fun-ASR model (streaming) -->
-    <string name="feature_dash_fun_asr_off_desc">Uses Qwen3-ASR-Flash-Realtime for streaming (default).</string>
+    <string name="feature_dash_fun_asr_off_desc">Uses Qwen-Audio-3.0-ASR-Flash-Streaming for streaming (default).</string>
     <string name="feature_dash_fun_asr_on_desc">Uses Fun-ASR-Realtime for streaming.</string>
 
     <!-- DashScope - Fun-ASR Semantic Segmentation -->

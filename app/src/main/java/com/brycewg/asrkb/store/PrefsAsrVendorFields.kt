@@ -66,6 +66,7 @@ internal object PrefsAsrVendorFields {
         ),
         AsrVendor.DashScope to listOf(
             VendorField.credential(KEY_DASH_API_KEY),
+            VendorField.model(KEY_DASH_ASR_MODEL, default = Prefs.DEFAULT_DASH_MODEL),
             VendorField.prompt(KEY_DASH_PROMPT),
             VendorField.language(KEY_DASH_LANGUAGE),
             VendorField(KEY_DASH_REGION, default = "cn"),

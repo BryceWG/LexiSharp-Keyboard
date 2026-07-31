@@ -24,6 +24,7 @@
     <string name="error_asr_empty_result">識別回傳為空</string>
     <string name="error_asr_timeout">識別逾時，請稍後重試</string>
     <string name="error_recognize_failed_with_reason">識別失敗：%1$s</string>
+    <string name="error_dashscope_unsupported_model">不支援的 DashScope ASR 模型：%1$s</string>
     <string name="error_local_model_integrity_failed">本機模型檔案完整性異常：%1$s。請刪除後重新下載或匯入模型。</string>
     <string name="error_model_download_incomplete">下載未完成，請重試以繼續下載。</string>
     <string name="error_model_package_verify_failed">下載包校驗失敗，請重新下載。</string>

@@ -6,12 +6,10 @@
     <!-- DashScope configuration -->
     <string name="label_dash_api_key">مفتاح DashScope API (Bearer)</string>
     <string name="label_dash_model">نموذج ASR</string>
-    <string name="dash_model_qwen_file">Qwen3-ASR-Flash (غير متدفق)</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash (غير متدفق)</string>
     <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash (غير متدفق)</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash (غير متدفق)</string>
     <string name="dash_model_qwen35_omni_plus">Qwen3.5-Omni-Plus (غير متدفق)</string>
-    <string name="dash_model_qwen_realtime">Qwen3-ASR-Flash-Realtime (بث)</string>
     <string name="dash_model_fun_realtime">Fun-ASR-Realtime (بث)</string>
     <string name="dash_model_qwen_audio_realtime">Qwen-Audio-3.0-ASR-Flash-Streaming (بث)</string>
     <string name="label_dash_prompt">موجّه / سياق مخصص (اختياري)</string>
@@ -43,11 +41,11 @@
     <!-- ============================================== -->
 
     <!-- DashScope - Streaming -->
-    <string name="feature_dash_streaming_off_desc">يستخدم تعرّفاً غير متدفق. تبدأ المعالجة بعد انتهاء التسجيل وقد يحدث تأخير. متاح لنماذج Qwen3-ASR-Flash و Qwen3.5-Omni.</string>
-    <string name="feature_dash_streaming_on_desc">يستخدم التعرّف بالبث. تُعرض نتائج النسخ النصي فوراً أثناء الكلام. الافتراضي Qwen3-ASR-Flash-Realtime؛ يمكنك التبديل إلى Fun-ASR-Realtime أدناه.</string>
+    <string name="feature_dash_streaming_off_desc">يستخدم تعرّفاً غير متدفق. تبدأ المعالجة بعد انتهاء التسجيل وقد يحدث تأخير. متاح لنماذج Qwen-Audio-3.0-ASR-Flash وFun-ASR-Flash وQwen3.5-Omni.</string>
+    <string name="feature_dash_streaming_on_desc">يستخدم التعرّف بالبث. تُعرض نتائج النسخ النصي فوراً أثناء الكلام. الافتراضي Qwen-Audio-3.0-ASR-Flash-Streaming؛ يمكنك التبديل إلى Fun-ASR-Realtime أدناه.</string>
 
     <!-- DashScope - Fun-ASR model (streaming) -->
-    <string name="feature_dash_fun_asr_off_desc">يستخدم Qwen3-ASR-Flash-Realtime للبث (افتراضي).</string>
+    <string name="feature_dash_fun_asr_off_desc">يستخدم Qwen-Audio-3.0-ASR-Flash-Streaming للبث (افتراضي).</string>
     <string name="feature_dash_fun_asr_on_desc">يستخدم Fun-ASR-Realtime للبث.</string>
 
     <!-- DashScope - Fun-ASR Semantic Segmentation -->

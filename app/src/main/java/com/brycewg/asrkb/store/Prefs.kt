@@ -960,11 +960,9 @@ class Prefs(context: Context) {
         DashScopePrefsCompat.isGenerationAsrModel(modelId)
 
     // DashScope：ASR 模型选择（用于替代“流式开关 + Fun-ASR 开关”的组合）
-    // - qwen3-asr-flash：非流式
     // - fun-asr-flash-2026-06-15：非流式
     // - qwen-audio-3.0-asr-flash：非流式
     // - qwen3.5-omni-flash / qwen3.5-omni-plus：非流式多模态转写
-    // - qwen3-asr-flash-realtime：流式（Qwen3）
     // - fun-asr-realtime：流式（Fun-ASR）
     // - qwen-audio-3.0-asr-flash-streaming：流式（Qwen-Audio 3.0）
     var dashAsrModel: String
@@ -2059,12 +2057,11 @@ class Prefs(context: Context) {
         )
 
         // DashScope 默认
-        const val DEFAULT_DASH_MODEL = "qwen3-asr-flash"
+        const val DEFAULT_DASH_MODEL = "qwen-audio-3.0-asr-flash"
         const val DASH_MODEL_QWEN35_OMNI_FLASH = "qwen3.5-omni-flash"
         const val DASH_MODEL_QWEN35_OMNI_PLUS = "qwen3.5-omni-plus"
         const val DASH_MODEL_FUN_ASR_FLASH = "fun-asr-flash-2026-06-15"
         const val DASH_MODEL_QWEN_AUDIO_FLASH = "qwen-audio-3.0-asr-flash"
-        const val DASH_MODEL_QWEN3_REALTIME = "qwen3-asr-flash-realtime"
         const val DASH_MODEL_FUN_ASR_REALTIME = "fun-asr-realtime"
         const val DASH_MODEL_QWEN_AUDIO_REALTIME = "qwen-audio-3.0-asr-flash-streaming"
 

@@ -141,12 +141,11 @@ internal fun dashScopePrimaryItemCount(
     (if (promptVisible) 1 else 0)
 
 internal fun dashModelOptions(context: Context): List<DashChoice> = listOf(
-    DashChoice(Prefs.DEFAULT_DASH_MODEL, context.getString(R.string.dash_model_qwen_file)),
-    DashChoice(Prefs.DASH_MODEL_FUN_ASR_FLASH, context.getString(R.string.dash_model_fun_flash)),
     DashChoice(
         Prefs.DASH_MODEL_QWEN_AUDIO_FLASH,
         context.getString(R.string.dash_model_qwen_audio_flash)
     ),
+    DashChoice(Prefs.DASH_MODEL_FUN_ASR_FLASH, context.getString(R.string.dash_model_fun_flash)),
     DashChoice(
         Prefs.DASH_MODEL_QWEN35_OMNI_FLASH,
         context.getString(R.string.dash_model_qwen35_omni_flash)
@@ -155,7 +154,6 @@ internal fun dashModelOptions(context: Context): List<DashChoice> = listOf(
         Prefs.DASH_MODEL_QWEN35_OMNI_PLUS,
         context.getString(R.string.dash_model_qwen35_omni_plus)
     ),
-    DashChoice(Prefs.DASH_MODEL_QWEN3_REALTIME, context.getString(R.string.dash_model_qwen_realtime)),
     DashChoice(Prefs.DASH_MODEL_FUN_ASR_REALTIME, context.getString(R.string.dash_model_fun_realtime)),
     DashChoice(
         Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME,
@@ -166,7 +164,7 @@ internal fun dashModelOptions(context: Context): List<DashChoice> = listOf(
 internal fun dashModelLabel(context: Context, model: String): String {
     val normalized = normalizeDashModel(model)
     return dashModelOptions(context).firstOrNull { it.value == normalized }?.label
-        ?: context.getString(R.string.dash_model_qwen_file)
+        ?: context.getString(R.string.dash_model_qwen_audio_flash)
 }
 
 internal fun dashLanguageOptions(context: Context): List<DashChoice> = listOf(

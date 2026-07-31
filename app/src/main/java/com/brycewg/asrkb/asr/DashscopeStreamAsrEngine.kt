@@ -4,24 +4,16 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioFormat
-import android.util.Base64
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.alibaba.dashscope.audio.asr.recognition.Recognition
 import com.alibaba.dashscope.audio.asr.recognition.RecognitionParam
 import com.alibaba.dashscope.audio.asr.recognition.RecognitionResult
-import com.alibaba.dashscope.audio.omni.OmniRealtimeCallback
-import com.alibaba.dashscope.audio.omni.OmniRealtimeConfig
-import com.alibaba.dashscope.audio.omni.OmniRealtimeConversation
-import com.alibaba.dashscope.audio.omni.OmniRealtimeModality
-import com.alibaba.dashscope.audio.omni.OmniRealtimeParam
-import com.alibaba.dashscope.audio.omni.OmniRealtimeTranscriptionParam
 import com.alibaba.dashscope.common.ResultCallback
 import com.alibaba.dashscope.utils.Constants
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.DashScopePrefsCompat
 import com.brycewg.asrkb.store.Prefs
-import com.google.gson.JsonObject
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CompletableDeferred
@@ -32,14 +24,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * DashScope Qwen3-ASR-Flash 实时流式引擎（SDK）。
+ * DashScope 实时流式 ASR 引擎（SDK）。
  *
- * - 使用 OmniRealtimeConversation + OmniRealtimeCallback 实现。
- * - 模型：支持 Qwen3 Realtime，以及共用 Recognition 协议的 Fun-ASR / Qwen-Audio 3.0。
- * - 每 ~100ms 发送一帧 PCM（16kHz/16bit/mono），Base64 编码。
- * - 使用手动模式（enableTurnDetection=false），用户停止时调用 commit() 触发最终识别。
+ * - 模型：使用共用 Recognition 协议的 Fun-ASR / Qwen-Audio 3.0。
+ * - 每 ~100ms 发送一帧 PCM（16kHz/16bit/mono）。
  * - text 事件的 text+stash 字段从录音开始持续累积，用于实时预览。
- * - 支持 language 和 corpusText 参数提升识别准确度。
+ * - 支持 language_hints 和 vocabulary_id 等识别参数。
  */
 class DashscopeStreamAsrEngine(
     private val context: Context,
@@ -55,9 +45,6 @@ class DashscopeStreamAsrEngine(
 
     companion object {
         private const val TAG = "DashscopeStreamAsrEngine"
-        private const val MODEL_QWEN3 = Prefs.DASH_MODEL_QWEN3_REALTIME
-        private const val WS_URL_CN = "wss://dashscope.aliyuncs.com/api-ws/v1/realtime"
-        private const val WS_URL_INTL = "wss://dashscope-intl.aliyuncs.com/api-ws/v1/realtime"
         private const val WS_URL_INFER_CN = "wss://dashscope.aliyuncs.com/api-ws/v1/inference"
         private const val WS_URL_INFER_INTL = "wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference"
         private const val FINAL_RESULT_TIMEOUT_MS = 6000L
@@ -71,15 +58,13 @@ class DashscopeStreamAsrEngine(
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
 
-    private var conversation: OmniRealtimeConversation? = null
     private var recognizer: Recognition? = null
-    private var useRecognitionProtocol: Boolean = false
-    private var selectedModel: String = Prefs.DASH_MODEL_QWEN3_REALTIME
+    private var selectedModel: String = Prefs.DEFAULT_DASH_MODEL
 
     // 用于识别结果
     // currentTurnText: 当前已确定的文本（来自 text 事件的 text 字段，用于实时预览）
     // currentTurnStash: 当前未确定的中间文本（来自 text 事件的 stash 字段，用于实时预览）
-    // finalTranscript: 用户停止后，由 commit() 触发的最终完整识别结果
+    // finalTranscript: 用户停止后，由 stop() 触发的最终完整识别结果
     private var currentTurnText: String = ""
     private var currentTurnStash: String = ""
     private var finalTranscript: String? = null
@@ -94,7 +79,7 @@ class DashscopeStreamAsrEngine(
     private val prebufferLock = Any()
     private val externalVadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
-    @Volatile private var convReady: Boolean = false
+    @Volatile private var recognizerReady: Boolean = false
 
     override fun start() {
         if (running.get()) return
@@ -113,8 +98,7 @@ class DashscopeStreamAsrEngine(
             return
         }
 
-        selectedModel = prefs.dashAsrModel
-        useRecognitionProtocol = DashScopePrefsCompat.isRecognitionStreamingModel(selectedModel)
+        selectedModel = DashScopePrefsCompat.normalizeDashAsrModel(prefs.dashAsrModel)
 
         running.set(true)
         externalVadInputLeveler.reset()
@@ -129,102 +113,7 @@ class DashscopeStreamAsrEngine(
         controlJob?.cancel()
         controlJob = scope.launch(Dispatchers.IO) {
             try {
-                if (useRecognitionProtocol) {
-                    startRecognitionStreaming(selectedModel)
-                    return@launch
-                }
-
-                // 根据地域选择 WebSocket URL
-                val wsUrl = if (prefs.dashRegion.equals(
-                        "intl",
-                        ignoreCase = true
-                    )
-                ) {
-                    WS_URL_INTL
-                } else {
-                    WS_URL_CN
-                }
-                prepareApiLog(
-                    wsUrl = wsUrl,
-                    model = MODEL_QWEN3,
-                    requestStructure = "SDK WebSocket session; config=modalities, turn_detection, transcription; audio=base64 pcm frames"
-                )
-
-                // 构建 OmniRealtimeParam
-                val param = OmniRealtimeParam.builder()
-                    .model(MODEL_QWEN3)
-                    .apikey(prefs.dashApiKey)
-                    .url(wsUrl)
-                    .build()
-
-                // 构建 OmniRealtimeTranscriptionParam
-                val transcriptionParam = OmniRealtimeTranscriptionParam()
-                transcriptionParam.setInputSampleRate(sampleRate)
-                transcriptionParam.setInputAudioFormat("pcm")
-                // 可选：设置语言以提升准确度
-                prefs.getDashLanguages().firstOrNull()?.let(transcriptionParam::setLanguage)
-                // 可选：设置语料文本
-                val corpus = prefs.dashPrompt
-                if (corpus.isNotBlank()) {
-                    transcriptionParam.setCorpusText(corpus)
-                }
-
-                // 构建 OmniRealtimeConfig（关闭服务端 VAD，使用手动模式）
-                // 手动模式下：text 事件仍实时返回用于预览，用户停止时调用 commit() 触发最终识别
-                val config = OmniRealtimeConfig.builder()
-                    .modalities(listOf(OmniRealtimeModality.TEXT))
-                    .enableTurnDetection(false) // 关闭服务端 VAD
-                    .transcriptionConfig(transcriptionParam)
-                    .build()
-
-                // 创建回调
-                val callback = object : OmniRealtimeCallback() {
-                    override fun onOpen() {
-                        Log.d(TAG, "WebSocket opened, updating session config")
-                        try {
-                            conversation?.updateSession(config)
-                            convReady = true
-                            // 冲刷预缓冲
-                            flushPrebuffer()
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "updateSession failed", t)
-                        }
-                    }
-
-                    override fun onEvent(message: JsonObject) {
-                        handleServerEvent(message)
-                    }
-
-                    override fun onClose(code: Int, reason: String) {
-                        Log.d(TAG, "WebSocket closed: $code $reason")
-                        if (running.get()) {
-                            recordApiLogOnce(success = false, code = code, error = reason)
-                            // 非预期关闭
-                            running.set(false)
-                            try {
-                                listener.onError(
-                                    context.getString(
-                                        R.string.error_recognize_failed_with_reason,
-                                        reason
-                                    )
-                                )
-                            } catch (t: Throwable) {
-                                Log.e(TAG, "notify error failed", t)
-                            }
-                        }
-                    }
-                }
-
-                // 创建并连接（使用构造函数，与官方示例一致）
-                val conv = OmniRealtimeConversation(param, callback)
-                conversation = conv
-                convReady = false
-                conv.connect()
-
-                // 建立连接后开始推送音频（仅非外部模式）
-                if (!externalPcmMode) {
-                    startCaptureAndSend()
-                }
+                startRecognitionStreaming(selectedModel)
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to start DashScope streaming recognition", t)
                 recordApiLogOnce(success = false, error = t.message.orEmpty())
@@ -275,9 +164,7 @@ class DashscopeStreamAsrEngine(
         )
         val rec = Recognition()
         recognizer = rec
-        conversation = null
-
-        convReady = false
+        recognizerReady = false
         val callback = object : ResultCallback<RecognitionResult>() {
             override fun onEvent(result: RecognitionResult) {
                 handleRecognitionEvent(result)
@@ -294,7 +181,7 @@ class DashscopeStreamAsrEngine(
 
         rec.call(param, callback)
 
-        convReady = true
+        recognizerReady = true
         flushPrebuffer()
         if (!externalPcmMode) {
             startCaptureAndSend()
@@ -379,130 +266,6 @@ class DashscopeStreamAsrEngine(
     private fun Char.isAsciiLetterOrDigit(): Boolean = (this in 'a'..'z') || (this in 'A'..'Z') || (this in '0'..'9')
 
     /**
-     * 处理服务端事件
-     */
-    private fun handleServerEvent(message: JsonObject) {
-        val eventType = message.get("type")?.asString ?: return
-
-        when (eventType) {
-            "session.created" -> {
-                Log.d(TAG, "Session created")
-            }
-            "session.updated" -> {
-                Log.d(TAG, "Session updated")
-            }
-            "input_audio_buffer.speech_started" -> {
-                Log.d(TAG, "Speech started")
-            }
-            "input_audio_buffer.speech_stopped" -> {
-                Log.d(TAG, "Speech stopped")
-            }
-            "input_audio_buffer.committed" -> {
-                Log.d(TAG, "Audio committed")
-            }
-            "conversation.item.created" -> {
-                Log.d(TAG, "Conversation item created")
-            }
-            "conversation.item.input_audio_transcription.text" -> {
-                // 实时识别结果（用于预览）
-                // text: 已确定的文本（完整，非增量）
-                // stash: 尚未确定的中间文本
-                val text = message.get("text")?.asString ?: ""
-                val stash = message.get("stash")?.asString ?: ""
-
-                if (running.get()) {
-                    // 更新当前文本（用于实时预览）
-                    currentTurnText = text
-                    currentTurnStash = stash
-
-                    // 实时预览 = text + stash
-                    val preview = currentTurnText + currentTurnStash
-                    if (preview.isNotEmpty()) {
-                        try {
-                            listener.onPartial(preview)
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "notify partial failed", t)
-                        }
-                    }
-                }
-            }
-            "conversation.item.input_audio_transcription.completed" -> {
-                // 最终识别结果（由 commit() 触发，手动模式下只会有一次）
-                val transcript = message.get("transcript")?.asString ?: ""
-                Log.d(TAG, "Transcription completed: $transcript")
-
-                // 保存最终结果（用于 stop() 时返回）
-                finalTranscript = transcript
-
-                finalResultDeferred?.complete(transcript)
-
-                // 通知 UI 最终结果
-                if (finalDelivered.compareAndSet(false, true)) {
-                    recordApiLogOnce(success = true)
-                    try {
-                        listener.onFinal(transcript)
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "notify final failed", t)
-                    }
-                }
-            }
-            "conversation.item.input_audio_transcription.failed" -> {
-                // 识别失败
-                val error = message.getAsJsonObject("error")
-                val errorMsg = error?.get("message")?.asString ?: "Transcription failed"
-                Log.e(TAG, "Transcription failed: $errorMsg")
-                running.set(false)
-                if (!finalDelivered.get()) {
-                    recordApiLogOnce(success = false, error = errorMsg)
-                    try {
-                        listener.onError(
-                            context.getString(R.string.error_recognize_failed_with_reason, errorMsg)
-                        )
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "notify error failed", t)
-                    }
-                }
-                finalResultDeferred?.complete(null)
-                try {
-                    audioJob?.cancel()
-                } catch (t: Throwable) {
-                    Log.w(TAG, "cancel audio job after failure failed", t)
-                }
-                audioJob = null
-                safeClose()
-            }
-            "error" -> {
-                // 通用错误
-                val error = message.getAsJsonObject("error")
-                val errorMsg = error?.get("message")?.asString ?: "Unknown error"
-                Log.e(TAG, "Server error: $errorMsg")
-                if (running.get()) {
-                    running.set(false)
-                    recordApiLogOnce(success = false, error = errorMsg)
-                    try {
-                        listener.onError(
-                            context.getString(R.string.error_recognize_failed_with_reason, errorMsg)
-                        )
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "notify error failed", t)
-                    }
-                }
-                try {
-                    audioJob?.cancel()
-                } catch (t: Throwable) {
-                    Log.w(TAG, "cancel audio job after server error failed", t)
-                }
-                audioJob = null
-                finalResultDeferred?.complete(null)
-                safeClose()
-            }
-            else -> {
-                Log.d(TAG, "Unknown event: $eventType")
-            }
-        }
-    }
-
-    /**
      * 冲刷预缓冲区
      */
     private fun flushPrebuffer() {
@@ -518,23 +281,12 @@ class DashscopeStreamAsrEngine(
         }
     }
 
-    /**
-     * 发送音频帧（Base64 编码）
-     */
+    /** 发送 PCM 音频帧。 */
     private fun sendAudioFrame(audioChunk: ByteArray) {
-        if (useRecognitionProtocol) {
-            try {
-                recognizer?.sendAudioFrame(ByteBuffer.wrap(audioChunk))
-            } catch (t: Throwable) {
-                Log.e(TAG, "sendAudioFrame failed", t)
-            }
-            return
-        }
         try {
-            val base64Audio = Base64.encodeToString(audioChunk, Base64.NO_WRAP)
-            conversation?.appendAudio(base64Audio)
+            recognizer?.sendAudioFrame(ByteBuffer.wrap(audioChunk))
         } catch (t: Throwable) {
-            Log.e(TAG, "appendAudio failed", t)
+            Log.e(TAG, "sendAudioFrame failed", t)
         }
     }
 
@@ -549,7 +301,7 @@ class DashscopeStreamAsrEngine(
             Log.w(TAG, "notify amplitude failed", t)
         }
 
-        if (!convReady) {
+        if (!recognizerReady) {
             synchronized(prebufferLock) { prebuffer.addLast(pcm.copyOf()) }
         } else {
             // 先冲刷预缓冲
@@ -584,47 +336,23 @@ class DashscopeStreamAsrEngine(
                 }
                 audioJob = null
 
-                if (useRecognitionProtocol) {
-                    // Recognition 协议：调用 stop() 触发最终回调（onComplete）
-                    try {
-                        Log.d(TAG, "Calling recognizer.stop() to trigger final recognition")
-                        recognizer?.stop()
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "recognizer.stop() failed", t)
-                        val fallbackText = (currentTurnText + currentTurnStash).trim()
-                        if (finalDelivered.compareAndSet(false, true)) {
-                            recordApiLogOnce(success = false, error = "recognizer.stop failed: ${t.message.orEmpty()}")
-                            try {
-                                listener.onFinal(fallbackText)
-                            } catch (notifyError: Throwable) {
-                                Log.e(TAG, "notify final fallback failed", notifyError)
-                            }
-                        }
-                        if (!resultDeferred.isCompleted) {
-                            resultDeferred.complete(fallbackText)
+                // Recognition 协议：调用 stop() 触发最终回调（onComplete）
+                try {
+                    Log.d(TAG, "Calling recognizer.stop() to trigger final recognition")
+                    recognizer?.stop()
+                } catch (t: Throwable) {
+                    Log.w(TAG, "recognizer.stop() failed", t)
+                    val fallbackText = (currentTurnText + currentTurnStash).trim()
+                    if (finalDelivered.compareAndSet(false, true)) {
+                        recordApiLogOnce(success = false, error = "recognizer.stop failed: ${t.message.orEmpty()}")
+                        try {
+                            listener.onFinal(fallbackText)
+                        } catch (notifyError: Throwable) {
+                            Log.e(TAG, "notify final fallback failed", notifyError)
                         }
                     }
-                } else {
-                    // 调用 commit() 触发最终识别（手动模式必需）
-                    // completed 事件会在回调中调用 listener.onFinal()
-                    try {
-                        Log.d(TAG, "Calling commit() to trigger final recognition")
-                        conversation?.commit()
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "commit() failed", t)
-                        // 如果 commit 失败，使用当前预览作为最终结果
-                        val fallbackText = (currentTurnText + currentTurnStash).trim()
-                        if (finalDelivered.compareAndSet(false, true)) {
-                            recordApiLogOnce(success = false, error = "commit failed: ${t.message.orEmpty()}")
-                            try {
-                                listener.onFinal(fallbackText)
-                            } catch (notifyError: Throwable) {
-                                Log.e(TAG, "notify final fallback failed", notifyError)
-                            }
-                        }
-                        if (!resultDeferred.isCompleted) {
-                            resultDeferred.complete(fallbackText)
-                        }
+                    if (!resultDeferred.isCompleted) {
+                        resultDeferred.complete(fallbackText)
                     }
                 }
 
@@ -716,7 +444,7 @@ class DashscopeStreamAsrEngine(
                     }
 
                     // 发送音频
-                    if (!convReady) {
+                    if (!recognizerReady) {
                         synchronized(prebufferLock) { prebuffer.addLast(audioChunk.copyOf()) }
                     } else {
                         flushPrebuffer()
@@ -752,14 +480,7 @@ class DashscopeStreamAsrEngine(
     }
 
     private fun safeClose() {
-        convReady = false
-        try {
-            conversation?.close()
-        } catch (t: Throwable) {
-            Log.w(TAG, "conversation close failed", t)
-        } finally {
-            conversation = null
-        }
+        recognizerReady = false
 
         try {
             recognizer?.stop()

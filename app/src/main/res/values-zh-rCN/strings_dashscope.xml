@@ -6,12 +6,10 @@
     <!-- DashScope configuration -->
     <string name="label_dash_api_key">DashScope API Key（Bearer）</string>
     <string name="label_dash_model">ASR 模型</string>
-    <string name="dash_model_qwen_file">Qwen3-ASR-Flash（非流式）</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash（非流式）</string>
     <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash（非流式）</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash（非流式）</string>
     <string name="dash_model_qwen35_omni_plus">Qwen3.5-Omni-Plus（非流式）</string>
-    <string name="dash_model_qwen_realtime">Qwen3-ASR-Flash-Realtime（流式）</string>
     <string name="dash_model_fun_realtime">Fun-ASR-Realtime（流式）</string>
     <string name="dash_model_qwen_audio_realtime">Qwen-Audio-3.0-ASR-Flash-Streaming（流式）</string>
     <string name="label_dash_prompt">自定义提示词/识别上下文（可选）</string>
@@ -44,11 +42,11 @@
     <!-- ============================================== -->
 
     <!-- 流式识别 - Streaming recognition -->
-    <string name="feature_dash_streaming_off_desc">使用非流式识别。录音结束后开始处理，可能有延迟。可用于 Qwen3-ASR-Flash 与 Qwen3.5-Omni 系列模型。</string>
-    <string name="feature_dash_streaming_on_desc">使用流式识别。边说话边实时显示转写结果。默认使用Qwen3-ASR-Flash-Realtime；也可在下方切换Fun-ASR-Realtime。</string>
+    <string name="feature_dash_streaming_off_desc">使用非流式识别。录音结束后开始处理，可能有延迟。可用于 Qwen-Audio-3.0-ASR-Flash、Fun-ASR-Flash 与 Qwen3.5-Omni 系列模型。</string>
+    <string name="feature_dash_streaming_on_desc">使用流式识别。边说话边实时显示转写结果。默认使用 Qwen-Audio-3.0-ASR-Flash-Streaming；也可在下方切换 Fun-ASR-Realtime。</string>
 
     <!-- Fun-ASR 模型（仅流式） -->
-    <string name="feature_dash_fun_asr_off_desc">流式识别使用 Qwen3-ASR-Flash-Realtime（默认）。</string>
+    <string name="feature_dash_fun_asr_off_desc">流式识别使用 Qwen-Audio-3.0-ASR-Flash-Streaming（默认）。</string>
     <string name="feature_dash_fun_asr_on_desc">流式识别使用 Fun-ASR-Realtime。</string>
 
     <!-- Fun-ASR 语义断句 -->
