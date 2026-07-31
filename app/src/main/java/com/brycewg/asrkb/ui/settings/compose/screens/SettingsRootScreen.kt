@@ -157,8 +157,13 @@ private fun SettingsRouteContent(
         BibiSettingsRoute.Input -> InputSettingsScreen(
             uiMode = uiState.uiMode,
             onBack = { onPopRoute() },
-            onOpenKeyboardLayout = { onPushRoute(BibiSettingsRoute.KeyboardLayout) },
             actions = actions
+        )
+
+        BibiSettingsRoute.UiSettings -> UiSettingsScreen(
+            uiMode = uiState.uiMode,
+            onBack = { onPopRoute() },
+            onOpenKeyboardLayout = { onPushRoute(BibiSettingsRoute.KeyboardLayout) }
         )
 
         BibiSettingsRoute.KeyboardLayout -> KeyboardLayoutEditorScreen(

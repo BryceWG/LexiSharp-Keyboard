@@ -19,8 +19,10 @@ import androidx.core.os.LocaleListCompat
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsFeatureExplainerDialogState
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsLazyColumn
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsPreference
+import com.brycewg.asrkb.ui.settings.compose.components.settingsFeatureExplainerDialogState
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsActionController
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
@@ -39,6 +41,36 @@ internal typealias InputExplainedSwitchHandler = (
     write: (Boolean) -> Unit
 ) -> Unit
 
+internal fun inputExplainedSwitchDialogState(
+    context: android.content.Context,
+    current: Boolean,
+    target: Boolean,
+    titleRes: Int,
+    offDescRes: Int,
+    onDescRes: Int,
+    preferenceKey: String,
+    preCheck: ((Boolean) -> Boolean)?,
+    onChanged: ((Boolean) -> Unit)?,
+    write: (Boolean) -> Unit,
+    onRefreshState: () -> Unit
+): SettingsFeatureExplainerDialogState? = settingsFeatureExplainerDialogState(
+    context = context,
+    titleRes = titleRes,
+    offDescRes = offDescRes,
+    onDescRes = onDescRes,
+    currentState = current,
+    preferenceKey = preferenceKey,
+    onConfirm = {
+        if (preCheck != null && !preCheck(target)) {
+            onRefreshState()
+            return@settingsFeatureExplainerDialogState
+        }
+        write(target)
+        onChanged?.invoke(target)
+        onRefreshState()
+    }
+)
+
 @Composable
 internal fun InputSettingsRouteContent(
     uiMode: BibiUiMode,
@@ -46,22 +78,16 @@ internal fun InputSettingsRouteContent(
     scrollModifier: Modifier,
     prefs: Prefs,
     uiState: InputSettingsUiState,
-    lastHapticLevel: Int,
     actions: SettingsActionController,
     onUiStateChange: (InputSettingsUiState) -> Unit,
-    onLastHapticLevelChange: (Int) -> Unit,
     onPendingHeadsetPermissionChange: (Boolean) -> Unit,
     onRequestBluetoothConnectPermission: () -> Unit,
     onRefreshState: () -> Unit,
     onShowExternalAidlGuideDialog: () -> Unit,
-    onShowExtensionButtonsPicker: () -> Unit,
     onApplyExplainedSwitch: InputExplainedSwitchHandler
 ) {
     val context = LocalContext.current
     val imeOptions = context.buildImeOptions()
-    val languageOptions = context.languageOptions().mapIndexed { index, label ->
-        DropdownOption(languageTagForIndex(index), label)
-    }
     val behaviorItemCount = if (uiState.trimTrailingPunct) 10 else 9
     val behaviorTrimThresholdOffset = if (uiState.trimTrailingPunct) 1 else 0
 
@@ -428,119 +454,136 @@ internal fun InputSettingsRouteContent(
             }
         }
 
-        item("ui") {
-            InputSection(uiMode = uiMode, titleRes = R.string.section_ui_settings) {
-                InputKeyboardHeightControl(
-                    selectedTier = uiState.keyboardHeightTier,
-                    uiMode = uiMode,
-                    index = 0,
-                    count = 6,
-                    onSelected = { tier ->
-                        prefs.keyboardHeightTier = tier
-                        onUiStateChange(uiState.copy(keyboardHeightTier = prefs.keyboardHeightTier))
-                        context.sendImeRefreshBroadcast()
-                    }
-                )
-                InputExplainedSwitch(
-                    id = "ime_tablet_floating_keyboard",
-                    titleRes = R.string.label_ime_tablet_floating_keyboard,
-                    checked = uiState.imeTabletFloatingKeyboard,
-                    onToggle = { target ->
-                        onApplyExplainedSwitch(
-                            uiState.imeTabletFloatingKeyboard,
-                            target,
-                            R.string.label_ime_tablet_floating_keyboard,
-                            R.string.feature_ime_tablet_floating_keyboard_off_desc,
-                            R.string.feature_ime_tablet_floating_keyboard_on_desc,
-                            "ime_tablet_floating_keyboard_explained",
-                            null,
-                            { context.sendImeRefreshBroadcast() }
-                        ) { prefs.imeTabletFloatingKeyboardEnabled = it }
-                    },
-                    index = 1,
-                    count = 6
-                )
-                InputSliderPreference(
-                    titleRes = R.string.label_haptic_feedback_strength,
-                    valueLabel = uiState.hapticFeedbackLabel,
-                    value = uiState.hapticFeedbackLevel.toFloat(),
-                    valueRange = Prefs.HAPTIC_FEEDBACK_LEVEL_OFF.toFloat()..Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY.toFloat(),
-                    steps = 5,
-                    uiMode = uiMode,
-                    index = 2,
-                    count = 6,
-                    onValueChange = { value ->
-                        val level = value.toInt().coerceIn(
-                            Prefs.HAPTIC_FEEDBACK_LEVEL_OFF,
-                            Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY
-                        )
-                        if (lastHapticLevel != level) {
-                            onLastHapticLevelChange(level)
-                            onUiStateChange(uiState.withHapticFeedbackLevel(context, level))
-                        }
-                    },
-                    onValueChangeFinished = {
-                        prefs.hapticFeedbackLevel = uiState.hapticFeedbackLevel
-                        onRefreshState()
-                    }
-                )
-                InputSliderPreference(
-                    titleRes = R.string.label_keyboard_bottom_padding,
-                    valueLabel = stringResource(
-                        R.string.keyboard_bottom_padding_value,
-                        uiState.keyboardBottomPaddingDp
-                    ),
-                    value = uiState.keyboardBottomPaddingDp.toFloat(),
-                    valueRange = 0f..100f,
-                    steps = 19,
-                    uiMode = uiMode,
-                    index = 3,
-                    count = 6,
-                    onValueChange = { value ->
-                        val next = value.roundToStep(step = 5).toInt().coerceIn(0, 100)
-                        if (next != uiState.keyboardBottomPaddingDp) {
-                            onUiStateChange(uiState.copy(keyboardBottomPaddingDp = next))
-                        }
-                    },
-                    onValueChangeFinished = {
-                        prefs.keyboardBottomPaddingDp = uiState.keyboardBottomPaddingDp
-                        context.sendImeRefreshBroadcast()
-                        onRefreshState()
-                    }
-                )
-                SettingsPreference(
-                    entry = SettingsEntry.Dropdown(
-                        id = "app_language",
-                        titleRes = R.string.label_language,
-                        options = languageOptions,
-                        selectedOptionId = normalizeLanguageTag(prefs.appLanguageTag),
-                        onSelectedOptionChange = { tag ->
-                            if (tag != prefs.appLanguageTag) {
-                                prefs.appLanguageTag = tag
-                                val locales = if (tag.isBlank()) {
-                                    LocaleListCompat.getEmptyLocaleList()
-                                } else {
-                                    LocaleListCompat.forLanguageTags(tag)
-                                }
-                                AppCompatDelegate.setApplicationLocales(locales)
-                            }
-                            onRefreshState()
-                        }
-                    ),
-                    index = 4,
-                    count = 6
-                )
-                InputValuePreference(
-                    titleRes = R.string.label_extension_buttons,
-                    value = uiState.extensionButtonsLabel,
-                    uiMode = uiMode,
-                    index = 5,
-                    count = 6,
-                    onClick = {
-                        onShowExtensionButtonsPicker()
-                    }
-                )
+    }
+}
+
+@Composable
+internal fun InputUiSettingsSection(
+    uiMode: BibiUiMode,
+    prefs: Prefs,
+    uiState: InputSettingsUiState,
+    lastHapticLevel: Int,
+    onUiStateChange: (InputSettingsUiState) -> Unit,
+    onLastHapticLevelChange: (Int) -> Unit,
+    onRefreshState: () -> Unit,
+    onShowExtensionButtonsPicker: () -> Unit,
+    onApplyExplainedSwitch: InputExplainedSwitchHandler
+) {
+    val context = LocalContext.current
+    val languageOptions = context.languageOptions().mapIndexed { index, label ->
+        DropdownOption(languageTagForIndex(index), label)
+    }
+    InputSection(uiMode = uiMode, titleRes = R.string.section_ui_settings) {
+        InputKeyboardHeightControl(
+            selectedTier = uiState.keyboardHeightTier,
+            uiMode = uiMode,
+            index = 0,
+            count = 6,
+            onSelected = { tier ->
+                prefs.keyboardHeightTier = tier
+                onUiStateChange(uiState.copy(keyboardHeightTier = prefs.keyboardHeightTier))
+                context.sendImeRefreshBroadcast()
             }
-        }
+        )
+        InputExplainedSwitch(
+            id = "ime_tablet_floating_keyboard",
+            titleRes = R.string.label_ime_tablet_floating_keyboard,
+            checked = uiState.imeTabletFloatingKeyboard,
+            onToggle = { target ->
+                onApplyExplainedSwitch(
+                    uiState.imeTabletFloatingKeyboard,
+                    target,
+                    R.string.label_ime_tablet_floating_keyboard,
+                    R.string.feature_ime_tablet_floating_keyboard_off_desc,
+                    R.string.feature_ime_tablet_floating_keyboard_on_desc,
+                    "ime_tablet_floating_keyboard_explained",
+                    null,
+                    { context.sendImeRefreshBroadcast() }
+                ) { prefs.imeTabletFloatingKeyboardEnabled = it }
+            },
+            index = 1,
+            count = 6
+        )
+        InputSliderPreference(
+            titleRes = R.string.label_haptic_feedback_strength,
+            valueLabel = uiState.hapticFeedbackLabel,
+            value = uiState.hapticFeedbackLevel.toFloat(),
+            valueRange = Prefs.HAPTIC_FEEDBACK_LEVEL_OFF.toFloat()..Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY.toFloat(),
+            steps = 5,
+            uiMode = uiMode,
+            highlightId = "haptic_feedback_strength",
+            index = 2,
+            count = 6,
+            onValueChange = { value ->
+                val level = value.toInt().coerceIn(
+                    Prefs.HAPTIC_FEEDBACK_LEVEL_OFF,
+                    Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY
+                )
+                if (lastHapticLevel != level) {
+                    onLastHapticLevelChange(level)
+                    onUiStateChange(uiState.withHapticFeedbackLevel(context, level))
+                }
+            },
+            onValueChangeFinished = {
+                prefs.hapticFeedbackLevel = uiState.hapticFeedbackLevel
+                onRefreshState()
+            }
+        )
+        InputSliderPreference(
+            titleRes = R.string.label_keyboard_bottom_padding,
+            valueLabel = stringResource(
+                R.string.keyboard_bottom_padding_value,
+                uiState.keyboardBottomPaddingDp
+            ),
+            value = uiState.keyboardBottomPaddingDp.toFloat(),
+            valueRange = 0f..100f,
+            steps = 19,
+            uiMode = uiMode,
+            highlightId = "keyboard_bottom_padding",
+            index = 3,
+            count = 6,
+            onValueChange = { value ->
+                val next = value.roundToStep(step = 5).toInt().coerceIn(0, 100)
+                if (next != uiState.keyboardBottomPaddingDp) {
+                    onUiStateChange(uiState.copy(keyboardBottomPaddingDp = next))
+                }
+            },
+            onValueChangeFinished = {
+                prefs.keyboardBottomPaddingDp = uiState.keyboardBottomPaddingDp
+                context.sendImeRefreshBroadcast()
+                onRefreshState()
+            }
+        )
+        SettingsPreference(
+            entry = SettingsEntry.Dropdown(
+                id = "language",
+                titleRes = R.string.label_language,
+                options = languageOptions,
+                selectedOptionId = normalizeLanguageTag(prefs.appLanguageTag),
+                onSelectedOptionChange = { tag ->
+                    if (tag != prefs.appLanguageTag) {
+                        prefs.appLanguageTag = tag
+                        val locales = if (tag.isBlank()) {
+                            LocaleListCompat.getEmptyLocaleList()
+                        } else {
+                            LocaleListCompat.forLanguageTags(tag)
+                        }
+                        AppCompatDelegate.setApplicationLocales(locales)
+                    }
+                    onRefreshState()
+                }
+            ),
+            index = 4,
+            count = 6
+        )
+        InputValuePreference(
+            titleRes = R.string.label_extension_buttons,
+            value = uiState.extensionButtonsLabel,
+            uiMode = uiMode,
+            highlightId = "extension_buttons",
+            index = 5,
+            count = 6,
+            onClick = onShowExtensionButtonsPicker
+        )
     }
 }

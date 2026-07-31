@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsHighlightContainer
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsPreference
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSectionContainer
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSliderPreference
@@ -72,18 +73,22 @@ internal fun InputValuePreference(
     titleRes: Int,
     value: String,
     uiMode: BibiUiMode,
+    highlightId: String? = null,
     index: Int = 0,
     count: Int = 1,
     onClick: () -> Unit
 ) {
-    SettingsValuePreference(
-        titleRes = titleRes,
-        value = value,
-        uiMode = uiMode,
-        index = index,
-        count = count,
-        onClick = onClick
-    )
+    val content: @Composable () -> Unit = {
+        SettingsValuePreference(
+            titleRes = titleRes,
+            value = value,
+            uiMode = uiMode,
+            index = index,
+            count = count,
+            onClick = onClick
+        )
+    }
+    if (highlightId == null) content() else SettingsHighlightContainer(highlightId, uiMode, content)
 }
 
 @Composable
@@ -121,6 +126,7 @@ internal fun InputSliderPreference(
     steps: Int,
     uiMode: BibiUiMode,
     showKeyPoints: Boolean = steps in 1..10,
+    highlightId: String? = null,
     index: Int = 0,
     count: Int = 1,
     onValueChange: (Float) -> Unit,
@@ -134,6 +140,7 @@ internal fun InputSliderPreference(
         valueRange = valueRange,
         steps = steps,
         showKeyPoints = showKeyPoints,
+        highlightId = highlightId,
         index = index,
         count = count,
         onValueChange = onValueChange,

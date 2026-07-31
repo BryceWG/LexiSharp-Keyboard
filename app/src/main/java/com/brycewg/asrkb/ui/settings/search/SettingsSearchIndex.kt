@@ -93,6 +93,7 @@ object SettingsSearchIndex {
         addOtherEntries()
         addBackupEntries()
         addAboutEntries()
+        addUiSettingsEntries()
     }
 
     private fun MutableList<DeclarativeEntry>.addInputEntries() {
@@ -117,11 +118,20 @@ object SettingsSearchIndex {
         item(R.string.label_upload_audio_compression, R.string.section_audio_and_link)
         item(R.string.label_headset_mic_priority, R.string.section_audio_and_link)
         item(R.string.label_external_ime_link_aidl, R.string.section_audio_and_link, "aidl")
-        item(R.string.label_keyboard_height, R.string.section_ui_settings)
-        item(R.string.label_haptic_feedback_strength, R.string.section_ui_settings)
-        item(R.string.label_keyboard_bottom_padding, R.string.section_ui_settings)
-        item(R.string.label_language, R.string.section_ui_settings)
-        item(R.string.label_extension_buttons, R.string.section_ui_settings)
+    }
+
+    private fun MutableList<DeclarativeEntry>.addUiSettingsEntries() {
+        val route = BibiSettingsRoute.UiSettings
+        val screen = R.string.section_ui_settings
+        fun item(@StringRes title: Int) {
+            add(DeclarativeEntry(title, screen, route, R.string.section_ui_settings))
+        }
+        item(R.string.label_keyboard_height)
+        item(R.string.label_ime_tablet_floating_keyboard)
+        item(R.string.label_haptic_feedback_strength)
+        item(R.string.label_keyboard_bottom_padding)
+        item(R.string.label_language)
+        item(R.string.label_extension_buttons)
     }
 
     private fun MutableList<DeclarativeEntry>.addFloatingEntries() {

@@ -303,6 +303,12 @@ private fun inputSections(
                 onClick = { onPushRoute(BibiSettingsRoute.Input) }
             ),
             SettingsEntry.Action(
+                id = "ui_settings",
+                titleRes = R.string.section_ui_settings,
+                icon = Icons.Rounded.Dashboard,
+                onClick = { onPushRoute(BibiSettingsRoute.UiSettings) }
+            ),
+            SettingsEntry.Action(
                 id = "floating_settings",
                 titleRes = R.string.title_floating_settings,
                 summary = snapshot.floatingSummary,

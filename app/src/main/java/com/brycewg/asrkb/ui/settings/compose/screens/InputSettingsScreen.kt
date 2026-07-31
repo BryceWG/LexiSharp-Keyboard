@@ -27,7 +27,6 @@ import com.brycewg.asrkb.ui.settings.compose.components.SettingsFeatureExplainer
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsFeatureExplainerDialogState
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialog
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialogState
-import com.brycewg.asrkb.ui.settings.compose.components.settingsFeatureExplainerDialogState
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsActionController
 
@@ -35,14 +34,12 @@ import com.brycewg.asrkb.ui.settings.compose.core.SettingsActionController
 fun InputSettingsScreen(
     uiMode: BibiUiMode,
     onBack: () -> Unit,
-    onOpenKeyboardLayout: () -> Unit,
     actions: SettingsActionController
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember(context) { Prefs(context) }
     var uiState by remember(context) { mutableStateOf(InputSettingsUiState.fromPrefs(context, prefs)) }
     var pendingHeadsetPermission by remember { mutableStateOf(false) }
-    var lastHapticLevel by remember { mutableStateOf(prefs.hapticFeedbackLevel) }
     var choiceSheet by remember { mutableStateOf<SettingsChoiceSheetState?>(null) }
     var messageDialog by remember { mutableStateOf<SettingsMessageDialogState?>(null) }
     var featureExplainerDialog by remember { mutableStateOf<SettingsFeatureExplainerDialogState?>(null) }
@@ -134,22 +131,18 @@ fun InputSettingsScreen(
         onChanged: ((Boolean) -> Unit)? = null,
         write: (Boolean) -> Unit
     ) {
-        featureExplainerDialog = settingsFeatureExplainerDialogState(
+        featureExplainerDialog = inputExplainedSwitchDialogState(
             context = context,
+            current = current,
+            target = target,
             titleRes = titleRes,
             offDescRes = offDescRes,
             onDescRes = onDescRes,
-            currentState = current,
             preferenceKey = preferenceKey,
-            onConfirm = {
-                if (preCheck != null && !preCheck(target)) {
-                    refreshState()
-                    return@settingsFeatureExplainerDialogState
-                }
-                write(target)
-                onChanged?.invoke(target)
-                refreshState()
-            }
+            preCheck = preCheck,
+            onChanged = onChanged,
+            write = write,
+            onRefreshState = ::refreshState
         )
     }
 
@@ -175,17 +168,14 @@ fun InputSettingsScreen(
             scrollModifier = scrollModifier,
             prefs = prefs,
             uiState = uiState,
-            lastHapticLevel = lastHapticLevel,
             actions = actions,
             onUiStateChange = { uiState = it },
-            onLastHapticLevelChange = { lastHapticLevel = it },
             onPendingHeadsetPermissionChange = { pendingHeadsetPermission = it },
             onRequestBluetoothConnectPermission = {
                 bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
             },
             onRefreshState = ::refreshState,
             onShowExternalAidlGuideDialog = ::showExternalAidlGuideDialog,
-            onShowExtensionButtonsPicker = onOpenKeyboardLayout,
             onApplyExplainedSwitch = { current, target, titleRes, offDescRes, onDescRes, preferenceKey, preCheck, onChanged, write ->
                 applyExplainedSwitch(
                     current = current,
