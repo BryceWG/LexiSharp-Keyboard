@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
@@ -408,6 +409,12 @@ private fun systemSections(
                 titleRes = R.string.title_other_settings,
                 icon = Icons.Rounded.MoreHoriz,
                 onClick = { onPushRoute(BibiSettingsRoute.Other) }
+            ),
+            SettingsEntry.Action(
+                id = "about_stats_title",
+                titleRes = R.string.about_stats_title,
+                icon = Icons.Rounded.BarChart,
+                onClick = { onPushRoute(BibiSettingsRoute.UsageStats) }
             ),
             SettingsEntry.Action(
                 id = "check_update",

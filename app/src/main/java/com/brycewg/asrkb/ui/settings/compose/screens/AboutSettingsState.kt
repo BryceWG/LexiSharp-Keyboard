@@ -30,16 +30,26 @@ internal data class AboutInfo(
 )
 
 internal data class AboutUsageInfo(
-    val summaryLines: List<String>,
+    val daysWithYou: Long,
+    val totalAudioFormatted: String,
+    val totalCharsFormatted: String,
+    val totalSessionsFormatted: String,
+    val avgAudioFormatted: String,
+    val avgCharsFormatted: String,
+    val avgSpeedFormatted: String,
+    val dailyAvg7dFormatted: String,
+    val weeklyAvg4wFormatted: String,
     val vendorItems: List<AboutProgressItem>,
     val failureItems: List<AboutProgressItem>,
     val dailyItems: List<AboutProgressItem>
 )
 
 internal data class AboutProgressItem(
-    val label: String,
+    val title: String,
+    val value: String,
     val ratio: Double,
-    val isError: Boolean = false
+    val isError: Boolean = false,
+    val valueBelowTitle: Boolean = false
 )
 
 internal fun buildAboutInfo(context: Context): AboutInfo {
@@ -74,40 +84,51 @@ internal fun buildUsageInfo(context: Context, prefs: Prefs): AboutUsageInfo {
     val sessions = stats.totalSessions.coerceAtLeast(0)
     val totalChars = stats.totalChars.coerceAtLeast(0)
     val totalAudioMs = stats.totalAudioMs.coerceAtLeast(0)
-    val summary = mutableListOf(
-        context.getString(R.string.about_days_with_you, prefs.getDaysSinceFirstUse()),
-        context.getString(R.string.about_total_audio, context.formatDurationMs(totalAudioMs))
-    )
-    if (sessions > 0) {
-        val avgAudio = totalAudioMs / sessions
-        val avgChars = totalChars / sessions
+    val hasSessionAverages = sessions > 0
+    val avgAudioFormatted = if (hasSessionAverages) {
+        context.formatDurationMs(totalAudioMs / sessions)
+    } else {
+        context.getString(R.string.about_empty_stats_placeholder)
+    }
+    val avgCharsFormatted = if (hasSessionAverages) {
+        formatInt(totalChars / sessions)
+    } else {
+        context.getString(R.string.about_empty_stats_placeholder)
+    }
+    val avgSpeedFormatted = if (hasSessionAverages) {
         val avgSpeed = if (totalAudioMs > 0) {
             totalChars * 60_000.0 / totalAudioMs.toDouble()
         } else {
             0.0
         }
-        summary += context.getString(
-            R.string.about_avg_line,
-            context.formatDurationMs(avgAudio),
-            avgChars,
+        context.getString(
+            R.string.about_stats_avg_speed_value,
             String.format(Locale.getDefault(), "%.1f", avgSpeed)
         )
     } else {
-        summary += context.getString(R.string.about_empty_stats_placeholder)
+        context.getString(R.string.about_empty_stats_placeholder)
     }
 
     val daily7 = stats.dailySum(7)
     val daily28 = stats.dailySum(28)
-    summary += context.getString(
-        R.string.about_daily_weekly_avg,
-        (daily7.second / 7),
-        context.formatDurationMs(daily7.first / 7),
-        (daily28.second / 4),
-        context.formatDurationMs(daily28.first / 4)
-    )
-
     return AboutUsageInfo(
-        summaryLines = summary,
+        daysWithYou = prefs.getDaysSinceFirstUse(),
+        totalAudioFormatted = context.formatDurationMs(totalAudioMs),
+        totalCharsFormatted = formatInt(totalChars),
+        totalSessionsFormatted = formatInt(sessions),
+        avgAudioFormatted = avgAudioFormatted,
+        avgCharsFormatted = avgCharsFormatted,
+        avgSpeedFormatted = avgSpeedFormatted,
+        dailyAvg7dFormatted = context.getString(
+            R.string.about_stats_chars_with_audio,
+            formatInt(daily7.second / 7),
+            context.formatDurationMs(daily7.first / 7)
+        ),
+        weeklyAvg4wFormatted = context.getString(
+            R.string.about_stats_chars_with_audio,
+            formatInt(daily28.second / 4),
+            context.formatDurationMs(daily28.first / 4)
+        ),
         vendorItems = buildVendorProgressItems(context, stats),
         failureItems = buildFailureProgressItems(context),
         dailyItems = buildDailyProgressItems(context, stats, 7)
@@ -135,19 +156,22 @@ private fun buildVendorProgressItems(context: Context, stats: UsageStats): List<
     if (vendorPairs.isEmpty() || maxChars <= 0) return emptyList()
     return vendorPairs.map { (id, agg) ->
         val name = AsrVendorUi.name(context, AsrVendor.fromId(id))
-        val label = buildString {
-            append(name)
-            append(": ")
+        val value = buildString {
             append(formatInt(agg.chars)).append(" ").append(context.getString(R.string.unit_chars))
-            append(" / ")
+            append(" · ")
             append(context.formatDurationMs(agg.audioMs))
             if (agg.procMs > 0) {
-                append(" / ")
+                append(" · ")
                 append(context.getString(R.string.about_proc_prefix)).append(" ")
                 append(context.formatDurationMs(agg.procMs))
             }
         }
-        AboutProgressItem(label, agg.chars.toDouble() / maxChars.toDouble())
+        AboutProgressItem(
+            title = name,
+            value = value,
+            ratio = agg.chars.toDouble() / maxChars.toDouble(),
+            valueBelowTitle = true
+        )
     }
 }
 
@@ -173,9 +197,7 @@ private fun buildFailureProgressItems(context: Context): List<AboutProgressItem>
         val total = list.size
         val failed = list.count { !it.success }
         val rate = if (total > 0) failed.toDouble() / total.toDouble() else 0.0
-        val label = buildString {
-            append(AsrVendorUi.name(context, vendor))
-            append(": ")
+        val value = buildString {
             append(String.format(Locale.getDefault(), "%.1f%%", rate * 100.0))
             append(" (")
             append(formatInt(failed.toLong()))
@@ -183,10 +205,15 @@ private fun buildFailureProgressItems(context: Context): List<AboutProgressItem>
             append(formatInt(total.toLong()))
             append(")")
         }
-        AboutProgressItem(label = label, ratio = rate, isError = true)
+        AboutProgressItem(
+            title = AsrVendorUi.name(context, vendor),
+            value = value,
+            ratio = rate,
+            isError = true
+        )
     }.sortedWith(
         compareByDescending<AboutProgressItem> { it.ratio }
-            .thenByDescending { it.label }
+            .thenByDescending { it.title }
     )
 }
 
@@ -204,12 +231,12 @@ private fun buildDailyProgressItems(
         values.add(d.format(labelFmt) to (stats.daily[key]?.chars ?: 0L))
         d = d.minusDays(1)
     }
-    values.reverse()
     val max = values.maxOfOrNull { it.second } ?: 0L
     if (max <= 0) return emptyList()
     return values.map { (label, value) ->
         AboutProgressItem(
-            label = "$label  ${formatInt(value)}${context.getString(R.string.unit_chars)}",
+            title = label,
+            value = "${formatInt(value)} ${context.getString(R.string.unit_chars)}",
             ratio = value.toDouble() / max.toDouble()
         )
     }

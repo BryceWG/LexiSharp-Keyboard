@@ -85,6 +85,7 @@ object SettingsSearchIndex {
         add(DeclarativeEntry(R.string.title_backup_settings, R.string.settings_title, BibiSettingsRoute.Backup))
         add(DeclarativeEntry(R.string.title_other_settings, R.string.settings_title, BibiSettingsRoute.Other))
         add(DeclarativeEntry(R.string.about_title, R.string.settings_title, BibiSettingsRoute.About))
+        add(DeclarativeEntry(R.string.about_stats_title, R.string.about_stats_title, BibiSettingsRoute.UsageStats))
 
         addInputEntries()
         addFloatingEntries()
@@ -93,6 +94,7 @@ object SettingsSearchIndex {
         addOtherEntries()
         addBackupEntries()
         addAboutEntries()
+        addUsageStatsEntries()
         addUiSettingsEntries()
     }
 
@@ -250,6 +252,26 @@ object SettingsSearchIndex {
         item(R.string.about_btn_learn_pro, null, "pro")
         item(R.string.about_view_full_licenses, R.string.about_acknowledgements_title)
         item(R.string.btn_debug_export, R.string.about_debug_title)
+    }
+
+    private fun MutableList<DeclarativeEntry>.addUsageStatsEntries() {
+        val route = BibiSettingsRoute.UsageStats
+        val screen = R.string.about_stats_title
+        fun item(@StringRes title: Int, vararg keywords: String) {
+            add(
+                DeclarativeEntry(
+                    titleRes = title,
+                    screenTitleRes = screen,
+                    route = route,
+                    sectionTitleRes = R.string.about_stats_title,
+                    keywords = keywords.toList()
+                )
+            )
+        }
+        item(R.string.about_stats_overview, "overview", "总览", "概要")
+        item(R.string.about_by_vendor, "provider", "vendor", "供应商")
+        item(R.string.about_online_asr_failure_title, "failure", "错误", "失败")
+        item(R.string.about_last_7_days, "daily", "每日", "最近")
     }
 
     private fun asrVendorEntries(context: Context): List<SettingsSearchEntry> {

@@ -148,6 +148,11 @@ private fun SettingsRouteContent(
             actions = actions
         )
 
+        BibiSettingsRoute.UsageStats -> UsageStatsSettingsScreen(
+            uiMode = uiState.uiMode,
+            onBack = { onPopRoute() }
+        )
+
         BibiSettingsRoute.Backup -> BackupSettingsScreen(
             uiMode = uiState.uiMode,
             onBack = { onPopRoute() },

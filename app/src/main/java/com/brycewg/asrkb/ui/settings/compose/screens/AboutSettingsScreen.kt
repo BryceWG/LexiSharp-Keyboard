@@ -19,7 +19,6 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.StopCircle
 import androidx.compose.material.icons.rounded.WorkspacePremium
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,8 +38,6 @@ import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsActionController
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import com.brycewg.asrkb.ui.settings.compose.model.SettingsEntry
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
 fun AboutSettingsScreen(
@@ -52,17 +49,10 @@ fun AboutSettingsScreen(
     val appContext = context.applicationContext
     val prefs = remember(appContext) { Prefs(appContext) }
     val aboutInfo = remember(appContext) { buildAboutInfo(appContext) }
-    var usageInfo by remember(appContext) { mutableStateOf<AboutUsageInfo?>(null) }
     val latestExitInfo = remember(appContext) { buildLatestExitInfo(appContext) }
     var autoUpdateCheck by remember { mutableStateOf(prefs.autoUpdateCheckEnabled) }
     var debugRecording by remember { mutableStateOf(DebugLogManager.isRecording()) }
     var licensesDialog by remember { mutableStateOf<SettingsLongTextDialogState?>(null) }
-
-    LaunchedEffect(appContext, prefs) {
-        usageInfo = withContext(Dispatchers.IO) {
-            buildUsageInfo(appContext, prefs)
-        }
-    }
 
     AboutScaffold(uiMode = uiMode, onBack = onBack) { innerPadding, scrollModifier ->
         SettingsLazyColumn(
@@ -124,31 +114,6 @@ fun AboutSettingsScreen(
                             onClick = actions::showProPromo
                         )
                     )
-                }
-            }
-
-            item("stats") {
-                AboutSection(uiMode = uiMode, titleRes = R.string.about_stats_title) {
-                    usageInfo?.let { info ->
-                        info.summaryLines.forEach { line ->
-                            AboutText(line, uiMode)
-                        }
-                        AboutProgressGroup(
-                            titleRes = R.string.about_by_vendor,
-                            items = info.vendorItems,
-                            uiMode = uiMode
-                        )
-                        AboutProgressGroup(
-                            titleRes = R.string.about_online_asr_failure_title,
-                            items = info.failureItems,
-                            uiMode = uiMode
-                        )
-                        AboutProgressGroup(
-                            titleRes = R.string.about_last_7_days,
-                            items = info.dailyItems,
-                            uiMode = uiMode
-                        )
-                    } ?: AboutText(stringResource(R.string.about_empty_stats_placeholder), uiMode)
                 }
             }
 

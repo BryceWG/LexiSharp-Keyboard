@@ -26,13 +26,21 @@
 
     <!-- About: Usage stats -->
     <string name="about_stats_title">使用統計</string>
+    <string name="about_stats_overview">總覽</string>
     <string name="about_days_with_you">說點啥已陪伴你 %1$d 天</string>
-    <string name="about_total_audio">總音訊時長：%1$s</string>
-    <string name="about_avg_line">平均音訊時長：%1$s  ·  平均字數：%2$d  ·  平均速度：%3$s 字/分鐘</string>
-    <string name="about_daily_weekly_avg">每日平均（近 7 天）：%1$d 字、%2$s；每週平均（近 4 週）：%3$d 字、%4$s</string>
+    <string name="about_stats_total_audio_label">總音訊時長</string>
+    <string name="about_stats_total_chars_label">總辨識字數</string>
+    <string name="about_stats_sessions_label">工作階段次數</string>
+    <string name="about_stats_avg_audio_label">平均音訊時長</string>
+    <string name="about_stats_avg_chars_label">平均字數</string>
+    <string name="about_stats_avg_speed_label">平均速度</string>
+    <string name="about_stats_avg_speed_value">%1$s 字/分鐘</string>
+    <string name="about_stats_daily_avg_7d_label">每日平均（近 7 天）</string>
+    <string name="about_stats_weekly_avg_4w_label">每週平均（近 4 週）</string>
+    <string name="about_stats_chars_with_audio">%1$s 字 · %2$s</string>
     <string name="about_by_vendor">按供應商</string>
     <string name="about_online_asr_failure_title">線上 ASR 呼叫失敗率（近 30 天）</string>
-    <string name="about_proc_prefix">處理耗時</string>
+    <string name="about_proc_prefix">耗時</string>
     <string name="about_last_7_days">最近 7 天（字數）</string>
     <string name="about_empty_stats_placeholder">尚無統計資料</string>
 

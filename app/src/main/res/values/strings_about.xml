@@ -26,13 +26,21 @@
 
     <!-- About: Usage stats -->
     <string name="about_stats_title">Usage Stats</string>
+    <string name="about_stats_overview">Overview</string>
     <string name="about_days_with_you">BiBi Keyboard has been with you for %1$d days</string>
-    <string name="about_total_audio">Total audio time: %1$s</string>
-    <string name="about_avg_line">Avg audio: %1$s  ·  Avg chars: %2$d  ·  Avg speed: %3$s chars/min</string>
-    <string name="about_daily_weekly_avg">Daily avg (last 7d): %1$d chars, %2$s; Weekly avg (last 4w): %3$d chars, %4$s</string>
+    <string name="about_stats_total_audio_label">Total audio time</string>
+    <string name="about_stats_total_chars_label">Total characters</string>
+    <string name="about_stats_sessions_label">Sessions</string>
+    <string name="about_stats_avg_audio_label">Avg. audio</string>
+    <string name="about_stats_avg_chars_label">Avg. characters</string>
+    <string name="about_stats_avg_speed_label">Avg. speed</string>
+    <string name="about_stats_avg_speed_value">%1$s chars/min</string>
+    <string name="about_stats_daily_avg_7d_label">Daily avg (last 7 days)</string>
+    <string name="about_stats_weekly_avg_4w_label">Weekly avg (last 4 weeks)</string>
+    <string name="about_stats_chars_with_audio">%1$s chars · %2$s</string>
     <string name="about_by_vendor">By provider</string>
     <string name="about_online_asr_failure_title">Online ASR failure rate (last 30 days)</string>
-    <string name="about_proc_prefix">processing time</string>
+    <string name="about_proc_prefix">time</string>
     <string name="about_last_7_days">Last 7 days (chars)</string>
     <string name="about_empty_stats_placeholder">No data yet</string>
 

@@ -26,13 +26,21 @@
 
     <!-- About: Usage stats -->
     <string name="about_stats_title">使用统计</string>
+    <string name="about_stats_overview">总览</string>
     <string name="about_days_with_you">说点啥已陪伴你 %1$d 天</string>
-    <string name="about_total_audio">总音频时长：%1$s</string>
-    <string name="about_avg_line">平均音频时长：%1$s  ·  平均字数：%2$d  ·  平均速度：%3$s 字/分钟</string>
-    <string name="about_daily_weekly_avg">每日平均（近7天）：%1$d 字、%2$s；每周平均（近4周）：%3$d 字、%4$s</string>
+    <string name="about_stats_total_audio_label">总音频时长</string>
+    <string name="about_stats_total_chars_label">总识别字数</string>
+    <string name="about_stats_sessions_label">会话次数</string>
+    <string name="about_stats_avg_audio_label">平均音频时长</string>
+    <string name="about_stats_avg_chars_label">平均字数</string>
+    <string name="about_stats_avg_speed_label">平均速度</string>
+    <string name="about_stats_avg_speed_value">%1$s 字/分钟</string>
+    <string name="about_stats_daily_avg_7d_label">每日平均（近 7 天）</string>
+    <string name="about_stats_weekly_avg_4w_label">每周平均（近 4 周）</string>
+    <string name="about_stats_chars_with_audio">%1$s 字 · %2$s</string>
     <string name="about_by_vendor">按供应商</string>
     <string name="about_online_asr_failure_title">在线 ASR 调用失败率（近 30 天）</string>
-    <string name="about_proc_prefix">处理耗时</string>
+    <string name="about_proc_prefix">耗时</string>
     <string name="about_last_7_days">最近 7 天（字数）</string>
     <string name="about_empty_stats_placeholder">暂无统计数据</string>
 

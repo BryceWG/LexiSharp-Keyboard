@@ -26,13 +26,21 @@
 
     <!-- About: Usage stats -->
     <string name="about_stats_title">إحصاءات الاستخدام</string>
+    <string name="about_stats_overview">نظرة عامة</string>
     <string name="about_days_with_you">رافقتك BiBi Keyboard لمدة %1$d يوماً</string>
-    <string name="about_total_audio">إجمالي مدة الصوت: %1$s</string>
-    <string name="about_avg_line">متوسط الصوت: %1$s  ·  متوسط الأحرف: %2$d  ·  متوسط السرعة: %3$s حرف/دقيقة</string>
-    <string name="about_daily_weekly_avg">متوسط يومي (آخر 7 أيام): %1$d حرف، %2$s؛ متوسط أسبوعي (آخر 4 أسابيع): %3$d حرف، %4$s</string>
+    <string name="about_stats_total_audio_label">إجمالي مدة الصوت</string>
+    <string name="about_stats_total_chars_label">إجمالي الأحرف</string>
+    <string name="about_stats_sessions_label">عدد الجلسات</string>
+    <string name="about_stats_avg_audio_label">متوسط مدة الصوت</string>
+    <string name="about_stats_avg_chars_label">متوسط الأحرف</string>
+    <string name="about_stats_avg_speed_label">متوسط السرعة</string>
+    <string name="about_stats_avg_speed_value">%1$s حرف/دقيقة</string>
+    <string name="about_stats_daily_avg_7d_label">المتوسط اليومي (آخر 7 أيام)</string>
+    <string name="about_stats_weekly_avg_4w_label">المتوسط الأسبوعي (آخر 4 أسابيع)</string>
+    <string name="about_stats_chars_with_audio">%1$s حرف · %2$s</string>
     <string name="about_by_vendor">حسب المزود</string>
     <string name="about_online_asr_failure_title">معدل فشل ASR السحابي (آخر 30 يوماً)</string>
-    <string name="about_proc_prefix">وقت المعالجة</string>
+    <string name="about_proc_prefix">الوقت</string>
     <string name="about_last_7_days">آخر 7 أيام (أحرف)</string>
     <string name="about_empty_stats_placeholder">لا توجد بيانات بعد</string>
 

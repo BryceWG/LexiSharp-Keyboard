@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,8 +36,6 @@ import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSectionContainer
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator as MiuixLinearProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -141,7 +138,11 @@ internal fun AboutText(
 @Composable
 internal fun AboutDivider(uiMode: BibiUiMode) {
     if (uiMode == BibiUiMode.Material) {
-        HorizontalDivider(modifier = Modifier.fillMaxWidth())
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+        )
     }
 }
 
@@ -153,59 +154,4 @@ internal fun AboutAcknowledgement(
 ) {
     AboutText(stringResource(titleRes), uiMode, strong = true)
     AboutText(stringResource(descRes), uiMode)
-}
-
-@Composable
-internal fun AboutProgressGroup(
-    titleRes: Int,
-    items: List<AboutProgressItem>,
-    uiMode: BibiUiMode
-) {
-    AboutText(stringResource(titleRes), uiMode, strong = true)
-    if (items.isEmpty()) {
-        AboutText(stringResource(R.string.about_empty_stats_placeholder), uiMode)
-        return
-    }
-    items.forEach { item ->
-        AboutText(item.label, uiMode)
-        AboutProgressIndicator(
-            uiMode = uiMode,
-            progress = item.ratio.toFloat().coerceIn(0f, 1f),
-            isError = item.isError
-        )
-    }
-}
-
-@Composable
-private fun AboutProgressIndicator(
-    uiMode: BibiUiMode,
-    progress: Float,
-    isError: Boolean
-) {
-    val modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 20.dp, vertical = 4.dp)
-    when (uiMode) {
-        BibiUiMode.Material -> LinearProgressIndicator(
-            progress = { progress },
-            modifier = modifier,
-            color = if (isError) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.primary
-            }
-        )
-
-        BibiUiMode.Miuix -> MiuixLinearProgressIndicator(
-            progress = progress,
-            modifier = modifier,
-            colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                foregroundColor = if (isError) {
-                    MiuixTheme.colorScheme.error
-                } else {
-                    MiuixTheme.colorScheme.primary
-                }
-            )
-        )
-    }
 }

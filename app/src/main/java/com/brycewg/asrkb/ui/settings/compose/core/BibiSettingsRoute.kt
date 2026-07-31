@@ -52,6 +52,10 @@ sealed interface BibiSettingsRoute {
         override val id: String = "about"
     }
 
+    data object UsageStats : BibiSettingsRoute {
+        override val id: String = "usage_stats"
+    }
+
     data object Search : BibiSettingsRoute {
         override val id: String = "search"
     }
@@ -77,6 +81,7 @@ sealed interface BibiSettingsRoute {
             Backup.id -> Backup
             Other.id -> Other
             About.id -> About
+            UsageStats.id -> UsageStats
             Search.id -> Search
             History.id -> History
             ApiLog.id -> ApiLog
