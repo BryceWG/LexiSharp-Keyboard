@@ -14,6 +14,22 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class DashscopeRequestBuildersTest {
     @Test
+    fun flashModelsUseM4aWhileOmniKeepsAac() {
+        assertEquals(
+            UploadAudioEncodingSpec.M4A_AAC_LC,
+            dashscopeUploadAudioEncodingSpecForModel(Prefs.DASH_MODEL_FUN_ASR_FLASH)
+        )
+        assertEquals(
+            UploadAudioEncodingSpec.M4A_AAC_LC,
+            dashscopeUploadAudioEncodingSpecForModel(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH)
+        )
+        assertEquals(
+            UploadAudioEncodingSpec.AAC_ADTS,
+            dashscopeUploadAudioEncodingSpecForModel(Prefs.DASH_MODEL_QWEN35_OMNI_FLASH)
+        )
+    }
+
+    @Test
     fun generationRequestSendsAtMostFourQwenAudioLanguageHints() {
         val body = buildDashGenerationAsrRequestBody(
             model = Prefs.DASH_MODEL_QWEN_AUDIO_FLASH,

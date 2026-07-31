@@ -22,7 +22,7 @@ import org.json.JSONObject
 
 /**
  * 使用阿里云百炼（DashScope）的非流式 ASR 引擎。
- * - Fun-ASR-Flash 与 Qwen-Audio 3.0 走 DashScope REST multimodal-generation + WAV Base64。
+ * - Fun-ASR-Flash 与 Qwen-Audio 3.0 走 DashScope REST multimodal-generation + Base64 音频。
  * - Qwen3.5-Omni 非实时模型走 OpenAI 兼容 chat/completions + Base64 音频输入。
  */
 class DashscopeFileAsrEngine(
@@ -53,7 +53,7 @@ class DashscopeFileAsrEngine(
     override val uploadAudioEncodingSpec: UploadAudioEncodingSpec?
         get() {
             val model = prefs.dashAsrModel.trim().ifBlank { Prefs.DEFAULT_DASH_MODEL }
-            return uploadAudioEncodingSpecForModel(model)
+            return dashscopeUploadAudioEncodingSpecForModel(model)
         }
 
     override fun ensureReady(): Boolean {
@@ -88,12 +88,6 @@ class DashscopeFileAsrEngine(
         recognize(pcm)
     }
 
-    private fun uploadAudioEncodingSpecForModel(model: String): UploadAudioEncodingSpec? = when {
-        prefs.isDashGenerationAsrModelId(model) -> null
-        prefs.isDashOmniModelId(model) -> UploadAudioEncodingSpec.AAC_ADTS
-        else -> UploadAudioEncodingSpec.M4A_AAC_LC
-    }
-
     private fun reportUnsupportedModel(model: String) {
         listener.onError(
             context.getString(
@@ -104,8 +98,8 @@ class DashscopeFileAsrEngine(
     }
 
     private fun encodePcmForUploadIfEnabled(pcm: ByteArray, model: String): UploadAudioData {
-        val encodingSpec = uploadAudioEncodingSpecForModel(model)
-        return if (prefs.uploadAudioCompressionEnabled && encodingSpec != null) {
+        val encodingSpec = dashscopeUploadAudioEncodingSpecForModel(model)
+        return if (prefs.uploadAudioCompressionEnabled) {
             encodePcmForUpload(
                 context,
                 pcm,
@@ -460,6 +454,13 @@ class DashscopeFileAsrEngine(
         }
     }
 }
+
+internal fun dashscopeUploadAudioEncodingSpecForModel(model: String): UploadAudioEncodingSpec =
+    if (DashScopePrefsCompat.isOmniModel(model)) {
+        UploadAudioEncodingSpec.AAC_ADTS
+    } else {
+        UploadAudioEncodingSpec.M4A_AAC_LC
+    }
 
 internal fun buildDashGenerationAsrRequestBody(
     model: String,
