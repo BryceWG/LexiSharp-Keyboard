@@ -8,6 +8,8 @@
 package com.brycewg.asrkb.ui.settings.compose.screens
 
 import android.content.Context
+import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -334,6 +336,11 @@ internal fun SyncClipboardSection(
     onAutoReceiveChange: (Boolean) -> Unit,
     onKeepBackgroundRealtimeChange: (Boolean) -> Unit,
     onIntervalChange: (Int) -> Unit,
+    onImagesChange: (Boolean) -> Unit,
+    onFilesChange: (Boolean) -> Unit,
+    onAttachmentMaxSizeChange: (Int) -> Unit,
+    onChooseWatchTree: () -> Unit,
+    onClearWatchTree: () -> Unit,
     onTestPull: () -> Unit,
     onOpenProject: () -> Unit
 ) {
@@ -341,6 +348,10 @@ internal fun SyncClipboardSection(
         mutableStateOf(state.pullIntervalSec.toString())
     }
     val autoReceiveEnabled = state.receiveMode != ClipboardSyncReceiveMode.OFF
+    val attachmentsEnabled = state.syncImagesEnabled || state.syncFilesEnabled
+    var attachmentMaxSizeText by remember(state.attachmentMaxSizeMb) {
+        mutableStateOf(state.attachmentMaxSizeMb.toString())
+    }
     OtherSection(uiMode = uiMode, titleRes = R.string.section_sync_clipboard) {
         SettingsPreference(
             SettingsEntry.Switch(
@@ -437,6 +448,76 @@ internal fun SyncClipboardSection(
                     )
                 )
             }
+            SettingsPreference(
+                SettingsEntry.Switch(
+                    id = "sync_clipboard_images",
+                    titleRes = R.string.label_sc_sync_images,
+                    checked = state.syncImagesEnabled,
+                    onCheckedChange = onImagesChange
+                )
+            )
+            SettingsPreference(
+                SettingsEntry.Switch(
+                    id = "sync_clipboard_files",
+                    titleRes = R.string.label_sc_sync_files,
+                    checked = state.syncFilesEnabled,
+                    onCheckedChange = onFilesChange
+                )
+            )
+            if (attachmentsEnabled) {
+                val attachmentFields: @Composable () -> Unit = {
+                    OtherTextField(
+                        value = attachmentMaxSizeText,
+                        onValueChange = { raw ->
+                            attachmentMaxSizeText = raw.filter { it.isDigit() }.take(4)
+                            attachmentMaxSizeText.toIntOrNull()?.let {
+                                onAttachmentMaxSizeChange(it.coerceIn(1, 1024))
+                            }
+                        },
+                        label = stringResource(R.string.label_sc_attachment_max_size),
+                        uiMode = uiMode,
+                        keyboardType = KeyboardType.Number,
+                        singleLine = true,
+                        materialContainer = false,
+                        applyEdgePadding = false,
+                        contentPadding = fieldPadding
+                    )
+                    OtherBodyText(
+                        if (state.watchTreeUri.isBlank()) {
+                            stringResource(R.string.summary_sc_watch_tree_not_selected)
+                        } else {
+                            stringResource(
+                                R.string.summary_sc_watch_tree_selected,
+                                syncClipboardWatchTreeLabel(state.watchTreeUri)
+                            )
+                        },
+                        uiMode
+                    )
+                    OtherButtonRow(uiMode = uiMode) {
+                        if (state.watchTreeUri.isBlank()) {
+                            OtherButton(
+                                text = stringResource(R.string.btn_sc_choose_watch_tree),
+                                uiMode = uiMode,
+                                modifier = Modifier.weight(1f),
+                                onClick = onChooseWatchTree,
+                                padded = false
+                            )
+                        } else {
+                            OtherButton(
+                                text = stringResource(R.string.btn_sc_clear_watch_tree),
+                                uiMode = uiMode,
+                                modifier = Modifier.weight(1f),
+                                onClick = onClearWatchTree,
+                                padded = false
+                            )
+                        }
+                    }
+                }
+                when (uiMode) {
+                    BibiUiMode.Material -> SettingsMaterialItemSurface { attachmentFields() }
+                    BibiUiMode.Miuix -> Column { attachmentFields() }
+                }
+            }
             OtherButtonRow(uiMode = uiMode) {
                 OtherButton(
                     text = stringResource(R.string.btn_sc_test_pull),
@@ -455,6 +536,13 @@ internal fun SyncClipboardSection(
             }
         }
     }
+}
+
+private fun syncClipboardWatchTreeLabel(uriString: String): String = try {
+    val documentId = DocumentsContract.getTreeDocumentId(Uri.parse(uriString))
+    documentId.substringAfter(':').trim('/').ifBlank { documentId.substringBefore(':') }
+} catch (_: Throwable) {
+    uriString
 }
 
 private fun selectedSpeechPresetLabel(

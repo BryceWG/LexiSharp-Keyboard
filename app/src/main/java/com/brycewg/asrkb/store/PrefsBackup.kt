@@ -198,6 +198,10 @@ internal object PrefsBackup {
         o.put(KEY_SC_AUTO_PULL, syncClipboardReceiveMode != ClipboardSyncReceiveMode.OFF)
         o.put(KEY_SC_REALTIME, syncClipboardReceiveMode == ClipboardSyncReceiveMode.REALTIME)
         o.put(KEY_SC_PULL_INTERVAL_SEC, syncClipboardPullIntervalSec)
+        o.put(KEY_SC_SYNC_IMAGES, syncClipboardImagesEnabled)
+        o.put(KEY_SC_SYNC_FILES, syncClipboardFilesEnabled)
+        o.put(KEY_SC_ATTACHMENT_MAX_SIZE_MB, syncClipboardAttachmentMaxSizeMb)
+        o.put(KEY_SC_WATCH_TREE_URI, syncClipboardWatchTreeUri)
         // WebDAV（可选）
         o.put(KEY_WD_URL, webdavUrl)
         o.put(KEY_WD_USERNAME, webdavUsername)
@@ -549,6 +553,10 @@ internal object PrefsBackup {
                 }
             }
             optInt(KEY_SC_PULL_INTERVAL_SEC)?.let { syncClipboardPullIntervalSec = it }
+            optBool(KEY_SC_SYNC_IMAGES)?.let { syncClipboardImagesEnabled = it }
+            optBool(KEY_SC_SYNC_FILES)?.let { syncClipboardFilesEnabled = it }
+            optInt(KEY_SC_ATTACHMENT_MAX_SIZE_MB)?.let { syncClipboardAttachmentMaxSizeMb = it }
+            optString(KEY_SC_WATCH_TREE_URI)?.let { syncClipboardWatchTreeUri = it }
             // 隐私开关
             optBool(KEY_DISABLE_ASR_HISTORY)?.let { disableAsrHistory = it }
             optInt(KEY_AUDIO_HISTORY_RETENTION_COUNT)?.let { audioHistoryRetentionCount = it }

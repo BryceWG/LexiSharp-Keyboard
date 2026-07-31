@@ -62,6 +62,11 @@ internal fun OtherSettingsRouteContent(
     onSyncClipboardAutoReceiveChange: (Boolean) -> Unit,
     onSyncClipboardKeepBackgroundChange: (Boolean) -> Unit,
     onSyncClipboardIntervalChange: (Int) -> Unit,
+    onSyncClipboardImagesChange: (Boolean) -> Unit,
+    onSyncClipboardFilesChange: (Boolean) -> Unit,
+    onSyncClipboardAttachmentMaxSizeChange: (Int) -> Unit,
+    onChooseSyncClipboardWatchTree: () -> Unit,
+    onClearSyncClipboardWatchTree: () -> Unit,
     onTestClipboardSync: () -> Unit,
     onOpenSyncClipboardProject: () -> Unit
 ) {
@@ -147,6 +152,11 @@ internal fun OtherSettingsRouteContent(
                 onAutoReceiveChange = onSyncClipboardAutoReceiveChange,
                 onKeepBackgroundRealtimeChange = onSyncClipboardKeepBackgroundChange,
                 onIntervalChange = onSyncClipboardIntervalChange,
+                onImagesChange = onSyncClipboardImagesChange,
+                onFilesChange = onSyncClipboardFilesChange,
+                onAttachmentMaxSizeChange = onSyncClipboardAttachmentMaxSizeChange,
+                onChooseWatchTree = onChooseSyncClipboardWatchTree,
+                onClearWatchTree = onClearSyncClipboardWatchTree,
                 onTestPull = onTestClipboardSync,
                 onOpenProject = onOpenSyncClipboardProject
             )

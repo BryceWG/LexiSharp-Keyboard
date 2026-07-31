@@ -80,12 +80,18 @@ class SyncClipboardReceiveModePrefsTest {
         prefs.syncClipboardReceiveMode = ClipboardSyncReceiveMode.REALTIME
         prefs.syncClipboardKeepBackgroundRealtimeEnabled = true
         prefs.syncClipboardPullIntervalSec = 42
+        prefs.syncClipboardImagesEnabled = true
+        prefs.syncClipboardFilesEnabled = true
+        prefs.syncClipboardAttachmentMaxSizeMb = 64
+        prefs.syncClipboardWatchTreeUri = "content://example/tree/screenshots"
 
         val exported = prefs.exportJsonString()
         val json = JSONObject(exported)
         assertEquals(ClipboardSyncReceiveMode.REALTIME.id, json.getString(KEY_SC_RECEIVE_MODE))
         assertTrue(json.getBoolean(KEY_SC_AUTO_PULL))
         assertTrue(json.getBoolean(KEY_SC_KEEP_BACKGROUND_REALTIME))
+        assertTrue(json.getBoolean(KEY_SC_SYNC_IMAGES))
+        assertEquals(64, json.getInt(KEY_SC_ATTACHMENT_MAX_SIZE_MB))
 
         clearPrefs()
         val restored = Prefs(context)
@@ -93,6 +99,10 @@ class SyncClipboardReceiveModePrefsTest {
         assertEquals(ClipboardSyncReceiveMode.REALTIME, restored.syncClipboardReceiveMode)
         assertTrue(restored.syncClipboardKeepBackgroundRealtimeEnabled)
         assertEquals(42, restored.syncClipboardPullIntervalSec)
+        assertTrue(restored.syncClipboardImagesEnabled)
+        assertTrue(restored.syncClipboardFilesEnabled)
+        assertEquals(64, restored.syncClipboardAttachmentMaxSizeMb)
+        assertEquals("content://example/tree/screenshots", restored.syncClipboardWatchTreeUri)
     }
 
     @Test

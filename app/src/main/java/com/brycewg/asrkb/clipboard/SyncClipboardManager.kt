@@ -5,8 +5,11 @@ import android.net.Uri
 import android.util.Base64
 import android.util.Log
 import com.brycewg.asrkb.store.Prefs
+import java.io.InputStream
+import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
+import java.util.UUID
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,16 +23,22 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.BufferedSink
+import okio.source
 
 /**
  * 写入 SyncClipboard 的文本数据载荷
  */
 @Serializable
 private data class UploadClipboardPayload(
-    val hasData: Boolean = false,
+    val hasData: Boolean,
     val text: String,
-    val type: String = "Text"
+    val type: String,
+    val hash: String? = null,
+    val dataName: String? = null,
+    val size: Long? = null
 )
 
 /**
@@ -82,10 +91,20 @@ class SyncClipboardManager(
 
     private val json by lazy { Json { ignoreUnknownKeys = true } }
     private val fileManager by lazy { ClipboardFileManager(context) }
+    private val attachmentPolicy by lazy { ClipboardAttachmentPolicy(prefs) }
+    private val attachmentOrigins by lazy { ClipboardAttachmentOriginStore(context) }
+    private val attachmentNotifier by lazy { ClipboardAttachmentNotifier(context) }
+    private val attachmentWatcher by lazy {
+        ClipboardAttachmentWatcher(context, prefs, attachmentPolicy)
+    }
 
     companion object {
         private const val TAG = "SyncClipboardManager"
         private const val BRIDGE_OBSERVER_RENEW_INTERVAL_MS = 15_000L
+        private const val ATTACHMENT_SCAN_INTERVAL_MS = 2_000L
+        private const val ATTACHMENT_DOWNLOAD_MAX_ATTEMPTS = 3
+        private const val ATTACHMENT_DOWNLOAD_RETRY_DELAY_MS = 500L
+        private const val ATTACHMENT_RECOVERY_DELAY_MS = 30_000L
 
         fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(8, TimeUnit.SECONDS)
@@ -96,6 +115,8 @@ class SyncClipboardManager(
 
     private var pullJob: Job? = null
     private var observerRenewJob: Job? = null
+    private var attachmentWatchJob: Job? = null
+    private var attachmentRecoveryJob: Job? = null
     private var observing = false
 
     // 记录最近一次从服务端拉取的文本哈希，用于减少本地剪贴板读取次数
@@ -118,6 +139,7 @@ class SyncClipboardManager(
         ensureObserver()
         ensureObserverRenewLoop()
         ensurePullLoop()
+        ensureAttachmentWatch()
     }
 
     fun stop() {
@@ -132,6 +154,8 @@ class SyncClipboardManager(
         }
         observing = false
         stopPullLoop()
+        stopAttachmentWatch()
+        stopAttachmentRecovery()
         observerRenewJob?.cancel()
         observerRenewJob = null
         lastPulledServerHash = null
@@ -150,6 +174,8 @@ class SyncClipboardManager(
         }
         observing = false
         stopPullLoop()
+        stopAttachmentWatch()
+        stopAttachmentRecovery()
         observerRenewJob?.cancel()
         observerRenewJob = null
     }
@@ -161,6 +187,7 @@ class SyncClipboardManager(
         ensureObserver()
         ensureObserverRenewLoop()
         ensurePullLoop()
+        ensureAttachmentWatch()
     }
 
     /** 关闭同步或变更服务器/凭证后调用，立即作废旧响应与接收循环。 */
@@ -168,6 +195,8 @@ class SyncClipboardManager(
         credentialsEpoch++
         pollingEnabled = false
         stopPullLoop()
+        stopAttachmentWatch()
+        stopAttachmentRecovery()
     }
 
     internal fun setPollingEnabled(enabled: Boolean) {
@@ -216,6 +245,42 @@ class SyncClipboardManager(
         pullJob = null
     }
 
+    private fun stopAttachmentWatch() {
+        attachmentWatchJob?.cancel()
+        attachmentWatchJob = null
+    }
+
+    private fun stopAttachmentRecovery() {
+        attachmentRecoveryJob?.cancel()
+        attachmentRecoveryJob = null
+    }
+
+    private fun scheduleAttachmentRecovery(requestEpoch: Long) {
+        if (attachmentRecoveryJob?.isActive == true) return
+        attachmentRecoveryJob = scope.launch(ioDispatcher) {
+            delay(ATTACHMENT_RECOVERY_DELAY_MS)
+            pullNow(
+                updateClipboard = true,
+                requestEpoch = requestEpoch,
+                attachmentDownloadAttempts = 1
+            )
+        }
+    }
+
+    private fun ensureAttachmentWatch() {
+        if (attachmentWatchJob?.isActive == true || clipboardEffectsPaused ||
+            !prefs.syncClipboardEnabled || !attachmentPolicy.hasEnabledType() ||
+            prefs.syncClipboardWatchTreeUri.isBlank()
+        ) return
+        // ponytail: polling a SAF tree is portable; add provider notifications only if scans prove costly.
+        attachmentWatchJob = scope.launch(ioDispatcher) {
+            while (isActive && prefs.syncClipboardEnabled && !clipboardEffectsPaused) {
+                attachmentWatcher.scanAndUpload(::uploadAttachment)
+                delay(ATTACHMENT_SCAN_INTERVAL_MS)
+            }
+        }
+    }
+
     private fun ensurePullLoop() {
         stopPullLoop()
         if (clipboardEffectsPaused) return
@@ -250,11 +315,22 @@ class SyncClipboardManager(
 
     private fun sha256Hex(s: String): String {
         val md = MessageDigest.getInstance("SHA-256")
-        val bytes = md.digest(s.toByteArray(Charsets.UTF_8))
-        val sb = StringBuilder(bytes.size * 2)
-        for (b in bytes) sb.append(String.format("%02x", b))
-        return sb.toString()
+        return sha256Hex(md.digest(s.toByteArray(Charsets.UTF_8)))
     }
+
+    private fun sha256Hex(input: InputStream): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val buffer = ByteArray(8192)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            digest.update(buffer, 0, read)
+        }
+        return sha256Hex(digest.digest())
+    }
+
+    private fun sha256Hex(bytes: ByteArray): String =
+        bytes.joinToString("") { "%02x".format(it.toInt() and 0xff) }
 
     private fun authHeaderB64(): String? {
         val u = prefs.syncClipboardUsername
@@ -304,7 +380,7 @@ class SyncClipboardManager(
     }
 
     private fun uploadText(url: String, auth: String, text: String): Boolean = try {
-        val payload = UploadClipboardPayload(text = text)
+        val payload = UploadClipboardPayload(hasData = false, text = text, type = "Text")
         val bodyJson = json.encodeToString(payload)
         val req = Request.Builder()
             .url(url)
@@ -343,6 +419,74 @@ class SyncClipboardManager(
             Log.e(TAG, "Failed to notify upload failed listener (exception)", t)
         }
         false
+    }
+
+    private fun uploadAttachment(attachment: LocalClipboardAttachment): Boolean {
+        if (!attachmentPolicy.allows(attachment.kind, attachment.sizeBytes)) return false
+        val url = buildUrl() ?: return false
+        val auth = authHeaderB64() ?: return false
+        val dataName = newAttachmentDataName(attachment.displayName)
+        val hash = try {
+            context.contentResolver.openInputStream(attachment.uri)?.use(::sha256Hex)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to hash clipboard attachment", t)
+            null
+        }?.let { syncClipboardAttachmentHash(dataName, it) } ?: return false
+        val body = UriRequestBody(context, attachment.uri, attachment.mimeType, attachment.sizeBytes)
+        val fileUrl = buildFileUrl(dataName) ?: return false
+        val fileUploaded = try {
+            httpClient.newCall(
+                Request.Builder()
+                    .url(fileUrl)
+                    .header("Authorization", auth)
+                    .put(body)
+                    .build()
+            ).execute().use { it.isSuccessful }
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to upload clipboard attachment data", t)
+            false
+        }
+        if (!fileUploaded) return false
+        if (!attachmentPolicy.allows(attachment.kind, attachment.sizeBytes)) return false
+        val payload = UploadClipboardPayload(
+            hasData = true,
+            text = attachment.displayName,
+            type = attachment.kind.remoteType,
+            hash = hash,
+            dataName = dataName,
+            size = attachment.sizeBytes
+        )
+        // SignalR may deliver the Profile before this PUT returns, so record its origin first.
+        attachmentOrigins.record(hash)
+        val profilePublished = try {
+            val request = Request.Builder()
+                .url(url)
+                .header("Authorization", auth)
+                .put(json.encodeToString(payload).toRequestBody("application/json; charset=utf-8".toMediaType()))
+                .build()
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    Log.w(TAG, "Clipboard attachment profile upload failed: ${response.code}")
+                }
+                response.isSuccessful
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to upload clipboard attachment profile", t)
+            false
+        }
+        if (profilePublished) {
+            attachmentNotifier.showUploaded(attachment.displayName)
+        } else {
+            attachmentOrigins.clear(hash)
+        }
+        return profilePublished
+    }
+
+    private fun newAttachmentDataName(displayName: String): String {
+        val extension = displayName.substringAfterLast('.', "")
+            .takeWhile { it.isLetterOrDigit() }
+            .take(16)
+        return UUID.randomUUID().toString() + extension.takeIf { it.isNotBlank() }?.let { ".$it" }.orEmpty()
     }
 
     /**
@@ -392,7 +536,8 @@ class SyncClipboardManager(
 
     fun pullNow(
         updateClipboard: Boolean,
-        requestEpoch: Long = credentialsEpoch
+        requestEpoch: Long = credentialsEpoch,
+        attachmentDownloadAttempts: Int = ATTACHMENT_DOWNLOAD_MAX_ATTEMPTS
     ): Pair<Boolean, String?> {
         if (!canApplyPullResponse(updateClipboard, requestEpoch)) return false to null
         val url = buildUrl() ?: return false to null
@@ -415,7 +560,12 @@ class SyncClipboardManager(
                     }
 
                     val payload = decodeRemoteProfile(body) ?: return@executeRequestWithAuth null
-                    applyRemoteProfile(payload, updateClipboard, requestEpoch)
+                    applyRemoteProfile(
+                        payload,
+                        updateClipboard,
+                        requestEpoch,
+                        attachmentDownloadAttempts
+                    )
                 }
             )
         } catch (e: Throwable) {
@@ -435,11 +585,17 @@ class SyncClipboardManager(
 
     internal fun applyRemoteProfileJson(
         profileJson: String,
-        requestEpoch: Long = credentialsEpoch
+        requestEpoch: Long = credentialsEpoch,
+        attachmentDownloadAttempts: Int = ATTACHMENT_DOWNLOAD_MAX_ATTEMPTS
     ): Boolean {
         if (!canApplyPullResponse(updateClipboard = true, requestEpoch)) return false
         val payload = decodeRemoteProfile(profileJson) ?: return false
-        return applyRemoteProfile(payload, updateClipboard = true, requestEpoch)
+        return applyRemoteProfile(
+            payload,
+            updateClipboard = true,
+            requestEpoch = requestEpoch,
+            attachmentDownloadAttempts = attachmentDownloadAttempts
+        )
             ?.clipboardApplied == true
     }
 
@@ -453,7 +609,8 @@ class SyncClipboardManager(
     private fun applyRemoteProfile(
         payload: PullClipboardPayload,
         updateClipboard: Boolean,
-        requestEpoch: Long
+        requestEpoch: Long,
+        attachmentDownloadAttempts: Int
     ): HandledPullPayload? {
         if (!canApplyPullResponse(updateClipboard, requestEpoch)) return null
         val payloadType = resolvePayloadType(payload)
@@ -495,7 +652,8 @@ class SyncClipboardManager(
                     payload.hash ?: payload.legacyHash,
                     payload.size ?: payload.legacySize,
                     updateClipboard,
-                    requestEpoch
+                    requestEpoch,
+                    attachmentDownloadAttempts
                 )
             }
             else -> {
@@ -627,22 +785,34 @@ class SyncClipboardManager(
         credentialsEpoch == requestEpoch &&
             (!updateClipboard || (prefs.syncClipboardEnabled && !clipboardEffectsPaused))
 
-    /**
-     * 处理文件类型的 payload
-     * 仅添加到历史记录，不自动下载
-     */
+    /** 处理文件类型的 payload，并在类型和大小允许时自动下载。 */
     private fun handleFilePayload(
         type: String,
         fileName: String,
         serverHash: String?,
         serverSize: Long?,
         updateClipboard: Boolean,
-        requestEpoch: Long
+        requestEpoch: Long,
+        attachmentDownloadAttempts: Int
     ): HandledPullPayload {
         if (!canApplyPullResponse(updateClipboard, requestEpoch)) {
             return HandledPullPayload(fileName, clipboardApplied = false)
         }
-        try {
+        val attachmentKind = if (type.equals("image", ignoreCase = true)) {
+            ClipboardAttachmentKind.IMAGE
+        } else {
+            ClipboardAttachmentKind.FILE
+        }
+        if (!attachmentPolicy.allows(attachmentKind, serverSize)) {
+            Log.d(TAG, "Clipboard attachment skipped by policy: type=$type size=$serverSize")
+            return HandledPullPayload(fileName)
+        }
+        return ClipboardAttachmentTransferGate.run {
+            if (attachmentOrigins.isLocal(serverHash)) {
+                Log.d(TAG, "Skip locally published clipboard attachment: $fileName")
+                return@run HandledPullPayload(fileName)
+            }
+            try {
             // 若文件名与最近一次处理的文件相同，则视为内容未更新，避免重复触发预览
             val prevName = try {
                 prefs.syncClipboardLastFileName
@@ -655,10 +825,12 @@ class SyncClipboardManager(
             }
             val sameRemoteFile = fileName.isNotEmpty() && fileName == prevName &&
                 (serverHash.isNullOrBlank() ||
-                    previousEntry?.serverHash.equals(serverHash, ignoreCase = true))
+                    previousEntry?.serverHash.equals(serverHash, ignoreCase = true)) &&
+                previousEntry?.downloadStatus == DownloadStatus.COMPLETED &&
+                fileManager.fileExists(fileName, serverSize)
             if (sameRemoteFile) {
                 Log.d(TAG, "File payload unchanged, skip preview: $fileName")
-                return HandledPullPayload(fileName)
+                return@run HandledPullPayload(fileName)
             }
 
             val entryType = when (type.lowercase()) {
@@ -667,27 +839,52 @@ class SyncClipboardManager(
                 else -> EntryType.FILE
             }
 
-            // 检查文件是否已下载
-            val localFile = fileManager.getFile(fileName)
-            if (localFile.exists() && !serverHash.isNullOrBlank() &&
+            // 检查文件是否已下载；同名但 hash 更新时先删旧文件。
+            val existingPath = fileManager.getLocalPath(fileName)
+            if (existingPath != null && !serverHash.isNullOrBlank() &&
                 !previousEntry?.serverHash.equals(serverHash, ignoreCase = true)
             ) {
                 fileManager.deleteFile(fileName)
             }
-            val downloadStatus = if (localFile.exists()) {
+            val hadLocalFile = fileManager.fileExists(fileName, serverSize)
+            val (downloaded, localPath) = if (attachmentDownloadAttempts > 0) {
+                downloadAttachmentWithRetry(
+                    fileName,
+                    serverSize,
+                    serverHash,
+                    attachmentKind,
+                    updateClipboard,
+                    requestEpoch,
+                    attachmentDownloadAttempts
+                )
+            } else {
+                false to null
+            }
+            if (!canApplyPullResponse(updateClipboard, requestEpoch) ||
+                !attachmentPolicy.allows(attachmentKind, serverSize)
+            ) {
+                if (downloaded && !hadLocalFile) fileManager.deleteFile(fileName)
+                return@run HandledPullPayload(fileName, clipboardApplied = false)
+            }
+            val downloadStatus = if (downloaded && localPath != null) {
+                if (!hadLocalFile) attachmentNotifier.showDownloaded(fileName)
                 DownloadStatus.COMPLETED
             } else {
-                DownloadStatus.NONE
+                if (attachmentDownloadAttempts > 0) attachmentNotifier.showDownloadFailed(fileName)
+                if (attachmentDownloadAttempts > 1 &&
+                    prefs.syncClipboardReceiveMode == ClipboardSyncReceiveMode.REALTIME
+                ) {
+                    scheduleAttachmentRecovery(requestEpoch)
+                }
+                DownloadStatus.FAILED
             }
-
-            val localPath = if (localFile.exists()) localFile.absolutePath else null
 
             // 添加到历史记录（仅保留最新一条文件记录）
             clipboardStore?.addFileEntry(
                 type = entryType,
                 fileName = fileName,
                 serverFileName = fileName,
-                fileSize = serverSize ?: if (localFile.exists()) localFile.length() else null,
+                fileSize = serverSize,
                 serverHash = serverHash,
                 localFilePath = localPath,
                 downloadStatus = downloadStatus
@@ -708,10 +905,12 @@ class SyncClipboardManager(
             }
 
             Log.d(TAG, "File payload handled: $fileName (type: $type, status: $downloadStatus)")
-            return HandledPullPayload(fileName)
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to handle file payload: $fileName", e)
-            return HandledPullPayload(fileName)
+            // 附件失败已由本管理器安排一次受控恢复，避免 realtime 立即重复拉取同一份 profile。
+            HandledPullPayload(fileName, clipboardApplied = attachmentDownloadAttempts > 0)
+            } catch (e: Throwable) {
+                Log.e(TAG, "Failed to handle file payload: $fileName", e)
+                HandledPullPayload(fileName, clipboardApplied = false)
+            }
         }
     }
 
@@ -721,21 +920,13 @@ class SyncClipboardManager(
      * @param progressCallback 进度回调
      * @return 是否下载成功
      */
-    fun downloadFile(entryId: String, progressCallback: ((Long, Long) -> Unit)? = null): Boolean {
+    fun downloadFile(entryId: String, progressCallback: ((Long, Long) -> Unit)? = null): Boolean =
+        ClipboardAttachmentTransferGate.run { downloadFileLocked(entryId, progressCallback) }
+
+    private fun downloadFileLocked(entryId: String, progressCallback: ((Long, Long) -> Unit)?): Boolean {
         val store = clipboardStore ?: return false
         val entry = store.getEntryById(entryId) ?: return false
         val serverFileName = entry.serverFileName ?: entry.fileName ?: return false
-
-        // 检查是否已下载
-        if (fileManager.fileExists(serverFileName, entry.fileSize)) {
-            Log.d(TAG, "File already downloaded: $serverFileName")
-            store.updateFileEntry(
-                entryId,
-                fileManager.getFile(serverFileName).absolutePath,
-                DownloadStatus.COMPLETED
-            )
-            return true
-        }
 
         // 更新状态为下载中
         store.updateFileEntry(entryId, null, DownloadStatus.DOWNLOADING)
@@ -743,6 +934,7 @@ class SyncClipboardManager(
         val (ok, localPath) = downloadFileDirectInternal(
             serverFileName = serverFileName,
             expectedSize = entry.fileSize,
+            expectedHash = entry.serverHash,
             progressCallback = progressCallback
         )
 
@@ -764,19 +956,27 @@ class SyncClipboardManager(
     fun downloadFileDirect(
         fileName: String,
         progressCallback: ((Long, Long) -> Unit)? = null
+    ): Pair<Boolean, String?> = ClipboardAttachmentTransferGate.run {
+        downloadFileDirectLocked(fileName, progressCallback)
+    }
+
+    private fun downloadFileDirectLocked(
+        fileName: String,
+        progressCallback: ((Long, Long) -> Unit)?
     ): Pair<Boolean, String?> {
         if (fileName.isBlank()) return false to null
 
         // 已存在则直接返回
         if (fileManager.fileExists(fileName)) {
-            val local = fileManager.getFile(fileName)
-            Log.d(TAG, "File already downloaded (direct): $fileName -> ${local.absolutePath}")
-            return true to local.absolutePath
+            val localPath = fileManager.getLocalPath(fileName)
+            Log.d(TAG, "File already downloaded (direct): $fileName -> $localPath")
+            return true to localPath
         }
 
         return downloadFileDirectInternal(
             serverFileName = fileName,
             expectedSize = null,
+            expectedHash = null,
             progressCallback = progressCallback
         )
     }
@@ -787,6 +987,7 @@ class SyncClipboardManager(
     private fun downloadFileDirectInternal(
         serverFileName: String,
         expectedSize: Long?,
+        expectedHash: String?,
         progressCallback: ((Long, Long) -> Unit)?
     ): Pair<Boolean, String?> {
         val fileUrl = buildFileUrl(serverFileName) ?: run {
@@ -801,12 +1002,17 @@ class SyncClipboardManager(
 
         // 若已存在且大小匹配，直接返回
         if (fileManager.fileExists(serverFileName, expectedSize)) {
-            val local = fileManager.getFile(serverFileName)
-            Log.d(
-                TAG,
-                "File already exists with expected size: $serverFileName -> ${local.absolutePath}"
-            )
-            return true to local.absolutePath
+            val contentHash = fileManager.openInputStream(serverFileName)?.use(::sha256Hex)
+            val actualHash = contentHash?.let { syncClipboardAttachmentHash(serverFileName, it) }
+            if (expectedHash.isNullOrBlank() || actualHash.equals(expectedHash, ignoreCase = true)) {
+                val localPath = fileManager.getLocalPath(serverFileName)
+                Log.d(
+                    TAG,
+                    "File already exists with expected size: $serverFileName -> $localPath"
+                )
+                return true to localPath
+            }
+            fileManager.deleteFile(serverFileName)
         }
 
         return try {
@@ -825,14 +1031,27 @@ class SyncClipboardManager(
                 val body = resp.body
 
                 val totalBytes = body.contentLength()
+                val maxBytes = prefs.syncClipboardAttachmentMaxSizeMb * 1024L * 1024L
+                if (totalBytes > maxBytes) {
+                    Log.w(TAG, "Downloaded attachment exceeds configured size limit: $serverFileName")
+                    return false to null
+                }
+                val digest = MessageDigest.getInstance("SHA-256")
                 val localPath = fileManager.saveFile(
                     serverFileName,
-                    body.byteStream(),
+                    DigestInputStream(body.byteStream(), digest),
                     totalBytes,
+                    maxBytes,
                     progressCallback
                 )
 
                 if (localPath != null) {
+                    val actualHash = syncClipboardAttachmentHash(serverFileName, sha256Hex(digest.digest()))
+                    if (!expectedHash.isNullOrBlank() && !actualHash.equals(expectedHash, ignoreCase = true)) {
+                        fileManager.deleteFile(serverFileName)
+                        Log.w(TAG, "Downloaded attachment hash mismatch: $serverFileName")
+                        return false to null
+                    }
                     Log.d(TAG, "File downloaded successfully: $serverFileName -> $localPath")
                     true to localPath
                 } else {
@@ -850,12 +1069,63 @@ class SyncClipboardManager(
      * 构建文件下载 URL
      */
     private fun buildFileUrl(fileName: String): String? {
+        if (!isSafeAttachmentFileName(fileName)) return null
         val raw = prefs.syncClipboardServerBase.trim()
         if (raw.isBlank()) return null
         val base = raw.trimEnd('/')
         // 文件在服务器的 /file/ 目录下
         val encodedFileName = Uri.encode(fileName)
         return "$base/file/$encodedFileName"
+    }
+
+    private fun downloadAttachmentWithRetry(
+        serverFileName: String,
+        expectedSize: Long?,
+        expectedHash: String?,
+        kind: ClipboardAttachmentKind,
+        updateClipboard: Boolean,
+        requestEpoch: Long,
+        maxAttempts: Int
+    ): Pair<Boolean, String?> {
+        repeat(maxAttempts) { attempt ->
+            if (!canApplyPullResponse(updateClipboard, requestEpoch) ||
+                !attachmentPolicy.allows(kind, expectedSize)
+            ) {
+                return false to null
+            }
+            val result = downloadFileDirectInternal(serverFileName, expectedSize, expectedHash, null)
+            if (result.first) return result
+            if (attempt < maxAttempts - 1) {
+                try {
+                    Thread.sleep(ATTACHMENT_DOWNLOAD_RETRY_DELAY_MS)
+                } catch (_: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    return result
+                }
+            }
+        }
+        return false to null
+    }
+
+    private fun isSafeAttachmentFileName(fileName: String): Boolean =
+        fileName.isNotBlank() && fileName != "." && fileName != ".." &&
+            !fileName.contains('/') && !fileName.contains('\\')
+
+    private class UriRequestBody(
+        private val context: Context,
+        private val uri: Uri,
+        private val mimeType: String,
+        private val sizeBytes: Long
+    ) : RequestBody() {
+        override fun contentType() = mimeType.toMediaType()
+
+        override fun contentLength(): Long = sizeBytes
+
+        override fun writeTo(sink: BufferedSink) {
+            val input = context.contentResolver.openInputStream(uri)
+                ?: throw IllegalStateException("Unable to open clipboard attachment")
+            input.use { it.source().use(sink::writeAll) }
+        }
     }
 
     /**

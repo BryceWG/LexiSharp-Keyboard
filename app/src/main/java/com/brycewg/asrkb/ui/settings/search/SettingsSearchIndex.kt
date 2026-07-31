@@ -206,6 +206,10 @@ object SettingsSearchIndex {
         item(R.string.label_sc_password, R.string.section_sync_clipboard, "syncclipboard")
         item(R.string.label_sc_auto_receive, R.string.section_sync_clipboard, "syncclipboard")
         item(R.string.label_sc_pull_interval, R.string.section_sync_clipboard, "syncclipboard")
+        item(R.string.label_sc_sync_images, R.string.section_sync_clipboard, "syncclipboard", "image")
+        item(R.string.label_sc_sync_files, R.string.section_sync_clipboard, "syncclipboard", "file")
+        item(R.string.label_sc_attachment_max_size, R.string.section_sync_clipboard, "syncclipboard", "attachment")
+        item(R.string.btn_sc_choose_watch_tree, R.string.section_sync_clipboard, "syncclipboard", "folder")
     }
 
     private fun MutableList<DeclarativeEntry>.addBackupEntries() {

@@ -1970,6 +1970,22 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_SC_LAST_FILE_NAME, "") ?: ""
         set(value) = sp.edit { putString(KEY_SC_LAST_FILE_NAME, value) }
 
+    var syncClipboardImagesEnabled: Boolean
+        get() = sp.getBoolean(KEY_SC_SYNC_IMAGES, false)
+        set(value) = sp.edit { putBoolean(KEY_SC_SYNC_IMAGES, value) }
+
+    var syncClipboardFilesEnabled: Boolean
+        get() = sp.getBoolean(KEY_SC_SYNC_FILES, false)
+        set(value) = sp.edit { putBoolean(KEY_SC_SYNC_FILES, value) }
+
+    var syncClipboardAttachmentMaxSizeMb: Int
+        get() = sp.getInt(KEY_SC_ATTACHMENT_MAX_SIZE_MB, 50).coerceIn(1, 1024)
+        set(value) = sp.edit { putInt(KEY_SC_ATTACHMENT_MAX_SIZE_MB, value.coerceIn(1, 1024)) }
+
+    var syncClipboardWatchTreeUri: String
+        get() = sp.getString(KEY_SC_WATCH_TREE_URI, "") ?: ""
+        set(value) = sp.edit { putString(KEY_SC_WATCH_TREE_URI, value) }
+
     // ---- 备份/同步（WebDAV）偏好项 ----
     var webdavUrl: String
         get() = sp.getString(KEY_WD_URL, "") ?: ""

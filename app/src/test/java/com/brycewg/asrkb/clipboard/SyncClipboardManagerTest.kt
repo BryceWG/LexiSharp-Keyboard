@@ -55,6 +55,9 @@ class SyncClipboardManagerTest {
         prefs.syncClipboardUsername = "user"
         prefs.syncClipboardPassword = "pass"
         prefs.syncClipboardLastUploadedHash = ""
+        prefs.syncClipboardImagesEnabled = true
+        prefs.syncClipboardFilesEnabled = true
+        prefs.syncClipboardAttachmentMaxSizeMb = 50
         port = FakeSystemClipboardPort()
         historyStore = ClipboardHistoryStore(context, prefs).apply { clearAll() }
         httpClient = OkHttpClient.Builder()
@@ -143,9 +146,10 @@ class SyncClipboardManagerTest {
     fun applyRemoteProfileJson_fileAndImage_updateHistoryWithoutClipboardWrite() = runTest {
         val manager = createManager(this, historyStore)
 
-        assertTrue(
+        assertFalse(
             manager.applyRemoteProfileJson(
-                """{"type":"Image","hash":"hash-a","size":123,"hasData":true,"dataName":"remote.png"}"""
+                """{"type":"Image","hash":"hash-a","size":123,"hasData":true,"dataName":"remote.png"}""",
+                attachmentDownloadAttempts = 0
             )
         )
         historyStore.getHistory().single().let { entry ->
@@ -154,9 +158,10 @@ class SyncClipboardManagerTest {
             assertEquals(123L, entry.fileSize)
         }
 
-        assertTrue(
+        assertFalse(
             manager.applyRemoteProfileJson(
-                """{"type":"File","hasData":true,"dataName":"remote.pdf"}"""
+                """{"type":"File","size":456,"hasData":true,"dataName":"remote.pdf"}""",
+                attachmentDownloadAttempts = 0
             )
         )
         assertEquals(EntryType.FILE, historyStore.getHistory().single().type)
@@ -164,17 +169,77 @@ class SyncClipboardManagerTest {
     }
 
     @Test
-    fun applyRemoteProfileJson_sameFileNameWithNewHash_replacesHistory() = runTest {
+    fun applyRemoteProfileJson_attachmentDisabled_skipsItWithoutTreatingProfileAsFailed() = runTest {
+        prefs.syncClipboardImagesEnabled = false
         val manager = createManager(this, historyStore)
 
         assertTrue(
             manager.applyRemoteProfileJson(
-                """{"type":"File","hash":"old","size":10,"dataName":"same.pdf"}"""
+                """{"type":"Image","hash":"hash-a","size":123,"hasData":true,"dataName":"remote.png"}"""
             )
         )
+        assertTrue(historyStore.getHistory().isEmpty())
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun applyRemoteProfileJson_retriesAttachmentDownloadBeforeSucceeding() = runTest {
+        val dataName = "retry-${System.nanoTime()}.pdf"
+        val body = "retry file"
+        server.enqueue(MockResponse().setResponseCode(500))
+        server.enqueue(MockResponse().setResponseCode(500))
+        server.enqueue(MockResponse().setResponseCode(200).setBody(body))
+        val manager = createManager(this, historyStore)
+
         assertTrue(
             manager.applyRemoteProfileJson(
-                """{"type":"File","hash":"new","size":20,"dataName":"same.pdf"}"""
+                """{"type":"File","hasData":true,"dataName":"$dataName","size":${body.length},"hash":"${syncClipboardAttachmentHash(dataName, sha256Hex(body))}"}"""
+            )
+        )
+        assertEquals(3, server.requestCount)
+        assertEquals(DownloadStatus.COMPLETED, historyStore.getHistory().single().downloadStatus)
+    }
+
+    @Test
+    fun applyRemoteProfileJson_realtimeFailureSchedulesOneDelayedRecovery() = runTest {
+        prefs.syncClipboardReceiveMode = ClipboardSyncReceiveMode.REALTIME
+        val dataName = "recovery-${System.nanoTime()}.pdf"
+        val body = "recovered file"
+        val profile =
+            """{"type":"File","hasData":true,"dataName":"$dataName","size":${body.length},"hash":"${syncClipboardAttachmentHash(dataName, sha256Hex(body))}"}"""
+        repeat(3) { server.enqueue(MockResponse().setResponseCode(500)) }
+        server.enqueue(MockResponse().setResponseCode(200).setBody(profile))
+        server.enqueue(MockResponse().setResponseCode(200).setBody(body))
+        val manager = createManager(this, historyStore)
+
+        assertTrue(
+            manager.applyRemoteProfileJson(
+                profile
+            )
+        )
+        assertEquals(DownloadStatus.FAILED, historyStore.getHistory().single().downloadStatus)
+
+        advanceTimeBy(30_000L)
+        advanceUntilIdle()
+
+        assertEquals(5, server.requestCount)
+        assertEquals(DownloadStatus.COMPLETED, historyStore.getHistory().single().downloadStatus)
+    }
+
+    @Test
+    fun applyRemoteProfileJson_sameFileNameWithNewHash_replacesHistory() = runTest {
+        val manager = createManager(this, historyStore)
+
+        assertFalse(
+            manager.applyRemoteProfileJson(
+                """{"type":"File","hash":"old","size":10,"dataName":"same.pdf"}""",
+                attachmentDownloadAttempts = 0
+            )
+        )
+        assertFalse(
+            manager.applyRemoteProfileJson(
+                """{"type":"File","hash":"new","size":20,"dataName":"same.pdf"}""",
+                attachmentDownloadAttempts = 0
             )
         )
 

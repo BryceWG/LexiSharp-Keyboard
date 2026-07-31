@@ -1,217 +1,190 @@
+/** 管理 Download/BiBi 中的远端附件；Android 10+ 通过 MediaStore 写入共享下载目录。 */
 package com.brycewg.asrkb.clipboard
 
+import android.content.ContentValues
 import android.content.Context
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import java.io.File
 import java.io.InputStream
+import java.net.URLConnection
 
-/**
- * 剪贴板文件管理器
- * 负责管理从服务器下载的文件，存储在 Download/BiBi 目录
- */
 class ClipboardFileManager(private val context: Context) {
-
     companion object {
         private const val TAG = "ClipboardFileManager"
         private const val BIBI_FOLDER = "BiBi"
-        private const val MAX_CACHE_SIZE_MB = 500 // 最大缓存 500MB
-        private const val MAX_FILE_AGE_DAYS = 30 // 文件最长保留 30 天
+        private const val RELATIVE_PATH = "Download/BiBi/"
     }
 
-    /**
-     * 获取 BiBi 文件夹路径 (Download/BiBi)
-     */
-    private fun getBiBiFolder(): File {
-        val downloadDir = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_DOWNLOADS
-        )
-        val bibiDir = File(downloadDir, BIBI_FOLDER)
-        if (!bibiDir.exists()) {
-            bibiDir.mkdirs()
+    fun getLocalPath(fileName: String): String? {
+        if (!isSafeFileName(fileName)) return null
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            findMediaUri(fileName)?.toString()
+        } else {
+            legacyFile(fileName).takeIf(File::exists)?.absolutePath
         }
-        return bibiDir
     }
 
-    /**
-     * 获取文件的完整路径
-     * @param fileName 文件名
-     * @return 文件对象
-     */
-    fun getFile(fileName: String): File = File(getBiBiFolder(), fileName)
-
-    /**
-     * 检查文件是否已存在且完整
-     * @param fileName 文件名
-     * @param expectedSize 预期文件大小（可选，用于验证）
-     * @return 是否存在
-     */
     fun fileExists(fileName: String, expectedSize: Long? = null): Boolean {
-        val file = getFile(fileName)
-        if (!file.exists() || !file.isFile) {
-            return false
+        if (!isSafeFileName(fileName)) return false
+        return if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+        ) {
+            findMedia(fileName)?.let { expectedSize == null || expectedSize <= 0L || it.size == expectedSize } == true
+        } else {
+            legacyFile(fileName).let { it.exists() && (expectedSize == null || expectedSize <= 0L || it.length() == expectedSize) }
         }
-
-        // 如果提供了预期大小，验证文件大小是否匹配
-        if (expectedSize != null && expectedSize > 0) {
-            val actualSize = file.length()
-            if (actualSize != expectedSize) {
-                Log.w(
-                    TAG,
-                    "File size mismatch: $fileName (expected: $expectedSize, actual: $actualSize)"
-                )
-                return false
-            }
-        }
-
-        return true
     }
 
-    /**
-     * 保存文件流到本地
-     * @param fileName 文件名
-     * @param inputStream 输入流
-     * @param progressCallback 进度回调（已下载字节数，总字节数）
-     * @return 保存后的文件路径，失败返回 null
-     */
     fun saveFile(
         fileName: String,
         inputStream: InputStream,
         totalBytes: Long = -1,
+        maxBytes: Long? = null,
         progressCallback: ((Long, Long) -> Unit)? = null
-    ): String? = try {
-        val file = getFile(fileName)
+    ): String? {
+        return try {
+            if (!isSafeFileName(fileName)) null
+            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                saveMediaFile(fileName, inputStream, totalBytes, maxBytes, progressCallback)
+            } else {
+                saveLegacyFile(fileName, inputStream, totalBytes, maxBytes, progressCallback)
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to save clipboard file: $fileName", t)
+            null
+        } finally {
+            try {
+                inputStream.close()
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to close clipboard file input", t)
+            }
+        }
+    }
 
-        // 确保父目录存在
+    fun deleteFile(fileName: String): Boolean {
+        if (!isSafeFileName(fileName)) return false
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                findMediaUri(fileName)?.let { context.contentResolver.delete(it, null, null) } ?: 0
+                true
+            } else {
+                val file = legacyFile(fileName)
+                !file.exists() || file.delete()
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to delete clipboard file: $fileName", t)
+            false
+        }
+    }
+
+    private fun saveMediaFile(
+        fileName: String,
+        input: InputStream,
+        totalBytes: Long,
+        maxBytes: Long?,
+        onProgress: ((Long, Long) -> Unit)?
+    ): String? {
+        deleteFile(fileName)
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, URLConnection.guessContentTypeFromName(fileName) ?: "application/octet-stream")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, RELATIVE_PATH)
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            ?: return null
+        return try {
+            context.contentResolver.openOutputStream(uri)?.use { output ->
+                copy(input, output, totalBytes, maxBytes, onProgress)
+            } ?: return null
+            context.contentResolver.update(
+                uri,
+                ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) },
+                null,
+                null
+            )
+            uri.toString()
+        } catch (t: Throwable) {
+            context.contentResolver.delete(uri, null, null)
+            throw t
+        }
+    }
+
+    private fun saveLegacyFile(
+        fileName: String,
+        input: InputStream,
+        totalBytes: Long,
+        maxBytes: Long?,
+        onProgress: ((Long, Long) -> Unit)?
+    ): String? {
+        val file = legacyFile(fileName)
         file.parentFile?.mkdirs()
+        file.outputStream().use { copy(input, it, totalBytes, maxBytes, onProgress) }
+        return file.absolutePath
+    }
 
-        // 如果文件已存在，先删除
-        if (file.exists()) {
-            file.delete()
-        }
-
-        var downloadedBytes = 0L
+    private fun copy(
+        input: InputStream,
+        output: java.io.OutputStream,
+        totalBytes: Long,
+        maxBytes: Long?,
+        onProgress: ((Long, Long) -> Unit)?
+    ) {
         val buffer = ByteArray(8192)
-
-        file.outputStream().use { output ->
-            var bytesRead: Int
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                output.write(buffer, 0, bytesRead)
-                downloadedBytes += bytesRead
-                progressCallback?.invoke(downloadedBytes, totalBytes)
+        var copied = 0L
+        while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            if (maxBytes != null && copied + count > maxBytes) {
+                throw IllegalStateException("Clipboard attachment exceeds configured size limit")
             }
-        }
-
-        Log.d(TAG, "File saved: $fileName -> ${file.absolutePath}")
-        file.absolutePath
-    } catch (e: Exception) {
-        Log.e(TAG, "Failed to save file: $fileName", e)
-        null
-    } finally {
-        try {
-            inputStream.close()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to close input stream", e)
+            output.write(buffer, 0, count)
+            copied += count
+            onProgress?.invoke(copied, totalBytes)
         }
     }
 
-    /**
-     * 删除文件
-     * @param fileName 文件名
-     * @return 是否删除成功
-     */
-    fun deleteFile(fileName: String): Boolean = try {
-        val file = getFile(fileName)
-        if (file.exists()) {
-            file.delete()
+    private fun findMediaUri(fileName: String): Uri? = findMedia(fileName)?.uri
+
+    fun openInputStream(fileName: String): InputStream? {
+        if (!isSafeFileName(fileName)) return null
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            findMediaUri(fileName)?.let(context.contentResolver::openInputStream)
         } else {
-            true
-        }
-    } catch (e: Exception) {
-        Log.e(TAG, "Failed to delete file: $fileName", e)
-        false
-    }
-
-    /**
-     * 清理旧文件（超过 MAX_FILE_AGE_DAYS 天的文件）
-     * @return 清理的文件数量
-     */
-    fun cleanOldFiles(): Int {
-        val cutoffTime = System.currentTimeMillis() - MAX_FILE_AGE_DAYS * 24 * 60 * 60 * 1000L
-        var count = 0
-
-        try {
-            val bibiDir = getBiBiFolder()
-            bibiDir.listFiles()?.forEach { file ->
-                if (file.isFile && file.lastModified() < cutoffTime) {
-                    if (file.delete()) {
-                        count++
-                        Log.d(TAG, "Deleted old file: ${file.name}")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to clean old files", e)
-        }
-
-        return count
-    }
-
-    /**
-     * 确保缓存大小在限制内，删除最旧的文件
-     * @return 清理的文件数量
-     */
-    fun ensureCacheLimit(): Int {
-        var count = 0
-
-        try {
-            val bibiDir = getBiBiFolder()
-            val files =
-                bibiDir.listFiles()?.filter { it.isFile }?.sortedBy { it.lastModified() }
-                    ?: return 0
-
-            var totalSize = files.sumOf { it.length() }
-            val maxSize = MAX_CACHE_SIZE_MB * 1024 * 1024L
-
-            for (file in files) {
-                if (totalSize <= maxSize) break
-
-                totalSize -= file.length()
-                if (file.delete()) {
-                    count++
-                    Log.d(TAG, "Deleted file to free space: ${file.name}")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to ensure cache limit", e)
-        }
-
-        return count
-    }
-
-    /**
-     * 获取缓存文件夹的总大小
-     * @return 大小（字节）
-     */
-    fun getCacheSize(): Long = try {
-        val bibiDir = getBiBiFolder()
-        bibiDir.listFiles()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
-    } catch (e: Exception) {
-        Log.e(TAG, "Failed to get cache size", e)
-        0L
-    }
-
-    /**
-     * 格式化文件大小为可读字符串
-     */
-    fun formatFileSize(bytes: Long?): String {
-        if (bytes == null || bytes < 0) return "未知大小"
-
-        return when {
-            bytes < 1024 -> "$bytes B"
-            bytes < 1024 * 1024 -> String.format("%.1f KB", bytes / 1024.0)
-            bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024))
-            else -> String.format("%.2f GB", bytes / (1024.0 * 1024 * 1024))
+            legacyFile(fileName).takeIf(File::exists)?.inputStream()
         }
     }
+
+    private fun findMedia(fileName: String): MediaFile? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        val projection = arrayOf(MediaStore.MediaColumns._ID, MediaStore.MediaColumns.SIZE)
+        val selection = "${MediaStore.MediaColumns.DISPLAY_NAME}=? AND ${MediaStore.MediaColumns.RELATIVE_PATH}=?"
+        return context.contentResolver.query(
+            MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+            projection,
+            selection,
+            arrayOf(fileName, RELATIVE_PATH),
+            null
+        )?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use null
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID))
+            val size = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE))
+            MediaFile(Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, id.toString()), size)
+        }
+    }
+
+    private fun legacyFile(fileName: String): File = File(
+        File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), BIBI_FOLDER),
+        fileName
+    )
+
+    private fun isSafeFileName(fileName: String): Boolean =
+        fileName.isNotBlank() && fileName != "." && fileName != ".." &&
+            !fileName.contains('/') && !fileName.contains('\\')
+
+    private data class MediaFile(val uri: Uri, val size: Long)
 }

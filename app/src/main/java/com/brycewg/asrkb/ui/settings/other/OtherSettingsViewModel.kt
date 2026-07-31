@@ -60,7 +60,11 @@ class OtherSettingsViewModel(
         val receiveMode: ClipboardSyncReceiveMode = ClipboardSyncReceiveMode.OFF,
         val detectingReceiveMode: Boolean = false,
         val keepBackgroundRealtimeEnabled: Boolean = false,
-        val pullIntervalSec: Int = 15
+        val pullIntervalSec: Int = 15,
+        val syncImagesEnabled: Boolean = false,
+        val syncFilesEnabled: Boolean = false,
+        val attachmentMaxSizeMb: Int = 50,
+        val watchTreeUri: String = ""
     )
 
     // Speech Presets Management
@@ -232,7 +236,11 @@ class OtherSettingsViewModel(
         password = prefs.syncClipboardPassword,
         receiveMode = prefs.syncClipboardReceiveMode,
         keepBackgroundRealtimeEnabled = prefs.syncClipboardKeepBackgroundRealtimeEnabled,
-        pullIntervalSec = prefs.syncClipboardPullIntervalSec
+        pullIntervalSec = prefs.syncClipboardPullIntervalSec,
+        syncImagesEnabled = prefs.syncClipboardImagesEnabled,
+        syncFilesEnabled = prefs.syncClipboardFilesEnabled,
+        attachmentMaxSizeMb = prefs.syncClipboardAttachmentMaxSizeMb,
+        watchTreeUri = prefs.syncClipboardWatchTreeUri
     )
 
     private fun buildSyncClipboardStateSafely(): SyncClipboardState = try {
@@ -389,6 +397,40 @@ class OtherSettingsViewModel(
                 onSyncClipboardChanged()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update sync clipboard pull interval", e)
+            }
+        }
+    }
+
+    fun updateSyncClipboardImagesEnabled(enabled: Boolean) = updateAttachmentState {
+        prefs.syncClipboardImagesEnabled = enabled
+        it.copy(syncImagesEnabled = enabled)
+    }
+
+    fun updateSyncClipboardFilesEnabled(enabled: Boolean) = updateAttachmentState {
+        prefs.syncClipboardFilesEnabled = enabled
+        it.copy(syncFilesEnabled = enabled)
+    }
+
+    fun updateSyncClipboardAttachmentMaxSizeMb(sizeMb: Int) = updateAttachmentState {
+        val coerced = sizeMb.coerceIn(1, 1024)
+        prefs.syncClipboardAttachmentMaxSizeMb = coerced
+        it.copy(attachmentMaxSizeMb = coerced)
+    }
+
+    fun updateSyncClipboardWatchTreeUri(uri: String) = updateAttachmentState {
+        prefs.syncClipboardWatchTreeUri = uri
+        it.copy(watchTreeUri = uri)
+    }
+
+    private fun updateAttachmentState(
+        update: (SyncClipboardState) -> SyncClipboardState
+    ) {
+        viewModelScope.launch {
+            try {
+                _syncClipboardState.value = update(_syncClipboardState.value)
+                onSyncClipboardChanged()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to update clipboard attachment settings", e)
             }
         }
     }

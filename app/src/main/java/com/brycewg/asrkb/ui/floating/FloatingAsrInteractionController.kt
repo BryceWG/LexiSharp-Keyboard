@@ -1179,35 +1179,8 @@ internal class FloatingAsrInteractionController(
                     false
                 }
 
-                var hadFile = false
-                var fileDownloaded = false
-
-                if (ok) {
-                    val fileName = try {
-                        prefs.syncClipboardLastFileName
-                    } catch (e: Throwable) {
-                        Log.e(tag, "Failed to read last clipboard file name after pull", e)
-                        ""
-                    }
-                    if (fileName.isNotEmpty()) {
-                        hadFile = true
-                        val result = try {
-                            mgr.downloadFileDirect(fileName)
-                        } catch (e: Throwable) {
-                            Log.e(tag, "Failed to download clipboard file from floating menu", e)
-                            false to null
-                        }
-                        fileDownloaded = result.first
-                    }
-                }
-
                 handler.post {
-                    val msgRes = when {
-                        !ok -> R.string.sc_test_failed
-                        hadFile && fileDownloaded -> R.string.clip_file_download_success
-                        hadFile && !fileDownloaded -> R.string.clip_file_download_failed
-                        else -> R.string.sc_test_success
-                    }
+                    val msgRes = if (ok) R.string.sc_test_success else R.string.sc_test_failed
                     showToast(context.getString(msgRes))
                 }
             }

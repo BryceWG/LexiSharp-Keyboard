@@ -10,6 +10,8 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +33,7 @@ import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import com.brycewg.asrkb.clipboard.ClipboardSyncRuntimeService
+import com.brycewg.asrkb.clipboard.isSyncClipboardDownloadDirectory
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveScheduler
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveStarter
@@ -120,6 +123,25 @@ fun OtherSettingsScreen(
         coroutineScope.launch {
             yield()
             showOtherMessage(messageRes)
+        }
+    }
+
+    val syncClipboardWatchTreeLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        if (isSyncClipboardDownloadDirectory(uri)) {
+            showOtherMessage(R.string.sc_watch_tree_download_directory_not_allowed)
+            return@rememberLauncherForActivityResult
+        }
+        try {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            viewModel.updateSyncClipboardWatchTreeUri(uri.toString())
+        } catch (t: Throwable) {
+            Log.e(OTHER_TAG, "Failed to persist clipboard watch directory permission", t)
         }
     }
 
@@ -428,6 +450,42 @@ fun OtherSettingsScreen(
                 ) { viewModel.updateSyncClipboardKeepBackgroundRealtimeEnabled(it) }
             },
             onSyncClipboardIntervalChange = viewModel::updateSyncClipboardPullIntervalSec,
+            onSyncClipboardImagesChange = { target ->
+                applyExplainedSwitch(
+                    current = syncState.syncImagesEnabled,
+                    target = target,
+                    titleRes = R.string.label_sc_sync_images,
+                    offDescRes = R.string.feature_sc_sync_images_off_desc,
+                    onDescRes = R.string.feature_sc_sync_images_on_desc,
+                    preferenceKey = "sc_sync_images_explained"
+                ) { viewModel.updateSyncClipboardImagesEnabled(it) }
+            },
+            onSyncClipboardFilesChange = { target ->
+                applyExplainedSwitch(
+                    current = syncState.syncFilesEnabled,
+                    target = target,
+                    titleRes = R.string.label_sc_sync_files,
+                    offDescRes = R.string.feature_sc_sync_files_off_desc,
+                    onDescRes = R.string.feature_sc_sync_files_on_desc,
+                    preferenceKey = "sc_sync_files_explained"
+                ) { viewModel.updateSyncClipboardFilesEnabled(it) }
+            },
+            onSyncClipboardAttachmentMaxSizeChange = viewModel::updateSyncClipboardAttachmentMaxSizeMb,
+            onChooseSyncClipboardWatchTree = { syncClipboardWatchTreeLauncher.launch(null) },
+            onClearSyncClipboardWatchTree = {
+                val oldUri = syncState.watchTreeUri
+                if (oldUri.isNotBlank()) {
+                    try {
+                        context.contentResolver.releasePersistableUriPermission(
+                            android.net.Uri.parse(oldUri),
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )
+                    } catch (t: Throwable) {
+                        Log.w(OTHER_TAG, "Failed to release clipboard watch directory permission", t)
+                    }
+                }
+                viewModel.updateSyncClipboardWatchTreeUri("")
+            },
             onTestClipboardSync = {
                 testClipboardSync(context, prefs, coroutineScope, ::showOtherMessage)
             },
