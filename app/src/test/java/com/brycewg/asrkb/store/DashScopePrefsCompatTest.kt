@@ -48,6 +48,10 @@ class DashScopePrefsCompatTest {
             DashScopePrefsCompat.isRecognitionStreamingModel(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME)
         )
         assertEquals(true, DashScopePrefsCompat.isStreamingModel(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME))
+        assertEquals(
+            true,
+            DashScopePrefsCompat.isSemanticPunctuationSupported(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME)
+        )
         assertEquals(false, DashScopePrefsCompat.isPromptSupported(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH))
         assertEquals(true, DashScopePrefsCompat.isLanguageSupported(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH))
     }

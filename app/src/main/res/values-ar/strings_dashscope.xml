@@ -17,7 +17,7 @@
     <string name="dash_language_max_4">يمكن اختيار ما يصل إلى 4 لغات</string>
     <string name="label_dash_streaming">التعرّف بالبث</string>
     <string name="label_dash_fun_asr">استخدام نموذج Fun-ASR (fun-asr-realtime)</string>
-    <string name="label_dash_funasr_semantic_punct">استخدام التقسيم الدلالي (Fun-ASR)</string>
+    <string name="label_dash_semantic_punct">استخدام التقسيم الدلالي</string>
     <string name="dash_lang_auto">اكتشاف تلقائي</string>
     <string name="label_dash_region">منطقة الخادم</string>
     <string name="dash_region_cn">الصين القارية (aliyuncs.com)</string>
@@ -48,7 +48,7 @@
     <string name="feature_dash_fun_asr_off_desc">يستخدم Qwen-Audio-3.0-ASR-Flash-Streaming للبث (افتراضي).</string>
     <string name="feature_dash_fun_asr_on_desc">يستخدم Fun-ASR-Realtime للبث.</string>
 
-    <!-- DashScope - Fun-ASR Semantic Segmentation -->
-    <string name="feature_dash_funasr_semantic_punct_off_desc">يُقسَّم أساساً حسب التوقفات، وعادةً أسرع.</string>
-    <string name="feature_dash_funasr_semantic_punct_on_desc">يستخدم معنى الجملة لاختيار الفواصل. قد تبدو الترقيم أكثر طبيعية، لكن النتائج قد تتأخر.</string>
+    <!-- DashScope - Semantic Segmentation -->
+    <string name="feature_dash_semantic_punct_off_desc">يُقسَّم أساساً حسب التوقفات، وعادةً أسرع.</string>
+    <string name="feature_dash_semantic_punct_on_desc">يستخدم معنى الجملة لاختيار الفواصل. قد تبدو الترقيم أكثر طبيعية، لكن النتائج قد تتأخر.</string>
 </resources>

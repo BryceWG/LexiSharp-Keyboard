@@ -1022,10 +1022,10 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_DASH_FUNASR_ENABLED, false)
         set(value) = sp.edit { putBoolean(KEY_DASH_FUNASR_ENABLED, value) }
 
-    // DashScope: Fun-ASR 使用语义断句（开启时关闭 VAD 断句）
-    var dashFunAsrSemanticPunctEnabled: Boolean
-        get() = sp.getBoolean(KEY_DASH_FUNASR_SEMANTIC_PUNCT_ENABLED, true)
-        set(value) = sp.edit { putBoolean(KEY_DASH_FUNASR_SEMANTIC_PUNCT_ENABLED, value) }
+    // DashScope 流式 Recognition 模型使用语义断句（开启时关闭 VAD 断句）
+    var dashSemanticPunctEnabled: Boolean
+        get() = sp.getBoolean(KEY_DASH_SEMANTIC_PUNCT_ENABLED, true)
+        set(value) = sp.edit { putBoolean(KEY_DASH_SEMANTIC_PUNCT_ENABLED, value) }
 
     // ElevenLabs凭证
     var elevenApiKey: String by stringPref(KEY_ELEVEN_API_KEY, "")

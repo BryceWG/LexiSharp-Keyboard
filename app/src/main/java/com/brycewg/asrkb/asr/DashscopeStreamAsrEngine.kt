@@ -160,7 +160,7 @@ class DashscopeStreamAsrEngine(
             apiKey = prefs.dashApiKey,
             sampleRate = sampleRate,
             languages = prefs.getDashLanguages(),
-            semanticPunctuationEnabled = prefs.dashFunAsrSemanticPunctEnabled
+            semanticPunctuationEnabled = prefs.dashSemanticPunctEnabled
         )
         val rec = Recognition()
         recognizer = rec
@@ -535,7 +535,7 @@ internal fun buildDashRecognitionParam(
     if (languageHints.isNotEmpty()) {
         builder.parameter("language_hints", languageHints.toTypedArray())
     }
-    if (model.equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true)) {
+    if (DashScopePrefsCompat.isSemanticPunctuationSupported(model)) {
         builder.parameter("semantic_punctuation_enabled", semanticPunctuationEnabled)
     }
     return builder.build()

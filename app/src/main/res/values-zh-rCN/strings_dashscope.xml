@@ -17,7 +17,7 @@
     <string name="dash_language_max_4">最多选择 4 种语言</string>
     <string name="label_dash_streaming">流式识别</string>
     <string name="label_dash_fun_asr">使用 Fun-ASR 模型进行识别（fun-asr-realtime）</string>
-    <string name="label_dash_funasr_semantic_punct">使用语义断句（Fun-ASR）</string>
+    <string name="label_dash_semantic_punct">使用语义断句</string>
     <string name="dash_lang_auto">自动识别</string>
     <string name="label_dash_region">服务器地区</string>
     <string name="dash_region_cn">中国大陆（aliyuncs.com）</string>
@@ -49,7 +49,7 @@
     <string name="feature_dash_fun_asr_off_desc">流式识别使用 Qwen-Audio-3.0-ASR-Flash-Streaming（默认）。</string>
     <string name="feature_dash_fun_asr_on_desc">流式识别使用 Fun-ASR-Realtime。</string>
 
-    <!-- Fun-ASR 语义断句 -->
-    <string name="feature_dash_funasr_semantic_punct_off_desc">主要根据说话停顿断句，通常返回更快。</string>
-    <string name="feature_dash_funasr_semantic_punct_on_desc">结合语句含义判断断句，标点可能更自然，但返回可能稍慢。</string>
+    <!-- DashScope 语义断句 -->
+    <string name="feature_dash_semantic_punct_off_desc">主要根据说话停顿断句，通常返回更快。</string>
+    <string name="feature_dash_semantic_punct_on_desc">结合语句含义判断断句，标点可能更自然，但返回可能稍慢。</string>
 </resources>

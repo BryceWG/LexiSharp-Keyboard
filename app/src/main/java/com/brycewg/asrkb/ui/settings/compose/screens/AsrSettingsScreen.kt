@@ -59,6 +59,9 @@ private data class AsrLocalModelQueryResult(
     val checkStatusByKey: Map<String, String>
 )
 
+private const val LEGACY_DASH_SEMANTIC_PUNCT_EXPLAINED_KEY =
+    "dash_funasr_semantic_punct_explained"
+
 private class LocalModelRefreshHandle {
     var job: Job? = null
 }
@@ -499,14 +502,14 @@ fun AsrSettingsScreen(
     fun applyDashSemanticPunctSwitch(target: Boolean) {
         featureExplainerDialog = settingsFeatureExplainerDialogState(
             context = context,
-            titleRes = R.string.label_dash_funasr_semantic_punct,
-            offDescRes = R.string.feature_dash_funasr_semantic_punct_off_desc,
-            onDescRes = R.string.feature_dash_funasr_semantic_punct_on_desc,
+            titleRes = R.string.label_dash_semantic_punct,
+            offDescRes = R.string.feature_dash_semantic_punct_off_desc,
+            onDescRes = R.string.feature_dash_semantic_punct_on_desc,
             currentState = onlineFields.dashSemanticPunct,
-            preferenceKey = "dash_funasr_semantic_punct_explained",
+            preferenceKey = LEGACY_DASH_SEMANTIC_PUNCT_EXPLAINED_KEY,
             onConfirm = {
                 onlineFields.dashSemanticPunct = target
-                prefs.dashFunAsrSemanticPunctEnabled = target
+                prefs.dashSemanticPunctEnabled = target
             }
         )
     }

@@ -52,7 +52,7 @@ class DashscopeRequestBuildersTest {
 
         val hints = param.parameters["language_hints"] as Array<*>
         assertEquals(listOf("zh", "en", "ja", "de"), hints.toList())
-        assertFalse(param.parameters.containsKey("semantic_punctuation_enabled"))
+        assertEquals(true, param.parameters["semantic_punctuation_enabled"])
     }
 
     private fun wavAudio() = UploadAudioData(

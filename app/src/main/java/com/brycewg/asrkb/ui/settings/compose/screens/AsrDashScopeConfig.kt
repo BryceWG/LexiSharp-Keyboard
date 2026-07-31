@@ -102,8 +102,8 @@ internal fun DashScopeConfig(
     )
     if (semanticPunctVisible) {
         AsrSwitchPreference(
-            id = "dash_funasr_semantic_punct",
-            titleRes = R.string.label_dash_funasr_semantic_punct,
+            id = "dash_semantic_punct",
+            titleRes = R.string.label_dash_semantic_punct,
             checked = semanticPunct,
             index = itemIndex++,
             count = itemCount,
@@ -217,8 +217,8 @@ internal fun normalizeDashRegion(region: String): String = if (region.equals("in
     "cn"
 }
 
-internal fun isDashFunAsrRealtimeModel(model: String): Boolean = normalizeDashModel(model)
-    .equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true)
+internal fun isDashSemanticPunctuationSupported(model: String): Boolean =
+    DashScopePrefsCompat.isSemanticPunctuationSupported(model)
 
 internal fun isDashPromptSupported(model: String): Boolean =
     DashScopePrefsCompat.isPromptSupported(model)

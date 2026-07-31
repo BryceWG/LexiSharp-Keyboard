@@ -54,6 +54,9 @@ internal object DashScopePrefsCompat {
     fun isStreamingModel(model: String): Boolean =
         isRecognitionStreamingModel(model)
 
+    fun isSemanticPunctuationSupported(model: String): Boolean =
+        isRecognitionStreamingModel(model)
+
     fun isQwenAudioModel(model: String): Boolean = normalizeDashAsrModel(model).let {
         it.equals(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH, ignoreCase = true) ||
             it.equals(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME, ignoreCase = true)

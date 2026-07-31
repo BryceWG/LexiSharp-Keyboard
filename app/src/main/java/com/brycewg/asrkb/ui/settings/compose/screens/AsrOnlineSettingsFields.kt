@@ -26,7 +26,7 @@ internal class AsrOnlineSettingsFields(
     var dashPrompt by mutableStateOf(prefs.dashPrompt)
     var dashLanguage by mutableStateOf(prefs.dashLanguage)
     var dashRegion by mutableStateOf(normalizeDashRegion(prefs.dashRegion))
-    var dashSemanticPunct by mutableStateOf(prefs.dashFunAsrSemanticPunctEnabled)
+    var dashSemanticPunct by mutableStateOf(prefs.dashSemanticPunctEnabled)
     var sfFreeAsrEnabled by mutableStateOf(prefs.sfFreeAsrEnabled)
     var sfFreeAsrModel by mutableStateOf(displaySfFreeAsrModel(prefs))
     var sfApiKey by mutableStateOf(prefs.sfApiKey)
@@ -96,7 +96,7 @@ internal class AsrOnlineSettingsFields(
         dashPrompt = prefs.dashPrompt
         dashLanguage = prefs.dashLanguage
         dashRegion = normalizeDashRegion(prefs.dashRegion)
-        dashSemanticPunct = prefs.dashFunAsrSemanticPunctEnabled
+        dashSemanticPunct = prefs.dashSemanticPunctEnabled
         sfFreeAsrEnabled = prefs.sfFreeAsrEnabled
         sfFreeAsrModel = displaySfFreeAsrModel(prefs)
         sfApiKey = prefs.sfApiKey

@@ -17,7 +17,7 @@
     <string name="dash_language_max_4">Select up to 4 languages</string>
     <string name="label_dash_streaming">Streaming recognition</string>
     <string name="label_dash_fun_asr">Use Fun-ASR model (fun-asr-realtime)</string>
-    <string name="label_dash_funasr_semantic_punct">Use semantic segmentation (Fun-ASR)</string>
+    <string name="label_dash_semantic_punct">Use semantic segmentation</string>
     <string name="dash_lang_auto">Auto detect</string>
     <string name="label_dash_region">Server region</string>
     <string name="dash_region_cn">Mainland China (aliyuncs.com)</string>
@@ -48,7 +48,7 @@
     <string name="feature_dash_fun_asr_off_desc">Uses Qwen-Audio-3.0-ASR-Flash-Streaming for streaming (default).</string>
     <string name="feature_dash_fun_asr_on_desc">Uses Fun-ASR-Realtime for streaming.</string>
 
-    <!-- DashScope - Fun-ASR Semantic Segmentation -->
-    <string name="feature_dash_funasr_semantic_punct_off_desc">Segments mainly by pauses, which usually returns faster.</string>
-    <string name="feature_dash_funasr_semantic_punct_on_desc">Uses sentence meaning to choose breaks. Punctuation may feel more natural, but results may return more slowly.</string>
+    <!-- DashScope - Semantic Segmentation -->
+    <string name="feature_dash_semantic_punct_off_desc">Segments mainly by pauses, which usually returns faster.</string>
+    <string name="feature_dash_semantic_punct_on_desc">Uses sentence meaning to choose breaks. Punctuation may feel more natural, but results may return more slowly.</string>
 </resources>
