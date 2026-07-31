@@ -7,7 +7,6 @@
 
 package com.brycewg.asrkb.ui.settings.compose.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,7 +38,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
@@ -194,8 +192,11 @@ internal fun SettingsHomeSearchEntry(
             }
         }
 
+        // 使用 Card(onClick) 让按压遮罩画在内部 clip 之后，避免直角灰遮罩溢出圆角。
         BibiUiMode.Miuix -> MiuixCard(
-            modifier = layoutModifier.clickable(role = Role.Button, onClick = clickWithHaptic)
+            modifier = layoutModifier,
+            showIndication = true,
+            onClick = clickWithHaptic
         ) {
             HomeSearchEntryContent(
                 leadingIcon = {

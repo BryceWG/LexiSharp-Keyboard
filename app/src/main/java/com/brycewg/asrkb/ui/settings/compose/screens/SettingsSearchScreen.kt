@@ -196,10 +196,11 @@ private fun SearchResultItem(
             SearchResultText(entry.title, subtitle, uiMode)
         }
 
+        // 使用 Card(onClick) 让按压遮罩画在内部 clip 之后，避免直角灰遮罩溢出圆角。
         BibiUiMode.Miuix -> MiuixCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = clickWithHaptic)
+            modifier = Modifier.fillMaxWidth(),
+            showIndication = true,
+            onClick = clickWithHaptic
         ) {
             SearchResultText(entry.title, subtitle, uiMode)
         }
