@@ -531,7 +531,7 @@ fun AsrSettingsScreen(
             preferenceKey = "tencent_vad_explained",
             onConfirm = {
                 onlineFields.tencentVadEnabled = target
-                prefs.tencentVadEnabled = target
+                viewModel.updateTencentVadEnabled(target)
             }
         )
     }

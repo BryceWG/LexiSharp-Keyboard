@@ -132,7 +132,8 @@ class AsrSettingsViewModel : ViewModel() {
             xAsrPreloadEnabled = prefs.xAsrPreloadEnabled,
             xAsrUseItn = prefs.xAsrUseItn,
             // Tencent settings
-            tencentStreamingEnabled = prefs.tencentStreamingEnabled
+            tencentStreamingEnabled = prefs.tencentStreamingEnabled,
+            tencentVadEnabled = prefs.tencentVadEnabled
         )
     }
 
@@ -384,6 +385,11 @@ class AsrSettingsViewModel : ViewModel() {
     fun updateTencentStreaming(enabled: Boolean) {
         prefs.tencentStreamingEnabled = enabled
         _uiState.value = _uiState.value.copy(tencentStreamingEnabled = enabled)
+    }
+
+    fun updateTencentVadEnabled(enabled: Boolean) {
+        prefs.tencentVadEnabled = enabled
+        _uiState.value = _uiState.value.copy(tencentVadEnabled = enabled)
     }
 
     fun updateSonioxLanguages(languages: List<String>) {
@@ -1011,7 +1017,8 @@ data class AsrSettingsUiState(
     val xAsrPreloadEnabled: Boolean = true,
     val xAsrUseItn: Boolean = false,
     // Tencent settings
-    val tencentStreamingEnabled: Boolean = false
+    val tencentStreamingEnabled: Boolean = false,
+    val tencentVadEnabled: Boolean = false
 ) {
     // Computed visibility properties based on selected vendor
     val isVolcVisible: Boolean get() = selectedVendor == AsrVendor.Volc
