@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,31 +56,13 @@ internal fun SettingsAssistChip(
         }
     }
     when (uiMode) {
-        BibiUiMode.Material -> {
-            if (clickWithHaptic != null) {
-                AssistChip(
-                    onClick = clickWithHaptic,
-                    label = { SettingsChipMaterialText(label) },
-                    modifier = modifier,
-                    leadingIcon = icon?.let {
-                        {
-                            Icon(
-                                imageVector = it,
-                                contentDescription = null,
-                                modifier = Modifier.size(SettingsChipIconSize)
-                            )
-                        }
-                    },
-                    shape = SettingsChipShape
-                )
-            } else {
-                SettingsMaterialStaticChip(
-                    label = label,
-                    modifier = modifier,
-                    icon = icon
-                )
-            }
-        }
+        // 使用自定义密度芯片，避免 Material AssistChip 的 48dp 最小触摸目标把历史卡片顶栏撑高。
+        BibiUiMode.Material -> SettingsMaterialStaticChip(
+            label = label,
+            modifier = modifier,
+            icon = icon,
+            onClick = clickWithHaptic
+        )
 
         BibiUiMode.Miuix -> SettingsMiuixChip(
             label = label,
@@ -127,8 +108,14 @@ internal fun SettingsFilterChip(
 private fun SettingsMaterialStaticChip(
     label: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
+    onClick: (() -> Unit)? = null
 ) {
+    val clickableModifier = if (onClick != null) {
+        Modifier.clickable(onClick = onClick)
+    } else {
+        Modifier
+    }
     Row(
         modifier = modifier
             .heightIn(min = SettingsChipMinHeight)
@@ -139,6 +126,7 @@ private fun SettingsMaterialStaticChip(
                 color = MaterialTheme.colorScheme.outlineVariant,
                 shape = SettingsChipShape
             )
+            .then(clickableModifier)
             .padding(
                 horizontal = SettingsChipHorizontalPadding,
                 vertical = SettingsChipVerticalPadding

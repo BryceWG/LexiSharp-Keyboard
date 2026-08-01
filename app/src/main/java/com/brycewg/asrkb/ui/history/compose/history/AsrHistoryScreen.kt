@@ -532,6 +532,7 @@ private fun HistoryItemCard(
                         }
                     ),
                 cornerRadius = cornerRadius,
+                insideMargin = PaddingValues(0.dp),
                 onClick = onClick,
                 onLongPress = onLongClick,
                 showIndication = true
@@ -554,8 +555,10 @@ private fun HistoryItemContent(
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", LocaleHelper.locale(context))
     }
     val timestamp = remember(record.timestamp) { formatter.format(Date(record.timestamp)) }
+    // 卡片内边距由内容区统一承担；MiuixCard 默认 insideMargin 会与这里叠加，造成顶部空洞。
+    val contentPadding = PaddingValues(start = 14.dp, top = 12.dp, end = 14.dp, bottom = 14.dp)
     Column(
-        modifier = Modifier.padding(14.dp),
+        modifier = Modifier.padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 复制按钮只与时间戳同行，避免与正文并排时在右侧占满一列高度。
@@ -567,7 +570,7 @@ private fun HistoryItemContent(
             HistoryText(
                 text = timestamp,
                 uiMode = uiMode,
-                compact = true,
+                timestamp = true,
                 modifier = Modifier.weight(1f)
             )
             SettingsAssistChip(
@@ -580,6 +583,7 @@ private fun HistoryItemContent(
         HistoryText(
             text = record.text,
             uiMode = uiMode,
+            emphasized = true,
             maxLines = 4
         )
         HistoryText(
@@ -833,21 +837,29 @@ private fun HistoryText(
     uiMode: BibiUiMode,
     modifier: Modifier = Modifier,
     header: Boolean = false,
+    timestamp: Boolean = false,
     compact: Boolean = false,
     secondary: Boolean = false,
+    emphasized: Boolean = false,
     maxLines: Int = 2,
     overflow: TextOverflow = TextOverflow.Ellipsis
 ) {
+    val fontWeight = when {
+        header || emphasized -> FontWeight.SemiBold
+        else -> FontWeight.Normal
+    }
     when (uiMode) {
         BibiUiMode.Material -> Text(
             text = text,
             modifier = modifier,
+            // Material 默认正文字号偏小；时间戳与正文分别上调，贴近 Miuix 视觉权重。
             style = when {
                 header -> MaterialTheme.typography.titleSmall
+                timestamp -> MaterialTheme.typography.bodyMedium
                 compact -> MaterialTheme.typography.bodySmall
-                else -> MaterialTheme.typography.bodyMedium
+                else -> MaterialTheme.typography.bodyLarge
             },
-            fontWeight = if (header) FontWeight.SemiBold else FontWeight.Normal,
+            fontWeight = fontWeight,
             color = if (secondary) {
                 MaterialTheme.colorScheme.onSurfaceVariant
             } else {
@@ -862,10 +874,11 @@ private fun HistoryText(
             modifier = modifier,
             style = when {
                 header -> MiuixTheme.textStyles.body2
+                timestamp -> MiuixTheme.textStyles.body2
                 compact -> MiuixTheme.textStyles.footnote1
                 else -> MiuixTheme.textStyles.body1
             },
-            fontWeight = if (header) FontWeight.SemiBold else FontWeight.Normal,
+            fontWeight = fontWeight,
             color = if (secondary) {
                 MiuixTheme.colorScheme.onSurfaceVariantSummary
             } else {
