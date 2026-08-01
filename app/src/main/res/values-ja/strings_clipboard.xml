@@ -34,7 +34,10 @@
     <string name="btn_sc_clear_watch_tree">フォルダーを解除</string>
     <string name="sc_watch_tree_download_directory_not_allowed">Download/BiBi は同期ファイル用です。別のフォルダーを選択してください。</string>
     <string name="sc_attachment_notification_channel">クリップボード添付ファイルの同期</string>
+    <string name="sc_attachment_notification_uploading">添付ファイルをアップロード中</string>
+    <string name="sc_attachment_notification_downloading">添付ファイルをダウンロード中</string>
     <string name="sc_attachment_notification_uploaded">添付ファイルをアップロードしました</string>
+    <string name="sc_attachment_notification_upload_failed">添付ファイルのアップロードに失敗しました</string>
     <string name="sc_attachment_notification_downloaded">添付ファイルをダウンロードしました</string>
     <string name="sc_attachment_notification_download_failed">添付ファイルのダウンロードに失敗しました</string>
     <string name="btn_sc_test_pull">検証</string>

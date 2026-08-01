@@ -434,7 +434,15 @@ class SyncClipboardManager(
             Log.e(TAG, "Failed to hash clipboard attachment", t)
             null
         }?.let { syncClipboardAttachmentHash(dataName, it) } ?: return false
-        val body = UriRequestBody(context, attachment.uri, attachment.mimeType, attachment.sizeBytes)
+        val body = UriRequestBody(
+            context = context,
+            uri = attachment.uri,
+            mimeType = attachment.mimeType,
+            sizeBytes = attachment.sizeBytes,
+            onProgress = { copied ->
+                attachmentNotifier.showUploadProgress(attachment.displayName, copied, attachment.sizeBytes)
+            }
+        )
         val fileUrl = buildFileUrl(dataName) ?: return false
         val fileUploaded = try {
             httpClient.newCall(
@@ -448,8 +456,14 @@ class SyncClipboardManager(
             Log.e(TAG, "Failed to upload clipboard attachment data", t)
             false
         }
-        if (!fileUploaded) return false
-        if (!prefs.syncClipboardEnabled || !attachmentPolicy.allows(attachment.kind, attachment.sizeBytes)) return false
+        if (!fileUploaded) {
+            attachmentNotifier.showUploadFailed(attachment.displayName)
+            return false
+        }
+        if (!prefs.syncClipboardEnabled || !attachmentPolicy.allows(attachment.kind, attachment.sizeBytes)) {
+            attachmentNotifier.showUploadFailed(attachment.displayName)
+            return false
+        }
         val payload = UploadClipboardPayload(
             hasData = true,
             text = attachment.displayName,
@@ -480,6 +494,7 @@ class SyncClipboardManager(
             attachmentNotifier.showUploaded(attachment.displayName)
         } else {
             attachmentOrigins.clear(hash)
+            attachmentNotifier.showUploadFailed(attachment.displayName)
         }
         return profilePublished
     }
@@ -951,6 +966,7 @@ class SyncClipboardManager(
                 !attachmentPolicy.allows(attachmentKind, serverSize)
             ) {
                 if (downloaded && !hadLocalFile) fileManager.deleteFile(fileName)
+                attachmentNotifier.clearDownloadProgress()
                 return@run HandledPullPayload(fileName, clipboardApplied = false)
             }
             val downloadStatus = if (downloaded && localPath != null) {
@@ -1027,10 +1043,12 @@ class SyncClipboardManager(
 
         if (ok && localPath != null) {
             store.updateFileEntry(entryId, localPath, DownloadStatus.COMPLETED)
+            attachmentNotifier.showDownloaded(serverFileName)
             return true
         }
 
         store.updateFileEntry(entryId, null, DownloadStatus.FAILED)
+        attachmentNotifier.showDownloadFailed(serverFileName)
         return false
     }
 
@@ -1123,30 +1141,38 @@ class SyncClipboardManager(
                     Log.w(TAG, "Downloaded attachment exceeds configured size limit: $serverFileName")
                     return false to null
                 }
+                attachmentNotifier.showDownloadProgress(serverFileName, 0L, totalBytes)
                 val digest = MessageDigest.getInstance("SHA-256")
                 val localPath = fileManager.saveFile(
                     serverFileName,
                     DigestInputStream(body.byteStream(), digest),
                     totalBytes,
                     maxBytes,
-                    progressCallback
+                    { copied, total ->
+                        attachmentNotifier.showDownloadProgress(serverFileName, copied, total)
+                        progressCallback?.invoke(copied, total)
+                    }
                 )
 
                 if (localPath != null) {
                     val actualHash = syncClipboardAttachmentHash(serverFileName, sha256Hex(digest.digest()))
                     if (!expectedHash.isNullOrBlank() && !actualHash.equals(expectedHash, ignoreCase = true)) {
                         fileManager.deleteFile(serverFileName)
+                        attachmentNotifier.clearDownloadProgress()
                         Log.w(TAG, "Downloaded attachment hash mismatch: $serverFileName")
                         return false to null
                     }
                     Log.d(TAG, "File downloaded successfully: $serverFileName -> $localPath")
+                    attachmentNotifier.clearDownloadProgress()
                     true to localPath
                 } else {
+                    attachmentNotifier.clearDownloadProgress()
                     Log.w(TAG, "Failed to save downloaded file: $serverFileName")
                     false to null
                 }
             }
         } catch (e: Exception) {
+            attachmentNotifier.clearDownloadProgress()
             Log.e(TAG, "Download error: $serverFileName", e)
             false to null
         }
@@ -1202,7 +1228,8 @@ class SyncClipboardManager(
         private val context: Context,
         private val uri: Uri,
         private val mimeType: String,
-        private val sizeBytes: Long
+        private val sizeBytes: Long,
+        private val onProgress: (Long) -> Unit
     ) : RequestBody() {
         override fun contentType() = mimeType.toMediaType()
 
@@ -1211,7 +1238,17 @@ class SyncClipboardManager(
         override fun writeTo(sink: BufferedSink) {
             val input = context.contentResolver.openInputStream(uri)
                 ?: throw IllegalStateException("Unable to open clipboard attachment")
-            input.use { it.source().use(sink::writeAll) }
+            input.use {
+                val buffer = ByteArray(8192)
+                var copied = 0L
+                while (true) {
+                    val read = it.read(buffer)
+                    if (read < 0) break
+                    sink.write(buffer, 0, read)
+                    copied += read
+                    onProgress(copied)
+                }
+            }
         }
     }
 

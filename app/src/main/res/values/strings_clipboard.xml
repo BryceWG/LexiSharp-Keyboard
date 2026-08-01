@@ -33,7 +33,10 @@
     <string name="btn_sc_clear_watch_tree">Clear folder</string>
     <string name="sc_watch_tree_download_directory_not_allowed">Download/BiBi is reserved for synced files. Choose another folder.</string>
     <string name="sc_attachment_notification_channel">Clipboard attachment sync</string>
+    <string name="sc_attachment_notification_uploading">Uploading attachment</string>
+    <string name="sc_attachment_notification_downloading">Downloading attachment</string>
     <string name="sc_attachment_notification_uploaded">Attachment uploaded</string>
+    <string name="sc_attachment_notification_upload_failed">Attachment upload failed</string>
     <string name="sc_attachment_notification_downloaded">Attachment downloaded</string>
     <string name="sc_attachment_notification_download_failed">Attachment download failed</string>
     <string name="btn_sc_test_pull">Validate</string>

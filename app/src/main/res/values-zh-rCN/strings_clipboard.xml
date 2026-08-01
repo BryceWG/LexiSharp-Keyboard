@@ -33,7 +33,10 @@
     <string name="btn_sc_clear_watch_tree">清除监听位置</string>
     <string name="sc_watch_tree_download_directory_not_allowed">Download/BiBi 用于保存同步文件，请选择其他监听位置。</string>
     <string name="sc_attachment_notification_channel">剪贴板附件同步</string>
+    <string name="sc_attachment_notification_uploading">正在上传附件</string>
+    <string name="sc_attachment_notification_downloading">正在下载附件</string>
     <string name="sc_attachment_notification_uploaded">附件已上传</string>
+    <string name="sc_attachment_notification_upload_failed">附件上传失败</string>
     <string name="sc_attachment_notification_downloaded">附件已下载</string>
     <string name="sc_attachment_notification_download_failed">附件下载失败</string>
     <string name="btn_sc_test_pull">立即验证</string>
