@@ -16,6 +16,11 @@ object LocaleHelper {
         return newBase.createConfigurationContext(config)
     }
 
+    fun locale(context: Context): Locale {
+        val locales = wrap(context).resources.configuration.locales
+        return if (locales.isEmpty) Locale.getDefault() else locales[0]
+    }
+
     private fun applyLocales(config: Configuration, locales: LocaleListCompat) {
         if (locales.isEmpty) return
         val tags = locales.toLanguageTags()
@@ -23,7 +28,5 @@ object LocaleHelper {
         val localeList = LocaleList.forLanguageTags(tags)
         if (localeList.isEmpty) return
         config.setLocales(localeList)
-        LocaleList.setDefault(localeList)
-        Locale.setDefault(localeList[0])
     }
 }

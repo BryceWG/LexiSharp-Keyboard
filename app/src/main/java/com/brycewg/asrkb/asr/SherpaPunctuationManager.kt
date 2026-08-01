@@ -3,6 +3,7 @@ package com.brycewg.asrkb.asr
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -148,9 +149,10 @@ class SherpaPunctuationManager private constructor() {
             if (hasWarnedMissingModel) return
             hasWarnedMissingModel = true
             try {
+                val localizedContext = LocaleHelper.wrap(context)
                 Toast.makeText(
-                    context.applicationContext,
-                    context.getString(R.string.toast_punct_model_missing),
+                    localizedContext,
+                    localizedContext.getString(R.string.toast_punct_model_missing),
                     Toast.LENGTH_SHORT
                 ).show()
             } catch (t: Throwable) {

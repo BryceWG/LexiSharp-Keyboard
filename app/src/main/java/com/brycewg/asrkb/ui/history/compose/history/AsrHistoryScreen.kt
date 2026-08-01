@@ -58,12 +58,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsAlertDialog
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogAction
@@ -81,7 +83,6 @@ import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -548,7 +549,10 @@ private fun HistoryItemContent(
     vendorOptions: List<HistoryVendorOption>,
     onCopy: (String) -> Unit
 ) {
-    val formatter = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
+    val context = LocalContext.current
+    val formatter = remember(context) {
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", LocaleHelper.locale(context))
+    }
     val timestamp = remember(record.timestamp) { formatter.format(Date(record.timestamp)) }
     Column(
         modifier = Modifier.padding(14.dp),

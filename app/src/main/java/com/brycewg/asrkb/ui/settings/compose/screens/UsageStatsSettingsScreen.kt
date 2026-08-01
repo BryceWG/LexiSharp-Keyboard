@@ -52,7 +52,7 @@ fun UsageStatsSettingsScreen(
 
     LaunchedEffect(appContext, prefs) {
         usageInfo = withContext(Dispatchers.IO) {
-            buildUsageInfo(appContext, prefs)
+            buildUsageInfo(context, prefs)
         }
     }
 
@@ -63,8 +63,8 @@ fun UsageStatsSettingsScreen(
         scope.launch {
             try {
                 val bitmap = withContext(Dispatchers.Default) {
-                    val payload = buildUsageStatsSharePayload(appContext, prefs)
-                    UsageStatsShareCardRenderer.render(appContext, payload)
+                    val payload = buildUsageStatsSharePayload(context, prefs)
+                    UsageStatsShareCardRenderer.render(context, payload)
                 }
                 shareBitmap = bitmap
             } catch (t: Throwable) {

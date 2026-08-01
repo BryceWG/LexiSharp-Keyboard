@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.store.ApiLogStore
 import com.brycewg.asrkb.store.Prefs
@@ -21,7 +22,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
-import java.util.Locale
 
 internal data class AboutInfo(
     val appName: String,
@@ -91,7 +91,7 @@ internal fun buildUsageInfo(context: Context, prefs: Prefs): AboutUsageInfo {
         context.getString(R.string.about_empty_stats_placeholder)
     }
     val avgCharsFormatted = if (hasSessionAverages) {
-        formatInt(totalChars / sessions)
+        formatInt(context, totalChars / sessions)
     } else {
         context.getString(R.string.about_empty_stats_placeholder)
     }
@@ -103,7 +103,7 @@ internal fun buildUsageInfo(context: Context, prefs: Prefs): AboutUsageInfo {
         }
         context.getString(
             R.string.about_stats_avg_speed_value,
-            String.format(Locale.getDefault(), "%.1f", avgSpeed)
+            String.format(LocaleHelper.locale(context), "%.1f", avgSpeed)
         )
     } else {
         context.getString(R.string.about_empty_stats_placeholder)
@@ -114,19 +114,19 @@ internal fun buildUsageInfo(context: Context, prefs: Prefs): AboutUsageInfo {
     return AboutUsageInfo(
         daysWithYou = prefs.getDaysSinceFirstUse(),
         totalAudioFormatted = context.formatDurationMs(totalAudioMs),
-        totalCharsFormatted = formatInt(totalChars),
-        totalSessionsFormatted = formatInt(sessions),
+        totalCharsFormatted = formatInt(context, totalChars),
+        totalSessionsFormatted = formatInt(context, sessions),
         avgAudioFormatted = avgAudioFormatted,
         avgCharsFormatted = avgCharsFormatted,
         avgSpeedFormatted = avgSpeedFormatted,
         dailyAvg7dFormatted = context.getString(
             R.string.about_stats_chars_with_audio,
-            formatInt(daily7.second / 7),
+            formatInt(context, daily7.second / 7),
             context.formatDurationMs(daily7.first / 7)
         ),
         weeklyAvg4wFormatted = context.getString(
             R.string.about_stats_chars_with_audio,
-            formatInt(daily28.second / 4),
+            formatInt(context, daily28.second / 4),
             context.formatDurationMs(daily28.first / 4)
         ),
         vendorItems = buildVendorProgressItems(context, stats),
@@ -138,7 +138,11 @@ internal fun buildUsageInfo(context: Context, prefs: Prefs): AboutUsageInfo {
 internal fun buildLatestExitInfo(context: Context): String? {
     val info = DebugLogManager.getLatestExitInfo(context) ?: return null
     val formattedTime = try {
-        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(info.timestamp))
+        DateFormat.getDateTimeInstance(
+            DateFormat.MEDIUM,
+            DateFormat.SHORT,
+            LocaleHelper.locale(context)
+        ).format(Date(info.timestamp))
     } catch (_: Throwable) {
         info.timestamp.toString()
     }
@@ -157,7 +161,7 @@ private fun buildVendorProgressItems(context: Context, stats: UsageStats): List<
     return vendorPairs.map { (id, agg) ->
         val name = AsrVendorUi.name(context, AsrVendor.fromId(id))
         val value = buildString {
-            append(formatInt(agg.chars)).append(" ").append(context.getString(R.string.unit_chars))
+            append(formatInt(context, agg.chars)).append(" ").append(context.getString(R.string.unit_chars))
             append(" · ")
             append(context.formatDurationMs(agg.audioMs))
             if (agg.procMs > 0) {
@@ -198,11 +202,11 @@ private fun buildFailureProgressItems(context: Context): List<AboutProgressItem>
         val failed = list.count { !it.success }
         val rate = if (total > 0) failed.toDouble() / total.toDouble() else 0.0
         val value = buildString {
-            append(String.format(Locale.getDefault(), "%.1f%%", rate * 100.0))
+            append(String.format(LocaleHelper.locale(context), "%.1f%%", rate * 100.0))
             append(" (")
-            append(formatInt(failed.toLong()))
+            append(formatInt(context, failed.toLong()))
             append("/")
-            append(formatInt(total.toLong()))
+            append(formatInt(context, total.toLong()))
             append(")")
         }
         AboutProgressItem(
@@ -223,7 +227,7 @@ private fun buildDailyProgressItems(
     days: Int
 ): List<AboutProgressItem> {
     val fmt = DateTimeFormatter.BASIC_ISO_DATE
-    val labelFmt = DateTimeFormatter.ofPattern("MM-dd")
+    val labelFmt = DateTimeFormatter.ofPattern("MM-dd", LocaleHelper.locale(context))
     val values = ArrayList<Pair<String, Long>>()
     var d = LocalDate.now()
     repeat(days) {
@@ -236,7 +240,7 @@ private fun buildDailyProgressItems(
     return values.map { (label, value) ->
         AboutProgressItem(
             title = label,
-            value = "${formatInt(value)} ${context.getString(R.string.unit_chars)}",
+            value = "${formatInt(context, value)} ${context.getString(R.string.unit_chars)}",
             ratio = value.toDouble() / max.toDouble()
         )
     }
@@ -286,4 +290,5 @@ private fun Context.formatDurationMs(ms: Long): String {
     }
 }
 
-private fun formatInt(v: Long): String = NumberFormat.getIntegerInstance().format(v)
+private fun formatInt(context: Context, v: Long): String =
+    NumberFormat.getIntegerInstance(LocaleHelper.locale(context)).format(v)

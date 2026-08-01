@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.asr.AsrEngineConstructionSource
 import com.brycewg.asrkb.asr.AsrEngineInvocationMode
 import com.brycewg.asrkb.asr.AsrParallelEngineFactory
@@ -94,6 +95,7 @@ internal class RecordingTestViewModel(
     private val appContext: Context,
     private val prefs: Prefs
 ) : ViewModel() {
+    private val localizedContext get() = LocaleHelper.wrap(appContext)
     private val parallelEngineFactory = AsrParallelEngineFactory()
     private val pushPcmEngineFactory = AsrPushPcmEngineFactory()
 
@@ -173,7 +175,7 @@ internal class RecordingTestViewModel(
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to play recording test audio", t)
             stopPlayback()
-            _uiState.update { it.copy(statusMessage = appContext.getString(R.string.recording_test_error_playback, t.message.orEmpty())) }
+            _uiState.update { it.copy(statusMessage = localizedContext.getString(R.string.recording_test_error_playback, t.message.orEmpty())) }
         }
     }
 
@@ -188,7 +190,7 @@ internal class RecordingTestViewModel(
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     AsrFinalFilters.applyWithAi(
-                        context = appContext,
+                        context = localizedContext,
                         prefs = prefs,
                         input = input,
                         postProcessor = LlmPostProcessor(),
@@ -220,7 +222,7 @@ internal class RecordingTestViewModel(
                         isAiProcessing = false,
                         aiLatencyMs = elapsed,
                         totalLatencyMs = sumLatencies(it.recordLatencyMs, it.asrLatencyMs, elapsed),
-                        statusMessage = appContext.getString(R.string.recording_test_error_ai, t.message.orEmpty())
+                        statusMessage = localizedContext.getString(R.string.recording_test_error_ai, t.message.orEmpty())
                     )
                 }
             }
@@ -310,7 +312,7 @@ internal class RecordingTestViewModel(
         if (engine == null || pcmConsumer == null) {
             _uiState.update {
                 it.copy(
-                    statusMessage = appContext.getString(R.string.recording_test_error_vendor_unavailable),
+                    statusMessage = localizedContext.getString(R.string.recording_test_error_vendor_unavailable),
                     currentAsrVendor = prefs.asrVendor,
                     backupAsrVendor = configuredBackupVendorOrNull(),
                     backupAsrStrategy = configuredBackupStrategyOrNull(),
@@ -357,7 +359,7 @@ internal class RecordingTestViewModel(
             _uiState.update {
                 it.copy(
                     isRecording = false,
-                    statusMessage = appContext.getString(R.string.recording_test_error_transcribe, t.message.orEmpty())
+                    statusMessage = localizedContext.getString(R.string.recording_test_error_transcribe, t.message.orEmpty())
                 )
             }
             return
@@ -373,7 +375,7 @@ internal class RecordingTestViewModel(
         }
         try {
             BluetoothRouteManager.onRecordingStarted(appContext)
-            preloadLocalAsrForImmediateUse(appContext, prefs)
+            preloadLocalAsrForImmediateUse(localizedContext, prefs)
         } catch (t: Throwable) {
             Log.w(TAG, "Recording test preparation failed", t)
         }
@@ -418,7 +420,7 @@ internal class RecordingTestViewModel(
                         it.copy(
                             isRecording = false,
                             isTranscribing = false,
-                            statusMessage = appContext.getString(R.string.recording_test_error_record, t.message.orEmpty())
+                            statusMessage = localizedContext.getString(R.string.recording_test_error_record, t.message.orEmpty())
                         )
                     }
                 }
@@ -454,28 +456,28 @@ internal class RecordingTestViewModel(
                 it.copy(
                     isRecording = false,
                     hasAudio = false,
-                    statusMessage = appContext.getString(R.string.recording_test_error_empty_audio)
+                    statusMessage = localizedContext.getString(R.string.recording_test_error_empty_audio)
                 )
             }
             return
         }
         val finalized = withContext(Dispatchers.IO) {
             val silenceAnalysis = RecordedAudioVoiceFilter.analyzeSilence(
-                context = appContext,
+                context = localizedContext,
                 prefs = prefs,
                 pcm = source,
                 sampleRate = RECORDING_TEST_SAMPLE_RATE,
                 chunkMillis = RECORDING_TEST_CHUNK_MS
             )
             val filtered = RecordedAudioVoiceFilter.processIfEnabled(
-                context = appContext,
+                context = localizedContext,
                 prefs = prefs,
                 pcm = source,
                 sampleRate = RECORDING_TEST_SAMPLE_RATE,
                 chunkMillis = RECORDING_TEST_CHUNK_MS
             )
             OfflineSpeechDenoiserManager.denoiseIfEnabled(
-                context = appContext,
+                context = localizedContext,
                 prefs = prefs,
                 pcm = if (filtered.droppedAsEmptyAudio) source else filtered.pcm,
                 sampleRate = RECORDING_TEST_SAMPLE_RATE
@@ -541,7 +543,7 @@ internal class RecordingTestViewModel(
                 it.copy(
                     isRecording = false,
                     isTranscribing = false,
-                    statusMessage = appContext.getString(R.string.recording_test_error_transcribe, message)
+                    statusMessage = localizedContext.getString(R.string.recording_test_error_transcribe, message)
                 )
             }
         }
@@ -576,7 +578,7 @@ internal class RecordingTestViewModel(
             _uiState.update {
                 it.copy(
                     isTranscribing = false,
-                    statusMessage = appContext.getString(R.string.recording_test_error_transcribe, t.message.orEmpty())
+                    statusMessage = localizedContext.getString(R.string.recording_test_error_transcribe, t.message.orEmpty())
                 )
             }
             return
@@ -590,7 +592,7 @@ internal class RecordingTestViewModel(
             _uiState.update {
                 it.copy(
                     isTranscribing = false,
-                    statusMessage = appContext.getString(R.string.recording_test_error_transcribe_timeout)
+                    statusMessage = localizedContext.getString(R.string.recording_test_error_transcribe_timeout)
                 )
             }
         }
@@ -621,7 +623,7 @@ internal class RecordingTestViewModel(
         val primaryVendor = prefs.asrVendor
         val backupVendor = prefs.backupAsrVendor
         parallelEngineFactory.createOrNull(
-            context = appContext,
+            context = localizedContext,
             scope = viewModelScope,
             prefs = prefs,
             listener = listener,
@@ -632,7 +634,7 @@ internal class RecordingTestViewModel(
 
         if (!isAsrVendorConfigured(appContext, prefs, primaryVendor)) return null
         return pushPcmEngineFactory.create(
-            context = appContext,
+            context = localizedContext,
             scope = viewModelScope,
             prefs = prefs,
             listener = listener,
@@ -654,7 +656,7 @@ internal class RecordingTestViewModel(
     }
 
     private fun configuredBackupPlanOrNull() = parallelEngineFactory.resolvePlan(
-        context = appContext,
+        context = localizedContext,
         prefs = prefs,
         primaryVendor = prefs.asrVendor,
         backupVendor = prefs.backupAsrVendor,

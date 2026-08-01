@@ -89,7 +89,7 @@ fun SettingsHomeScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val prefs = remember(appContext) { Prefs(appContext) }
     var homeSnapshot by remember(appContext) {
-        mutableStateOf(SettingsHomeSnapshot.placeholder(appContext))
+        mutableStateOf(SettingsHomeSnapshot.placeholder(context))
     }
     var hasRecentApiErrors by remember { mutableStateOf(false) }
     var refreshToken by remember { mutableStateOf(0) }
@@ -124,7 +124,7 @@ fun SettingsHomeScreen(
     LaunchedEffect(refreshToken) {
         val loaded = withContext(Dispatchers.IO) {
             SettingsHomeLoadedState(
-                snapshot = SettingsHomeSnapshot.fromPrefs(appContext, prefs),
+                snapshot = SettingsHomeSnapshot.fromPrefs(context, prefs),
                 hasRecentApiErrors = hasRecentApiLogErrors()
             )
         }

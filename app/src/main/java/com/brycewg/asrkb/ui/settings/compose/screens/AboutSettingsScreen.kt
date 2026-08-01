@@ -48,8 +48,8 @@ fun AboutSettingsScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val appContext = context.applicationContext
     val prefs = remember(appContext) { Prefs(appContext) }
-    val aboutInfo = remember(appContext) { buildAboutInfo(appContext) }
-    val latestExitInfo = remember(appContext) { buildLatestExitInfo(appContext) }
+    val aboutInfo = remember(appContext) { buildAboutInfo(context) }
+    val latestExitInfo = remember(appContext) { buildLatestExitInfo(context) }
     var autoUpdateCheck by remember { mutableStateOf(prefs.autoUpdateCheckEnabled) }
     var debugRecording by remember { mutableStateOf(DebugLogManager.isRecording()) }
     var licensesDialog by remember { mutableStateOf<SettingsLongTextDialogState?>(null) }

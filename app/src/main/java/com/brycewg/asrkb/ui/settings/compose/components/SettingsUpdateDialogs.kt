@@ -26,12 +26,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.ui.DownloadSourceOption
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import com.brycewg.asrkb.ui.update.UpdateChecker
 import java.text.SimpleDateFormat
-import java.util.Locale
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -316,7 +316,7 @@ private fun UpdateMessageContent(
         }
         result.updateTime?.let { updateTime ->
             UpdateText(
-                text = stringResource(R.string.update_timestamp_label, formatUpdateTime(updateTime)),
+                text = stringResource(R.string.update_timestamp_label, formatUpdateTime(context, updateTime)),
                 uiMode = uiMode
             )
         }
@@ -366,12 +366,13 @@ private fun UpdateText(
     }
 }
 
-private fun formatUpdateTime(updateTime: String): String = try {
-    val utcFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+private fun formatUpdateTime(context: android.content.Context, updateTime: String): String = try {
+    val locale = LocaleHelper.locale(context)
+    val utcFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", locale)
     utcFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
     val date = utcFormat.parse(updateTime)
 
-    val localFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+    val localFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", locale)
     if (date != null) localFormat.format(date) else updateTime
 } catch (_: Exception) {
     updateTime

@@ -368,7 +368,7 @@ private fun ApiLogCardContent(
                 maxLines = 2
             )
             ApiLogText(
-                text = apiLogTime(record),
+                text = apiLogTime(context, record),
                 uiMode = uiMode,
                 secondary = true,
                 maxLines = 1

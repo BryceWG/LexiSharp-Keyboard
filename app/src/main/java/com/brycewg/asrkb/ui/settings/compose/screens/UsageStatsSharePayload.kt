@@ -11,6 +11,7 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 import android.content.Context
 import android.util.Log
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.UsageStats
@@ -20,7 +21,6 @@ import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Date
-import java.util.Locale
 import kotlin.math.roundToLong
 
 internal data class UsageStatsShareMetric(
@@ -76,10 +76,10 @@ internal fun buildUsageStatsSharePayload(context: Context, prefs: Prefs): UsageS
     val totalAudioMs = stats.totalAudioMs.coerceAtLeast(0)
     val daysWithYou = prefs.getDaysSinceFirstUse().coerceAtLeast(1)
 
-    val dailyBars = buildShareDailyBars(stats, days = 7)
+    val dailyBars = buildShareDailyBars(context, stats, days = 7)
     val topVendors = buildShareTopVendors(context, stats, limit = 3)
     val generatedAt = try {
-        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date())
+        DateFormat.getDateInstance(DateFormat.MEDIUM, LocaleHelper.locale(context)).format(Date())
     } catch (t: Throwable) {
         Log.w("UsageStatsShare", "Failed to format share-card date", t)
         LocalDate.now().toString()
@@ -89,7 +89,7 @@ internal fun buildUsageStatsSharePayload(context: Context, prefs: Prefs): UsageS
         val avgSpeed = totalChars * 60_000.0 / totalAudioMs.toDouble()
         context.getString(
             R.string.about_stats_avg_speed_value,
-            String.format(Locale.getDefault(), "%.1f", avgSpeed)
+            String.format(LocaleHelper.locale(context), "%.1f", avgSpeed)
         )
     } else {
         context.getString(R.string.about_empty_stats_placeholder)
@@ -100,7 +100,7 @@ internal fun buildUsageStatsSharePayload(context: Context, prefs: Prefs): UsageS
         tagline = context.getString(R.string.about_stats_share_tagline),
         subtitle = context.getString(R.string.about_stats_share_subtitle),
         generatedAt = generatedAt,
-        heroDaysValue = formatShareInt(daysWithYou),
+        heroDaysValue = formatShareInt(context, daysWithYou),
         heroDaysUnit = context.getString(R.string.about_stats_share_days_unit),
         heroCaption = context.getString(
             R.string.about_stats_share_hero_caption,
@@ -110,7 +110,7 @@ internal fun buildUsageStatsSharePayload(context: Context, prefs: Prefs): UsageS
         metrics = listOf(
             UsageStatsShareMetric(
                 label = context.getString(R.string.about_stats_total_chars_label),
-                value = formatShareInt(totalChars)
+                value = formatShareInt(context, totalChars)
             ),
             UsageStatsShareMetric(
                 label = context.getString(R.string.about_stats_total_audio_label),
@@ -118,7 +118,7 @@ internal fun buildUsageStatsSharePayload(context: Context, prefs: Prefs): UsageS
             ),
             UsageStatsShareMetric(
                 label = context.getString(R.string.about_stats_sessions_label),
-                value = formatShareInt(sessions)
+                value = formatShareInt(context, sessions)
             ),
             UsageStatsShareMetric(
                 label = context.getString(R.string.about_stats_avg_speed_label),
@@ -147,10 +147,11 @@ private fun buildTimeSavedText(context: Context, totalChars: Long, totalAudioMs:
     )
 }
 
-private fun buildShareDailyBars(stats: UsageStats, days: Int): List<UsageStatsShareDailyBar> {
+private fun buildShareDailyBars(context: Context, stats: UsageStats, days: Int): List<UsageStatsShareDailyBar> {
     val fmt = DateTimeFormatter.BASIC_ISO_DATE
-    val weekdayFmt = DateTimeFormatter.ofPattern("E", Locale.getDefault())
-    val dateFmt = DateTimeFormatter.ofPattern("MM-dd", Locale.getDefault())
+    val locale = LocaleHelper.locale(context)
+    val weekdayFmt = DateTimeFormatter.ofPattern("E", locale)
+    val dateFmt = DateTimeFormatter.ofPattern("MM-dd", locale)
     val entries = ArrayList<Triple<LocalDate, String, Long>>(days)
     var d = LocalDate.now().minusDays(days - 1L)
     repeat(days) {
@@ -164,7 +165,7 @@ private fun buildShareDailyBars(stats: UsageStats, days: Int): List<UsageStatsSh
             weekday = date.format(weekdayFmt),
             date = date.format(dateFmt),
             chars = chars,
-            valueText = formatShareInt(chars),
+            valueText = formatShareInt(context, chars),
             ratio = (chars.toDouble() / maxChars.toDouble()).toFloat().coerceIn(0f, 1f),
             isMax = chars > 0 && chars == maxChars
         )
@@ -188,10 +189,10 @@ private fun buildShareTopVendors(
         UsageStatsShareVendorRow(
             name = AsrVendorUi.name(context, AsrVendor.fromId(id)),
             valueText = buildString {
-                append(formatShareInt(agg.chars)).append(' ')
+                append(formatShareInt(context, agg.chars)).append(' ')
                 append(context.getString(R.string.unit_chars))
                 append(" · ")
-                append(String.format(Locale.getDefault(), "%d%%", percent))
+                append(String.format(LocaleHelper.locale(context), "%d%%", percent))
             },
             ratio = (agg.chars.toDouble() / totalVendorChars.toDouble()).toFloat().coerceIn(0f, 1f)
         )
@@ -211,5 +212,5 @@ private fun Context.formatShareDurationMs(ms: Long): String {
     }
 }
 
-private fun formatShareInt(v: Long): String =
-    NumberFormat.getIntegerInstance(Locale.getDefault()).format(v)
+private fun formatShareInt(context: Context, v: Long): String =
+    NumberFormat.getIntegerInstance(LocaleHelper.locale(context)).format(v)

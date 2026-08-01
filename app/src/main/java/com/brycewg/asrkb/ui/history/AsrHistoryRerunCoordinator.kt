@@ -3,6 +3,7 @@ package com.brycewg.asrkb.ui.history
 
 import android.content.Context
 import android.os.SystemClock
+import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.asr.AsrEngineConstructionSource
 import com.brycewg.asrkb.asr.AsrEngineInvocationMode
 import com.brycewg.asrkb.asr.AsrEngineModePreferences
@@ -35,6 +36,7 @@ internal class AsrHistoryRerunCoordinator(
     private val audioStore = AsrHistoryAudioStore(appContext)
 
     suspend fun reRecognize(record: AsrHistoryStore.AsrHistoryRecord): AsrHistoryStore.AsrHistoryRecord {
+        val localizedContext = LocaleHelper.wrap(appContext)
         val pcm = withContext(Dispatchers.IO) { audioStore.readAudio(record.id) }
             ?: error("audio_unavailable")
         val started = SystemClock.uptimeMillis()
@@ -49,7 +51,7 @@ internal class AsrHistoryRerunCoordinator(
         val primary = prefs.asrVendor
         val batchPreferences = AsrEngineModePreferences()
         val engine = AsrParallelEngineFactory().createOrNull(
-            context = appContext,
+            context = localizedContext,
             scope = scope,
             prefs = prefs,
             listener = listener,
@@ -59,7 +61,7 @@ internal class AsrHistoryRerunCoordinator(
             modePreferences = batchPreferences,
             onPrimaryRequestDuration = { requestMs = it }
         ) ?: AsrPushPcmEngineFactory().createOrNull(
-            context = appContext,
+            context = localizedContext,
             scope = scope,
             prefs = prefs,
             listener = listener,
@@ -109,10 +111,11 @@ internal class AsrHistoryRerunCoordinator(
     }
 
     suspend fun reprocess(record: AsrHistoryStore.AsrHistoryRecord): AsrHistoryStore.AsrHistoryRecord {
+        val localizedContext = LocaleHelper.wrap(appContext)
         if (!prefs.hasLlmKeys()) error("llm_unavailable")
         val input = record.rawText?.takeIf { it.isNotBlank() } ?: record.text
         val result = AsrFinalFilters.applyWithAi(
-            appContext,
+            localizedContext,
             prefs,
             input,
             forceAi = true
@@ -135,8 +138,9 @@ internal class AsrHistoryRerunCoordinator(
     }
 
     private suspend fun processNormal(raw: String): ProcessedText {
-        val result = AsrFinalFilters.applyWithAi(appContext, prefs, raw)
-        val text = result.text.ifBlank { AsrFinalFilters.applySimple(appContext, prefs, raw) }
+        val localizedContext = LocaleHelper.wrap(appContext)
+        val result = AsrFinalFilters.applyWithAi(localizedContext, prefs, raw)
+        val text = result.text.ifBlank { AsrFinalFilters.applySimple(localizedContext, prefs, raw) }
         val aiUsed = result.ok && result.usedAi
         return ProcessedText(
             text = text,

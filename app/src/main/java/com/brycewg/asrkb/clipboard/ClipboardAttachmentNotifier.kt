@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.R
 
 internal class ClipboardAttachmentNotifier(context: Context) {
@@ -34,6 +35,7 @@ internal class ClipboardAttachmentNotifier(context: Context) {
     )
 
     private fun show(notificationId: Int, titleRes: Int, fileName: String) {
+        val localizedContext = LocaleHelper.wrap(appContext)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
@@ -42,16 +44,16 @@ internal class ClipboardAttachmentNotifier(context: Context) {
             notificationManager.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
-                    appContext.getString(R.string.sc_attachment_notification_channel),
+                    localizedContext.getString(R.string.sc_attachment_notification_channel),
                     NotificationManager.IMPORTANCE_DEFAULT
                 )
             )
         }
         notificationManager.notify(
             notificationId,
-            NotificationCompat.Builder(appContext, CHANNEL_ID)
+            NotificationCompat.Builder(localizedContext, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.stat_sys_upload_done)
-                .setContentTitle(appContext.getString(titleRes))
+                .setContentTitle(localizedContext.getString(titleRes))
                 .setContentText(fileName)
                 .setAutoCancel(true)
                 .build()
