@@ -353,74 +353,74 @@ internal fun SyncClipboardSection(
         mutableStateOf(state.attachmentMaxSizeMb.toString())
     }
     OtherSection(uiMode = uiMode, titleRes = R.string.section_sync_clipboard) {
+        val showKeepBackgroundSwitch = state.enabled &&
+            state.receiveMode == ClipboardSyncReceiveMode.REALTIME
+        val showAttachmentFields = state.enabled && attachmentsEnabled
+        val itemCount = if (!state.enabled) {
+            1
+        } else {
+            // 启用开关 + 4 个填写框 + 自动接收/图片/文件开关 + 底部按钮行
+            var total = 9
+            if (showKeepBackgroundSwitch) total++
+            if (showAttachmentFields) total++
+            total
+        }
+        var itemIndex = 0
         SettingsPreference(
             SettingsEntry.Switch(
                 id = "sync_clipboard",
                 titleRes = R.string.label_enable_sync_clipboard,
                 checked = state.enabled,
                 onCheckedChange = onEnabledChange
-            )
+            ),
+            index = itemIndex++,
+            count = itemCount
         )
         if (state.enabled) {
             val fieldPadding = PaddingValues(
                 horizontal = SettingsLayoutMetrics.TextFieldHorizontalPadding,
                 vertical = SettingsLayoutMetrics.TextFieldLooseVerticalPadding
             )
-            val credentialFields: @Composable () -> Unit = {
-                OtherTextField(
-                    value = state.serverBase,
-                    onValueChange = onServerChange,
-                    label = stringResource(R.string.label_sc_server_base),
-                    uiMode = uiMode,
-                    keyboardType = KeyboardType.Uri,
-                    materialContainer = false,
-                    applyEdgePadding = false,
-                    contentPadding = fieldPadding
-                )
-                OtherTextField(
-                    value = state.username,
-                    onValueChange = onUsernameChange,
-                    label = stringResource(R.string.label_sc_username),
-                    uiMode = uiMode,
-                    materialContainer = false,
-                    applyEdgePadding = false,
-                    contentPadding = fieldPadding
-                )
-                OtherTextField(
-                    value = state.password,
-                    onValueChange = onPasswordChange,
-                    label = stringResource(R.string.label_sc_password),
-                    uiMode = uiMode,
-                    keyboardType = KeyboardType.Password,
-                    password = true,
-                    materialContainer = false,
-                    applyEdgePadding = false,
-                    contentPadding = fieldPadding
-                )
-                OtherTextField(
-                    value = intervalText,
-                    onValueChange = { raw ->
-                        intervalText = raw.filter { it.isDigit() }.take(3)
-                        intervalText.toIntOrNull()?.let { onIntervalChange(it.coerceIn(1, 600)) }
-                    },
-                    label = stringResource(R.string.label_sc_pull_interval),
-                    uiMode = uiMode,
-                    keyboardType = KeyboardType.Number,
-                    singleLine = true,
-                    materialContainer = false,
-                    applyEdgePadding = false,
-                    contentPadding = fieldPadding
-                )
-            }
-            when (uiMode) {
-                BibiUiMode.Material -> SettingsMaterialItemSurface {
-                    credentialFields()
-                }
-
-                BibiUiMode.Miuix -> Column {
-                    credentialFields()
-                }
-            }
+            OtherTextField(
+                value = state.serverBase,
+                onValueChange = onServerChange,
+                label = stringResource(R.string.label_sc_server_base),
+                uiMode = uiMode,
+                keyboardType = KeyboardType.Uri,
+                index = itemIndex++,
+                count = itemCount
+            )
+            OtherTextField(
+                value = state.username,
+                onValueChange = onUsernameChange,
+                label = stringResource(R.string.label_sc_username),
+                uiMode = uiMode,
+                index = itemIndex++,
+                count = itemCount
+            )
+            OtherTextField(
+                value = state.password,
+                onValueChange = onPasswordChange,
+                label = stringResource(R.string.label_sc_password),
+                uiMode = uiMode,
+                keyboardType = KeyboardType.Password,
+                password = true,
+                index = itemIndex++,
+                count = itemCount
+            )
+            OtherTextField(
+                value = intervalText,
+                onValueChange = { raw ->
+                    intervalText = raw.filter { it.isDigit() }.take(3)
+                    intervalText.toIntOrNull()?.let { onIntervalChange(it.coerceIn(1, 600)) }
+                },
+                label = stringResource(R.string.label_sc_pull_interval),
+                uiMode = uiMode,
+                keyboardType = KeyboardType.Number,
+                singleLine = true,
+                index = itemIndex++,
+                count = itemCount
+            )
             SettingsPreference(
                 SettingsEntry.Switch(
                     id = "sync_clipboard_auto_receive",
@@ -436,16 +436,20 @@ internal fun SyncClipboardSection(
                     ),
                     checked = autoReceiveEnabled,
                     onCheckedChange = onAutoReceiveChange
-                )
+                ),
+                index = itemIndex++,
+                count = itemCount
             )
-            if (state.receiveMode == ClipboardSyncReceiveMode.REALTIME) {
+            if (showKeepBackgroundSwitch) {
                 SettingsPreference(
                     SettingsEntry.Switch(
                         id = "sync_clipboard_keep_background",
                         titleRes = R.string.label_sc_keep_background_realtime,
                         checked = state.keepBackgroundRealtimeEnabled,
                         onCheckedChange = onKeepBackgroundRealtimeChange
-                    )
+                    ),
+                    index = itemIndex++,
+                    count = itemCount
                 )
             }
             SettingsPreference(
@@ -454,7 +458,9 @@ internal fun SyncClipboardSection(
                     titleRes = R.string.label_sc_sync_images,
                     checked = state.syncImagesEnabled,
                     onCheckedChange = onImagesChange
-                )
+                ),
+                index = itemIndex++,
+                count = itemCount
             )
             SettingsPreference(
                 SettingsEntry.Switch(
@@ -462,7 +468,9 @@ internal fun SyncClipboardSection(
                     titleRes = R.string.label_sc_sync_files,
                     checked = state.syncFilesEnabled,
                     onCheckedChange = onFilesChange
-                )
+                ),
+                index = itemIndex++,
+                count = itemCount
             )
             if (attachmentsEnabled) {
                 val attachmentFields: @Composable () -> Unit = {
@@ -514,25 +522,37 @@ internal fun SyncClipboardSection(
                     }
                 }
                 when (uiMode) {
-                    BibiUiMode.Material -> SettingsMaterialItemSurface { attachmentFields() }
+                    BibiUiMode.Material -> SettingsMaterialItemSurface(
+                        index = itemIndex++,
+                        count = itemCount
+                    ) { attachmentFields() }
                     BibiUiMode.Miuix -> Column { attachmentFields() }
                 }
             }
-            OtherButtonRow(uiMode = uiMode) {
-                OtherButton(
-                    text = stringResource(R.string.btn_sc_test_pull),
-                    uiMode = uiMode,
-                    modifier = Modifier.weight(1f),
-                    onClick = onTestPull,
-                    padded = false
-                )
-                OtherButton(
-                    text = stringResource(R.string.btn_sc_project_home),
-                    uiMode = uiMode,
-                    modifier = Modifier.weight(1f),
-                    onClick = onOpenProject,
-                    padded = false
-                )
+            val actionButtons: @Composable () -> Unit = {
+                OtherButtonRow(uiMode = uiMode) {
+                    OtherButton(
+                        text = stringResource(R.string.btn_sc_test_pull),
+                        uiMode = uiMode,
+                        modifier = Modifier.weight(1f),
+                        onClick = onTestPull,
+                        padded = false
+                    )
+                    OtherButton(
+                        text = stringResource(R.string.btn_sc_project_home),
+                        uiMode = uiMode,
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenProject,
+                        padded = false
+                    )
+                }
+            }
+            when (uiMode) {
+                BibiUiMode.Material -> SettingsMaterialItemSurface(
+                    index = itemIndex,
+                    count = itemCount
+                ) { actionButtons() }
+                BibiUiMode.Miuix -> actionButtons()
             }
         }
     }
