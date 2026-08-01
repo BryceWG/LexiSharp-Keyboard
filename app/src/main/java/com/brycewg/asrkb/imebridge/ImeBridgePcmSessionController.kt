@@ -108,7 +108,7 @@ internal class ImeBridgePcmSessionController(
             ),
             ::onSessionEnded
         )
-            ?: return result(ImeBridgePcmContract.RESULT_UNSUPPORTED)
+            ?: return result(ImeBridgePcmContract.RESULT_SESSION_UNAVAILABLE)
         active = ActiveSession(
             sessionId = request.sessionId,
             ownerPackage = currentImePackage,
@@ -138,8 +138,8 @@ internal class ImeBridgePcmSessionController(
             active = null
             runCatching { session.cancel() }
             result(
-                ImeBridgePcmContract.RESULT_UNSUPPORTED,
-                t.message ?: ImeBridgePcmContract.messageForCode(ImeBridgePcmContract.RESULT_UNSUPPORTED)
+                ImeBridgePcmContract.RESULT_SESSION_UNAVAILABLE,
+                t.message ?: ImeBridgePcmContract.messageForCode(ImeBridgePcmContract.RESULT_SESSION_UNAVAILABLE)
             ).also { failedSummary?.let { summary -> record(summary, "begin", it) } }
         }
     }

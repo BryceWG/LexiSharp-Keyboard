@@ -497,4 +497,6 @@
   <string name="recording_test_error_transcribe_timeout">轉錄逾時</string>
   <string name="recording_test_error_vendor_unavailable">目前 ASR 設定無法用於本次測試</string>
   <string name="recording_test_error_ai">AI 處理失敗：%1$s</string>
+  <string name="toast_ime_bridge_protocol_mismatch">輸入法橋接模組與說點啥版本不相容，請更新模組或應用程式。</string>
+  <string name="toast_ime_bridge_connection_failed">無法連線輸入法橋接模組，請確認已在 LSPosed 中啟用模組並勾選目前輸入法。</string>
 </resources>

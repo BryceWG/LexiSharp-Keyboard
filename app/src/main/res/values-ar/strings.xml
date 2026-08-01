@@ -499,4 +499,6 @@
   <string name="recording_test_error_transcribe_timeout">انتهت مهلة النسخ النصي</string>
   <string name="recording_test_error_vendor_unavailable">إعداد ASR الحالي غير متاح لهذا الاختبار</string>
   <string name="recording_test_error_ai">فشلت معالجة الذكاء الاصطناعي: %1$s</string>
+  <string name="toast_ime_bridge_protocol_mismatch">وحدة جسر طريقة الإدخال غير متوافقة مع BiBi Keyboard. حدّث الوحدة أو التطبيق.</string>
+  <string name="toast_ime_bridge_connection_failed">تعذر الاتصال بوحدة جسر طريقة الإدخال. تأكد من تفعيلها واختيار طريقة الإدخال الحالية في LSPosed.</string>
 </resources>

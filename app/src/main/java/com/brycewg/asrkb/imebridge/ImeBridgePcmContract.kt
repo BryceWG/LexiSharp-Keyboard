@@ -26,6 +26,7 @@ internal object ImeBridgePcmContract {
     const val RESULT_BUSY: Int = -7
     const val RESULT_STALE_SESSION: Int = -8
     const val RESULT_UNSUPPORTED: Int = -9
+    const val RESULT_SESSION_UNAVAILABLE: Int = -10
 
     fun messageForCode(code: Int): String = when (code) {
         RESULT_OK -> "ok"
@@ -38,6 +39,7 @@ internal object ImeBridgePcmContract {
         RESULT_BUSY -> "busy"
         RESULT_STALE_SESSION -> "stale session"
         RESULT_UNSUPPORTED -> "unsupported"
+        RESULT_SESSION_UNAVAILABLE -> "session unavailable"
         else -> "unknown: $code"
     }
 }

@@ -11,13 +11,17 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
+import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.ApiLogStore
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 data class ImeBridgeResult(
     val code: Int,
@@ -50,7 +54,12 @@ data class ImeBridgeResult(
 
 class ImeBridgeClient(private val context: Context) {
     fun queryStatus(timeoutMs: Long = DEFAULT_STATUS_TIMEOUT_MS): ImeBridgeResult =
-        sendBridgeRequest(ImeBridgeContract.ACTION_QUERY_STATUS, null, timeoutMs)
+        sendBridgeRequest(
+            ImeBridgeContract.ACTION_QUERY_STATUS,
+            null,
+            timeoutMs,
+            warnOnFailure = false
+        )
 
     fun beginSession(
         sessionId: String,
@@ -60,7 +69,8 @@ class ImeBridgeClient(private val context: Context) {
             ImeBridgeContract.ACTION_BEGIN_SESSION,
             null,
             timeoutMs,
-            sessionId = sessionId
+            sessionId = sessionId,
+            warnOnFailure = false
         )
 
     fun cancelSession(
@@ -71,7 +81,8 @@ class ImeBridgeClient(private val context: Context) {
             ImeBridgeContract.ACTION_CANCEL_SESSION,
             null,
             timeoutMs,
-            sessionId = sessionId
+            sessionId = sessionId,
+            warnOnFailure = false
         )
 
     fun insertText(
@@ -95,7 +106,8 @@ class ImeBridgeClient(private val context: Context) {
             text,
             timeoutMs,
             cursorPosition,
-            sessionId
+            sessionId,
+            warnOnFailure = true
         )
     }
 
@@ -110,7 +122,8 @@ class ImeBridgeClient(private val context: Context) {
             text,
             timeoutMs,
             cursorPosition,
-            sessionId
+            sessionId,
+            warnOnFailure = false
         )
 
     fun finishComposingText(
@@ -121,7 +134,8 @@ class ImeBridgeClient(private val context: Context) {
             ImeBridgeContract.ACTION_FINISH_COMPOSING_TEXT,
             null,
             timeoutMs,
-            sessionId = sessionId
+            sessionId = sessionId,
+            warnOnFailure = false
         )
 
     fun setClipboardText(
@@ -141,7 +155,8 @@ class ImeBridgeClient(private val context: Context) {
         return sendBridgeRequest(
             ImeBridgeContract.ACTION_SET_CLIPBOARD_TEXT,
             text,
-            timeoutMs
+            timeoutMs,
+            warnOnFailure = false
         )
     }
 
@@ -151,7 +166,8 @@ class ImeBridgeClient(private val context: Context) {
         sendBridgeRequest(
             ImeBridgeContract.ACTION_GET_CLIPBOARD_TEXT,
             null,
-            timeoutMs
+            timeoutMs,
+            warnOnFailure = false
         )
 
     fun startClipboardObserve(
@@ -162,7 +178,8 @@ class ImeBridgeClient(private val context: Context) {
             ImeBridgeContract.ACTION_START_CLIPBOARD_OBSERVE,
             null,
             timeoutMs,
-            clipboardSubscriptionToken = subscriptionToken
+            clipboardSubscriptionToken = subscriptionToken,
+            warnOnFailure = false
         )
 
     fun stopClipboardObserve(
@@ -171,7 +188,8 @@ class ImeBridgeClient(private val context: Context) {
         sendBridgeRequest(
             ImeBridgeContract.ACTION_STOP_CLIPBOARD_OBSERVE,
             null,
-            timeoutMs
+            timeoutMs,
+            warnOnFailure = false
         )
 
     fun resolveCurrentImePackage(): String? = resolveCurrentImePackage(context)
@@ -182,7 +200,8 @@ class ImeBridgeClient(private val context: Context) {
         timeoutMs: Long,
         cursorPosition: Int = 1,
         sessionId: String? = null,
-        clipboardSubscriptionToken: String? = null
+        clipboardSubscriptionToken: String? = null,
+        warnOnFailure: Boolean
     ): ImeBridgeResult {
         val targetPackage = resolveCurrentImePackage()
         val requestId = UUID.randomUUID().toString()
@@ -298,6 +317,7 @@ class ImeBridgeClient(private val context: Context) {
                 isImeWindowVisible = false
             )
             recordBridgeApiLog(action, requestId, targetPackage, text, cursorPosition, sessionId, started, failedResult)
+            ImeBridgeWarningToast.show(context, failedResult.code, warnOnFailure)
             return failedResult
         }
 
@@ -328,6 +348,7 @@ class ImeBridgeClient(private val context: Context) {
             )
         }
         recordBridgeApiLog(action, requestId, targetPackage, text, cursorPosition, sessionId, started, finalResult)
+        ImeBridgeWarningToast.show(context, finalResult.code, warnOnFailure)
         return finalResult
     }
 
@@ -438,5 +459,49 @@ private object BridgeResultHandler {
         val thread = HandlerThread("ImeBridgeResult")
         thread.start()
         Handler(thread.looper)
+    }
+}
+
+internal fun imeBridgeWarningMessageRes(code: Int, warnOnFailure: Boolean): Int? {
+    if (!warnOnFailure) return null
+    return when (code) {
+    ImeBridgeContract.RESULT_PROTOCOL_MISMATCH -> R.string.toast_ime_bridge_protocol_mismatch
+    ImeBridgeContract.RESULT_NO_RECEIVER,
+    ImeBridgeContract.RESULT_TIMEOUT,
+    ImeBridgeContract.RESULT_SEND_FAILED -> R.string.toast_ime_bridge_connection_failed
+    else -> null
+    }
+}
+
+internal object ImeBridgeWarningToast {
+    private const val COOLDOWN_MS = 30_000L
+    private val lastShownElapsedMs = ConcurrentHashMap<Int, AtomicLong>()
+
+    fun show(context: Context, code: Int, warnOnFailure: Boolean) {
+        val messageRes = imeBridgeWarningMessageRes(code, warnOnFailure) ?: return
+        if (!tryAcquire(messageRes, SystemClock.elapsedRealtime())) return
+        Handler(Looper.getMainLooper()).post {
+            android.widget.Toast.makeText(
+                context.applicationContext,
+                messageRes,
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    internal fun tryAcquire(messageRes: Int, nowElapsedMs: Long): Boolean {
+        val lastShown = lastShownElapsedMs.computeIfAbsent(messageRes) {
+            AtomicLong(-COOLDOWN_MS)
+        }
+        while (true) {
+            val previous = lastShown.get()
+            if (nowElapsedMs - previous < COOLDOWN_MS) return false
+            if (lastShown.compareAndSet(previous, nowElapsedMs)) return true
+        }
+    }
+
+    internal fun wasShownWithin(messageRes: Int, nowElapsedMs: Long, windowMs: Long): Boolean {
+        val lastShown = lastShownElapsedMs[messageRes]?.get() ?: return false
+        return nowElapsedMs - lastShown < windowMs
     }
 }

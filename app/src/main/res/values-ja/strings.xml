@@ -498,4 +498,6 @@
   <string name="recording_test_error_transcribe_timeout">文字起こしがタイムアウトしました</string>
   <string name="recording_test_error_vendor_unavailable">現在の ASR 設定はこのテストで利用できません</string>
   <string name="recording_test_error_ai">AI処理に失敗しました：%1$s</string>
+  <string name="toast_ime_bridge_protocol_mismatch">IME ブリッジモジュールと BiBi Keyboard のバージョンに互換性がありません。モジュールまたはアプリを更新してください。</string>
+  <string name="toast_ime_bridge_connection_failed">IME ブリッジモジュールに接続できません。LSPosed でモジュールを有効にし、現在の入力方式を選択していることを確認してください。</string>
 </resources>

@@ -16,6 +16,8 @@ import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.imebridge.ImeBridgeClient
 import com.brycewg.asrkb.imebridge.ImeBridgeContract
 import com.brycewg.asrkb.imebridge.ImeBridgeResult
+import com.brycewg.asrkb.imebridge.ImeBridgeWarningToast
+import com.brycewg.asrkb.imebridge.imeBridgeWarningMessageRes
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.Prefs
@@ -49,6 +51,7 @@ class AsrSessionManager(
     companion object {
         private const val TAG = "AsrSessionManager"
         private const val LOCAL_MODEL_READY_WAIT_CONSUMED = -1L
+        private const val WARNING_TOAST_RECENT_WINDOW_MS = 5_000L
     }
 
     interface AsrSessionListener {
@@ -1155,6 +1158,14 @@ class AsrSessionManager(
     }
 
     private fun showImeBridgeInsertFailure(bridgeResult: ImeBridgeResult) {
+        // 仅当桥接警告 toast 本次实际展示过才跳过，避免被冷却期抑制后用户完全无反馈
+        val warningRes = imeBridgeWarningMessageRes(bridgeResult.code, warnOnFailure = true)
+        val warningShown = warningRes != null && ImeBridgeWarningToast.wasShownWithin(
+            warningRes,
+            SystemClock.elapsedRealtime(),
+            WARNING_TOAST_RECENT_WINDOW_MS
+        )
+        if (warningShown) return
         val isSensitiveField = bridgeResult.isSensitiveField ||
             bridgeResult.code == ImeBridgeContract.RESULT_SENSITIVE_FIELD
         val message = if (isSensitiveField) {

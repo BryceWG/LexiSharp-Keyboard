@@ -38,11 +38,21 @@ class ImeBridgePcmSessionControllerTest {
         val result = fixture.controller.begin(fixture.beginRequest("session-1"))
         val staleFrame = fixture.controller.writeFrame("session-1", byteArrayOf(1, 2), 16000, 1)
 
-        assertCode(ImeBridgePcmContract.RESULT_UNSUPPORTED, result)
+        assertCode(ImeBridgePcmContract.RESULT_SESSION_UNAVAILABLE, result)
         assertCode(ImeBridgePcmContract.RESULT_STALE_SESSION, staleFrame)
         assertEquals(1, sessions.single().starts)
         assertEquals(1, sessions.single().cancels)
         assertTrue(sessions.single().frames.isEmpty())
+    }
+
+    @Test
+    fun unavailableAsrSessionIsDistinctFromProtocolMismatch() {
+        val fixture = Fixture(sessionFactory = BridgePcmSessionFactory { _, _ -> null })
+
+        val result = fixture.controller.begin(fixture.beginRequest())
+
+        assertCode(ImeBridgePcmContract.RESULT_SESSION_UNAVAILABLE, result)
+        assertFalse(result.code == ImeBridgePcmContract.RESULT_UNSUPPORTED)
     }
 
     @Test

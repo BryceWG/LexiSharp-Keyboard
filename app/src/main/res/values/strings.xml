@@ -499,4 +499,6 @@
   <string name="recording_test_error_transcribe_timeout">Transcription timed out</string>
   <string name="recording_test_error_vendor_unavailable">The current ASR configuration is unavailable for this test</string>
   <string name="recording_test_error_ai">AI processing failed: %1$s</string>
+  <string name="toast_ime_bridge_protocol_mismatch">The IME Bridge module is incompatible with BiBi Keyboard. Update the module or app.</string>
+  <string name="toast_ime_bridge_connection_failed">Unable to connect to the IME Bridge module. Check that it is enabled and the current input method is selected in LSPosed.</string>
 </resources>
