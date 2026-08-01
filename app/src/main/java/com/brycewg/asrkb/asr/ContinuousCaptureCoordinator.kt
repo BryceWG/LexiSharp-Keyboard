@@ -203,7 +203,7 @@ object ContinuousCaptureCoordinator {
         val channel = synchronized(lock) {
             activeSession?.chunks
         } ?: return
-        channel.send(chunk.copyOf())
+        channel.sendWhileSessionActive(chunk.copyOf())
     }
 
     private fun closeActiveSessionLocked() {
@@ -214,7 +214,7 @@ object ContinuousCaptureCoordinator {
         } catch (_: Throwable) {
         }
         session.timeoutJob = null
-        session.chunks.close()
+        session.chunks.closeSessionDispatch()
     }
 
     private fun closeActiveSession(cause: Throwable) {
@@ -226,7 +226,7 @@ object ContinuousCaptureCoordinator {
             } catch (_: Throwable) {
             }
             session.timeoutJob = null
-            session.chunks.close(cause)
+            session.chunks.closeSessionDispatch(cause)
         }
     }
 
