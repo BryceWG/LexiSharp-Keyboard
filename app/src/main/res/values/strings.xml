@@ -98,7 +98,6 @@
 
   <!-- Settings page section titles -->
   <string name="section_settings_items">Main Settings</string>
-  <string name="section_more">More</string>
   <string name="section_general">Background Keep-Alive</string>
 
   <string name="label_app_key">X-Api-App-Key</string>

@@ -125,15 +125,17 @@ object SettingsSearchIndex {
     private fun MutableList<DeclarativeEntry>.addUiSettingsEntries() {
         val route = BibiSettingsRoute.UiSettings
         val screen = R.string.section_ui_settings
-        fun item(@StringRes title: Int) {
-            add(DeclarativeEntry(title, screen, route, R.string.section_ui_settings))
+        fun item(@StringRes title: Int, @StringRes section: Int) {
+            add(DeclarativeEntry(title, screen, route, section))
         }
-        item(R.string.label_keyboard_height)
-        item(R.string.label_ime_tablet_floating_keyboard)
-        item(R.string.label_haptic_feedback_strength)
-        item(R.string.label_keyboard_bottom_padding)
-        item(R.string.label_language)
-        item(R.string.label_extension_buttons)
+        item(R.string.label_language, R.string.section_main_ui)
+        item(R.string.settings_ui_mode, R.string.section_main_ui)
+        item(R.string.settings_theme_mode, R.string.section_main_ui)
+        item(R.string.label_keyboard_height, R.string.section_keyboard_ui)
+        item(R.string.label_ime_tablet_floating_keyboard, R.string.section_keyboard_ui)
+        item(R.string.label_haptic_feedback_strength, R.string.section_keyboard_ui)
+        item(R.string.label_keyboard_bottom_padding, R.string.section_keyboard_ui)
+        item(R.string.label_extension_buttons, R.string.section_keyboard_ui)
     }
 
     private fun MutableList<DeclarativeEntry>.addFloatingEntries() {

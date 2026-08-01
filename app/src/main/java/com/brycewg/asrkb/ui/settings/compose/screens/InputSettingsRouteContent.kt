@@ -458,7 +458,78 @@ internal fun InputSettingsRouteContent(
 }
 
 @Composable
-internal fun InputUiSettingsSection(
+internal fun InputMainUiSettingsSection(
+    uiMode: BibiUiMode,
+    prefs: Prefs,
+    themeMode: String,
+    onSetUiMode: (BibiUiMode) -> Unit,
+    onSetThemeMode: (String) -> Unit,
+    onRefreshState: () -> Unit
+) {
+    val context = LocalContext.current
+    val languageOptions = context.languageOptions().mapIndexed { index, label ->
+        DropdownOption(languageTagForIndex(index), label)
+    }
+    val uiModeOptions = listOf(
+        DropdownOption(BibiUiMode.Miuix.id, stringResource(R.string.settings_ui_mode_miuix)),
+        DropdownOption(BibiUiMode.Material.id, stringResource(R.string.settings_ui_mode_material))
+    )
+    val themeModeOptions = listOf(
+        DropdownOption("system", stringResource(R.string.settings_theme_mode_system)),
+        DropdownOption("light", stringResource(R.string.settings_theme_mode_light)),
+        DropdownOption("dark", stringResource(R.string.settings_theme_mode_dark))
+    )
+    InputSection(uiMode = uiMode, titleRes = R.string.section_main_ui) {
+        SettingsPreference(
+            entry = SettingsEntry.Dropdown(
+                id = "language",
+                titleRes = R.string.label_language,
+                options = languageOptions,
+                selectedOptionId = normalizeLanguageTag(prefs.appLanguageTag),
+                onSelectedOptionChange = { tag ->
+                    if (tag != prefs.appLanguageTag) {
+                        prefs.appLanguageTag = tag
+                        val locales = if (tag.isBlank()) {
+                            LocaleListCompat.getEmptyLocaleList()
+                        } else {
+                            LocaleListCompat.forLanguageTags(tag)
+                        }
+                        AppCompatDelegate.setApplicationLocales(locales)
+                    }
+                    onRefreshState()
+                }
+            ),
+            index = 0,
+            count = 3
+        )
+        SettingsPreference(
+            entry = SettingsEntry.Dropdown(
+                id = "settings_ui_mode",
+                titleRes = R.string.settings_ui_mode,
+                summaryRes = R.string.settings_ui_mode_summary,
+                options = uiModeOptions,
+                selectedOptionId = uiMode.id,
+                onSelectedOptionChange = { onSetUiMode(BibiUiMode.fromId(it)) }
+            ),
+            index = 1,
+            count = 3
+        )
+        SettingsPreference(
+            entry = SettingsEntry.Dropdown(
+                id = "settings_theme_mode",
+                titleRes = R.string.settings_theme_mode,
+                options = themeModeOptions,
+                selectedOptionId = themeMode,
+                onSelectedOptionChange = onSetThemeMode
+            ),
+            index = 2,
+            count = 3
+        )
+    }
+}
+
+@Composable
+internal fun InputKeyboardUiSettingsSection(
     uiMode: BibiUiMode,
     prefs: Prefs,
     uiState: InputSettingsUiState,
@@ -470,15 +541,12 @@ internal fun InputUiSettingsSection(
     onApplyExplainedSwitch: InputExplainedSwitchHandler
 ) {
     val context = LocalContext.current
-    val languageOptions = context.languageOptions().mapIndexed { index, label ->
-        DropdownOption(languageTagForIndex(index), label)
-    }
-    InputSection(uiMode = uiMode, titleRes = R.string.section_ui_settings) {
+    InputSection(uiMode = uiMode, titleRes = R.string.section_keyboard_ui) {
         InputKeyboardHeightControl(
             selectedTier = uiState.keyboardHeightTier,
             uiMode = uiMode,
             index = 0,
-            count = 6,
+            count = 5,
             onSelected = { tier ->
                 prefs.keyboardHeightTier = tier
                 onUiStateChange(uiState.copy(keyboardHeightTier = prefs.keyboardHeightTier))
@@ -502,7 +570,7 @@ internal fun InputUiSettingsSection(
                 ) { prefs.imeTabletFloatingKeyboardEnabled = it }
             },
             index = 1,
-            count = 6
+            count = 5
         )
         InputSliderPreference(
             titleRes = R.string.label_haptic_feedback_strength,
@@ -513,7 +581,7 @@ internal fun InputUiSettingsSection(
             uiMode = uiMode,
             highlightId = "haptic_feedback_strength",
             index = 2,
-            count = 6,
+            count = 5,
             onValueChange = { value ->
                 val level = value.toInt().coerceIn(
                     Prefs.HAPTIC_FEEDBACK_LEVEL_OFF,
@@ -541,7 +609,7 @@ internal fun InputUiSettingsSection(
             uiMode = uiMode,
             highlightId = "keyboard_bottom_padding",
             index = 3,
-            count = 6,
+            count = 5,
             onValueChange = { value ->
                 val next = value.roundToStep(step = 5).toInt().coerceIn(0, 100)
                 if (next != uiState.keyboardBottomPaddingDp) {
@@ -554,35 +622,13 @@ internal fun InputUiSettingsSection(
                 onRefreshState()
             }
         )
-        SettingsPreference(
-            entry = SettingsEntry.Dropdown(
-                id = "language",
-                titleRes = R.string.label_language,
-                options = languageOptions,
-                selectedOptionId = normalizeLanguageTag(prefs.appLanguageTag),
-                onSelectedOptionChange = { tag ->
-                    if (tag != prefs.appLanguageTag) {
-                        prefs.appLanguageTag = tag
-                        val locales = if (tag.isBlank()) {
-                            LocaleListCompat.getEmptyLocaleList()
-                        } else {
-                            LocaleListCompat.forLanguageTags(tag)
-                        }
-                        AppCompatDelegate.setApplicationLocales(locales)
-                    }
-                    onRefreshState()
-                }
-            ),
-            index = 4,
-            count = 6
-        )
         InputValuePreference(
             titleRes = R.string.label_extension_buttons,
             value = uiState.extensionButtonsLabel,
             uiMode = uiMode,
             highlightId = "extension_buttons",
-            index = 5,
-            count = 6,
+            index = 4,
+            count = 5,
             onClick = onShowExtensionButtonsPicker
         )
     }

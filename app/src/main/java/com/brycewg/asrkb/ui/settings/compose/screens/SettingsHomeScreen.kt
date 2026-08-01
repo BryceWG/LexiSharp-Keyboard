@@ -34,7 +34,6 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.MoreHoriz
-import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.TextFields
@@ -65,7 +64,6 @@ import com.brycewg.asrkb.ui.settings.compose.core.BibiSettingsRoute
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsActionController
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
-import com.brycewg.asrkb.ui.settings.compose.model.DropdownOption
 import com.brycewg.asrkb.ui.settings.compose.model.SettingsEntry
 import com.brycewg.asrkb.ui.settings.compose.model.SettingsSection
 import kotlinx.coroutines.Dispatchers
@@ -75,12 +73,9 @@ import kotlinx.coroutines.withContext
 fun SettingsHomeScreen(
     selectedTab: Int,
     uiMode: BibiUiMode,
-    themeMode: String,
     hasUpdateAvailable: Boolean,
     onSelectTab: (Int) -> Unit,
     onPushRoute: (BibiSettingsRoute) -> Unit,
-    onSetUiMode: (BibiUiMode) -> Unit,
-    onSetThemeMode: (String) -> Unit,
     actions: SettingsActionController
 ) {
     val tabs = remember { settingsHomeTabs() }
@@ -157,46 +152,16 @@ fun SettingsHomeScreen(
     } else {
         null
     }
-    val miuixUiModeLabel = stringResource(R.string.settings_ui_mode_miuix)
-    val materialUiModeLabel = stringResource(R.string.settings_ui_mode_material)
-    val uiModeOptions = remember(miuixUiModeLabel, materialUiModeLabel) {
-        listOf(
-            DropdownOption(BibiUiMode.Miuix.id, miuixUiModeLabel),
-            DropdownOption(BibiUiMode.Material.id, materialUiModeLabel)
-        )
-    }
-    val systemThemeLabel = stringResource(R.string.settings_theme_mode_system)
-    val lightThemeLabel = stringResource(R.string.settings_theme_mode_light)
-    val darkThemeLabel = stringResource(R.string.settings_theme_mode_dark)
-    val themeModeOptions = remember(systemThemeLabel, lightThemeLabel, darkThemeLabel) {
-        listOf(
-            DropdownOption("system", systemThemeLabel),
-            DropdownOption("light", lightThemeLabel),
-            DropdownOption("dark", darkThemeLabel)
-        )
-    }
     val updatesEnabled = actions.updatesEnabled
     val systemPageSections = remember(
-        uiMode,
-        themeMode,
-        uiModeOptions,
-        themeModeOptions,
         updateAvailableSummary,
         updatesEnabled,
         actions,
-        onSetUiMode,
-        onSetThemeMode,
         onPushRoute
     ) {
         systemSections(
-            uiMode = uiMode,
-            themeMode = themeMode,
-            uiModeOptions = uiModeOptions,
-            themeModeOptions = themeModeOptions,
             updateAvailableSummary = updateAvailableSummary,
             updatesEnabled = updatesEnabled,
-            onSetUiMode = onSetUiMode,
-            onSetThemeMode = onSetThemeMode,
             actions = actions,
             onPushRoute = onPushRoute
         )
@@ -357,46 +322,13 @@ private fun smartSections(
 )
 
 private fun systemSections(
-    uiMode: BibiUiMode,
-    themeMode: String,
-    uiModeOptions: List<DropdownOption>,
-    themeModeOptions: List<DropdownOption>,
     updateAvailableSummary: String?,
     updatesEnabled: Boolean,
-    onSetUiMode: (BibiUiMode) -> Unit,
-    onSetThemeMode: (String) -> Unit,
     actions: SettingsActionController,
     onPushRoute: (BibiSettingsRoute) -> Unit
 ): List<SettingsSection> = listOf(
     SettingsSection(
-        id = "system_style",
-        entries = listOf(
-            SettingsEntry.Dropdown(
-                id = "settings_ui_mode",
-                titleRes = R.string.settings_ui_mode,
-                summaryRes = R.string.settings_ui_mode_summary,
-                icon = Icons.Rounded.Dashboard,
-                options = uiModeOptions,
-                selectedOptionId = uiMode.id,
-                onSelectedOptionChange = {
-                    onSetUiMode(BibiUiMode.fromId(it))
-                }
-            ),
-            SettingsEntry.Dropdown(
-                id = "settings_theme_mode",
-                titleRes = R.string.settings_theme_mode,
-                icon = Icons.Rounded.Palette,
-                options = themeModeOptions,
-                selectedOptionId = themeMode,
-                onSelectedOptionChange = {
-                    onSetThemeMode(it)
-                }
-            )
-        )
-    ),
-    SettingsSection(
         id = "system_more",
-        titleRes = R.string.section_more,
         entries = listOf(
             SettingsEntry.Action(
                 id = "backup_settings",

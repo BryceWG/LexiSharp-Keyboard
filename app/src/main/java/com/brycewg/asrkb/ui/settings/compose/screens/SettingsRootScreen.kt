@@ -133,12 +133,9 @@ private fun SettingsRouteContent(
         BibiSettingsRoute.Home -> SettingsHomeScreen(
             selectedTab = uiState.selectedHomeTab,
             uiMode = uiState.uiMode,
-            themeMode = uiState.themeMode,
             hasUpdateAvailable = hasUpdateAvailable,
             onSelectTab = onSelectTab,
             onPushRoute = onPushRoute,
-            onSetUiMode = onSetUiMode,
-            onSetThemeMode = onSetThemeMode,
             actions = actions
         )
 
@@ -167,8 +164,11 @@ private fun SettingsRouteContent(
 
         BibiSettingsRoute.UiSettings -> UiSettingsScreen(
             uiMode = uiState.uiMode,
+            themeMode = uiState.themeMode,
             onBack = { onPopRoute() },
-            onOpenKeyboardLayout = { onPushRoute(BibiSettingsRoute.KeyboardLayout) }
+            onOpenKeyboardLayout = { onPushRoute(BibiSettingsRoute.KeyboardLayout) },
+            onSetUiMode = onSetUiMode,
+            onSetThemeMode = onSetThemeMode
         )
 
         BibiSettingsRoute.KeyboardLayout -> KeyboardLayoutEditorScreen(

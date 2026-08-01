@@ -86,4 +86,6 @@
     <string name="section_input_behavior">輸入行為</string>
     <string name="section_audio_and_link">音訊與聯動</string>
     <string name="section_ui_settings">介面設定</string>
+    <string name="section_main_ui">主介面</string>
+    <string name="section_keyboard_ui">鍵盤介面</string>
 </resources>

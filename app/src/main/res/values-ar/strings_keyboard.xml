@@ -86,4 +86,6 @@
     <string name="section_input_behavior">سلوك الإدخال</string>
     <string name="section_audio_and_link">الصوت والربط الخارجي</string>
     <string name="section_ui_settings">إعدادات الواجهة</string>
+    <string name="section_main_ui">واجهة التطبيق</string>
+    <string name="section_keyboard_ui">واجهة لوحة المفاتيح</string>
 </resources>

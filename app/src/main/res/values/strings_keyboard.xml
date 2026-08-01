@@ -86,4 +86,6 @@
     <string name="section_input_behavior">Input Behavior</string>
     <string name="section_audio_and_link">Audio &amp; External Link</string>
     <string name="section_ui_settings">UI Settings</string>
+    <string name="section_main_ui">App UI</string>
+    <string name="section_keyboard_ui">Keyboard UI</string>
 </resources>

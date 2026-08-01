@@ -26,8 +26,11 @@ import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 @Composable
 fun UiSettingsScreen(
     uiMode: BibiUiMode,
+    themeMode: String,
     onBack: () -> Unit,
-    onOpenKeyboardLayout: () -> Unit
+    onOpenKeyboardLayout: () -> Unit,
+    onSetUiMode: (BibiUiMode) -> Unit,
+    onSetThemeMode: (String) -> Unit
 ) {
     val context = LocalContext.current
     val prefs = remember(context) { Prefs(context) }
@@ -78,8 +81,18 @@ fun UiSettingsScreen(
             contentPadding = SettingsLayoutMetrics.pageContentPadding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(SettingsLayoutMetrics.SectionSpacing)
         ) {
-            item("ui") {
-                InputUiSettingsSection(
+            item("main_ui") {
+                InputMainUiSettingsSection(
+                    uiMode = uiMode,
+                    prefs = prefs,
+                    themeMode = themeMode,
+                    onSetUiMode = onSetUiMode,
+                    onSetThemeMode = onSetThemeMode,
+                    onRefreshState = ::refreshState
+                )
+            }
+            item("keyboard_ui") {
+                InputKeyboardUiSettingsSection(
                     uiMode = uiMode,
                     prefs = prefs,
                     uiState = uiState,
