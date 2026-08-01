@@ -269,6 +269,7 @@ object SettingsSearchIndex {
             )
         }
         item(R.string.about_stats_overview, "overview", "总览", "概要")
+        item(R.string.about_stats_share, "share", "分享", "导出")
         item(R.string.about_by_vendor, "provider", "vendor", "供应商")
         item(R.string.about_online_asr_failure_title, "failure", "错误", "失败")
         item(R.string.about_last_7_days, "daily", "每日", "最近")

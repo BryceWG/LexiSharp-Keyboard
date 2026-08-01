@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <attr name="asrScrimColor" format="color" />
+    <!-- Usage-stats share card: fixed light palette via UiColors fallbacks -->
+    <attr name="asrShareCardBg" format="color" />
+    <attr name="asrShareCardSurface" format="color" />
+    <attr name="asrShareCardOnBg" format="color" />
+    <attr name="asrShareCardOnBgVariant" format="color" />
+    <attr name="asrShareCardAccent" format="color" />
+    <attr name="asrShareCardAccentSoft" format="color" />
+    <attr name="asrShareCardTrack" format="color" />
+    <attr name="asrShareCardFooter" format="color" />
 </resources>

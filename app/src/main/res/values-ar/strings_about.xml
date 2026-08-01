@@ -43,6 +43,21 @@
     <string name="about_proc_prefix">الوقت</string>
     <string name="about_last_7_days">آخر 7 أيام (أحرف)</string>
     <string name="about_empty_stats_placeholder">لا توجد بيانات بعد</string>
+    <string name="about_stats_share">مشاركة</string>
+    <string name="about_stats_share_title">مشاركة إحصاءات الاستخدام</string>
+    <string name="about_stats_share_subtitle">سجل استخدامي</string>
+    <string name="about_stats_share_save">حفظ</string>
+    <string name="about_stats_share_action">مشاركة</string>
+    <string name="about_stats_share_chooser_title">مشاركة إحصاءات الاستخدام</string>
+    <string name="about_stats_share_saved">تم الحفظ في Pictures/BiBi</string>
+    <string name="about_stats_share_save_failed">فشل حفظ الصورة</string>
+    <string name="about_stats_share_failed">فشل مشاركة الصورة</string>
+    <string name="about_stats_share_top_vendors">أبرز المزودين</string>
+    <string name="about_stats_share_footer_site">bibi.brycewg.com</string>
+    <string name="about_stats_share_days_unit">يوم</string>
+    <string name="about_stats_share_tagline">لوحة مفاتيح صوتية ذكية</string>
+    <string name="about_stats_share_hero_caption">%1$s برفقتك</string>
+    <string name="about_stats_share_insight_time_saved">وفّرت حوالي %1$s من وقت الكتابة</string>
 
     <!-- Open Source Acknowledgements -->
     <string name="about_acknowledgements_title">شكر وتقدير</string>

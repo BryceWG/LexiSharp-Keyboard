@@ -44,6 +44,21 @@
     <string name="about_proc_prefix">所要</string>
     <string name="about_last_7_days">過去7日間（文字）</string>
     <string name="about_empty_stats_placeholder">まだデータがありません</string>
+    <string name="about_stats_share">共有</string>
+    <string name="about_stats_share_title">使用統計を共有</string>
+    <string name="about_stats_share_subtitle">マイ使用記録</string>
+    <string name="about_stats_share_save">保存</string>
+    <string name="about_stats_share_action">共有</string>
+    <string name="about_stats_share_chooser_title">使用統計を共有</string>
+    <string name="about_stats_share_saved">Pictures/BiBi に保存しました</string>
+    <string name="about_stats_share_save_failed">画像の保存に失敗しました</string>
+    <string name="about_stats_share_failed">画像の共有に失敗しました</string>
+    <string name="about_stats_share_top_vendors">よく使うプロバイダー</string>
+    <string name="about_stats_share_footer_site">bibi.brycewg.com</string>
+    <string name="about_stats_share_days_unit">日</string>
+    <string name="about_stats_share_tagline">AI音声キーボード</string>
+    <string name="about_stats_share_hero_caption">%1$sと一緒に過ごした日々</string>
+    <string name="about_stats_share_insight_time_saved">約%1$sのタイピング時間を節約</string>
 
     <!-- オープンソース謝辞 -->
     <string name="about_acknowledgements_title">謝辞</string>

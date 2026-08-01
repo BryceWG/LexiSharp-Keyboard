@@ -74,8 +74,23 @@ object UiColors {
         UiColorTokens.outline -> 0xFF79747E.toInt()
         UiColorTokens.outlineVariant -> 0xFFCAC4D0.toInt()
         UiColorTokens.scrim -> 0xFF000000.toInt()
+        // 使用统计分享卡：固定浅色导出构图，不跟随深色主题
+        UiColorTokens.shareCardBg -> 0xFFF7F4FF.toInt()
+        UiColorTokens.shareCardSurface -> 0xFFFFFFFF.toInt()
+        UiColorTokens.shareCardOnBg -> 0xFF1C1B1F.toInt()
+        UiColorTokens.shareCardOnBgVariant -> 0xFF49454F.toInt()
+        UiColorTokens.shareCardAccent -> 0xFF6750A4.toInt()
+        UiColorTokens.shareCardAccentSoft -> 0xFFE8DEF8.toInt()
+        UiColorTokens.shareCardTrack -> 0xFFE7E0EC.toInt()
+        UiColorTokens.shareCardFooter -> 0xFF79747E.toInt()
         else -> 0xFF000000.toInt() // 黑色作为最终回退
     }
+
+    /**
+     * 分享卡取色：优先主题 attr（若已配置），否则使用固定浅色回退，保证导出构图稳定。
+     */
+    @ColorInt
+    fun shareCard(context: Context, @AttrRes attr: Int): Int = get(context, attr)
 
     // ==================== 便捷方法（常用颜色） ====================
 

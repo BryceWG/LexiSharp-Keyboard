@@ -5,13 +5,20 @@
  */
 package com.brycewg.asrkb.ui.settings.compose.screens
 
+import android.graphics.Bitmap
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -21,9 +28,13 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsLazyColumn
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
+import com.brycewg.asrkb.ui.settings.compose.core.LocalSettingsHapticTap
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
+import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
 
 @Composable
 fun UsageStatsSettingsScreen(
@@ -33,7 +44,11 @@ fun UsageStatsSettingsScreen(
     val context = LocalContext.current
     val appContext = context.applicationContext
     val prefs = remember(appContext) { Prefs(appContext) }
+    val scope = rememberCoroutineScope()
+    val hapticTap = LocalSettingsHapticTap.current
     var usageInfo by remember(appContext) { mutableStateOf<AboutUsageInfo?>(null) }
+    var shareBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var shareBusy by remember { mutableStateOf(false) }
 
     LaunchedEffect(appContext, prefs) {
         usageInfo = withContext(Dispatchers.IO) {
@@ -41,10 +56,65 @@ fun UsageStatsSettingsScreen(
         }
     }
 
+    fun openSharePreview() {
+        if (shareBusy) return
+        shareBusy = true
+        hapticTap()
+        scope.launch {
+            try {
+                val bitmap = withContext(Dispatchers.Default) {
+                    val payload = buildUsageStatsSharePayload(appContext, prefs)
+                    UsageStatsShareCardRenderer.render(appContext, payload)
+                }
+                shareBitmap = bitmap
+            } catch (t: Throwable) {
+                android.util.Log.e("UsageStatsShare", "Failed to render usage stats share card", t)
+                Toast.makeText(
+                    context,
+                    R.string.about_stats_share_failed,
+                    Toast.LENGTH_SHORT
+                ).show()
+            } finally {
+                shareBusy = false
+            }
+        }
+    }
+
+    UsageStatsSharePreviewDialog(
+        bitmap = shareBitmap,
+        uiMode = uiMode,
+        onDismiss = { shareBitmap = null }
+    )
+
     SettingsDetailScaffold(
         uiMode = uiMode,
         titleRes = R.string.about_stats_title,
-        onBack = onBack
+        onBack = onBack,
+        actions = {
+            val shareLabel = stringResource(R.string.about_stats_share)
+            when (uiMode) {
+                BibiUiMode.Material -> IconButton(
+                    onClick = ::openSharePreview,
+                    enabled = !shareBusy
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Share,
+                        contentDescription = shareLabel
+                    )
+                }
+
+                BibiUiMode.Miuix -> MiuixIconButton(
+                    onClick = {
+                        if (!shareBusy) openSharePreview()
+                    }
+                ) {
+                    MiuixIcon(
+                        imageVector = Icons.Rounded.Share,
+                        contentDescription = shareLabel
+                    )
+                }
+            }
+        }
     ) { innerPadding, scrollModifier ->
         SettingsLazyColumn(
             uiMode = uiMode,

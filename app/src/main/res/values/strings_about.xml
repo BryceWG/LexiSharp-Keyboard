@@ -43,6 +43,21 @@
     <string name="about_proc_prefix">time</string>
     <string name="about_last_7_days">Last 7 days (chars)</string>
     <string name="about_empty_stats_placeholder">No data yet</string>
+    <string name="about_stats_share">Share</string>
+    <string name="about_stats_share_title">Share usage stats</string>
+    <string name="about_stats_share_subtitle">My usage record</string>
+    <string name="about_stats_share_save">Save</string>
+    <string name="about_stats_share_action">Share</string>
+    <string name="about_stats_share_chooser_title">Share usage stats</string>
+    <string name="about_stats_share_saved">Saved to Pictures/BiBi</string>
+    <string name="about_stats_share_save_failed">Failed to save image</string>
+    <string name="about_stats_share_failed">Failed to share image</string>
+    <string name="about_stats_share_top_vendors">Top providers</string>
+    <string name="about_stats_share_footer_site">bibi.brycewg.com</string>
+    <string name="about_stats_share_days_unit">days</string>
+    <string name="about_stats_share_tagline">AI Voice Keyboard</string>
+    <string name="about_stats_share_hero_caption">%1$s has been with you</string>
+    <string name="about_stats_share_insight_time_saved">≈ %1$s of typing saved</string>
 
     <!-- Open Source Acknowledgements -->
     <string name="about_acknowledgements_title">Acknowledgements</string>

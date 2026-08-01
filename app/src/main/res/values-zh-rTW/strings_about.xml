@@ -43,6 +43,21 @@
     <string name="about_proc_prefix">耗時</string>
     <string name="about_last_7_days">最近 7 天（字數）</string>
     <string name="about_empty_stats_placeholder">尚無統計資料</string>
+    <string name="about_stats_share">分享</string>
+    <string name="about_stats_share_title">分享使用紀錄</string>
+    <string name="about_stats_share_subtitle">我的使用紀錄</string>
+    <string name="about_stats_share_save">儲存</string>
+    <string name="about_stats_share_action">分享</string>
+    <string name="about_stats_share_chooser_title">分享使用紀錄</string>
+    <string name="about_stats_share_saved">已儲存到 Pictures/BiBi</string>
+    <string name="about_stats_share_save_failed">儲存圖片失敗</string>
+    <string name="about_stats_share_failed">分享圖片失敗</string>
+    <string name="about_stats_share_top_vendors">常用供應商</string>
+    <string name="about_stats_share_footer_site">bibi.brycewg.com</string>
+    <string name="about_stats_share_days_unit">天</string>
+    <string name="about_stats_share_tagline">AI 語音鍵盤</string>
+    <string name="about_stats_share_hero_caption">%1$s 與你相伴</string>
+    <string name="about_stats_share_insight_time_saved">約省下 %1$s 打字時間</string>
 
     <!-- 開源致謝 -->
     <string name="about_acknowledgements_title">開源致謝</string>

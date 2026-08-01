@@ -114,4 +114,30 @@ object UiColorTokens {
 
     /** 芯片文本色 */
     val chipFg = com.google.android.material.R.attr.colorOnSurfaceVariant
+
+    // ==================== 使用统计分享卡 ====================
+
+    /** 分享卡画布背景 */
+    val shareCardBg = R.attr.asrShareCardBg
+
+    /** 分享卡内容表面（指标块等） */
+    val shareCardSurface = R.attr.asrShareCardSurface
+
+    /** 分享卡主文字 */
+    val shareCardOnBg = R.attr.asrShareCardOnBg
+
+    /** 分享卡次要文字 */
+    val shareCardOnBgVariant = R.attr.asrShareCardOnBgVariant
+
+    /** 分享卡强调色 */
+    val shareCardAccent = R.attr.asrShareCardAccent
+
+    /** 分享卡强调浅色容器 */
+    val shareCardAccentSoft = R.attr.asrShareCardAccentSoft
+
+    /** 分享卡进度轨道 */
+    val shareCardTrack = R.attr.asrShareCardTrack
+
+    /** 分享卡页脚文字 */
+    val shareCardFooter = R.attr.asrShareCardFooter
 }
