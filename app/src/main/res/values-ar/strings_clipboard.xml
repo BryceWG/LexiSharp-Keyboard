@@ -41,6 +41,7 @@
     <string name="sc_test_failed">فشل السحب. تحقّق من الرابط وبيانات الاعتماد.</string>
     <string name="sc_status_uploaded">تم رفع الحافظة بنجاح</string>
     <string name="sc_status_upload_failed">فشل رفع الحافظة</string>
+    <string name="sc_share_file_target_label">الرفع إلى مزامنة الحافظة</string>
     <string name="btn_sc_project_home">صفحة المشروع</string>
     <string name="sc_open_browser_failed">تعذّر فتح المتصفح</string>
     

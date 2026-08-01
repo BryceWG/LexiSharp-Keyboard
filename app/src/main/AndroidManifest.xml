@@ -67,6 +67,27 @@
         </activity>
 
         <activity
+            android:name=".ui.ClipboardFileShareActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ASRKeyboard.Transparent" />
+
+        <activity-alias
+            android:name=".ui.ClipboardFileShareTarget"
+            android:targetActivity=".ui.ClipboardFileShareActivity"
+            android:exported="true"
+            android:label="@string/sc_share_file_target_label">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+        </activity-alias>
+
+        <service
+            android:name=".clipboard.ClipboardFileShareUploadService"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.setup.OnboardingGuideActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

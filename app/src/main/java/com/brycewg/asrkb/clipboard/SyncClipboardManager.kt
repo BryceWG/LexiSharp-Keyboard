@@ -1,7 +1,9 @@
 package com.brycewg.asrkb.clipboard
 
 import android.content.Context
+import android.content.ContentResolver
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Log
 import com.brycewg.asrkb.store.Prefs
@@ -422,7 +424,7 @@ class SyncClipboardManager(
     }
 
     private fun uploadAttachment(attachment: LocalClipboardAttachment): Boolean {
-        if (!attachmentPolicy.allows(attachment.kind, attachment.sizeBytes)) return false
+        if (!prefs.syncClipboardEnabled || !attachmentPolicy.allows(attachment.kind, attachment.sizeBytes)) return false
         val url = buildUrl() ?: return false
         val auth = authHeaderB64() ?: return false
         val dataName = newAttachmentDataName(attachment.displayName)
@@ -447,7 +449,7 @@ class SyncClipboardManager(
             false
         }
         if (!fileUploaded) return false
-        if (!attachmentPolicy.allows(attachment.kind, attachment.sizeBytes)) return false
+        if (!prefs.syncClipboardEnabled || !attachmentPolicy.allows(attachment.kind, attachment.sizeBytes)) return false
         val payload = UploadClipboardPayload(
             hasData = true,
             text = attachment.displayName,
@@ -480,6 +482,91 @@ class SyncClipboardManager(
             attachmentOrigins.clear(hash)
         }
         return profilePublished
+    }
+
+    /** 上传由系统分享入口授予的单个附件。 */
+    fun uploadSharedFile(uri: Uri): Boolean {
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return false
+        return ClipboardAttachmentTransferGate.run {
+            if (!prefs.syncClipboardEnabled) return@run false
+            resolveSharedAttachment(uri)?.let(::uploadAttachment) ?: false
+        }
+    }
+
+    private fun resolveSharedAttachment(uri: Uri): LocalClipboardAttachment? {
+        var displayName: String? = null
+        var sizeBytes: Long? = null
+        try {
+            context.contentResolver.query(
+                uri,
+                arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                    if (nameIndex >= 0) displayName = cursor.getString(nameIndex)
+                    if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) sizeBytes = cursor.getLong(sizeIndex)
+                }
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to read shared clipboard attachment metadata", t)
+        }
+        val size = sizeBytes?.takeIf { it >= 0L } ?: resolveSharedAttachmentSize(uri) ?: return null
+        val name = displayName.orEmpty()
+            .substringAfterLast('/')
+            .substringAfterLast('\\')
+            .ifBlank { "attachment" }
+        val mimeType = try {
+            context.contentResolver.getType(uri).orEmpty()
+                .ifBlank { "application/octet-stream" }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to resolve shared clipboard attachment type", t)
+            return null
+        }
+        val kind = if (mimeType.startsWith("image/", ignoreCase = true)) {
+            ClipboardAttachmentKind.IMAGE
+        } else {
+            ClipboardAttachmentKind.FILE
+        }
+        return LocalClipboardAttachment(
+            uri = uri,
+            displayName = name,
+            mimeType = mimeType,
+            sizeBytes = size,
+            kind = kind,
+            signature = uri.toString(),
+            lastModifiedMillis = 0L
+        )
+    }
+
+    private fun resolveSharedAttachmentSize(uri: Uri): Long? {
+        try {
+            context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { descriptor ->
+                if (descriptor.length >= 0L) return descriptor.length
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to read shared clipboard attachment descriptor", t)
+        }
+        val maxBytes = prefs.syncClipboardAttachmentMaxSizeMb * 1024L * 1024L
+        return try {
+            val input = context.contentResolver.openInputStream(uri) ?: return null
+            input.use {
+                val buffer = ByteArray(8192)
+                var total = 0L
+                while (total <= maxBytes) {
+                    val read = it.read(buffer)
+                    if (read < 0) break
+                    total += read
+                }
+                total
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to measure shared clipboard attachment", t)
+            null
+        }
     }
 
     private fun newAttachmentDataName(displayName: String): String {

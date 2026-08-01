@@ -12,4 +12,11 @@
     <style name="Theme.ASRKeyboard.Ime" parent="Theme.Material3.DayNight.NoActionBar">
     </style>
 
+    <style name="Theme.ASRKeyboard.Transparent" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
 </resources>
