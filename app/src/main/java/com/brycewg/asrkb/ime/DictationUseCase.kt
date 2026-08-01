@@ -49,7 +49,7 @@ internal class DictationUseCase(
         if (isCancelled(seq)) return
 
         transitionToState(KeyboardState.AiProcessing(rawText = text))
-        inputHelper.setComposingText(ic, text)
+        inputHelper.replaceStreamingPreview(ic, text)
 
         val postprocessResult = postprocessPipeline.process(
             ic = ic,

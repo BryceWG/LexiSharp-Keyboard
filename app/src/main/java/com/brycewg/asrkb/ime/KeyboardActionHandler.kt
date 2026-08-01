@@ -757,12 +757,7 @@ class KeyboardActionHandler(
         if (state is KeyboardState.Listening) {
             val partial = state.partialText
             if (!partial.isNullOrEmpty()) {
-                // 检查并删除已固化的预览文本
-                val before = inputHelper.getTextBeforeCursor(ic, 10000)?.toString()
-                if (!before.isNullOrEmpty() && before.endsWith(partial)) {
-                    inputHelper.deleteSurroundingText(ic, partial.length, 0)
-                }
-                inputHelper.setComposingText(ic, partial)
+                inputHelper.setStreamingPreview(ic, partial)
             }
         }
     }

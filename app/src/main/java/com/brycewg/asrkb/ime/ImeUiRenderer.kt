@@ -68,7 +68,7 @@ internal class ImeUiRenderer(
         // 更新中间结果到 composing
         if (state is KeyboardState.Listening && state.partialText != null) {
             inputConnectionProvider()?.let { ic ->
-                inputHelper.setComposingText(ic, state.partialText)
+                inputHelper.setStreamingPreview(ic, state.partialText)
             }
         }
 

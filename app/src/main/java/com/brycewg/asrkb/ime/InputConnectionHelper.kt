@@ -4,6 +4,10 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import java.lang.ref.WeakReference
+
+private const val STREAMING_PREVIEW_ANCHOR_MAX = 128
+private const val STREAMING_PREVIEW_VERIFY_MAX = 10_000
 
 /**
  * InputConnection 辅助类：封装所有与 InputConnection 的交互，统一异常处理和日志记录。
@@ -12,6 +16,14 @@ import android.view.inputmethod.InputConnection
  * 为所有操作添加详细日志，以便在特定应用中功能静默失败时能够快速定位问题。
  */
 class InputConnectionHelper(private val tag: String = "InputConnectionHelper") {
+    private data class StreamingPreviewOwnership(
+        val inputConnection: WeakReference<InputConnection>,
+        val anchorBeforeCursor: String,
+        val text: String
+    )
+
+    private var streamingPreviewOwnership: StreamingPreviewOwnership? = null
+
     /**
      * 提交文本到输入框
      * @param ic InputConnection 实例
@@ -34,7 +46,8 @@ class InputConnectionHelper(private val tag: String = "InputConnectionHelper") {
     }
 
     /**
-     * 设置组合文本（预览状态，通常用于实时显示 ASR 中间结果）
+     * 设置普通组合文本。
+     * 需要由识别终态安全替换的 ASR 流式预览应使用 [setStreamingPreview]。
      */
     fun setComposingText(
         ic: InputConnection?,
@@ -45,13 +58,75 @@ class InputConnectionHelper(private val tag: String = "InputConnectionHelper") {
             Log.w(tag, "setComposingText: InputConnection is null")
             return false
         }
+
         return try {
             ic.setComposingText(text, newCursorPosition)
-            true
         } catch (e: Throwable) {
             Log.e(tag, "setComposingText failed: text='$text', pos=$newCursorPosition", e)
             false
         }
+    }
+
+    /** 写入并记录 ASR 流式预览，供识别终态安全替换。 */
+    fun setStreamingPreview(ic: InputConnection?, text: CharSequence): Boolean {
+        if (ic == null) return setComposingText(null, text)
+        val previewText = text.toString()
+        val previous = streamingPreviewOwnership?.takeIf { it.inputConnection.get() === ic }
+        val anchor = previous?.anchorBeforeCursor
+            ?: captureStreamingPreviewAnchor(ic, previewText.length)
+        val success = setComposingText(ic, text)
+        val replacedExpected = anchor?.plus(previewText)
+            ?.takeIf { it.length <= STREAMING_PREVIEW_VERIFY_MAX }
+        val appendedText = previous?.text?.plus(previewText)
+        val appendedExpected = if (anchor != null && appendedText != null) {
+            (anchor + appendedText).takeIf { it.length <= STREAMING_PREVIEW_VERIFY_MAX }
+        } else {
+            null
+        }
+        val verifyLength = maxOf(replacedExpected?.length ?: 0, appendedExpected?.length ?: 0)
+        val actual = if (success && previewText.isNotEmpty() && verifyLength > 0) {
+            ic.getTextBeforeCursor(verifyLength, 0)?.toString()
+        } else {
+            null
+        }
+        val ownedText = when {
+            actual != null && actual == replacedExpected -> previewText
+            actual != null && actual == appendedExpected -> appendedText
+            else -> null
+        }
+        streamingPreviewOwnership = if (anchor != null && ownedText != null) {
+            StreamingPreviewOwnership(WeakReference(ic), anchor, ownedText)
+        } else null
+        return success
+    }
+
+    /**
+     * 仅在归属可确认时移除流式预览，再写入识别终态。
+     *
+     * 先结束 composing，再删除并重写，是为了替换被宿主静默固化为普通正文的流式预览。
+     */
+    fun replaceStreamingPreview(ic: InputConnection?, replacement: CharSequence): Boolean {
+        if (ic == null) return setComposingText(null, replacement)
+        val ownership = streamingPreviewOwnership?.takeIf {
+            it.inputConnection.get() === ic && matchesOwnedPreview(ic, it)
+        }
+        streamingPreviewOwnership = null
+        if (ownership == null) return setComposingText(ic, replacement)
+
+        val removed = try {
+            ic.finishComposingText() && ic.deleteSurroundingText(ownership.text.length, 0)
+        } catch (e: Throwable) {
+            Log.e(tag, "replaceStreamingPreview failed to remove preview", e)
+            false
+        }
+        if (!removed) {
+            Log.w(tag, "replaceStreamingPreview could not remove owned preview; using composing replacement")
+            return setComposingText(ic, replacement)
+        }
+
+        if (setComposingText(ic, replacement)) return true
+        restoreStreamingPreview(ic, ownership)
+        return false
     }
 
     /**
@@ -64,10 +139,11 @@ class InputConnectionHelper(private val tag: String = "InputConnectionHelper") {
         }
         return try {
             ic.finishComposingText()
-            true
         } catch (e: Throwable) {
             Log.e(tag, "finishComposingText failed", e)
             false
+        } finally {
+            clearStreamingPreviewOwnership(ic)
         }
     }
 
@@ -87,6 +163,43 @@ class InputConnectionHelper(private val tag: String = "InputConnectionHelper") {
         } catch (e: Throwable) {
             Log.e(tag, "deleteSurroundingText failed: before=$beforeLength, after=$afterLength", e)
             false
+        }
+    }
+
+    private fun matchesOwnedPreview(
+        ic: InputConnection,
+        ownership: StreamingPreviewOwnership
+    ): Boolean {
+        val expected = ownership.anchorBeforeCursor + ownership.text
+        return ic.getTextBeforeCursor(expected.length, 0)?.toString() == expected
+    }
+
+    private fun captureStreamingPreviewAnchor(ic: InputConnection, previewLength: Int): String? {
+        val maxLength = minOf(
+            STREAMING_PREVIEW_ANCHOR_MAX,
+            STREAMING_PREVIEW_VERIFY_MAX - previewLength
+        )
+        if (maxLength <= 0) return null
+        return ic.getTextBeforeCursor(maxLength, 0)?.toString()
+    }
+
+    private fun restoreStreamingPreview(
+        ic: InputConnection,
+        ownership: StreamingPreviewOwnership
+    ) {
+        try {
+            if (!ic.setComposingText(ownership.text, 1)) return
+            if (matchesOwnedPreview(ic, ownership)) {
+                streamingPreviewOwnership = ownership
+            }
+        } catch (e: Throwable) {
+            Log.e(tag, "replaceStreamingPreview failed to restore preview", e)
+        }
+    }
+
+    private fun clearStreamingPreviewOwnership(ic: InputConnection) {
+        if (streamingPreviewOwnership?.inputConnection?.get() === ic) {
+            streamingPreviewOwnership = null
         }
     }
 
