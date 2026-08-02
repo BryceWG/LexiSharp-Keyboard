@@ -51,8 +51,8 @@ internal object UsageStatsShareCardRenderer {
     private const val QR_SIZE = 136f
     private const val QR_CARD_PAD = 8f
 
-    fun render(context: Context, payload: UsageStatsSharePayload): Bitmap {
-        val palette = SharePalette.from(context)
+    fun render(context: Context, payload: UsageStatsSharePayload, seed: Int): Bitmap {
+        val palette = SharePalette.from(context, seed)
         val height = measureContentHeight(payload).roundToInt()
         val bitmap = Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -489,8 +489,7 @@ internal object UsageStatsShareCardRenderer {
         val footer: Int
     ) {
         companion object {
-            fun from(context: Context): SharePalette {
-                val seed = UiColors.primary(context)
+            fun from(context: Context, seed: Int): SharePalette {
                 val accent = resolveAccent(seed)
                 val surface = UiColors.shareCard(context, UiColorTokens.shareCardSurface)
                 return SharePalette(

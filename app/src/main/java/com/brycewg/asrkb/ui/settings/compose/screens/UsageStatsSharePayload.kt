@@ -63,8 +63,8 @@ internal data class UsageStatsSharePayload(
     val hasVendorData: Boolean
 )
 
-/** 手打速度假设：约 40 字/分钟，用于估算语音输入节省的打字时间 */
-private const val ASSUMED_TYPING_CHARS_PER_MIN = 40.0
+/** 手打速度假设：约 50 字/分钟，用于估算语音输入节省的打字时间 */
+private const val ASSUMED_TYPING_CHARS_PER_MIN = 50.0
 
 /** 累计字数达到该量级才展示“节省打字时间”，避免几分钟的琐碎数字 */
 private const val MIN_CHARS_FOR_TIME_SAVED = 200L

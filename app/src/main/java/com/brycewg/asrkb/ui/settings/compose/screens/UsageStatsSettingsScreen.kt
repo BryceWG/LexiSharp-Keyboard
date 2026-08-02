@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
@@ -35,6 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
 import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun UsageStatsSettingsScreen(
@@ -46,6 +49,10 @@ fun UsageStatsSettingsScreen(
     val prefs = remember(appContext) { Prefs(appContext) }
     val scope = rememberCoroutineScope()
     val hapticTap = LocalSettingsHapticTap.current
+    val shareCardSeed = when (uiMode) {
+        BibiUiMode.Material -> MaterialTheme.colorScheme.primary
+        BibiUiMode.Miuix -> MiuixTheme.colorScheme.primary
+    }.toArgb()
     var usageInfo by remember(appContext) { mutableStateOf<AboutUsageInfo?>(null) }
     var shareBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var shareBusy by remember { mutableStateOf(false) }
@@ -64,7 +71,7 @@ fun UsageStatsSettingsScreen(
             try {
                 val bitmap = withContext(Dispatchers.Default) {
                     val payload = buildUsageStatsSharePayload(context, prefs)
-                    UsageStatsShareCardRenderer.render(context, payload)
+                    UsageStatsShareCardRenderer.render(context, payload, shareCardSeed)
                 }
                 shareBitmap = bitmap
             } catch (t: Throwable) {
