@@ -26,6 +26,14 @@ internal data class LocalClipboardAttachment(
     val lastModifiedMillis: Long
 )
 
+internal fun selectLatestAttachment(
+    attachments: List<LocalClipboardAttachment>,
+    isEligible: (LocalClipboardAttachment) -> Boolean
+): LocalClipboardAttachment? =
+    attachments.filter(isEligible).maxWithOrNull(
+        compareBy<LocalClipboardAttachment> { it.lastModifiedMillis }.thenBy { it.signature }
+    )
+
 internal class ClipboardAttachmentWatcher(
     context: Context,
     private val prefs: Prefs,
@@ -108,14 +116,26 @@ internal class ClipboardAttachmentWatcher(
                     )
                 }
             }
-            for (attachment in attachments.sortedBy { it.lastModifiedMillis }) {
-                if (firstScanForTree) {
-                    markProcessed(attachment)
-                } else if (isNew(attachment) && !policy.allows(attachment.kind, attachment.sizeBytes)) {
-                    markProcessed(attachment)
-                } else if (isNew(attachment)) {
-                    if (!upload(attachment)) break
-                    markProcessed(attachment)
+            if (firstScanForTree) {
+                attachments.forEach(::markProcessed)
+            } else {
+                val newAttachments = attachments.filter(::isNew)
+                val attachment = selectLatestAttachment(newAttachments) {
+                    policy.allows(it.kind, it.sizeBytes)
+                }
+                if (attachment == null) {
+                    newAttachments.forEach(::markProcessed)
+                } else {
+                    newAttachments.asSequence()
+                        .filter { it.lastModifiedMillis <= attachment.lastModifiedMillis }
+                        .filterNot { it.signature == attachment.signature }
+                        .forEach(::markProcessed)
+                    if (upload(attachment)) {
+                        markProcessed(attachment)
+                        newAttachments.asSequence()
+                            .filter { it.lastModifiedMillis > attachment.lastModifiedMillis }
+                            .forEach(::markProcessed)
+                    }
                 }
             }
             if (firstScanForTree) seenPrefs.edit().putString(KEY_TREE_URI, root.toString()).apply()

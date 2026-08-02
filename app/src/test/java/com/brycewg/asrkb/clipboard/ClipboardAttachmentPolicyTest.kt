@@ -48,6 +48,21 @@ class ClipboardAttachmentPolicyTest {
     }
 
     @Test
+    fun latestAttachment_keepsLatestEligibleAttachment() {
+        val oldest = attachment("oldest.jpg", 1L)
+        val latest = attachment("latest.jpg", 3L)
+
+        assertEquals(
+            latest,
+            selectLatestAttachment(listOf(oldest, latest), { true })
+        )
+        assertEquals(
+            oldest,
+            selectLatestAttachment(listOf(oldest, latest)) { it == oldest }
+        )
+    }
+
+    @Test
     fun originStore_recognizesRecentLocallyPublishedProfiles() {
         val originStore = ClipboardAttachmentOriginStore(
             ApplicationProvider.getApplicationContext()
@@ -70,4 +85,14 @@ class ClipboardAttachmentPolicyTest {
             )
         )
     }
+
+    private fun attachment(name: String, modified: Long) = LocalClipboardAttachment(
+        uri = Uri.parse("content://test/$name"),
+        displayName = name,
+        mimeType = "image/jpeg",
+        sizeBytes = 1L,
+        kind = ClipboardAttachmentKind.IMAGE,
+        signature = name,
+        lastModifiedMillis = modified
+    )
 }
