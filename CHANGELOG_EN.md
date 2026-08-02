@@ -1,5 +1,31 @@
 # Changelog
 
+## v4.4.0 (2026-08-02)
+
+### New Features
+
+- **Clipboard Attachment Sync**: Clipboard sync can now pull image and file attachments; it can watch a selected folder to upload new files, with a configurable attachment size limit
+- **Clipboard File Sharing**: Upload files via the system share sheet, with attachment upload/download notifications
+- **New DashScope Models**: Added Qwen-Audio-3.0-ASR-Flash streaming and non-streaming models, removed legacy models, and refined semantic punctuation handling
+- **[Pro] Hotword Injection Control**: New toggle to control whether hotwords are injected into supported recognition engines
+
+### Improvements
+
+- **Usage Stats**: Consolidated usage stats into a dedicated page with one-tap share card generation
+- **UI Settings**: Consolidated interface style, haptic feedback, and keyboard layout into a dedicated UI Settings entry
+- **IME Bridge Error Handling**: Enhanced IME Bridge error handling and user feedback
+- **Recognition History UI**: Refined the layout and styling of history cards and text components
+- **[Pro] Continuous Talk**: Attempted to optimize continuous talk session management and audio focus handling for more stable recording
+- **[Pro] Hotword Optimization**: Targets already present in existing hotwords are no longer learned again; improved DashScope hotword management and sync
+
+### Bug Fixes
+
+- Optimized some descriptive copy
+- Attempted to fix duplicated streaming previews appearing in the IME
+- Fixed the empty search state content not being centered
+
+---
+
 ## v4.3.0 (2026-07-26)
 
 ### New Features
