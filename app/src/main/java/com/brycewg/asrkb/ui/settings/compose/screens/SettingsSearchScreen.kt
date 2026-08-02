@@ -261,7 +261,8 @@ private fun EmptySearchState(uiMode: BibiUiMode) {
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = SettingsLayoutMetrics.SearchEmptyHorizontalPadding),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         when (uiMode) {
             BibiUiMode.Material -> Text(
