@@ -98,7 +98,6 @@
 
   <!-- Settings page section titles -->
   <string name="section_settings_items">الإعدادات الرئيسية</string>
-  <string name="section_more">المزيد</string>
   <string name="section_general">إبقاء التطبيق في الخلفية</string>
 
   <string name="label_app_key">X-Api-App-Key</string>
