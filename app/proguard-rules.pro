@@ -2,9 +2,8 @@
 # 开源版 ProGuard 规则（main 源集）
 # ==========================================
 
-# 保留优化，禁用混淆，便于调试与社区协作
--dontobfuscate
--optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+# 保留必要的兼容约束；release 由 R8 负责缩减、优化和混淆
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*
 -optimizationpasses 3
 
 # 精简日志
@@ -25,16 +24,6 @@
 -keepattributes EnclosingMethod
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
-
-# ==========================================
-# Android 组件
-# ==========================================
-
--keep public class * extends android.app.Activity
--keep public class * extends android.app.Application
--keep public class * extends android.app.Service
--keep public class * extends android.content.BroadcastReceiver
--keep public class * extends android.content.ContentProvider
 
 # Parcelable
 -keep class * implements android.os.Parcelable {
@@ -92,8 +81,6 @@
 # OkHttp & WebSocket
 -dontwarn okhttp3.**
 -dontwarn okio.**
--keep class okhttp3.** { *; }
--keep interface okhttp3.** { *; }
 
 # Kotlin 协程/元数据
 -keepclassmembers class kotlinx.coroutines.** {
@@ -113,16 +100,6 @@
 
 -keep class com.brycewg.asrkb.ime.AsrKeyboardService { *; }
 -keep class com.brycewg.asrkb.ui.floating.FloatingAsrService { *; }
-
-# ASR 接口与实现
--keep interface com.brycewg.asrkb.asr.AsrEngine { *; }
--keep interface com.brycewg.asrkb.asr.StreamingAsrEngine { *; }
--keep interface com.brycewg.asrkb.asr.StreamingAsrEngine$Listener { *; }
-
--keep class * implements com.brycewg.asrkb.asr.AsrEngine {
-    public <init>(...);
-    public *;
-}
 
 # BuildConfig
 -keep class com.brycewg.asrkb.BuildConfig { *; }

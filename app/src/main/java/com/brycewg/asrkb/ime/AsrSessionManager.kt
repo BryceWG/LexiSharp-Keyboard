@@ -456,9 +456,9 @@ class AsrSessionManager(
                 event = "start",
                 data = mapOf(
                     "sessionSeq" to activeSeq,
-                    "vendor" to prefs.asrVendor.name,
-                    "engine" to (eng?.javaClass?.simpleName ?: "null"),
-                    "state" to state::class.java.simpleName,
+                    "vendor" to prefs.asrVendor.id,
+                    "engine" to asrEngineDiagnosticName(eng, directEngineIdentity),
+                    "state" to state.diagnosticName,
                     "duckMedia" to prefs.duckMediaOnRecordEnabled
                 )
             )
@@ -490,7 +490,7 @@ class AsrSessionManager(
                 category = "asr",
                 event = "start_state",
                 data = mapOf(
-                    "engine" to (asrEngine?.javaClass?.simpleName ?: "null"),
+                    "engine" to asrEngineDiagnosticName(asrEngine, directEngineIdentity),
                     "running" to (asrEngine?.isRunning == true)
                 )
             )
@@ -520,7 +520,7 @@ class AsrSessionManager(
                 event = "stop",
                 data = mapOf(
                     "sessionSeq" to activeSeq,
-                    "state" to currentState::class.java.simpleName,
+                    "state" to currentState.diagnosticName,
                     "engineRunning" to (asrEngine?.isRunning == true)
                 )
             )
@@ -704,7 +704,7 @@ class AsrSessionManager(
                 data = mapOf(
                     "sessionSeq" to seq,
                     "len" to text.length,
-                    "state" to currentState::class.java.simpleName
+                    "state" to currentState.diagnosticName
                 )
             )
         } catch (_: Throwable) { }
@@ -755,7 +755,7 @@ class AsrSessionManager(
                 event = "error",
                 data = mapOf(
                     "sessionSeq" to seq,
-                    "state" to currentState::class.java.simpleName,
+                    "state" to currentState.diagnosticName,
                     "msgType" to if (friendlyMessage != null) "friendly" else "raw"
                 )
             )
@@ -804,7 +804,7 @@ class AsrSessionManager(
                 data = mapOf(
                     "sessionSeq" to seq,
                     "audioMs" to ms,
-                    "state" to currentState::class.java.simpleName
+                    "state" to currentState.diagnosticName
                 )
             )
         } catch (_: Throwable) { }
@@ -943,4 +943,19 @@ class AsrSessionManager(
         // 部分流式引擎显式 stop() 不立即回调 onStopped；主动补齐并由 gate 去重。
         onStopped(seq)
     }
+}
+
+internal fun asrEngineDiagnosticName(
+    engine: StreamingAsrEngine?,
+    directIdentity: AsrDirectMicrophoneEngineIdentity?
+): String = when (engine) {
+    null -> "null"
+    is BackupAwareAsrEngine -> when (engine.backupStrategy) {
+        AsrParallelEngineDecision.UseParallel -> "ParallelAsrEngine"
+        AsrParallelEngineDecision.UseLazyLocalBackup -> "LazyLocalBackupAsrEngine"
+        AsrParallelEngineDecision.UsePrimaryOnly -> "PrimaryAsrEngine"
+    }
+    else -> directIdentity?.let {
+        it.fileRecognizerKey?.engineClassName ?: it.constructorKey.engineClassName
+    } ?: "DirectAsrEngine"
 }

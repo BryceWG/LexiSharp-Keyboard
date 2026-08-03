@@ -6,6 +6,7 @@
 local.properties
 
 .gradle
+.gradle-user
 .idea
 
 AGENTS.md 

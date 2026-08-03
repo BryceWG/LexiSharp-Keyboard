@@ -45,7 +45,7 @@ internal class MicGestureController(
                 safeLog(
                     event = "mic_click_locked",
                     data = mapOf(
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                        "state" to actionHandler.getCurrentState().diagnosticName,
                         "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
                     )
                 )
@@ -57,7 +57,7 @@ internal class MicGestureController(
                 event = "mic_click",
                 data = mapOf(
                     "tapToggle" to true,
-                    "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                    "state" to actionHandler.getCurrentState().diagnosticName,
                     "running" to (actionHandler.getCurrentState() is KeyboardState.Listening),
                     "aiPanel" to isAiEditPanelVisible()
                 )
@@ -105,7 +105,7 @@ internal class MicGestureController(
                         data = mapOf(
                             "tapToggle" to false,
                             "aiPanel" to true,
-                            "state" to actionHandler.getCurrentState()::class.java.simpleName
+                            "state" to actionHandler.getCurrentState().diagnosticName
                         )
                     )
                     v.performClick()
@@ -115,7 +115,7 @@ internal class MicGestureController(
                     event = "ai_mic_down",
                     data = mapOf(
                         "tapToggle" to false,
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                        "state" to actionHandler.getCurrentState().diagnosticName,
                         "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
                     )
                 )
@@ -127,7 +127,7 @@ internal class MicGestureController(
                     event = "ai_mic_up",
                     data = mapOf(
                         "tapToggle" to false,
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                        "state" to actionHandler.getCurrentState().diagnosticName,
                         "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
                     )
                 )
@@ -142,7 +142,7 @@ internal class MicGestureController(
                     event = "ai_mic_cancel",
                     data = mapOf(
                         "tapToggle" to false,
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName
+                        "state" to actionHandler.getCurrentState().diagnosticName
                     )
                 )
                 if (actionHandler.getCurrentState() is KeyboardState.AiEditListening) {
@@ -167,7 +167,7 @@ internal class MicGestureController(
                         event = "mic_down_blocked",
                         data = mapOf(
                             "tapToggle" to false,
-                            "state" to actionHandler.getCurrentState()::class.java.simpleName
+                            "state" to actionHandler.getCurrentState().diagnosticName
                         )
                     )
                     v.performClick()
@@ -178,7 +178,7 @@ internal class MicGestureController(
                     event = "mic_down",
                     data = mapOf(
                         "tapToggle" to false,
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                        "state" to actionHandler.getCurrentState().diagnosticName,
                         "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
                     )
                 )
@@ -238,7 +238,7 @@ internal class MicGestureController(
                             event = "mic_up",
                             data = mapOf(
                                 "tapToggle" to false,
-                                "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                                "state" to actionHandler.getCurrentState().diagnosticName,
                                 "running" to
                                     (actionHandler.getCurrentState() is KeyboardState.Listening)
                             )
@@ -254,7 +254,7 @@ internal class MicGestureController(
                     event = "mic_cancel",
                     data = mapOf(
                         "tapToggle" to false,
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName,
+                        "state" to actionHandler.getCurrentState().diagnosticName,
                         "running" to (actionHandler.getCurrentState() is KeyboardState.Listening)
                     )
                 )
@@ -275,7 +275,7 @@ internal class MicGestureController(
                 safeLog(
                     event = "mic_locked_down",
                     data = mapOf(
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName
+                        "state" to actionHandler.getCurrentState().diagnosticName
                     )
                 )
                 return true
@@ -284,7 +284,7 @@ internal class MicGestureController(
                 safeLog(
                     event = "mic_locked_up",
                     data = mapOf(
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName
+                        "state" to actionHandler.getCurrentState().diagnosticName
                     )
                 )
                 actionHandler.handleLockedMicTap()
@@ -294,7 +294,7 @@ internal class MicGestureController(
                 safeLog(
                     event = "mic_locked_cancel",
                     data = mapOf(
-                        "state" to actionHandler.getCurrentState()::class.java.simpleName
+                        "state" to actionHandler.getCurrentState().diagnosticName
                     )
                 )
                 return true

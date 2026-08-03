@@ -241,7 +241,7 @@ class KeyboardActionHandler(
                 category = "ime",
                 event = "mic_tap_toggle",
                 data = mapOf(
-                    "state" to currentState::class.java.simpleName,
+                    "state" to currentState.diagnosticName,
                     "opSeq" to opSeq,
                     "dropPendingFinal" to dropPendingFinal,
                     "isAutoStarted" to isAutoStartedRecording
@@ -308,7 +308,7 @@ class KeyboardActionHandler(
                         "mic_tap_action",
                         mapOf(
                             "action" to "ignored",
-                            "state" to currentState::class.java.simpleName
+                            "state" to currentState.diagnosticName
                         )
                     )
                 } catch (_: Throwable) { }
@@ -328,7 +328,7 @@ class KeyboardActionHandler(
                 category = "ime",
                 event = "mic_down_dispatch",
                 data = mapOf(
-                    "state" to currentState::class.java.simpleName,
+                    "state" to currentState.diagnosticName,
                     "opSeq" to opSeq,
                     "dropPendingFinal" to dropPendingFinal,
                     "isAutoStarted" to isAutoStartedRecording
@@ -387,7 +387,7 @@ class KeyboardActionHandler(
                         "mic_down_action",
                         mapOf(
                             "action" to "ignored",
-                            "state" to currentState::class.java.simpleName
+                            "state" to currentState.diagnosticName
                         )
                     )
                 } catch (_: Throwable) { }
@@ -456,7 +456,7 @@ class KeyboardActionHandler(
                 event = "mic_up_dispatch",
                 data = mapOf(
                     "autoEnter" to autoEnterAfterFinal,
-                    "state" to currentState::class.java.simpleName,
+                    "state" to currentState.diagnosticName,
                     "opSeq" to opSeq
                 )
             )
@@ -1018,8 +1018,8 @@ class KeyboardActionHandler(
                 category = "ime",
                 event = "state_transition",
                 data = mapOf(
-                    "from" to prev::class.java.simpleName,
-                    "to" to newState::class.java.simpleName,
+                    "from" to prev.diagnosticName,
+                    "to" to newState.diagnosticName,
                     "opSeq" to opSeq
                 )
             )

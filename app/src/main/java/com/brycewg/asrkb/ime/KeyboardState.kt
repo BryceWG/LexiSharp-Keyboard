@@ -57,6 +57,17 @@ sealed class KeyboardState {
     ) : KeyboardState()
 }
 
+/** 诊断日志使用的稳定标签，不依赖混淆后的类名。 */
+internal val KeyboardState.diagnosticName: String
+    get() = when (this) {
+        KeyboardState.Idle -> "Idle"
+        is KeyboardState.Listening -> "Listening"
+        KeyboardState.Processing -> "Processing"
+        is KeyboardState.AiProcessing -> "AiProcessing"
+        is KeyboardState.AiEditListening -> "AiEditListening"
+        is KeyboardState.AiEditProcessing -> "AiEditProcessing"
+    }
+
 /**
  * 撤销快照：记录操作前后的文本状态，用于全局撤销
  */
