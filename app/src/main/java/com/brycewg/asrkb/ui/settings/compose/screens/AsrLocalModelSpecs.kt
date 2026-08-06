@@ -157,11 +157,16 @@ internal val Qwen3AsrModelSpec = AsrLocalModelSpec(
     clearDoneRes = R.string.qw_clear_done,
     clearFailedRes = R.string.qw_clear_failed,
     variants = listOf(
-        AsrLocalChoice("qwen3-0.6b-int8", R.string.qw_model_qwen3_06b_int8)
+        AsrLocalChoice("qwen3-0.6b-int8", R.string.qw_model_qwen3_06b_int8),
+        AsrLocalChoice("qwen3-1.7b-int8", R.string.qw_model_qwen3_17b_int8)
     ),
     currentVariant = { normalizeQwen3AsrVariant(it.qwModelVariant) },
-    downloadUrl = {
-        "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.zip"
+    downloadUrl = { variant ->
+        if (normalizeQwen3AsrVariant(variant) == "qwen3-1.7b-int8") {
+            "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-qwen3-asr-1.7B-int8-2026-08-04.zip"
+        } else {
+            "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.zip"
+        }
     },
     isReady = linkedAsrModelReady(AsrVendor.Qwen3Asr),
     checkStatus = linkedAsrModelStatus(AsrVendor.Qwen3Asr),

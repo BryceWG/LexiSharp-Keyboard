@@ -244,6 +244,7 @@ internal fun isQwen3AsrPrepared(): Boolean {
 
 internal fun normalizeQwen3AsrVariant(variant: String?): String = when (variant?.trim()?.lowercase()) {
     "qwen3-0.6b-int8", "qwen3-0.6b", "0.6b-int8", "0.6b" -> "qwen3-0.6b-int8"
+    "qwen3-1.7b-int8", "qwen3-1.7b", "1.7b-int8", "1.7b" -> "qwen3-1.7b-int8"
     else -> "qwen3-0.6b-int8"
 }
 
@@ -653,24 +654,25 @@ private object Qwen3AsrModelResolverCache {
         val probeRoot = File(base, "qwen3_asr")
         val cacheKey = probeRoot.absolutePath + "|" + variant
         val cached = if (cachedKey == cacheKey) cachedValue else null
-        if (cached != null && isUsable(context, cached)) return LocalModelCheck.Ready(cached)
+        if (cached != null && isUsable(context, cached, variant)) return LocalModelCheck.Ready(cached)
 
         val variantDir = File(probeRoot, variant)
-        val modelDir = findQwen3AsrModelDir(variantDir) ?: findQwen3AsrModelDir(probeRoot) ?: return LocalModelCheck.Missing
+        val modelDir = findQwen3AsrModelDir(variantDir) ?: return LocalModelCheck.Missing
         val convFrontend = File(modelDir, "conv_frontend.onnx")
         val encoder = File(modelDir, "encoder.int8.onnx")
         val decoder = File(modelDir, "decoder.int8.onnx")
         val tokenizerDir = findQwen3AsrTokenizerDir(modelDir) ?: return LocalModelCheck.Missing
         if (!isQwen3AsrTokenizerDir(tokenizerDir)) return LocalModelCheck.Missing
+        val specs = LocalModelSpecs.Qwen3Asr.forVariant(variant)
         when (
             val check = requireModelFilesCached(
                 context,
-                convFrontend to LocalModelSpecs.Qwen3Asr.convFrontend,
-                encoder to LocalModelSpecs.Qwen3Asr.encoder,
-                decoder to LocalModelSpecs.Qwen3Asr.decoder,
-                File(tokenizerDir, "merges.txt") to LocalModelSpecs.Qwen3Asr.merges,
-                File(tokenizerDir, "tokenizer_config.json") to LocalModelSpecs.Qwen3Asr.tokenizerConfig,
-                File(tokenizerDir, "vocab.json") to LocalModelSpecs.Qwen3Asr.vocab
+                convFrontend to specs.convFrontend,
+                encoder to specs.encoder,
+                decoder to specs.decoder,
+                File(tokenizerDir, "merges.txt") to specs.merges,
+                File(tokenizerDir, "tokenizer_config.json") to specs.tokenizerConfig,
+                File(tokenizerDir, "vocab.json") to specs.vocab
             )
         ) {
             is LocalModelCheck.IntegrityError -> return LocalModelCheck.IntegrityError(check.fileName)
@@ -692,15 +694,18 @@ private object Qwen3AsrModelResolverCache {
         )
     }
 
-    private fun isUsable(context: Context, model: Qwen3AsrResolvedModel): Boolean = requireModelFilesCached(
-        context,
-        File(model.convFrontendPath) to LocalModelSpecs.Qwen3Asr.convFrontend,
-        File(model.encoderPath) to LocalModelSpecs.Qwen3Asr.encoder,
-        File(model.decoderPath) to LocalModelSpecs.Qwen3Asr.decoder,
-        File(model.tokenizerDirPath, "merges.txt") to LocalModelSpecs.Qwen3Asr.merges,
-        File(model.tokenizerDirPath, "tokenizer_config.json") to LocalModelSpecs.Qwen3Asr.tokenizerConfig,
-        File(model.tokenizerDirPath, "vocab.json") to LocalModelSpecs.Qwen3Asr.vocab
-    ) is LocalModelCheck.Ready
+    private fun isUsable(context: Context, model: Qwen3AsrResolvedModel, variant: String): Boolean {
+        val specs = LocalModelSpecs.Qwen3Asr.forVariant(variant)
+        return requireModelFilesCached(
+            context,
+            File(model.convFrontendPath) to specs.convFrontend,
+            File(model.encoderPath) to specs.encoder,
+            File(model.decoderPath) to specs.decoder,
+            File(model.tokenizerDirPath, "merges.txt") to specs.merges,
+            File(model.tokenizerDirPath, "tokenizer_config.json") to specs.tokenizerConfig,
+            File(model.tokenizerDirPath, "vocab.json") to specs.vocab
+        ) is LocalModelCheck.Ready
+    }
 }
 
 internal fun checkQwen3AsrModel(context: Context, prefs: Prefs): LocalModelCheck<Qwen3AsrResolvedModel> = Qwen3AsrModelResolverCache.resolve(context, normalizeQwen3AsrVariant(prefs.qwModelVariant))

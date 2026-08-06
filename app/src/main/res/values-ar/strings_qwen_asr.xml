@@ -5,6 +5,7 @@
 
     <string name="label_qw_model_variant">إصدار النموذج</string>
     <string name="qw_model_qwen3_06b_int8">Qwen3-ASR 0.6B Int8 (806MB)</string>
+    <string name="qw_model_qwen3_17b_int8">Qwen3-ASR 1.7B Int8 (2.0GB)</string>
     <string name="label_qw_threads">عدد الخيوط (1-8)</string>
     <string name="label_qw_preload">تحميل النموذج بقوة</string>
     <string name="label_qw_use_itn">تفعيل ITN (تعرّف ذكي على الأرقام)</string>
@@ -30,4 +31,5 @@
     <string name="qw_clear_failed">فشل المسح</string>
     <string name="error_qwen3_asr_model_missing">ملفات نموذج Qwen3-ASR مفقودة. اضبطها أو نزّلها من الإعدادات.</string>
     <string name="notif_qw_title_qwen3_06b_int8">نموذج Qwen3-ASR 0.6B Int8 (806MB)</string>
+    <string name="notif_qw_title_qwen3_17b_int8">نموذج Qwen3-ASR 1.7B Int8 (2.0GB)</string>
 </resources>

@@ -6,6 +6,7 @@ import com.brycewg.asrkb.asr.AsrLocalVendorLifecycles
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.AsrVendorCapability
 import com.brycewg.asrkb.asr.AsrVendorRegistry
+import com.brycewg.asrkb.asr.normalizeQwen3AsrVariant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -54,6 +55,23 @@ class AsrLocalModelLifecycleCatalogTest {
         assertNull(PunctuationModelSpec.vendor)
         assertFalse(AsrLocalModelCatalog.all().any { it.vendor.id == PunctuationModelSpec.key })
         assertFalse(AsrLocalVendorLifecycles.all().any { it.vendor.id == PunctuationModelSpec.key })
+    }
+
+    @Test
+    fun qwen3AsrSpecExposesBothDownloadableModelVariants() {
+        assertEquals(
+            listOf("qwen3-0.6b-int8", "qwen3-1.7b-int8"),
+            Qwen3AsrModelSpec.variants.map { it.value }
+        )
+        assertEquals(
+            "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.zip",
+            Qwen3AsrModelSpec.downloadUrl("qwen3-0.6b-int8")
+        )
+        assertEquals(
+            "https://github.com/BryceWG/BiBi-Keyboard/releases/download/models/sherpa-onnx-qwen3-asr-1.7B-int8-2026-08-04.zip",
+            Qwen3AsrModelSpec.downloadUrl("qwen3-1.7b-int8")
+        )
+        assertEquals("qwen3-1.7b-int8", normalizeQwen3AsrVariant("1.7B"))
     }
 
     @Test

@@ -390,7 +390,7 @@ class ModelDownloadService : Service() {
                         "sensevoice" -> prefs.svModelVariant = detectedVariant
                         // FunASR Nano：二选一，直接同步用户选择
                         "funasr_nano" -> prefs.fnModelVariant = detectedVariant
-                        // Qwen3-ASR：当前仅一套 0.6B int8 模型
+                        // Qwen3-ASR：同步用户选择的模型变体
                         "qwen3_asr" -> prefs.qwModelVariant = detectedVariant
                         // Parakeet：v2/v3 两套模型
                         "parakeet" -> prefs.pkModelVariant = detectedVariant
@@ -536,6 +536,7 @@ class ModelDownloadService : Service() {
 
             // Qwen3-ASR
             "sherpa-onnx-qwen3-asr-0.6b-int8-2026-03-25" -> "qwen3_asr" to "qwen3-0.6b-int8"
+            "sherpa-onnx-qwen3-asr-1.7b-int8-2026-08-04" -> "qwen3_asr" to "qwen3-1.7b-int8"
 
             // Parakeet
             "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8" -> "parakeet" to "0.6b-v3-int8"
@@ -578,7 +579,13 @@ class ModelDownloadService : Service() {
             }
             "FunASR $versionName"
         }
-        "qwen3_asr" -> "Qwen3-ASR 0.6B Int8 (806MB)"
+        "qwen3_asr" -> if (
+            com.brycewg.asrkb.asr.normalizeQwen3AsrVariant(variant) == "qwen3-1.7b-int8"
+        ) {
+            getString(R.string.qw_model_qwen3_17b_int8)
+        } else {
+            getString(R.string.qw_model_qwen3_06b_int8)
+        }
         "parakeet" -> {
             val versionName = when (variant) {
                 "0.6b-v2-int8" -> "0.6B V2 Int8"
@@ -895,13 +902,14 @@ class ModelDownloadService : Service() {
             "qwen3_asr" -> {
                 val tokenizerDir = findQwen3AsrTokenizerDir(modelDir)
                     ?: throw IllegalStateException("qwen3_asr tokenizer missing after extract")
+                val specs = LocalModelSpecs.Qwen3Asr.forVariant(variant)
                 requireInstalledFiles(
-                    File(modelDir, "conv_frontend.onnx") to LocalModelSpecs.Qwen3Asr.convFrontend,
-                    File(modelDir, "encoder.int8.onnx") to LocalModelSpecs.Qwen3Asr.encoder,
-                    File(modelDir, "decoder.int8.onnx") to LocalModelSpecs.Qwen3Asr.decoder,
-                    File(tokenizerDir, "merges.txt") to LocalModelSpecs.Qwen3Asr.merges,
-                    File(tokenizerDir, "tokenizer_config.json") to LocalModelSpecs.Qwen3Asr.tokenizerConfig,
-                    File(tokenizerDir, "vocab.json") to LocalModelSpecs.Qwen3Asr.vocab
+                    File(modelDir, "conv_frontend.onnx") to specs.convFrontend,
+                    File(modelDir, "encoder.int8.onnx") to specs.encoder,
+                    File(modelDir, "decoder.int8.onnx") to specs.decoder,
+                    File(tokenizerDir, "merges.txt") to specs.merges,
+                    File(tokenizerDir, "tokenizer_config.json") to specs.tokenizerConfig,
+                    File(tokenizerDir, "vocab.json") to specs.vocab
                 )
             }
             "parakeet" -> {
@@ -1571,7 +1579,13 @@ class NotificationHandler(
                 context.getString(R.string.notif_fn_title_nano_int8)
             }
         }
-        "qwen3_asr" -> context.getString(R.string.notif_qw_title_qwen3_06b_int8)
+        "qwen3_asr" -> if (
+            com.brycewg.asrkb.asr.normalizeQwen3AsrVariant(variant) == "qwen3-1.7b-int8"
+        ) {
+            context.getString(R.string.notif_qw_title_qwen3_17b_int8)
+        } else {
+            context.getString(R.string.notif_qw_title_qwen3_06b_int8)
+        }
         "parakeet" -> {
             if (com.brycewg.asrkb.asr.normalizeParakeetVariant(variant) == "0.6b-v2-int8") {
                 context.getString(R.string.notif_pk_title_06b_v2_int8)

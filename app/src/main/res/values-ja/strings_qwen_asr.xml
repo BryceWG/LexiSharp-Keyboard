@@ -5,6 +5,7 @@
 
     <string name="label_qw_model_variant">モデルバージョン</string>
     <string name="qw_model_qwen3_06b_int8">Qwen3-ASR 0.6B Int8（806MB）</string>
+    <string name="qw_model_qwen3_17b_int8">Qwen3-ASR 1.7B Int8（2.0GB）</string>
     <string name="label_qw_threads">スレッド数（1-8）</string>
     <string name="label_qw_preload">積極的にモデルを読み込む</string>
     <string name="label_qw_use_itn">ITNを有効化（数字スマート認識）</string>
@@ -30,4 +31,5 @@
     <string name="qw_clear_failed">クリア失敗</string>
     <string name="error_qwen3_asr_model_missing">Qwen3-ASRモデルファイルがありません。設定で構成またはダウンロードしてください。</string>
     <string name="notif_qw_title_qwen3_06b_int8">Qwen3-ASR 0.6B Int8モデル（806MB）</string>
+    <string name="notif_qw_title_qwen3_17b_int8">Qwen3-ASR 1.7B Int8モデル（2.0GB）</string>
 </resources>

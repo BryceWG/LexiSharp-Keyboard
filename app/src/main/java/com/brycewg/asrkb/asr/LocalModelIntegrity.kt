@@ -25,6 +25,15 @@ internal data class LocalModelFileSpec(
     val sha256: String
 )
 
+internal data class Qwen3AsrVariantFileSpecs(
+    val convFrontend: LocalModelFileSpec,
+    val encoder: LocalModelFileSpec,
+    val decoder: LocalModelFileSpec,
+    val merges: LocalModelFileSpec,
+    val tokenizerConfig: LocalModelFileSpec,
+    val vocab: LocalModelFileSpec
+)
+
 internal fun localModelErrorMessage(
     context: Context,
     check: LocalModelCheck<*>,
@@ -160,36 +169,73 @@ internal object LocalModelSpecs {
     }
 
     object Qwen3Asr {
-        val convFrontend = LocalModelFileSpec(
-            name = "conv_frontend.onnx",
-            sizeBytes = 44_148_281L,
-            sha256 = "d22dc4423e0940e49884e903d2ea2f7e5567c14fc1aed97e4e26d6b8f208ef9e"
-        )
-        val encoder = LocalModelFileSpec(
-            name = "encoder.int8.onnx",
-            sizeBytes = 182_491_662L,
-            sha256 = "60748d3e6744a57c9c91e1b17424a6c2990567e8adceb0783940c03ed98fa9d9"
-        )
-        val decoder = LocalModelFileSpec(
-            name = "decoder.int8.onnx",
-            sizeBytes = 755_914_231L,
-            sha256 = "4f6885be5959ae26af3089d38ee7972c5fafbeeb1cf8d5e76eab6d8b61ca5771"
-        )
-        val merges = LocalModelFileSpec(
+        private val sharedMerges = LocalModelFileSpec(
             name = "merges.txt",
             sizeBytes = 1_671_853L,
             sha256 = "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
         )
-        val tokenizerConfig = LocalModelFileSpec(
+        private val sharedTokenizerConfig = LocalModelFileSpec(
             name = "tokenizer_config.json",
             sizeBytes = 12_487L,
             sha256 = "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c"
         )
-        val vocab = LocalModelFileSpec(
+        private val sharedVocab = LocalModelFileSpec(
             name = "vocab.json",
             sizeBytes = 2_776_833L,
             sha256 = "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
         )
+
+        private val qwen3Asr06bInt8 = Qwen3AsrVariantFileSpecs(
+            convFrontend = LocalModelFileSpec(
+                name = "conv_frontend.onnx",
+                sizeBytes = 44_148_281L,
+                sha256 = "d22dc4423e0940e49884e903d2ea2f7e5567c14fc1aed97e4e26d6b8f208ef9e"
+            ),
+            encoder = LocalModelFileSpec(
+                name = "encoder.int8.onnx",
+                sizeBytes = 182_491_662L,
+                sha256 = "60748d3e6744a57c9c91e1b17424a6c2990567e8adceb0783940c03ed98fa9d9"
+            ),
+            decoder = LocalModelFileSpec(
+                name = "decoder.int8.onnx",
+                sizeBytes = 755_914_231L,
+                sha256 = "4f6885be5959ae26af3089d38ee7972c5fafbeeb1cf8d5e76eab6d8b61ca5771"
+            ),
+            merges = sharedMerges,
+            tokenizerConfig = sharedTokenizerConfig,
+            vocab = sharedVocab
+        )
+
+        private val qwen3Asr17bInt8 = Qwen3AsrVariantFileSpecs(
+            convFrontend = LocalModelFileSpec(
+                name = "conv_frontend.onnx",
+                sizeBytes = 48_080_441L,
+                sha256 = "3cb27a9fe94d95c938e476f2012b21aba2ec0bfceef33b0e58acd208946bafdd"
+            ),
+            encoder = LocalModelFileSpec(
+                name = "encoder.int8.onnx",
+                sizeBytes = 314_222_162L,
+                sha256 = "a5deedae034ece715de8ed204378d8c77f889af3a60c2566581135e84cced7cd"
+            ),
+            decoder = LocalModelFileSpec(
+                name = "decoder.int8.onnx",
+                sizeBytes = 2_037_091_087L,
+                sha256 = "41eafdf582b124c5fb050a59ca3331a6ec62db0d5ce35d456e9f999f7e6ad042"
+            ),
+            merges = sharedMerges,
+            tokenizerConfig = sharedTokenizerConfig,
+            vocab = sharedVocab
+        )
+
+        val convFrontend: LocalModelFileSpec get() = qwen3Asr06bInt8.convFrontend
+        val encoder: LocalModelFileSpec get() = qwen3Asr06bInt8.encoder
+        val decoder: LocalModelFileSpec get() = qwen3Asr06bInt8.decoder
+        val merges: LocalModelFileSpec get() = qwen3Asr06bInt8.merges
+        val tokenizerConfig: LocalModelFileSpec get() = qwen3Asr06bInt8.tokenizerConfig
+        val vocab: LocalModelFileSpec get() = qwen3Asr06bInt8.vocab
+
+        fun forVariant(variant: String?): Qwen3AsrVariantFileSpecs =
+            if (normalizeQwen3AsrVariant(variant) == "qwen3-1.7b-int8") qwen3Asr17bInt8 else qwen3Asr06bInt8
     }
 
     object Parakeet {

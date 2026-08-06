@@ -5,6 +5,7 @@
 
     <string name="label_qw_model_variant">模型版本</string>
     <string name="qw_model_qwen3_06b_int8">Qwen3-ASR 0.6B Int8（806MB）</string>
+    <string name="qw_model_qwen3_17b_int8">Qwen3-ASR 1.7B Int8（2.0GB）</string>
     <string name="label_qw_threads">執行緒數（1-8）</string>
     <string name="label_qw_preload">積極載入模型</string>
     <string name="label_qw_use_itn">啟用 ITN（數字智慧識別）</string>
@@ -30,4 +31,5 @@
     <string name="qw_clear_failed">清除失敗</string>
     <string name="error_qwen3_asr_model_missing">缺少 Qwen3-ASR 模型檔案，請在設定中配置或下載</string>
     <string name="notif_qw_title_qwen3_06b_int8">Qwen3-ASR 0.6B Int8 模型（806MB）</string>
+    <string name="notif_qw_title_qwen3_17b_int8">Qwen3-ASR 1.7B Int8 模型（2.0GB）</string>
 </resources>

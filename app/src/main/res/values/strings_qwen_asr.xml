@@ -5,6 +5,7 @@
 
     <string name="label_qw_model_variant">Model version</string>
     <string name="qw_model_qwen3_06b_int8">Qwen3-ASR 0.6B Int8 (806MB)</string>
+    <string name="qw_model_qwen3_17b_int8">Qwen3-ASR 1.7B Int8 (2.0GB)</string>
     <string name="label_qw_threads">Threads (1-8)</string>
     <string name="label_qw_preload">Aggressive model loading</string>
     <string name="label_qw_use_itn">Enable ITN (smart number recognition)</string>
@@ -30,4 +31,5 @@
     <string name="qw_clear_failed">Clear failed</string>
     <string name="error_qwen3_asr_model_missing">Qwen3-ASR model files are missing. Please configure or download in Settings.</string>
     <string name="notif_qw_title_qwen3_06b_int8">Qwen3-ASR 0.6B Int8 model (806MB)</string>
+    <string name="notif_qw_title_qwen3_17b_int8">Qwen3-ASR 1.7B Int8 model (2.0GB)</string>
 </resources>
