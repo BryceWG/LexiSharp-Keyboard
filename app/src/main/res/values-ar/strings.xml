@@ -50,6 +50,7 @@
   <string name="label_auto_start_recording_on_show">بدء التسجيل تلقائياً عند ظهور اللوحة</string>
   <string name="label_continuous_capture">تسجيل مستمر أثناء الظهور</string>
   <string name="label_auto_enter_after_asr">إدخال تلقائي بعد اكتمال التعرّف</string>
+  <string name="label_auto_switch_ime_after_asr">التبديل إلى IME محدد بعد اكتمال الإدخال</string>
   <string name="btn_retry">فشل الاتصال، إعادة المحاولة؟</string>
 
   <!-- ============================================== -->
@@ -366,6 +367,10 @@
   <!-- Auto enter after input -->
   <string name="feature_auto_enter_after_asr_off_desc">بعد التعرّف (ومعالجة الذكاء الاصطناعي إن فُعّلت)، يُدرج النص فقط. يمكنك السحب يميناً على الميكروفون للإرسال بـ Enter في تلك الجلسة.</string>
   <string name="feature_auto_enter_after_asr_on_desc">بعد اكتمال التعرّف—بما فيه معالجة الذكاء الاصطناعي عند التفعيل—يُضغط Enter / إجراء الإرسال تلقائياً لإرسال الرسالة في تطبيقات الدردشة. تُتخطّى النتائج الفارغة.</string>
+
+  <!-- Auto switch IME after input -->
+  <string name="feature_auto_switch_ime_after_asr_off_desc">بعد اكتمال الإدخال تبقى طريقة الإدخال الحالية. لا يتم التبديل تلقائياً.</string>
+  <string name="feature_auto_switch_ime_after_asr_on_desc">بعد انتهاء المعالجة اللاحقة وتثبيت نص المعاينة، يتم التبديل تلقائياً إلى طريقة الإدخال المحددة في «طريقة الإدخال المستهدفة» لمتابعة التحرير. إن لم تُضبط تُستخدم السابقة. تُتخطّى النتائج الفارغة.</string>
 
   <!-- Fcitx5 return on switcher -->
   <string name="feature_fcitx5_return_on_switcher_off_desc">مفتاح تبديل IME يفتح منتقي طرق الإدخال بالنظام.</string>

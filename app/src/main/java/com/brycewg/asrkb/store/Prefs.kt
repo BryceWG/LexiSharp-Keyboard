@@ -204,6 +204,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_AUTO_ENTER_AFTER_ASR, false)
         set(value) = sp.edit { putBoolean(KEY_AUTO_ENTER_AFTER_ASR, value) }
 
+    // 输入完成（后处理结束且 composing 预览已固化）后自动切换到指定输入法，默认关闭
+    var autoSwitchImeAfterAsrEnabled: Boolean
+        get() = sp.getBoolean(KEY_AUTO_SWITCH_IME_AFTER_ASR, false)
+        set(value) = sp.edit { putBoolean(KEY_AUTO_SWITCH_IME_AFTER_ASR, value) }
+
     // 键盘/悬浮球可见期间预先热启动麦克风采集，默认关闭
     var continuousCaptureEnabled: Boolean
         get() = sp.getBoolean(KEY_CONTINUOUS_CAPTURE_ENABLED, false)

@@ -105,6 +105,7 @@ internal class DictationUseCase(
         )
 
         uiListenerProvider()?.onVibrate()
+        notifyInputSolidifiedIfReady(finalOut)
 
         if (asrManager.isRunning()) {
             transitionToState(KeyboardState.Listening(lockedBySwipe = state.lockedBySwipe))
@@ -195,6 +196,7 @@ internal class DictationUseCase(
         commitRecorder.record(text = finalToCommit, rawText = text, aiProcessed = false)
 
         uiListenerProvider()?.onVibrate()
+        notifyInputSolidifiedIfReady(finalToCommit)
 
         if (asrManager.isRunning()) {
             transitionToState(KeyboardState.Listening(lockedBySwipe = state.lockedBySwipe))
@@ -207,6 +209,17 @@ internal class DictationUseCase(
         transitionToState(KeyboardState.Processing)
         scheduleProcessingTimeout(null)
         transitionToIdleWithTiming(usedBackupResult)
+    }
+
+    private fun notifyInputSolidifiedIfReady(committedText: String) {
+        if (!AsrInputCompletionPolicy.shouldNotifyInputSolidified(
+                committedText = committedText,
+                sessionStillRunning = asrManager.isRunning()
+            )
+        ) {
+            return
+        }
+        uiListenerProvider()?.onDictationInputSolidified()
     }
 
     companion object {

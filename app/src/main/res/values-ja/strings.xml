@@ -49,6 +49,7 @@
   <string name="label_auto_start_recording_on_show">キーボード表示時に自動的に録音を開始</string>
   <string name="label_continuous_capture">表示中は継続録音</string>
   <string name="label_auto_enter_after_asr">入力完了後に自動Enter</string>
+  <string name="label_auto_switch_ime_after_asr">入力完了後に指定入力方法へ自動切替</string>
   <string name="btn_retry">接続に失敗しました。再試行しますか?</string>
 
   <!-- ============================================== -->
@@ -365,6 +366,10 @@
   <!-- Auto enter after input -->
   <string name="feature_auto_enter_after_asr_off_desc">認識（および有効時の AI 後処理）完了後はテキストのみ確定し、自動 Enter しません。録音中にマイクを右スワイプすれば、今回の結果確定後に Enter 送信できます。</string>
   <string name="feature_auto_enter_after_asr_on_desc">毎回の入力完了後（AI 後処理が有効な場合はその完了後）に自動で Enter / 送信アクションを実行し、チャットアプリでそのまま送信できます。空の結果では Enter しません。</string>
+
+  <!-- 入力完了後にIMEを自動切替 -->
+  <string name="feature_auto_switch_ime_after_asr_off_desc">入力完了後も現在の入力法のままです。自動では切り替わりません。</string>
+  <string name="feature_auto_switch_ime_after_asr_on_desc">後処理が終わり、プレビューテキストが確定したあと、「指定IME」で選んだ入力法に自動切替し、続けて編集できます。未設定の場合は前の入力法に切り替えます。空の結果では切り替えません。</string>
 
   <!-- 入力法切替キーの機能 -->
   <string name="feature_fcitx5_return_on_switcher_off_desc">入力法切替キーはシステムの入力法選択画面を開きます。</string>

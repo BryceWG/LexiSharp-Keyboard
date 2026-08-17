@@ -109,6 +109,7 @@ object SettingsSearchIndex {
         item(R.string.label_auto_start_recording_on_show, R.string.section_input_behavior)
         item(R.string.label_continuous_capture, R.string.section_input_behavior)
         item(R.string.label_auto_enter_after_asr, R.string.section_input_behavior, "enter", "回车", "发送")
+        item(R.string.label_auto_switch_ime_after_asr, R.string.section_input_behavior, "ime", "输入法", "二次编辑")
         item(R.string.label_fcitx5_return_on_switcher, R.string.section_input_behavior, "fcitx5")
         item(R.string.label_return_prev_ime_on_hide, R.string.section_input_behavior)
         item(R.string.label_ime_switch_target, R.string.section_input_behavior)

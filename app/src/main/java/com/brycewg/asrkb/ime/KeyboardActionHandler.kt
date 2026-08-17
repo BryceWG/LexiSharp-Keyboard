@@ -51,6 +51,7 @@ class KeyboardActionHandler(
         fun onShowPostprocessUndo(label: String)
         fun onHidePostprocessUndo()
         fun onAmplitude(amplitude: Float) { /* 默认空实现 */ }
+        fun onDictationInputSolidified() { /* 默认空实现 */ }
     }
 
     private var uiListener: UiListener? = null
@@ -576,6 +577,13 @@ class KeyboardActionHandler(
         transitionToState(KeyboardState.Idle)
         uiListener?.onStatusMessage(context.getString(R.string.status_postprocess_interrupted_raw))
         uiListener?.onVibrate()
+        if (AsrInputCompletionPolicy.shouldNotifyInputSolidified(
+                committedText = rawText,
+                sessionStillRunning = asrManager.isRunning()
+            )
+        ) {
+            uiListener?.onDictationInputSolidified()
+        }
         return true
     }
 

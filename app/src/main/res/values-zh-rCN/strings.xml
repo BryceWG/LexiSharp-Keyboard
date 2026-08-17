@@ -48,6 +48,7 @@
   <string name="label_auto_start_recording_on_show">键盘出现自动开始录音</string>
   <string name="label_continuous_capture">可见时持续录音</string>
   <string name="label_auto_enter_after_asr">输入完成后自动回车</string>
+  <string name="label_auto_switch_ime_after_asr">输入完成后切换到指定输入法</string>
   <string name="btn_retry">连接失败, 重试?</string>
 
   <!-- ============================================== -->
@@ -364,6 +365,10 @@
   <!-- Auto enter after input -->
   <string name="feature_auto_enter_after_asr_off_desc">识别（及开启时的 AI 后处理）完成后仅提交文本，不会自动回车。仍可在录音时右滑麦克风，让本次结果提交后回车发送。</string>
   <string name="feature_auto_enter_after_asr_on_desc">每次输入完成（若开启 AI 后处理则在后处理完成后）自动回车或触发编辑器发送动作，便于在聊天应用中直接发送。空结果不会回车。</string>
+
+  <!-- 输入完成后自动切换输入法 -->
+  <string name="feature_auto_switch_ime_after_asr_off_desc">输入完成后仍保持当前输入法，不会自动切换。</string>
+  <string name="feature_auto_switch_ime_after_asr_on_desc">后处理完成且预览文本固化后，自动切换到「指定输入法」中选定的输入法，便于二次编辑。未指定时切换到上一个输入法。空结果不会切换。</string>
 
   <!-- 输入法切换键功能 -->
   <string name="feature_fcitx5_return_on_switcher_off_desc">输入法切换键打开系统的输入法选择器。</string>

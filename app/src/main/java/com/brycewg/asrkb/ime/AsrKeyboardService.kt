@@ -424,18 +424,16 @@ class AsrKeyboardService :
         ContinuousCaptureCoordinator.release(ContinuousCaptureOwner.Ime)
 
         // 如开启：键盘收起后自动切回上一个输入法。
-        // 注意：若已在 requestHideSelf/返回键路径完成「显示中交接」，此处会被 suppress 跳过。
+        // 注意：若已在 requestHideSelf/返回键/输入完成交接路径完成「显示中交接」，此处会被 suppress 跳过。
         // 对系统直接 hide（手势返回等）只能事后切换；输入连接仍在时再尝试拉起目标 IME 面板。
-        if (prefs.returnPrevImeOnHide) {
-            if (suppressReturnPrevImeOnHideOnce) {
-                // 清除一次性抑制标记，避免连环切换
-                suppressReturnPrevImeOnHideOnce = false
-            } else {
-                val shouldTryReshow = !finishingInput
-                val switched = switchToConfiguredImeOrPrevious()
-                if (switched && shouldTryReshow) {
-                    scheduleReshowSoftInputAfterImeSwitch()
-                }
+        if (suppressReturnPrevImeOnHideOnce) {
+            // 无论是否开启收起后切换，都要清掉一次性抑制，避免下次交接被误跳过
+            suppressReturnPrevImeOnHideOnce = false
+        } else if (prefs.returnPrevImeOnHide) {
+            val shouldTryReshow = !finishingInput
+            val switched = switchToConfiguredImeOrPrevious()
+            if (switched && shouldTryReshow) {
+                scheduleReshowSoftInputAfterImeSwitch()
             }
         }
     }
@@ -523,6 +521,10 @@ class AsrKeyboardService :
 
     override fun onHidePostprocessUndo() {
         uiRenderer?.hidePostprocessUndo()
+    }
+
+    override fun onDictationInputSolidified() {
+        tryHandOffAfterAsrInput()
     }
 
     // ========== 视图绑定和监听器设置 ==========
@@ -869,23 +871,52 @@ class AsrKeyboardService :
      */
     private fun tryHandOffToConfiguredImeWhileShown(reason: String): Boolean {
         if (!prefs.returnPrevImeOnHide) return false
-        if (suppressReturnPrevImeOnHideOnce) return false
-        if (!isInputViewShown && !imeViewVisible) return false
+        val switched = configuredImeHandOffFailureReason() == null
+        if (switched) {
+            DebugLogManager.log(
+                category = "ime",
+                event = "ime_handoff_while_shown",
+                data = mapOf("reason" to reason)
+            )
+        }
+        return switched
+    }
+
+    private fun tryHandOffAfterAsrInput() {
+        if (!prefs.autoSwitchImeAfterAsrEnabled) return
+        val failReason = configuredImeHandOffFailureReason()
+        if (failReason == null) {
+            DebugLogManager.logBase(
+                this,
+                "ime",
+                "ime_handoff_after_asr",
+                mapOf("ok" to true)
+            )
+        } else {
+            DebugLogManager.logBase(
+                this,
+                "ime",
+                "ime_handoff_after_asr",
+                mapOf("ok" to false, "reason" to failReason)
+            )
+        }
+    }
+
+    /**
+     * @return `null` 表示已发起交接；否则为失败原因码。
+     */
+    private fun configuredImeHandOffFailureReason(): String? {
+        if (suppressReturnPrevImeOnHideOnce) return "suppressed"
+        if (!isInputViewShown && !imeViewVisible) return "ime_not_shown"
 
         stopImeRecordingIfRunning()
         suppressReturnPrevImeOnHideOnce = true
         val switched = switchToConfiguredImeOrPrevious()
         if (!switched) {
             suppressReturnPrevImeOnHideOnce = false
-            return false
+            return "switch_failed"
         }
-        DebugLogManager.log(
-            category = "ime",
-            event = "ime_handoff_while_shown",
-            data = mapOf("reason" to reason)
-        )
-        // 显示中 switch 通常会让目标 IME 直接接管面板；此处不再强制 re-show，避免与目标 IME 抢状态。
-        return true
+        return null
     }
 
     private fun stopImeRecordingIfRunning() {
