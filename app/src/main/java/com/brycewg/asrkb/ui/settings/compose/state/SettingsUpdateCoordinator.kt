@@ -19,6 +19,7 @@ import com.brycewg.asrkb.ui.DownloadSourceConfig
 import com.brycewg.asrkb.ui.DownloadSourceOption
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsUpdateUiState
 import com.brycewg.asrkb.ui.update.ApkDownloadService
+import com.brycewg.asrkb.ui.update.UpdateApkNaming
 import com.brycewg.asrkb.ui.update.UpdateChecker
 import java.io.File
 import java.text.SimpleDateFormat
@@ -203,23 +204,8 @@ internal class SettingsUpdateCoordinator(
             "https://github.com/BryceWG/BiBi-Keyboard"
         }
         val tag = "v$version"
-        return buildUpdateApkNames(version).map { apkName ->
+        return UpdateApkNaming.releaseDownloadCandidates(version, selectUpdateApkAbi()).map { apkName ->
             "$base/releases/download/$tag/$apkName"
-        }
-    }
-
-    private fun buildUpdateApkNames(version: String): List<String> {
-        val abi = selectUpdateApkAbi()
-        return if (abi == "armeabi-v7a") {
-            listOf(
-                "lexisharp-keyboard-$version-armeabi-v7a-release.apk",
-                "app-release-$version-armeabi-v7a.apk"
-            )
-        } else {
-            listOf(
-                "lexisharp-keyboard-$version-release.apk",
-                "app-release-$version-arm64-v8a.apk"
-            )
         }
     }
 

@@ -272,6 +272,7 @@ jobs:
           POCKETBASE_BASE_URL: ${{ secrets.POCKETBASE_BASE_URL || vars.POCKETBASE_BASE_URL }}
           VERSION: ${{ steps.version.outputs.version_name }}
         run: |
+          # APK 资产命名须与 app/.../ui/update/UpdateApkNaming.kt 首选项一致
           echo "使用签名密钥分 ABI 构建 Release APK..."
           mkdir -p release-artifacts
           for ABI in arm64-v8a armeabi-v7a; do
@@ -282,11 +283,7 @@ jobs:
               echo "未找到 $ABI Release APK"
               exit 1
             fi
-            if [ "$ABI" = "arm64-v8a" ]; then
-              NEW_PATH="release-artifacts/lexisharp-keyboard-${VERSION}-release.apk"
-            else
-              NEW_PATH="release-artifacts/lexisharp-keyboard-${VERSION}-${ABI}-release.apk"
-            fi
+            NEW_PATH="release-artifacts/app-release-${VERSION}-${ABI}.apk"
             cp "$APK_PATH" "$NEW_PATH"
             ls -lh "$NEW_PATH"
           done
@@ -298,6 +295,7 @@ jobs:
           POCKETBASE_BASE_URL: ${{ secrets.POCKETBASE_BASE_URL || vars.POCKETBASE_BASE_URL }}
           VERSION: ${{ steps.version.outputs.version_name }}
         run: |
+          # APK 资产命名须与 app/.../ui/update/UpdateApkNaming.kt 当前前缀一致（debug 变体）
           echo "未配置签名密钥,分 ABI 构建 Debug APK..."
           mkdir -p release-artifacts
           for ABI in arm64-v8a armeabi-v7a; do
@@ -308,11 +306,7 @@ jobs:
               echo "未找到 $ABI Debug APK"
               exit 1
             fi
-            if [ "$ABI" = "arm64-v8a" ]; then
-              NEW_PATH="release-artifacts/lexisharp-keyboard-${VERSION}-debug.apk"
-            else
-              NEW_PATH="release-artifacts/lexisharp-keyboard-${VERSION}-${ABI}-debug.apk"
-            fi
+            NEW_PATH="release-artifacts/app-debug-${VERSION}-${ABI}.apk"
             cp "$APK_PATH" "$NEW_PATH"
             ls -lh "$NEW_PATH"
           done

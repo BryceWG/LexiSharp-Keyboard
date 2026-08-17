@@ -311,7 +311,7 @@ class ApkDownloadService : Service() {
         Log.d(TAG, "Starting APK download from: $url")
 
         val apkDir = getApkDirectory(this@ApkDownloadService)
-        val apkFile = File(apkDir, "bibi-keyboard-$version.apk")
+        val apkFile = File(apkDir, UpdateApkNaming.localCacheFileName(version))
         downloadingApkFile = apkFile
 
         // 如果文件已存在，先删除
