@@ -88,7 +88,7 @@ internal fun InputSettingsRouteContent(
 ) {
     val context = LocalContext.current
     val imeOptions = context.buildImeOptions()
-    val behaviorItemCount = if (uiState.trimTrailingPunct) 10 else 9
+    val behaviorItemCount = if (uiState.trimTrailingPunct) 9 else 8
     val behaviorTrimThresholdOffset = if (uiState.trimTrailingPunct) 1 else 0
 
     SettingsLazyColumn(
@@ -233,25 +233,6 @@ internal fun InputSettingsRouteContent(
                     count = behaviorItemCount
                 )
                 InputExplainedSwitch(
-                    id = "hide_recent_task_card",
-                    titleRes = R.string.label_hide_recent_task_card,
-                    checked = uiState.hideRecentTasks,
-                    onToggle = { target ->
-                        onApplyExplainedSwitch(
-                            uiState.hideRecentTasks,
-                            target,
-                            R.string.label_hide_recent_task_card,
-                            R.string.feature_hide_recent_tasks_off_desc,
-                            R.string.feature_hide_recent_tasks_on_desc,
-                            "hide_recent_tasks_explained",
-                            null,
-                            { applyExcludeFromRecents(context, it) }
-                        ) { prefs.hideRecentTaskCard = it }
-                    },
-                    index = 5 + behaviorTrimThresholdOffset,
-                    count = behaviorItemCount
-                )
-                InputExplainedSwitch(
                     id = "fcitx5_return_on_switcher",
                     titleRes = R.string.label_fcitx5_return_on_switcher,
                     checked = uiState.fcitx5ReturnOnSwitcher,
@@ -267,7 +248,7 @@ internal fun InputSettingsRouteContent(
                             null
                         ) { prefs.fcitx5ReturnOnImeSwitch = it }
                     },
-                    index = 6 + behaviorTrimThresholdOffset,
+                    index = 5 + behaviorTrimThresholdOffset,
                     count = behaviorItemCount
                 )
                 InputExplainedSwitch(
@@ -286,7 +267,7 @@ internal fun InputSettingsRouteContent(
                             null
                         ) { prefs.returnPrevImeOnHide = it }
                     },
-                    index = 7 + behaviorTrimThresholdOffset,
+                    index = 6 + behaviorTrimThresholdOffset,
                     count = behaviorItemCount
                 )
                 SettingsPreference(
@@ -302,7 +283,7 @@ internal fun InputSettingsRouteContent(
                             onRefreshState()
                         }
                     ),
-                    index = 8 + behaviorTrimThresholdOffset,
+                    index = 7 + behaviorTrimThresholdOffset,
                     count = behaviorItemCount
                 )
             }
@@ -461,10 +442,12 @@ internal fun InputSettingsRouteContent(
 internal fun InputMainUiSettingsSection(
     uiMode: BibiUiMode,
     prefs: Prefs,
+    uiState: InputSettingsUiState,
     themeMode: String,
     onSetUiMode: (BibiUiMode) -> Unit,
     onSetThemeMode: (String) -> Unit,
-    onRefreshState: () -> Unit
+    onRefreshState: () -> Unit,
+    onApplyExplainedSwitch: InputExplainedSwitchHandler
 ) {
     val context = LocalContext.current
     val languageOptions = context.languageOptions().mapIndexed { index, label ->
@@ -500,7 +483,7 @@ internal fun InputMainUiSettingsSection(
                 }
             ),
             index = 0,
-            count = 3
+            count = 4
         )
         SettingsPreference(
             entry = SettingsEntry.Dropdown(
@@ -512,7 +495,7 @@ internal fun InputMainUiSettingsSection(
                 onSelectedOptionChange = { onSetUiMode(BibiUiMode.fromId(it)) }
             ),
             index = 1,
-            count = 3
+            count = 4
         )
         SettingsPreference(
             entry = SettingsEntry.Dropdown(
@@ -523,7 +506,26 @@ internal fun InputMainUiSettingsSection(
                 onSelectedOptionChange = onSetThemeMode
             ),
             index = 2,
-            count = 3
+            count = 4
+        )
+        InputExplainedSwitch(
+            id = "hide_recent_task_card",
+            titleRes = R.string.label_hide_recent_task_card,
+            checked = uiState.hideRecentTasks,
+            onToggle = { target ->
+                onApplyExplainedSwitch(
+                    uiState.hideRecentTasks,
+                    target,
+                    R.string.label_hide_recent_task_card,
+                    R.string.feature_hide_recent_tasks_off_desc,
+                    R.string.feature_hide_recent_tasks_on_desc,
+                    "hide_recent_tasks_explained",
+                    null,
+                    { applyExcludeFromRecents(context, it) }
+                ) { prefs.hideRecentTaskCard = it }
+            },
+            index = 3,
+            count = 4
         )
     }
 }

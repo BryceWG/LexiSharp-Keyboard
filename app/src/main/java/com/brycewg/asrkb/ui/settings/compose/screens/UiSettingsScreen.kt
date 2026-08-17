@@ -8,6 +8,7 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,10 @@ fun UiSettingsScreen(
     var uiState by remember(context) { mutableStateOf(InputSettingsUiState.fromPrefs(context, prefs)) }
     var lastHapticLevel by remember { mutableStateOf(prefs.hapticFeedbackLevel) }
     var featureExplainerDialog by remember { mutableStateOf<SettingsFeatureExplainerDialogState?>(null) }
+
+    LaunchedEffect(Unit) {
+        applyExcludeFromRecents(context, prefs.hideRecentTaskCard)
+    }
 
     fun refreshState() {
         uiState = InputSettingsUiState.fromPrefs(context, prefs)
@@ -85,10 +90,12 @@ fun UiSettingsScreen(
                 InputMainUiSettingsSection(
                     uiMode = uiMode,
                     prefs = prefs,
+                    uiState = uiState,
                     themeMode = themeMode,
                     onSetUiMode = onSetUiMode,
                     onSetThemeMode = onSetThemeMode,
-                    onRefreshState = ::refreshState
+                    onRefreshState = ::refreshState,
+                    onApplyExplainedSwitch = ::applyExplainedSwitch
                 )
             }
             item("keyboard_ui") {
