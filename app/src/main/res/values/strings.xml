@@ -426,17 +426,40 @@
   <!-- ============================================== -->
   <!-- Pro Version Promo -->
   <!-- ============================================== -->
-  <string name="pro_promo_title">BiBi Keyboard Pro is Now on Play Store!</string>
-  <string name="pro_promo_price">$5.49 one-time purchase. License follows your account with unlimited devices.</string>
-  <string name="pro_promo_features_title">Pro Exclusive Features:</string>
-  <string name="pro_promo_features">1. Unified hotword management across vendors (except offline models and ElevenLabs)\n2. WebDAV auto backup\n3. Custom UI color picking\n4. Omni-directional cursor sliding\n5. Offline Traditional Chinese conversion\n6. Regex post-processing</string>
-  <string name="pro_promo_future">More features coming soon…</string>
-  <string name="pro_promo_once_hint">This dialog only appears once. You can view it again in the About page.</string>
-  <string name="pro_promo_btn_play_store">Get on Play Store</string>
-  <string name="pro_promo_btn_telegram">Join Telegram Group</string>
-  <string name="pro_promo_btn_payment_qr">Pay via QR Code</string>
   <string name="pro_promo_btn_close">Close</string>
   <string name="about_btn_learn_pro">Learn about Pro</string>
+  <string name="pro_paywall_title">BiBi Keyboard Pro</string>
+  <string name="pro_paywall_eyebrow">UPGRADE YOUR VOICE INPUT</string>
+  <string name="pro_paywall_heading">More control for every sentence</string>
+  <string name="pro_paywall_subtitle">Keep the complete open-source core and add advanced tools for daily dictation</string>
+  <string name="pro_paywall_price">$5.49 / ¥36</string>
+  <string name="pro_paywall_price_note">One-time purchase · No subscription · Follows your Google account</string>
+  <string name="pro_paywall_compare_title">Free and Pro comparison</string>
+  <string name="pro_paywall_feature_header">Feature</string>
+  <string name="pro_paywall_free_header">Free</string>
+  <string name="pro_paywall_pro_header">Pro</string>
+  <string name="pro_paywall_included">Included</string>
+  <string name="pro_paywall_not_included">Not included</string>
+  <string name="pro_paywall_included_mark">✓</string>
+  <string name="pro_paywall_not_included_mark">—</string>
+  <string name="pro_paywall_feature_core_asr">Multi-provider ASR, streaming and local models</string>
+  <string name="pro_paywall_feature_ai">AI post-processing and basic AI editing</string>
+  <string name="pro_paywall_feature_input">Keyboard, floating ball and external calls</string>
+  <string name="pro_paywall_feature_layout">Layouts, presets and settings backup</string>
+  <string name="pro_paywall_feature_continuous">Continuous speaking mode</string>
+  <string name="pro_paywall_feature_hotwords">Hotwords, phoneme enhancement and learning</string>
+  <string name="pro_paywall_feature_context">Input context, AI Assistant and app prompts</string>
+  <string name="pro_paywall_feature_text">Traditional Chinese and regex processing</string>
+  <string name="pro_paywall_feature_theme">Omni-direction cursor and advanced themes</string>
+  <string name="pro_paywall_feature_webdav">Automatic WebDAV backup</string>
+  <string name="pro_paywall_purchase_title">Choose how to get Pro</string>
+  <string name="pro_paywall_play_store">Get Pro on Google Play</string>
+  <string name="pro_paywall_qr">Pay with WeChat or Alipay</string>
+  <string name="pro_paywall_telegram">Contact the author / join Telegram</string>
+  <string name="pro_paywall_purchase_note">Play Store purchases can be used on devices signed in to the same Google account. QR payments are exchanged for a Play redemption code.</string>
+  <string name="pro_paywall_home_title">Discover BiBi Keyboard Pro</string>
+  <string name="pro_paywall_home_summary">Compare editions and unlock advanced voice input.</string>
+  <string name="pro_paywall_home_dismiss">Dismiss Pro promotion</string>
 
   <!-- Payment QR Dialog -->
   <string name="payment_qr_title">Purchase Pro via QR Code</string>

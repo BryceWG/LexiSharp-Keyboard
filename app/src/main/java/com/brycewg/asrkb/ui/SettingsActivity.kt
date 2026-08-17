@@ -29,8 +29,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
-import com.brycewg.asrkb.ui.settings.compose.components.ProPromoDialogHost
-import com.brycewg.asrkb.ui.settings.compose.components.ProPromoDialogUiState
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialog
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialogState
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsTestInputSheet
@@ -97,7 +95,6 @@ class SettingsActivity : BaseActivity() {
 
     private val testInputSheetVisible = mutableStateOf(false)
     private val systemActionDialogState = mutableStateOf<SettingsMessageDialogState?>(null)
-    private val proPromoDialogState = mutableStateOf<ProPromoDialogUiState>(ProPromoDialogUiState.Hidden)
     private val pendingInitialRoute = mutableStateOf<BibiSettingsRoute?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,9 +112,7 @@ class SettingsActivity : BaseActivity() {
         )
         entryEffectsCoordinator = SettingsEntryEffectsCoordinator(
             activity = this,
-            postDelayed = { delayMillis, action -> handler.postDelayed(action, delayMillis) },
-            showSystemMessage = ::showSystemActionDialog,
-            showProPromoIfNeeded = ::showProPromoIfNeededFromCompose
+            showSystemMessage = ::showSystemActionDialog
         )
         updateCoordinator = SettingsUpdateCoordinator(this)
 
@@ -183,11 +178,6 @@ class SettingsActivity : BaseActivity() {
             state = systemActionDialogState.value,
             uiMode = uiMode,
             onDismiss = { systemActionDialogState.value = null }
-        )
-        ProPromoDialogHost(
-            state = proPromoDialogState.value,
-            uiMode = uiMode,
-            onStateChange = { proPromoDialogState.value = it }
         )
     }
 
@@ -283,19 +273,6 @@ class SettingsActivity : BaseActivity() {
                 messageRes = R.string.settings_ime_picker_open_failed_message
             )
         }
-    }
-
-    fun showProPromoFromCompose(markAsShown: Boolean = false) {
-        if (markAsShown) {
-            ProPromoDialog.markShown(this)
-        }
-        proPromoDialogState.value = ProPromoDialogUiState.Promo
-    }
-
-    fun showProPromoIfNeededFromCompose(): Boolean {
-        if (!ProPromoDialog.shouldShow(this)) return false
-        showProPromoFromCompose(markAsShown = true)
-        return true
     }
 
     fun hapticTapFromCompose() {

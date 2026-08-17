@@ -80,14 +80,6 @@ class SettingsActionController(
         }
     }
 
-    fun showProPromo() {
-        try {
-            activity.showProPromoFromCompose()
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to show Pro promo dialog", e)
-        }
-    }
-
     fun setDebugRecording(enabled: Boolean): Boolean {
         try {
             if (enabled) {

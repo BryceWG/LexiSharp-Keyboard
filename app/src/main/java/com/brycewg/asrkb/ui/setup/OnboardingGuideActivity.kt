@@ -32,10 +32,10 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.BaseActivity
 import com.brycewg.asrkb.ui.DownloadSourceOption
 import com.brycewg.asrkb.ui.floating.floatingInputNeedsAccessibility
-import com.brycewg.asrkb.ui.settings.compose.components.ProPromoDialogHost
-import com.brycewg.asrkb.ui.settings.compose.components.ProPromoDialogUiState
+import com.brycewg.asrkb.ui.SettingsActivity
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialog
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialogState
+import com.brycewg.asrkb.ui.settings.compose.core.BibiSettingsRoute
 import com.brycewg.asrkb.ui.settings.compose.core.BibiSettingsTheme
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.setup.compose.OnboardingAsrChoice
@@ -67,7 +67,6 @@ class OnboardingGuideActivity : BaseActivity() {
     private var dialogState = mutableStateOf<OnboardingDialogState>(OnboardingDialogState.None)
     private var messageDialogState = mutableStateOf<SettingsMessageDialogState?>(null)
     private var messageDismissAction: (() -> Unit)? = null
-    private var proPromoDialogState = mutableStateOf<ProPromoDialogUiState>(ProPromoDialogUiState.Hidden)
     private var isCompletingOnboarding: Boolean = false
     private var imePickerShown = false
     private var imePickerLostFocusOnce = false
@@ -98,7 +97,6 @@ class OnboardingGuideActivity : BaseActivity() {
             val dataCollectionEnabled by dataCollectionEnabledState
             val onboardingDialog by dialogState
             val messageDialog by messageDialogState
-            val proPromoDialog by proPromoDialogState
             val uiMode = BibiUiMode.fromId(prefs.settingsUiMode)
 
             BibiSettingsTheme(
@@ -132,11 +130,6 @@ class OnboardingGuideActivity : BaseActivity() {
                     state = messageDialog,
                     uiMode = uiMode,
                     onDismiss = ::dismissOnboardingMessage
-                )
-                ProPromoDialogHost(
-                    state = proPromoDialog,
-                    uiMode = uiMode,
-                    onStateChange = { proPromoDialogState.value = it }
                 )
             }
         }
@@ -429,9 +422,13 @@ class OnboardingGuideActivity : BaseActivity() {
 
     private fun showProPromo() {
         try {
-            proPromoDialogState.value = ProPromoDialogUiState.Promo
+            startActivity(Intent(this, SettingsActivity::class.java).putExtra(
+                SettingsActivity.EXTRA_INITIAL_ROUTE,
+                BibiSettingsRoute.Paywall.id
+            ))
+            prefs.proPromoShown = true
         } catch (t: Throwable) {
-            Log.e(TAG, "Failed to show Pro promo dialog", t)
+            Log.e(TAG, "Failed to open Pro paywall", t)
         }
     }
 

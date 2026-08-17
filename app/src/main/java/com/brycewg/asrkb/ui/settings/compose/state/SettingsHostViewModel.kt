@@ -105,6 +105,7 @@ class SettingsHostViewModel(application: Application) : AndroidViewModel(applica
         BibiSettingsRoute.Backup,
         BibiSettingsRoute.Other,
         BibiSettingsRoute.About,
+        BibiSettingsRoute.Paywall,
         BibiSettingsRoute.UsageStats,
         BibiSettingsRoute.Search,
         BibiSettingsRoute.History,

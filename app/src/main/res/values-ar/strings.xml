@@ -426,17 +426,40 @@
   <!-- ============================================== -->
   <!-- Pro Version Promo -->
   <!-- ============================================== -->
-  <string name="pro_promo_title">BiBi Keyboard Pro متاح الآن على Play Store!</string>
-  <string name="pro_promo_price">شراء لمرة واحدة بـ $5.49. الترخيص يتبع حسابك بلا حد للأجهزة.</string>
-  <string name="pro_promo_features_title">ميزات Pro الحصرية:</string>
-  <string name="pro_promo_features">1. إدارة موحّدة للكلمات الساخنة عبر المزودين (باستثناء النماذج دون اتصال و ElevenLabs)\n2. نسخ احتياطي تلقائي عبر WebDAV\n3. اختيار ألوان واجهة مخصص\n4. انزلاق مؤشر متعدد الاتجاهات\n5. تحويل صيني تقليدي دون اتصال\n6. معالجة لاحقة بتعبيرات منتظمة</string>
-  <string name="pro_promo_future">مزيد من الميزات قريباً…</string>
-  <string name="pro_promo_once_hint">يظهر هذا الحوار مرة واحدة فقط. يمكنك عرضه مجدداً في صفحة حول.</string>
-  <string name="pro_promo_btn_play_store">الحصول من Play Store</string>
-  <string name="pro_promo_btn_telegram">الانضمام لمجموعة Telegram</string>
-  <string name="pro_promo_btn_payment_qr">الدفع عبر رمز QR</string>
   <string name="pro_promo_btn_close">إغلاق</string>
   <string name="about_btn_learn_pro">تعرّف على Pro</string>
+  <string name="pro_paywall_title">BiBi Keyboard Pro</string>
+  <string name="pro_paywall_eyebrow">طوّر الإدخال الصوتي</string>
+  <string name="pro_paywall_heading">تحكم أكبر في كل جملة</string>
+  <string name="pro_paywall_subtitle">احتفظ بالنواة المفتوحة وأضف أدوات متقدمة للإملاء اليومي</string>
+  <string name="pro_paywall_price">$5.49 / ¥36</string>
+  <string name="pro_paywall_price_note">شراء لمرة واحدة · بلا اشتراك · مرتبط بحساب Google</string>
+  <string name="pro_paywall_compare_title">مقارنة المجاني و Pro</string>
+  <string name="pro_paywall_feature_header">الميزة</string>
+  <string name="pro_paywall_free_header">مجاني</string>
+  <string name="pro_paywall_pro_header">Pro</string>
+  <string name="pro_paywall_included">متوفر</string>
+  <string name="pro_paywall_not_included">غير متوفر</string>
+  <string name="pro_paywall_included_mark">✓</string>
+  <string name="pro_paywall_not_included_mark">—</string>
+  <string name="pro_paywall_feature_core_asr">ASR متعدد المزودين والبث والنماذج المحلية</string>
+  <string name="pro_paywall_feature_ai">معالجة AI اللاحقة والتحرير الأساسي</string>
+  <string name="pro_paywall_feature_input">لوحة المفاتيح والكرة العائمة والاستدعاءات الخارجية</string>
+  <string name="pro_paywall_feature_layout">التخطيطات والإعدادات المسبقة والنسخ الاحتياطي</string>
+  <string name="pro_paywall_feature_continuous">وضع الكلام المستمر</string>
+  <string name="pro_paywall_feature_hotwords">الكلمات المفتاحية وتعزيز النطق والتعلم</string>
+  <string name="pro_paywall_feature_context">سياق الحقل ومساعد AI و Prompts للتطبيقات</string>
+  <string name="pro_paywall_feature_text">التحويل إلى الصينية التقليدية ومعالجة Regex</string>
+  <string name="pro_paywall_feature_theme">تحريك المؤشر بكل الاتجاهات والسمات المتقدمة</string>
+  <string name="pro_paywall_feature_webdav">نسخ WebDAV الاحتياطي التلقائي</string>
+  <string name="pro_paywall_purchase_title">اختر طريقة الحصول على Pro</string>
+  <string name="pro_paywall_play_store">الحصول على Pro من Google Play</string>
+  <string name="pro_paywall_qr">الدفع عبر WeChat أو Alipay</string>
+  <string name="pro_paywall_telegram">التواصل مع المؤلف / الانضمام إلى Telegram</string>
+  <string name="pro_paywall_purchase_note">يمكن استخدام مشتريات Play Store على الأجهزة المسجلة بالحساب نفسه. تُستبدل مدفوعات QR برمز استرداد Play Store.</string>
+  <string name="pro_paywall_home_title">اكتشف BiBi Keyboard Pro</string>
+  <string name="pro_paywall_home_summary">قارن الإصدارات وافتح الإدخال الصوتي المتقدم.</string>
+  <string name="pro_paywall_home_dismiss">إغلاق عرض Pro</string>
 
   <!-- Payment QR Dialog -->
   <string name="payment_qr_title">شراء Pro عبر رمز QR</string>

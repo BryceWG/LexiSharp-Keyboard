@@ -424,17 +424,40 @@
   <!-- ============================================== -->
   <!-- Pro 版宣传 -->
   <!-- ============================================== -->
-  <string name="pro_promo_title">说点啥 Pro 版已上线 Play 商店！</string>
-  <string name="pro_promo_price">5.49 美元买断制。也可以加入 TG 群联系作者，以 36 元购入激活码。权限跟随账户，不限制使用设备数量。</string>
-  <string name="pro_promo_features_title">Pro 专属功能：</string>
-  <string name="pro_promo_features">1. 多供应商统一热词管理（暂不支持离线模型和 ElevenLabs）\n2. WebDAV 自动备份\n3. 个性化 UI 取色\n4. 全向光标滑动\n5. 离线繁体结果转换\n6. 正则后处理</string>
-  <string name="pro_promo_future">后续将持续更新…</string>
-  <string name="pro_promo_once_hint">此弹窗仅显示一次，后续可在「关于」页面再次查看。</string>
-  <string name="pro_promo_btn_play_store">前往 Play 商店</string>
-  <string name="pro_promo_btn_telegram">加入 Telegram 群</string>
-  <string name="pro_promo_btn_payment_qr">通过付款码购买</string>
   <string name="pro_promo_btn_close">关闭</string>
   <string name="about_btn_learn_pro">了解 Pro</string>
+  <string name="pro_paywall_title">说点啥 Pro</string>
+  <string name="pro_paywall_eyebrow">升级你的语音输入</string>
+  <string name="pro_paywall_heading">让每句话都更可控</string>
+  <string name="pro_paywall_subtitle">保留完整开源核心，再加入面向日常语音输入的进阶工具</string>
+  <string name="pro_paywall_price">5.49 美元 / 36 元</string>
+  <string name="pro_paywall_price_note">一次性买断 · 无订阅 · 权限跟随 Google 账户</string>
+  <string name="pro_paywall_compare_title">开源版与 Pro 对比</string>
+  <string name="pro_paywall_feature_header">功能</string>
+  <string name="pro_paywall_free_header">免费版</string>
+  <string name="pro_paywall_pro_header">Pro</string>
+  <string name="pro_paywall_included">支持</string>
+  <string name="pro_paywall_not_included">不支持</string>
+  <string name="pro_paywall_included_mark">✓</string>
+  <string name="pro_paywall_not_included_mark">—</string>
+  <string name="pro_paywall_feature_core_asr">多供应商 ASR、流式识别与本地模型</string>
+  <string name="pro_paywall_feature_ai">AI 后处理与基础 AI 编辑</string>
+  <string name="pro_paywall_feature_input">键盘、悬浮球与外部调用</string>
+  <string name="pro_paywall_feature_layout">键盘布局、预设与设置备份</string>
+  <string name="pro_paywall_feature_continuous">畅说模式</string>
+  <string name="pro_paywall_feature_hotwords">热词、音素增强与纠正学习</string>
+  <string name="pro_paywall_feature_context">输入框上下文、AI 助手与应用 Prompt</string>
+  <string name="pro_paywall_feature_text">繁体转换与正则后处理</string>
+  <string name="pro_paywall_feature_theme">全向光标与进阶主题</string>
+  <string name="pro_paywall_feature_webdav">WebDAV 自动备份</string>
+  <string name="pro_paywall_purchase_title">选择获取 Pro 的方式</string>
+  <string name="pro_paywall_play_store">通过 Google Play 获取 Pro</string>
+  <string name="pro_paywall_qr">通过微信或支付宝付款</string>
+  <string name="pro_paywall_telegram">联系作者 / 加入 Telegram</string>
+  <string name="pro_paywall_purchase_note">Play 商店购买可在登录同一 Google 账户的设备上使用。付款码购买会兑换为 Play 商店商品兑换码。</string>
+  <string name="pro_paywall_home_title">了解说点啥 Pro</string>
+  <string name="pro_paywall_home_summary">对比版本，解锁进阶语音输入。</string>
+  <string name="pro_paywall_home_dismiss">关闭 Pro 提示</string>
 
   <!-- 付款码弹窗 -->
   <string name="payment_qr_title">通过付款码购买 Pro</string>

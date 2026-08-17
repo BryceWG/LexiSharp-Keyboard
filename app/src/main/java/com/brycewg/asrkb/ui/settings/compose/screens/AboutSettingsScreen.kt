@@ -43,6 +43,7 @@ import com.brycewg.asrkb.ui.settings.compose.model.SettingsEntry
 fun AboutSettingsScreen(
     uiMode: BibiUiMode,
     onBack: () -> Unit,
+    onOpenPro: () -> Unit,
     actions: SettingsActionController
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -111,7 +112,7 @@ fun AboutSettingsScreen(
                             id = "about_pro",
                             titleRes = R.string.about_btn_learn_pro,
                             icon = Icons.Rounded.WorkspacePremium,
-                            onClick = actions::showProPromo
+                            onClick = onOpenPro
                         )
                     )
                 }

@@ -425,17 +425,40 @@
   <!-- ============================================== -->
   <!-- Pro版プロモーション -->
   <!-- ============================================== -->
-  <string name="pro_promo_title">说点啥 Pro 版が Play ストアで公開中！</string>
-  <string name="pro_promo_price">5.49ドルの買い切り。ライセンスはアカウントに紐づき、デバイス数制限なし。</string>
-  <string name="pro_promo_features_title">Pro 限定機能：</string>
-  <string name="pro_promo_features">1. 複数ベンダー統一ホットワード管理（オフラインモデルと ElevenLabs を除く）\n2. WebDAV 自動バックアップ\n3. カスタム UI カラー\n4. 全方向カーソルスライド\n5. オフライン繁体字変換\n6. 正規表現ポストプロセス</string>
-  <string name="pro_promo_future">今後も継続的にアップデート予定…</string>
-  <string name="pro_promo_once_hint">このダイアログは一度だけ表示されます。後で「アプリについて」から再確認できます。</string>
-  <string name="pro_promo_btn_play_store">Play ストアで入手</string>
-  <string name="pro_promo_btn_telegram">Telegram グループに参加</string>
-  <string name="pro_promo_btn_payment_qr">QRコードで購入</string>
   <string name="pro_promo_btn_close">閉じる</string>
   <string name="about_btn_learn_pro">Pro について</string>
+  <string name="pro_paywall_title">说点啥 Pro</string>
+  <string name="pro_paywall_eyebrow">音声入力をアップグレード</string>
+  <string name="pro_paywall_heading">すべての文章をもっと自由に</string>
+  <string name="pro_paywall_subtitle">オープンソースのコア機能に、毎日の音声入力を強化する機能を追加します</string>
+  <string name="pro_paywall_price">$5.49 / ¥36</string>
+  <string name="pro_paywall_price_note">買い切り · サブスクリプションなし · Google アカウントに紐づく</string>
+  <string name="pro_paywall_compare_title">無料版と Pro の比較</string>
+  <string name="pro_paywall_feature_header">機能</string>
+  <string name="pro_paywall_free_header">無料版</string>
+  <string name="pro_paywall_pro_header">Pro</string>
+  <string name="pro_paywall_included">対応</string>
+  <string name="pro_paywall_not_included">非対応</string>
+  <string name="pro_paywall_included_mark">✓</string>
+  <string name="pro_paywall_not_included_mark">—</string>
+  <string name="pro_paywall_feature_core_asr">複数 ASR、ストリーミング、ローカルモデル</string>
+  <string name="pro_paywall_feature_ai">AI ポスト処理と基本 AI 編集</string>
+  <string name="pro_paywall_feature_input">キーボード、フローティングボール、外部呼び出し</string>
+  <string name="pro_paywall_feature_layout">レイアウト、プリセット、設定バックアップ</string>
+  <string name="pro_paywall_feature_continuous">連続発話モード</string>
+  <string name="pro_paywall_feature_hotwords">ホットワード、音素強化、学習</string>
+  <string name="pro_paywall_feature_context">入力コンテキスト、AI アシスタント、アプリ Prompt</string>
+  <string name="pro_paywall_feature_text">繁体字変換と正規表現処理</string>
+  <string name="pro_paywall_feature_theme">全方向カーソルと高度なテーマ</string>
+  <string name="pro_paywall_feature_webdav">WebDAV 自動バックアップ</string>
+  <string name="pro_paywall_purchase_title">Pro の入手方法</string>
+  <string name="pro_paywall_play_store">Google Play で Pro を入手</string>
+  <string name="pro_paywall_qr">WeChat または Alipay で支払う</string>
+  <string name="pro_paywall_telegram">作者に連絡 / Telegram に参加</string>
+  <string name="pro_paywall_purchase_note">Play ストア購入は同じ Google アカウントでログインした端末で利用できます。QR 決済は Play ストアの引き換えコードに交換されます。</string>
+  <string name="pro_paywall_home_title">说点啥 Pro を見る</string>
+  <string name="pro_paywall_home_summary">エディションを比較して音声入力を強化。</string>
+  <string name="pro_paywall_home_dismiss">Pro の案内を閉じる</string>
 
   <!-- 支払いQRコードダイアログ -->
   <string name="payment_qr_title">QRコードで Pro を購入</string>

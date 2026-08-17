@@ -14,14 +14,11 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.store.Prefs
 import java.io.File
 import java.io.FileOutputStream
 
 /**
- * Pro 版本宣传弹窗动作工具类
- *
- * Compose 弹窗宿主位于 ui/settings/compose/components/ProPromoDialogHost.kt。
+ * Pro 购买动作工具类。
  */
 object ProPromoDialog {
 
@@ -38,21 +35,6 @@ object ProPromoDialog {
 
     val authorEmail: String
         get() = AUTHOR_EMAIL
-
-    /**
-     * 检查是否需要显示弹窗（仅检查是否已显示过）
-     *
-     * @param context Context
-     * @return true 如果需要显示弹窗
-     */
-    fun shouldShow(context: Context): Boolean {
-        val prefs = Prefs(context)
-        return !prefs.proPromoShown
-    }
-
-    fun markShown(context: Context) {
-        Prefs(context).proPromoShown = true
-    }
 
     fun openPlayStore(context: Context): Int? = openUrl(context, PLAY_STORE_URL)
 

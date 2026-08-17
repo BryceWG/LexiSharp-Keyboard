@@ -35,7 +35,6 @@ import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 internal sealed interface ProPromoDialogUiState {
     data object Hidden : ProPromoDialogUiState
-    data object Promo : ProPromoDialogUiState
     data object PaymentQr : ProPromoDialogUiState
 }
 
@@ -60,14 +59,6 @@ internal fun ProPromoDialogHost(
         pendingState = null
     }
 
-    fun showPromoMessage(messageRes: Int) {
-        messageDialog = SettingsMessageDialogState(
-            title = context.getString(R.string.pro_promo_title),
-            message = context.getString(messageRes),
-            confirmText = context.getString(android.R.string.ok)
-        )
-    }
-
     fun showPaymentMessage(messageRes: Int) {
         messageDialog = SettingsMessageDialogState(
             title = context.getString(R.string.payment_qr_title),
@@ -78,32 +69,10 @@ internal fun ProPromoDialogHost(
 
     when (state) {
         ProPromoDialogUiState.Hidden -> Unit
-        ProPromoDialogUiState.Promo -> ProPromoDialogPane(
-            uiMode = uiMode,
-            show = paneVisible,
-            onDismiss = { dismissTo(ProPromoDialogUiState.Hidden) },
-            onDismissFinished = ::finishDismiss,
-            content = {
-                ProPromoDialogContent(
-                    uiMode = uiMode,
-                    actions = ProPromoDialogActions(
-                        onPlayStore = {
-                            ProPromoDialog.openPlayStore(context)?.let(::showPromoMessage)
-                        },
-                        onTelegram = {
-                            ProPromoDialog.openTelegram(context)?.let(::showPromoMessage)
-                        },
-                        onPaymentQr = { onStateChange(ProPromoDialogUiState.PaymentQr) },
-                        onClose = { dismissTo(ProPromoDialogUiState.Hidden) }
-                    )
-                )
-            }
-        )
-
         ProPromoDialogUiState.PaymentQr -> ProPromoDialogPane(
             uiMode = uiMode,
             show = paneVisible,
-            onDismiss = { dismissTo(ProPromoDialogUiState.Promo) },
+            onDismiss = { dismissTo(ProPromoDialogUiState.Hidden) },
             onDismissFinished = ::finishDismiss,
             content = {
                 PaymentQrDialogContent(
@@ -131,7 +100,7 @@ internal fun ProPromoDialogHost(
                         onCopyEmail = {
                             ProPromoDialog.copyEmailToClipboard(context)?.let(::showPaymentMessage)
                         },
-                        onClose = { dismissTo(ProPromoDialogUiState.Promo) }
+                        onClose = { dismissTo(ProPromoDialogUiState.Hidden) }
                     )
                 )
             }

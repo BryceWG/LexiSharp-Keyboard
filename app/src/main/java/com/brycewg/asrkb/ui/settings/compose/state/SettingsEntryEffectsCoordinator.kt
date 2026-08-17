@@ -1,7 +1,7 @@
 /**
  * 设置页入口副作用协调器。
  *
- * 负责首次引导、升级提示与无障碍服务启用反馈。
+ * 负责首次引导与无障碍服务启用反馈。
  */
 package com.brycewg.asrkb.ui.settings.compose.state
 
@@ -18,16 +18,13 @@ import com.brycewg.asrkb.ui.setup.OnboardingGuideActivity
  */
 class SettingsEntryEffectsCoordinator(
     private val activity: BaseActivity,
-    private val postDelayed: (Long, () -> Unit) -> Unit,
-    private val showSystemMessage: (Int, Int) -> Unit,
-    private val showProPromoIfNeeded: () -> Boolean
+    private val showSystemMessage: (Int, Int) -> Unit
 ) {
     private var wasAccessibilityEnabled = isAccessibilityServiceEnabled()
 
     fun onResume() {
         checkAccessibilityServiceJustEnabled()
         maybeAutoShowOnboardingGuideOnFirstOpen()
-        maybeShowProPromoOnUpgrade()
     }
 
     private fun openOnboardingGuide() {
@@ -44,25 +41,6 @@ class SettingsEntryEffectsCoordinator(
             }
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to maybe auto show onboarding guide", t)
-        }
-    }
-
-    private fun maybeShowProPromoOnUpgrade() {
-        try {
-            val prefs = Prefs(activity)
-            // 首次引导尚未完成时跳过，避免多个入口弹窗叠加。
-            if (!prefs.hasShownQuickGuideOnce || !prefs.hasShownModelGuideOnce) {
-                return
-            }
-            postDelayed(500L) {
-                try {
-                    showProPromoIfNeeded()
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Failed to show Pro promo dialog", t)
-                }
-            }
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to check Pro promo", t)
         }
     }
 
