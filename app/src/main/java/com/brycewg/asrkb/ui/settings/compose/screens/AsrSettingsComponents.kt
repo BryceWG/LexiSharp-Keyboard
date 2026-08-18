@@ -231,7 +231,7 @@ internal fun SiliconFlowPoweredByImage() {
 @Composable
 internal fun AsrSliderPreference(
     titleRes: Int,
-    valueLabel: String,
+    valueLabel: (Float) -> String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int,
@@ -243,7 +243,7 @@ internal fun AsrSliderPreference(
     index: Int = 0,
     count: Int = 1,
     onValueChange: (Float) -> Unit,
-    onValueChangeFinished: () -> Unit
+    onValueChangeFinished: (Float) -> Unit = { _ -> }
 ) {
     SettingsSliderPreference(
         uiMode = uiMode,

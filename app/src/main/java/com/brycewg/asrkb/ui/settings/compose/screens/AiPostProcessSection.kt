@@ -44,7 +44,7 @@ internal fun AiPostProcessSection(
             )
             AiSliderPreference(
                 titleRes = R.string.title_ai_skip_under,
-                valueLabel = skipUnderChars.toString(),
+                valueLabel = { it.toInt().coerceIn(0, 100).toString() },
                 value = skipUnderChars.toFloat(),
                 valueRange = 0f..100f,
                 steps = 19,
@@ -54,7 +54,7 @@ internal fun AiPostProcessSection(
                 onValueChange = { value ->
                     onSkipUnderCharsChange(value.toInt().coerceIn(0, 100))
                 },
-                onValueChangeFinished = onSkipUnderCharsFinished
+                onValueChangeFinished = { onSkipUnderCharsFinished() }
             )
             AiBodyText(uiMode = uiMode, textRes = R.string.helper_ai_skip_under_chars)
         }

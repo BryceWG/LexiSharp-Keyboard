@@ -120,18 +120,25 @@ internal fun InputSettingsRouteContent(
                     count = behaviorItemCount
                 )
                 if (uiState.trimTrailingPunct) {
-                    val trimTrailingPunctThresholdLabel =
-                        if (uiState.trimTrailingPunctThreshold == Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_UNLIMITED) {
-                            stringResource(R.string.trim_trailing_punct_threshold_unlimited)
-                        } else {
-                            stringResource(
-                                R.string.trim_trailing_punct_threshold_value,
-                                uiState.trimTrailingPunctThreshold
-                            )
-                        }
+                    val unlimitedThresholdLabel = stringResource(
+                        R.string.trim_trailing_punct_threshold_unlimited
+                    )
                     InputSliderPreference(
                         titleRes = R.string.label_trim_trailing_punct_threshold,
-                        valueLabel = trimTrailingPunctThresholdLabel,
+                        valueLabel = { value ->
+                            val next = value.roundToStep(step = 1).toInt().coerceIn(
+                                Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_MIN,
+                                Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_UNLIMITED
+                            )
+                            if (next == Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_UNLIMITED) {
+                                unlimitedThresholdLabel
+                            } else {
+                                context.getString(
+                                    R.string.trim_trailing_punct_threshold_value,
+                                    next
+                                )
+                            }
+                        },
                         value = uiState.trimTrailingPunctThreshold.toFloat(),
                         valueRange = Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_MIN.toFloat()..
                             Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_UNLIMITED.toFloat(),
@@ -146,12 +153,14 @@ internal fun InputSettingsRouteContent(
                                 Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_MIN,
                                 Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_UNLIMITED
                             )
-                            if (next != uiState.trimTrailingPunctThreshold) {
-                                onUiStateChange(uiState.copy(trimTrailingPunctThreshold = next))
-                            }
+                            onUiStateChange(uiState.copy(trimTrailingPunctThreshold = next))
                         },
-                        onValueChangeFinished = {
-                            prefs.trimFinalTrailingPunctThreshold = uiState.trimTrailingPunctThreshold
+                        onValueChangeFinished = { value ->
+                            val next = value.roundToStep(step = 1).toInt().coerceIn(
+                                Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_MIN,
+                                Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_UNLIMITED
+                            )
+                            prefs.trimFinalTrailingPunctThreshold = next
                             onRefreshState()
                         }
                     )
@@ -554,9 +563,7 @@ internal fun InputKeyboardUiSettingsSection(
     uiMode: BibiUiMode,
     prefs: Prefs,
     uiState: InputSettingsUiState,
-    lastHapticLevel: Int,
     onUiStateChange: (InputSettingsUiState) -> Unit,
-    onLastHapticLevelChange: (Int) -> Unit,
     onRefreshState: () -> Unit,
     onShowExtensionButtonsPicker: () -> Unit,
     onApplyExplainedSwitch: InputExplainedSwitchHandler
@@ -595,7 +602,14 @@ internal fun InputKeyboardUiSettingsSection(
         )
         InputSliderPreference(
             titleRes = R.string.label_haptic_feedback_strength,
-            valueLabel = uiState.hapticFeedbackLabel,
+            valueLabel = { value ->
+                context.hapticFeedbackStrengthLabel(
+                    value.toInt().coerceIn(
+                        Prefs.HAPTIC_FEEDBACK_LEVEL_OFF,
+                        Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY
+                    )
+                )
+            },
             value = uiState.hapticFeedbackLevel.toFloat(),
             valueRange = Prefs.HAPTIC_FEEDBACK_LEVEL_OFF.toFloat()..Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY.toFloat(),
             steps = 5,
@@ -608,22 +622,25 @@ internal fun InputKeyboardUiSettingsSection(
                     Prefs.HAPTIC_FEEDBACK_LEVEL_OFF,
                     Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY
                 )
-                if (lastHapticLevel != level) {
-                    onLastHapticLevelChange(level)
-                    onUiStateChange(uiState.withHapticFeedbackLevel(context, level))
-                }
+                onUiStateChange(uiState.withHapticFeedbackLevel(context, level))
             },
-            onValueChangeFinished = {
-                prefs.hapticFeedbackLevel = uiState.hapticFeedbackLevel
+            onValueChangeFinished = { value ->
+                val level = value.toInt().coerceIn(
+                    Prefs.HAPTIC_FEEDBACK_LEVEL_OFF,
+                    Prefs.HAPTIC_FEEDBACK_LEVEL_HEAVY
+                )
+                prefs.hapticFeedbackLevel = level
                 onRefreshState()
             }
         )
         InputSliderPreference(
             titleRes = R.string.label_keyboard_bottom_padding,
-            valueLabel = stringResource(
-                R.string.keyboard_bottom_padding_value,
-                uiState.keyboardBottomPaddingDp
-            ),
+            valueLabel = { value ->
+                context.getString(
+                    R.string.keyboard_bottom_padding_value,
+                    value.roundToStep(step = 5).toInt().coerceIn(0, 100)
+                )
+            },
             value = uiState.keyboardBottomPaddingDp.toFloat(),
             valueRange = 0f..100f,
             steps = 19,
@@ -633,12 +650,11 @@ internal fun InputKeyboardUiSettingsSection(
             count = 5,
             onValueChange = { value ->
                 val next = value.roundToStep(step = 5).toInt().coerceIn(0, 100)
-                if (next != uiState.keyboardBottomPaddingDp) {
-                    onUiStateChange(uiState.copy(keyboardBottomPaddingDp = next))
-                }
+                onUiStateChange(uiState.copy(keyboardBottomPaddingDp = next))
             },
-            onValueChangeFinished = {
-                prefs.keyboardBottomPaddingDp = uiState.keyboardBottomPaddingDp
+            onValueChangeFinished = { value ->
+                val next = value.roundToStep(step = 5).toInt().coerceIn(0, 100)
+                prefs.keyboardBottomPaddingDp = next
                 context.sendImeRefreshBroadcast()
                 onRefreshState()
             }

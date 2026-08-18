@@ -100,7 +100,7 @@ internal fun SfFreeLlmSection(
     if (!sfUseFreeService) {
         AiSliderPreference(
             titleRes = R.string.label_llm_temperature,
-            valueLabel = formatTemperature(sfTemperature),
+            valueLabel = { formatTemperature(it) },
             value = sfTemperature,
             valueRange = 0f..2f,
             steps = 19,
@@ -108,7 +108,7 @@ internal fun SfFreeLlmSection(
             index = itemIndex,
             count = itemCount,
             onValueChange = actions.onTemperatureChange,
-            onValueChangeFinished = actions.onTestHaptic
+            onValueChangeFinished = { actions.onTestHaptic() }
         )
     }
     if (showReasoning) {
@@ -209,15 +209,14 @@ internal fun BuiltinLlmSection(
     }
     AiSliderPreference(
         titleRes = R.string.label_llm_temperature,
-        valueLabel = formatTemperature(config.temperature.coerceIn(vendor.temperatureMin, vendor.temperatureMax)),
+        valueLabel = { formatTemperature(it.coerceIn(vendor.temperatureMin, vendor.temperatureMax)) },
         value = config.temperature.coerceIn(vendor.temperatureMin, vendor.temperatureMax),
         valueRange = vendor.temperatureMin..vendor.temperatureMax,
         steps = temperatureSteps(vendor),
         uiMode = uiMode,
         index = itemIndex,
         count = itemCount,
-        onValueChange = onTemperatureChange,
-        onValueChangeFinished = {}
+        onValueChange = onTemperatureChange
     )
     if (showReasoning) {
         ReasoningSection(
@@ -343,15 +342,14 @@ internal fun CustomLlmSection(
     }
     AiSliderPreference(
         titleRes = R.string.label_llm_temperature,
-        valueLabel = formatTemperature((provider?.temperature ?: Prefs.DEFAULT_LLM_TEMPERATURE).coerceIn(0f, 2f)),
+        valueLabel = { formatTemperature(it.coerceIn(0f, 2f)) },
         value = (provider?.temperature ?: Prefs.DEFAULT_LLM_TEMPERATURE).coerceIn(0f, 2f),
         valueRange = 0f..2f,
         steps = 19,
         uiMode = uiMode,
         index = itemIndex,
         count = itemCount,
-        onValueChange = onTemperatureChange,
-        onValueChangeFinished = {}
+        onValueChange = onTemperatureChange
     )
     ReasoningSection(
         uiMode = uiMode,

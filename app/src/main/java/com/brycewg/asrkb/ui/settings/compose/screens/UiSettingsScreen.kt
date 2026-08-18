@@ -36,7 +36,6 @@ fun UiSettingsScreen(
     val context = LocalContext.current
     val prefs = remember(context) { Prefs(context) }
     var uiState by remember(context) { mutableStateOf(InputSettingsUiState.fromPrefs(context, prefs)) }
-    var lastHapticLevel by remember { mutableStateOf(prefs.hapticFeedbackLevel) }
     var featureExplainerDialog by remember { mutableStateOf<SettingsFeatureExplainerDialogState?>(null) }
 
     LaunchedEffect(Unit) {
@@ -45,7 +44,6 @@ fun UiSettingsScreen(
 
     fun refreshState() {
         uiState = InputSettingsUiState.fromPrefs(context, prefs)
-        lastHapticLevel = uiState.hapticFeedbackLevel
     }
 
     fun applyExplainedSwitch(
@@ -103,9 +101,7 @@ fun UiSettingsScreen(
                     uiMode = uiMode,
                     prefs = prefs,
                     uiState = uiState,
-                    lastHapticLevel = lastHapticLevel,
                     onUiStateChange = { uiState = it },
-                    onLastHapticLevelChange = { lastHapticLevel = it },
                     onRefreshState = ::refreshState,
                     onShowExtensionButtonsPicker = onOpenKeyboardLayout,
                     onApplyExplainedSwitch = ::applyExplainedSwitch
