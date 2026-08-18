@@ -328,7 +328,7 @@ internal fun CurrentAsrVendorConfig(
             )
             AsrSliderPreference(
                 titleRes = R.string.label_zhipu_temperature,
-                valueLabel = formatAsrFloat(zhipuTemperature),
+                valueLabel = { formatAsrFloat(it) },
                 value = zhipuTemperature,
                 valueRange = 0f..1f,
                 steps = 19,
@@ -336,7 +336,7 @@ internal fun CurrentAsrVendorConfig(
                 index = itemIndex,
                 count = itemCount,
                 onValueChange = onZhipuTemperatureChange,
-                onValueChangeFinished = onZhipuTemperatureFinished
+                onValueChangeFinished = { onZhipuTemperatureFinished() }
             )
             AsrBodyText(uiMode = uiMode, textRes = R.string.zhipu_temperature_hint)
         }
@@ -965,7 +965,12 @@ private fun SonioxAsrConfig(
     )
     AsrSliderPreference(
         titleRes = R.string.label_soniox_endpoint_mode,
-        valueLabel = sonioxEndpointSensitivityLabel(context, endpointSensitivityLevel),
+        valueLabel = { value ->
+            sonioxEndpointSensitivityLabel(
+                context,
+                value.roundToInt().coerceIn(endpointLevelMin, endpointLevelMax)
+            )
+        },
         value = endpointSensitivityLevel.toFloat(),
         valueRange = endpointLevelRange,
         steps = endpointLevelSteps,
@@ -982,8 +987,7 @@ private fun SonioxAsrConfig(
                     endpointLevelMax
                 )
             )
-        },
-        onValueChangeFinished = {}
+        }
     )
     AsrSwitchPreference(
         id = "soniox_language_strict",

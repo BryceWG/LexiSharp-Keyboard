@@ -520,7 +520,7 @@ fun FloatingSettingsScreen(
                         )
                         FloatingSliderPreference(
                             titleRes = R.string.label_floating_alpha,
-                            valueLabel = "${uiState.alphaPercent.toInt()}%",
+                            valueLabel = { "${it.roundFloatingToStep(5).toInt()}%" },
                             value = uiState.alphaPercent,
                             valueRange = 30f..100f,
                             step = 5,
@@ -530,15 +530,16 @@ fun FloatingSettingsScreen(
                             onValueChange = { value ->
                                 uiState = uiState.copy(alphaPercent = value.roundFloatingToStep(5))
                             },
-                            onValueChangeFinished = {
-                                prefs.floatingSwitcherAlpha = (uiState.alphaPercent / 100f).coerceIn(0.2f, 1.0f)
+                            onValueChangeFinished = { value ->
+                                val rounded = value.roundFloatingToStep(5)
+                                prefs.floatingSwitcherAlpha = (rounded / 100f).coerceIn(0.2f, 1.0f)
                                 serviceManager.refreshAsrService(uiState.asrEnabled)
                                 refreshState()
                             }
                         )
                         FloatingSliderPreference(
                             titleRes = R.string.label_floating_size,
-                            valueLabel = "${uiState.sizeDp} dp",
+                            valueLabel = { "${it.roundFloatingToStep(4).toInt().coerceIn(28, 96)} dp" },
                             value = uiState.sizeDp.toFloat(),
                             valueRange = 28f..96f,
                             step = 4,
@@ -548,8 +549,9 @@ fun FloatingSettingsScreen(
                             onValueChange = { value ->
                                 uiState = uiState.copy(sizeDp = value.roundFloatingToStep(4).toInt().coerceIn(28, 96))
                             },
-                            onValueChangeFinished = {
-                                prefs.floatingBallSizeDp = uiState.sizeDp
+                            onValueChangeFinished = { value ->
+                                val next = value.roundFloatingToStep(4).toInt().coerceIn(28, 96)
+                                prefs.floatingBallSizeDp = next
                                 if (uiState.asrEnabled) {
                                     serviceManager.showAsrService()
                                 }

@@ -136,7 +136,7 @@ internal fun AiValuePreference(
 @Composable
 internal fun AiSliderPreference(
     titleRes: Int,
-    valueLabel: String,
+    valueLabel: (Float) -> String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int,
@@ -145,7 +145,7 @@ internal fun AiSliderPreference(
     index: Int = 0,
     count: Int = 1,
     onValueChange: (Float) -> Unit,
-    onValueChangeFinished: () -> Unit
+    onValueChangeFinished: (Float) -> Unit = { _ -> }
 ) {
     SettingsSliderPreference(
         uiMode = uiMode,

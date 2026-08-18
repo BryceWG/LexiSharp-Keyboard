@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
@@ -198,6 +199,7 @@ private fun OtherPrivacySection(
     onClearClipboardHistory: () -> Unit
 ) {
     OtherSection(uiMode = uiMode, titleRes = R.string.section_data_retention) {
+        val context = LocalContext.current
         OtherExplainedSwitch(
             id = "disable_asr_history",
             titleRes = R.string.label_disable_asr_history,
@@ -209,10 +211,12 @@ private fun OtherPrivacySection(
         SettingsSliderPreference(
             uiMode = uiMode,
             title = stringResource(R.string.label_audio_history_retention_count),
-            valueLabel = stringResource(
-                R.string.audio_history_retention_count_value,
-                uiState.audioHistoryRetentionCount
-            ),
+            valueLabel = { value ->
+                context.getString(
+                    R.string.audio_history_retention_count_value,
+                    value.toInt().coerceIn(0, 100)
+                )
+            },
             value = uiState.audioHistoryRetentionCount.toFloat(),
             valueRange = 0f..100f,
             steps = 99,
@@ -220,7 +224,7 @@ private fun OtherPrivacySection(
             index = 1,
             count = 4,
             onValueChange = { onAudioRetentionChange(it.toInt()) },
-            onValueChangeFinished = onAudioRetentionChangeFinished
+            onValueChangeFinished = { onAudioRetentionChangeFinished() }
         )
         OtherExplainedSwitch(
             id = "disable_usage_stats",

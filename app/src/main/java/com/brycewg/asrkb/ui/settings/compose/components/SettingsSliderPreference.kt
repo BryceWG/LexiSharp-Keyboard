@@ -1,5 +1,7 @@
 /**
  * Compose 设置页滑块组件，统一 Material 与 Miuix 的控制项布局。
+ * 拖动过程只更新本地显示，松手后才把最终值交给调用方，避免中间步进反复保存。
+ * Miuix 无障碍 setProgress 没有 finished 回调，无指针按下时视为一次完整提交。
  *
  * 归属模块：ui/settings/compose/components
  */
@@ -18,8 +20,17 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.LocalSettingsHapticTap
@@ -32,7 +43,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 internal fun SettingsSliderPreference(
     uiMode: BibiUiMode,
     title: String,
-    valueLabel: String,
+    valueLabel: (Float) -> String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int,
@@ -43,11 +54,29 @@ internal fun SettingsSliderPreference(
     index: Int = 0,
     count: Int = 1,
     onValueChange: (Float) -> Unit,
-    onValueChangeFinished: () -> Unit
+    onValueChangeFinished: (Float) -> Unit = { _ -> }
 ) {
     val hapticTap = LocalSettingsHapticTap.current
+    var sliderValue by remember { mutableFloatStateOf(value) }
+    var isEditing by remember { mutableStateOf(false) }
+    val miuixPointerPressed = remember { mutableStateOf(false) }
+    val latestValue by rememberUpdatedState(value)
+    val latestOnValueChange by rememberUpdatedState(onValueChange)
+    val latestOnValueChangeFinished by rememberUpdatedState(onValueChangeFinished)
+
+    LaunchedEffect(value) {
+        if (!isEditing) {
+            sliderValue = value
+        }
+    }
+
     val finishWithHaptic = {
-        onValueChangeFinished()
+        val committed = sliderValue
+        isEditing = false
+        if (committed != latestValue) {
+            latestOnValueChange(committed)
+        }
+        latestOnValueChangeFinished(committed)
         hapticTap()
     }
     val sliderBottomPadding = if (index == count - 1) {
@@ -55,17 +84,21 @@ internal fun SettingsSliderPreference(
     } else {
         SettingsLayoutMetrics.SliderBottomPadding
     }
+    val displayLabel = valueLabel(sliderValue)
     val content: @Composable () -> Unit = {
         when (uiMode) {
             BibiUiMode.Material -> SettingsMaterialItemSurface(index = index, count = count) {
                 SettingsControlLabel(
                     uiMode = uiMode,
                     title = title,
-                    value = valueLabel
+                    value = displayLabel
                 )
                 Slider(
-                    value = value,
-                    onValueChange = onValueChange,
+                    value = sliderValue,
+                    onValueChange = { next ->
+                        isEditing = true
+                        sliderValue = next
+                    },
                     onValueChangeFinished = finishWithHaptic,
                     valueRange = valueRange,
                     steps = steps,
@@ -89,11 +122,22 @@ internal fun SettingsSliderPreference(
                 SettingsControlLabel(
                     uiMode = uiMode,
                     title = title,
-                    value = valueLabel
+                    value = displayLabel
                 )
                 MiuixSlider(
-                    value = value,
-                    onValueChange = onValueChange,
+                    value = sliderValue,
+                    onValueChange = { next ->
+                        // Miuix 0.9.1 无障碍 setProgress 只回调 onValueChange，不回调
+                        // onValueChangeFinished。手指拖动时指针已按下，仍只预览；
+                        // 无指针则视为无障碍调整，立即提交并清掉编辑状态。
+                        if (miuixPointerPressed.value) {
+                            isEditing = true
+                            sliderValue = next
+                        } else {
+                            sliderValue = next
+                            finishWithHaptic()
+                        }
+                    },
                     onValueChangeFinished = finishWithHaptic,
                     valueRange = valueRange,
                     steps = steps,
@@ -102,6 +146,18 @@ internal fun SettingsSliderPreference(
                         .fillMaxWidth()
                         .padding(horizontal = SettingsLayoutMetrics.SliderHorizontalPadding)
                         .padding(bottom = sliderBottomPadding)
+                        .pointerInput(Unit) {
+                            try {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                                        miuixPointerPressed.value = event.changes.any { it.pressed }
+                                    }
+                                }
+                            } finally {
+                                miuixPointerPressed.value = false
+                            }
+                        }
                 )
                 SettingsSliderScaleLabels(uiMode, startLabel, endLabel)
             }

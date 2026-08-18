@@ -339,10 +339,11 @@ fun OtherSettingsScreen(
                 ) { prefs.disableAsrHistory = it }
             },
             onAudioRetentionChange = { value ->
-                uiState = uiState.copy(audioHistoryRetentionCount = value.coerceIn(0, 100))
+                val next = value.coerceIn(0, 100)
+                uiState = uiState.copy(audioHistoryRetentionCount = next)
+                prefs.audioHistoryRetentionCount = next
             },
             onAudioRetentionChangeFinished = {
-                prefs.audioHistoryRetentionCount = uiState.audioHistoryRetentionCount
                 coroutineScope.launch(Dispatchers.IO) {
                     AsrHistoryAudioStore(context).prune(
                         AsrHistoryStore(context).listAll(),

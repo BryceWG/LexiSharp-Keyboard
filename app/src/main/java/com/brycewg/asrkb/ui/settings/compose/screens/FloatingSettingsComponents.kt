@@ -190,7 +190,7 @@ internal fun FloatingExplainedSwitch(
 @Composable
 internal fun FloatingSliderPreference(
     titleRes: Int,
-    valueLabel: String,
+    valueLabel: (Float) -> String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     step: Int,
@@ -199,7 +199,7 @@ internal fun FloatingSliderPreference(
     index: Int = 0,
     count: Int = 1,
     onValueChange: (Float) -> Unit,
-    onValueChangeFinished: () -> Unit
+    onValueChangeFinished: (Float) -> Unit = { _ -> }
 ) {
     val steps = (((valueRange.endInclusive - valueRange.start) / step).toInt() - 1).coerceAtLeast(0)
     SettingsSliderPreference(

@@ -147,15 +147,14 @@ private fun SenseVoiceConfig(
     )
     AsrSliderPreference(
         titleRes = R.string.label_sv_threads,
-        valueLabel = uiState.svNumThreads.toString(),
+        valueLabel = { it.toInt().toString() },
         value = uiState.svNumThreads.toFloat(),
         valueRange = 1f..8f,
         steps = 6,
         uiMode = uiMode,
         index = itemIndex++,
         count = itemCount,
-        onValueChange = { viewModel.updateSvNumThreads(it.toInt()) },
-        onValueChangeFinished = {}
+        onValueChange = { viewModel.updateSvNumThreads(it.toInt()) }
     )
     AsrSwitchPreference(
         id = "sv_use_itn",
@@ -247,15 +246,14 @@ private fun FunAsrNanoConfig(
     )
     AsrSliderPreference(
         titleRes = R.string.label_fn_threads,
-        valueLabel = uiState.fnNumThreads.toString(),
+        valueLabel = { it.toInt().toString() },
         value = uiState.fnNumThreads.toFloat(),
         valueRange = 1f..8f,
         steps = 6,
         uiMode = uiMode,
         index = itemIndex++,
         count = itemCount,
-        onValueChange = { viewModel.updateFnNumThreads(it.toInt()) },
-        onValueChangeFinished = {}
+        onValueChange = { viewModel.updateFnNumThreads(it.toInt()) }
     )
     AsrSwitchPreference(
         id = "fn_use_itn",
@@ -349,15 +347,14 @@ private fun Qwen3AsrConfig(
     )
     AsrSliderPreference(
         titleRes = R.string.label_qw_threads,
-        valueLabel = uiState.qwNumThreads.toString(),
+        valueLabel = { it.toInt().toString() },
         value = uiState.qwNumThreads.toFloat(),
         valueRange = 1f..8f,
         steps = 6,
         uiMode = uiMode,
         index = itemIndex++,
         count = itemCount,
-        onValueChange = { viewModel.updateQwNumThreads(it.toInt()) },
-        onValueChangeFinished = {}
+        onValueChange = { viewModel.updateQwNumThreads(it.toInt()) }
     )
     AsrSwitchPreference(
         id = "qw_preload",
@@ -432,15 +429,14 @@ private fun ParakeetConfig(
     )
     AsrSliderPreference(
         titleRes = R.string.label_pk_threads,
-        valueLabel = uiState.pkNumThreads.toString(),
+        valueLabel = { it.toInt().toString() },
         value = uiState.pkNumThreads.toFloat(),
         valueRange = 1f..8f,
         steps = 6,
         uiMode = uiMode,
         index = itemIndex++,
         count = itemCount,
-        onValueChange = { viewModel.updatePkNumThreads(it.toInt()) },
-        onValueChangeFinished = {}
+        onValueChange = { viewModel.updatePkNumThreads(it.toInt()) }
     )
     AsrSwitchPreference(
         id = "pk_preload",
@@ -505,15 +501,14 @@ private fun FireRedAsrConfig(
     )
     AsrSliderPreference(
         titleRes = R.string.label_fr_threads,
-        valueLabel = uiState.frNumThreads.toString(),
+        valueLabel = { it.toInt().toString() },
         value = uiState.frNumThreads.toFloat(),
         valueRange = 1f..8f,
         steps = 6,
         uiMode = uiMode,
         index = itemIndex++,
         count = itemCount,
-        onValueChange = { viewModel.updateFrNumThreads(it.toInt()) },
-        onValueChangeFinished = {}
+        onValueChange = { viewModel.updateFrNumThreads(it.toInt()) }
     )
     AsrSwitchPreference(
         id = "fr_preload",
@@ -590,15 +585,14 @@ private fun XAsrConfig(
     )
     AsrSliderPreference(
         titleRes = R.string.label_x_asr_threads,
-        valueLabel = uiState.xAsrNumThreads.toString(),
+        valueLabel = { it.toInt().toString() },
         value = uiState.xAsrNumThreads.toFloat(),
         valueRange = 1f..8f,
         steps = 6,
         uiMode = uiMode,
         index = itemIndex++,
         count = itemCount,
-        onValueChange = { viewModel.updateXAsrNumThreads(it.toInt()) },
-        onValueChangeFinished = {}
+        onValueChange = { viewModel.updateXAsrNumThreads(it.toInt()) }
     )
     AsrSwitchPreference(
         id = "x_asr_preload",

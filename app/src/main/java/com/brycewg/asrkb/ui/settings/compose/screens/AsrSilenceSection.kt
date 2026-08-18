@@ -8,6 +8,7 @@
 package com.brycewg.asrkb.ui.settings.compose.screens
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
@@ -63,7 +64,7 @@ internal fun AsrSilenceSection(
         if (autoStopMode == Prefs.RecordingAutoStopMode.SILENCE) {
             AsrSliderPreference(
                 titleRes = R.string.label_silence_window_ms,
-                valueLabel = silenceWindowMs.toString(),
+                valueLabel = { it.roundToNearestHundred().toString() },
                 value = silenceWindowMs.toFloat(),
                 valueRange = 300f..5000f,
                 steps = 46,
@@ -72,11 +73,11 @@ internal fun AsrSilenceSection(
                 index = 1,
                 count = itemCount,
                 onValueChange = { value -> onWindowChange(value.roundToNearestHundred()) },
-                onValueChangeFinished = onWindowFinished
+                onValueChangeFinished = { onWindowFinished() }
             )
             AsrSliderPreference(
                 titleRes = R.string.label_silence_sensitivity,
-                valueLabel = silenceSensitivity.toString(),
+                valueLabel = { it.roundToInt().toString() },
                 value = silenceSensitivity.toFloat(),
                 valueRange = 1f..10f,
                 steps = 8,
@@ -85,18 +86,21 @@ internal fun AsrSilenceSection(
                 index = 2,
                 count = itemCount,
                 onValueChange = { value -> onSensitivityChange(value.roundToInt()) },
-                onValueChangeFinished = onSensitivityFinished
+                onValueChangeFinished = { onSensitivityFinished() }
             )
         }
         if (autoStopMode == Prefs.RecordingAutoStopMode.MAX_DURATION) {
+            val context = LocalContext.current
             val durationRange = Prefs.RECORDING_MAX_DURATION_MIN_MS.toFloat()..
                 Prefs.RECORDING_MAX_DURATION_MAX_MS.toFloat()
             AsrSliderPreference(
                 titleRes = R.string.label_recording_max_duration,
-                valueLabel = stringResource(
-                    R.string.label_recording_max_duration_value_s,
-                    recordingMaxDurationMs / 1000
-                ),
+                valueLabel = { value ->
+                    context.getString(
+                        R.string.label_recording_max_duration_value_s,
+                        value.roundToNearestDurationStep() / 1000
+                    )
+                },
                 value = recordingMaxDurationMs.toFloat(),
                 valueRange = durationRange,
                 steps = maxDurationSliderSteps(),
@@ -106,7 +110,7 @@ internal fun AsrSilenceSection(
                 index = 1,
                 count = itemCount,
                 onValueChange = { value -> onMaxDurationChange(value.roundToNearestDurationStep()) },
-                onValueChangeFinished = onMaxDurationFinished
+                onValueChangeFinished = { onMaxDurationFinished() }
             )
         }
     }
