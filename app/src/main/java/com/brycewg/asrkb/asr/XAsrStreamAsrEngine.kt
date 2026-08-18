@@ -10,11 +10,13 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,21 +24,17 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
-internal fun xAsrShouldStopAfterTailDrainChunk(chunkIndex: Int, maxChunks: Int): Boolean {
-    return maxChunks > 0 && chunkIndex >= maxChunks
-}
-
 /**
  * 基于 sherpa-onnx OnlineRecognizer 的本地 X-ASR 流式识别引擎。
  * - 反射调用 sherpa-onnx Kotlin API，避免编译期强耦合。
- * - 录音分片（默认200ms），送入在线流；每次分片后尽可能 decode，并节流发送 partial。
- * - 停止时先读取少量真实尾部 PCM，再 inputFinished + 完整 decode 输出最终结果。
+ * - 录音/外部 PCM 同步进入单写者会话队列；采集 Flow 结束后才 Finish，再按模型 chunk 补 right-context。
  */
 class XAsrStreamAsrEngine(
     private val context: Context,
@@ -53,38 +51,25 @@ class XAsrStreamAsrEngine(
     companion object {
         private const val TAG = "XAsrStreamAsrEngine"
         private const val FRAME_MS = 200
-        private const val CAPTURE_TAIL_DRAIN_CHUNKS = 2
-        private const val CAPTURE_TAIL_DRAIN_TIMEOUT_MS = 900L
+        // 仅防止采集协程挂死；正常路径必须等 Flow/Channel 自然结束。
+        private const val CAPTURE_DRAIN_HANG_TIMEOUT_MS = 3000L
     }
 
     private val running = AtomicBoolean(false)
-    private val closing = AtomicBoolean(false)
-    private val finalizeOnce = AtomicBoolean(false)
-    private val closeSilently = AtomicBoolean(false)
-    private val captureTailDrainRequested = AtomicBoolean(false)
-    private val captureTailDrainChunks = AtomicInteger(0)
 
     @Volatile private var useItnForSession: Boolean = false
 
     private var audioJob: Job? = null
     private val mgr = XAsrOnnxManager.getInstance()
+    private val stopController = XAsrStopController()
 
-    @Volatile private var currentStream: Any? = null
-    private val streamMutex = Mutex()
+    @Volatile private var session: XAsrStreamSession? = null
 
     private val sampleRate = 16000
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
     private val externalVadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
 
-    // 预缓冲：在模型加载/流未创建前缓存音频，避免首字延迟过长
-    private val prebufferMutex = Mutex()
-    private val prebuffer = ArrayDeque<ByteArray>()
-    private var prebufferBytes: Int = 0
-    private val maxPrebufferBytes: Int = 384 * 1024 // ~12s @16kHz s16le mono
-
-    private var lastEmitUptimeMs: Long = 0L
-    private var lastEmittedText: String? = null
     private val loggedAudioBytes = AtomicInteger(0)
 
     @Volatile private var streamLog: LocalAsrCallLogger.Session? = null
@@ -96,11 +81,6 @@ class XAsrStreamAsrEngine(
 
     override fun start() {
         if (running.get()) return
-        closing.set(false)
-        finalizeOnce.set(false)
-        closeSilently.set(false)
-        captureTailDrainRequested.set(false)
-        captureTailDrainChunks.set(0)
         loggedAudioBytes.set(0)
         streamLog = LocalAsrCallLogger.startInference(
             prefs = prefs,
@@ -136,10 +116,36 @@ class XAsrStreamAsrEngine(
             Log.w(TAG, "Failed to read xAsrUseItn", t)
             false
         }
+        val newSession = XAsrStreamSession(
+            scope = scope,
+            sampleRate = sampleRate,
+            frameMs = FRAME_MS,
+            useItn = useItnForSession,
+            nowMs = { SystemClock.uptimeMillis() },
+            onPartial = { text ->
+                try {
+                    listener.onPartial(text)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "notify partial failed", t)
+                }
+            },
+            onFinal = { text ->
+                completeStreamLog(text)
+                try {
+                    listener.onFinal(text)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "notify final failed", t)
+                }
+                running.set(false)
+            },
+            logDiag = { event, data -> logDiag(event, data) }
+        )
+        val previous = stopController.onNewSession(newSession)
+        previous?.cancel()
+        session = newSession
         running.set(true)
         externalVadInputLeveler.reset()
-        lastEmitUptimeMs = 0L
-        lastEmittedText = null
+        newSession.start()
 
         // 非外部模式才启动采集；外部模式下由 appendPcm 注入
         if (!externalPcmMode) startCapture()
@@ -153,9 +159,7 @@ class XAsrStreamAsrEngine(
                     filesCheck,
                     R.string.error_x_asr_model_missing
                 )
-                failStreamLog(msg)
-                listener.onError(msg)
-                running.set(false)
+                failPrepare(newSession, msg)
                 return@launch
             }
 
@@ -189,131 +193,82 @@ class XAsrStreamAsrEngine(
                 Log.w(TAG, "X-ASR prepare() failed")
                 loadLog?.failure("prepare returned false")
                 loadLog = null
-                failStreamLog("X-ASR prepare returned false")
-                running.set(false)
+                failPrepare(newSession, context.getString(R.string.error_local_asr_not_ready))
                 return@launch
             }
 
             val stream = mgr.createStreamOrNull()
             if (stream == null) {
                 val msg = context.getString(R.string.error_local_asr_not_ready)
-                failStreamLog(msg)
-                listener.onError(msg)
+                failPrepare(newSession, msg)
                 return@launch
             }
-            currentStream = stream
-
-            // 冲刷预缓冲
-            drainPrebufferTo(stream)
-
-            // 若在准备期间已调用 stop()，此处直接做最终解码
-            if (closing.get() && finalizeOnce.compareAndSet(false, true)) {
-                if (closeSilently.get()) {
-                    try {
-                        releaseStreamSilently(stream)
-                    } catch (
-                        t: Throwable
-                    ) {
-                        Log.e(TAG, "releaseStreamSilently failed", t)
-                    }
-                    failStreamLog("Stream released silently")
-                } else {
-                    val finalText = try {
-                        finalizeAndRelease(stream)
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "finalizeAndRelease failed", t)
-                        failStreamLog(t.message ?: "finalizeAndRelease failed")
-                        ""
-                    }
-                    completeStreamLog(finalText)
-                    try {
-                        listener.onFinal(finalText)
-                    } catch (
-                        t: Throwable
-                    ) {
-                        Log.e(TAG, "notify final failed", t)
-                    }
+            if (session !== newSession) {
+                try {
+                    mgr.releaseStream(stream)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "release stale stream failed", t)
                 }
-                closing.set(false)
-                running.set(false)
-                closeSilently.set(false)
+                return@launch
             }
+            newSession.attachSink(XAsrOnnxStreamSink(mgr, stream))
         }
     }
 
     // ========== ExternalPcmConsumer（外部推流） ==========
     override fun appendPcm(pcm: ByteArray, sampleRate: Int, channels: Int) {
-        if (!running.get() && currentStream == null && !closing.get()) return
+        val active = session ?: return
         if (sampleRate != 16000 || channels != 1) return
-        if (pcm.isNotEmpty()) {
-            loggedAudioBytes.addAndGet(pcm.size)
-        }
         val leveled = externalVadInputLeveler.process(pcm)
         try {
             listener.onAmplitude(leveled.stableAmplitude)
         } catch (
             _: Throwable
         ) { }
-        val s = currentStream
-        if (s == null) {
-            scope.launch { appendPrebuffer(pcm) }
-        } else {
-            scope.launch { deliverChunk(s, pcm, pcm.size) }
+        if (active.enqueuePcm(pcm)) {
+            loggedAudioBytes.addAndGet(pcm.size)
         }
     }
 
     override fun stop() {
         running.set(false)
-        closing.set(true)
-        val jobToJoin = audioJob
-        val s = currentStream
-        val drainCaptureTail = !externalPcmMode && s != null && jobToJoin?.isActive == true
-        if (drainCaptureTail) {
-            captureTailDrainChunks.set(0)
-            captureTailDrainRequested.set(true)
-        } else {
-            jobToJoin?.cancel()
-        }
-        audioJob = null
-
-        if (s == null) {
+        val armed = stopController.tryBeginStop(externalPcmMode)
+        if (armed == null) {
+            logDiag("xasr_stop", mapOf("reentry" to true))
             return
         }
-
-        if (finalizeOnce.compareAndSet(false, true)) {
-            scope.launch(Dispatchers.Default) {
-                val finalText = try {
-                    awaitCaptureJobStopped(jobToJoin, drainCaptureTail)
-                    finalizeAndRelease(s)
-                } catch (t: Throwable) {
-                    Log.e(TAG, "finalizeAndRelease failed", t)
-                    failStreamLog(t.message ?: "finalizeAndRelease failed")
-                    ""
+        audioJob = null
+        logDiag(
+            "xasr_stop",
+            mapOf(
+                "reentry" to false,
+                "waitForCapture" to armed.waitForCapture
+            )
+        )
+        if (!armed.waitForCapture) {
+            armed.session?.finish()
+            return
+        }
+        val captureJob = armed.captureJob
+        val drained = armed.drained
+        val stoppingSession = armed.session
+        // 等采集 Flow 自然结束（Channel 关闭且帧已 enqueue），再 Finish。超时只防挂死。
+        scope.launch(Dispatchers.IO) {
+            withContext(NonCancellable) {
+                val completed = withTimeoutOrNull(CAPTURE_DRAIN_HANG_TIMEOUT_MS) { drained.await() }
+                if (completed == null && captureJob?.isActive == true) {
+                    captureJob.cancel()
                 }
-                completeStreamLog(finalText)
-                try {
-                    listener.onFinal(finalText)
-                } catch (
-                    t: Throwable
-                ) {
-                    Log.e(TAG, "notify final failed", t)
+                if (!drained.isCompleted) {
+                    drained.await()
                 }
-                closing.set(false)
+                logDiag(
+                    "xasr_capture_drain",
+                    mapOf("complete" to (completed == true))
+                )
+                stoppingSession?.finish()
             }
         }
-    }
-
-    private suspend fun awaitCaptureJobStopped(job: Job?, drainTail: Boolean) {
-        if (job == null) return
-        if (drainTail) {
-            val stopped = withTimeoutOrNull(CAPTURE_TAIL_DRAIN_TIMEOUT_MS) {
-                job.join()
-                true
-            } == true
-            if (stopped) return
-        }
-        job.cancel()
-        job.join()
     }
 
     private fun notifyLoadUi(start: Boolean) {
@@ -337,160 +292,159 @@ class XAsrStreamAsrEngine(
         streamLog = null
     }
 
+    private fun failPrepare(active: XAsrStreamSession, message: String) {
+        failStreamLog(message)
+        try {
+            listener.onError(message)
+        } catch (t: Throwable) {
+            Log.e(TAG, "notify error failed", t)
+        }
+        running.set(false)
+        if (session === active) {
+            active.cancel()
+        }
+    }
+
+    private fun logDiag(event: String, data: Map<String, Any?> = emptyMap()) {
+        DebugLogManager.logBase(category = "asr", event = event, data = data)
+    }
+
     private fun startCapture() {
         audioJob?.cancel()
-        audioJob = scope.launch(Dispatchers.IO) {
-            val chunkMillis = FRAME_MS
-            val audioManager = AudioCaptureManager(
-                context = context,
-                sampleRate = sampleRate,
-                channelConfig = channelConfig,
-                audioFormat = audioFormat,
-                chunkMillis = chunkMillis,
-                audioFrameSinkProvider = { audioFrameSink }
-            )
-
-            if (!audioManager.hasPermission()) {
-                Log.e(TAG, "Missing RECORD_AUDIO permission")
-                val msg = context.getString(R.string.error_record_permission_denied)
-                failStreamLog(msg)
-                listener.onError(msg)
-                running.set(false)
-                return@launch
-            }
-
-            val vadDetector = if (isVadAutoStopEnabled(context, prefs)) {
-                VadDetector(
-                    context,
-                    sampleRate,
-                    prefs.autoStopSilenceWindowMs,
-                    prefs.autoStopSilenceSensitivity
-                )
-            } else {
-                null
-            }
-            val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
-                prefs = prefs,
-                sampleRate = sampleRate
-            )
-            val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
-
+        val drained = CompletableDeferred<Boolean>()
+        stopController.captureDrained = drained
+        val job = scope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Starting audio capture for X-ASR with chunk=${chunkMillis}ms")
-                audioManager.startCapture().collect { audioChunk ->
-                    if (!running.get() && currentStream == null) return@collect
-                    if (audioChunk.isEmpty()) return@collect
-                    val tailDrainRequestedAtChunkStart = captureTailDrainRequested.get()
-                    val tailDrainChunkIndex = if (tailDrainRequestedAtChunkStart) {
-                        captureTailDrainChunks.incrementAndGet()
-                    } else {
-                        0
-                    }
-                    if (audioChunk.isNotEmpty()) {
-                        loggedAudioBytes.addAndGet(audioChunk.size)
-                    }
-
-                    val leveled = vadInputLeveler.process(audioChunk)
-
-                    // Calculate and send audio amplitude (for waveform animation)
-                    try {
-                        listener.onAmplitude(leveled.stableAmplitude)
-                    } catch (t: Throwable) {
-                        Log.w(TAG, "Failed to calculate amplitude", t)
-                    }
-
-                    val shouldStopForVad = vadDetector?.shouldStop(
-                        leveled.leveledPcm,
-                        leveled.leveledPcm.size
-                    ) == true
-                    val s = currentStream
-                    if (s == null) {
-                        withContext(NonCancellable) {
-                            appendPrebuffer(audioChunk)
-                        }
-                    } else {
-                        withContext(NonCancellable) {
-                            deliverChunk(s, audioChunk, audioChunk.size)
-                        }
-                    }
-
-                    if (maxDurationLimiter.acceptPcm(audioChunk.size)) {
-                        Log.d(TAG, "Max recording duration reached, stopping recording")
-                        try {
-                            listener.onStopped()
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "Failed to notify stopped", t)
-                        }
-                        stop()
-                        return@collect
-                    }
-
-                    // VAD 自动判停：当前块必须先进入模型，避免尾段在停止前被丢弃。
-                    if (shouldStopForVad) {
-                        Log.d(TAG, "Silence detected, stopping recording")
-                        try {
-                            listener.onStopped()
-                        } catch (
-                            t: Throwable
-                        ) {
-                            Log.e(TAG, "Failed to notify stopped", t)
-                        }
-                        stop()
-                        return@collect
-                    }
-                    if (
-                        tailDrainRequestedAtChunkStart &&
-                        xAsrShouldStopAfterTailDrainChunk(
-                            tailDrainChunkIndex,
-                            CAPTURE_TAIL_DRAIN_CHUNKS
-                        )
-                    ) {
-                        throw CancellationException("X-ASR capture stopped after tail drain")
-                    }
-                }
-            } catch (t: Throwable) {
-                if (t is kotlinx.coroutines.CancellationException) {
-                    Log.d(TAG, "Audio streaming cancelled: ${t.message}")
-                } else {
-                    Log.e(TAG, "Audio streaming failed: ${t.message}", t)
-                    val msg = if (isLikelyMicInUseError(t)) {
-                        context.getString(R.string.asr_error_mic_in_use)
-                    } else {
-                        context.getString(R.string.error_audio_error, t.message ?: "")
-                    }
-                    failStreamLog(msg)
-                    try {
-                        listener.onError(msg)
-                    } catch (
-                        err: Throwable
-                    ) {
-                        Log.e(TAG, "notify error failed", err)
-                    }
-
-                    // 录音被系统中断：静默释放（不再回调 onFinal），避免后续 stop() 触发 JNI 竞态
-                    closeSilently.set(true)
-                    running.set(false)
-                    closing.set(true)
-                    val s = currentStream
-                    if (s != null && finalizeOnce.compareAndSet(false, true)) {
-                        scope.launch(Dispatchers.Default) {
-                            try {
-                                releaseStreamSilently(s)
-                            } catch (releaseErr: Throwable) {
-                                Log.e(TAG, "releaseStreamSilently failed", releaseErr)
-                            } finally {
-                                closeSilently.set(false)
-                                closing.set(false)
-                            }
-                        }
-                    }
-                }
+                runCaptureLoop()
             } finally {
+                drained.complete(true)
+            }
+        }
+        audioJob = job
+        stopController.captureJob = job
+    }
+
+    private suspend fun runCaptureLoop() {
+        val chunkMillis = FRAME_MS
+        val audioManager = AudioCaptureManager(
+            context = context,
+            sampleRate = sampleRate,
+            channelConfig = channelConfig,
+            audioFormat = audioFormat,
+            chunkMillis = chunkMillis,
+            audioFrameSinkProvider = { audioFrameSink }
+        )
+
+        if (!audioManager.hasPermission()) {
+            Log.e(TAG, "Missing RECORD_AUDIO permission")
+            val msg = context.getString(R.string.error_record_permission_denied)
+            failStreamLog(msg)
+            listener.onError(msg)
+            running.set(false)
+            session?.cancel()
+            return
+        }
+
+        val vadDetector = if (isVadAutoStopEnabled(context, prefs)) {
+            VadDetector(
+                context,
+                sampleRate,
+                prefs.autoStopSilenceWindowMs,
+                prefs.autoStopSilenceSensitivity
+            )
+        } else {
+            null
+        }
+        val maxDurationLimiter = RecordingDurationLimiter.fromPrefs(
+            prefs = prefs,
+            sampleRate = sampleRate
+        )
+        val vadInputLeveler = VadInputLevelerBranch(sampleRate = sampleRate)
+
+        val continuousFlow = ContinuousCaptureCoordinator.attachActiveSessionFlow(
+            sampleRate = sampleRate,
+            channelConfig = channelConfig,
+            audioFormat = audioFormat
+        )
+        val fromContinuous = continuousFlow != null
+        val captureFlow = (continuousFlow ?: audioManager.startPlatformCapture())
+            .onEach { audioFrameSink?.onAudioFrame(it, sampleRate, 1) }
+
+        try {
+            Log.d(TAG, "Starting audio capture for X-ASR with chunk=${chunkMillis}ms")
+            captureFlow.collect { audioChunk ->
+                if (audioChunk.isEmpty()) return@collect
+                val leveled = vadInputLeveler.process(audioChunk)
+
                 try {
-                    vadDetector?.release()
+                    listener.onAmplitude(leveled.stableAmplitude)
                 } catch (t: Throwable) {
-                    Log.w(TAG, "VAD release failed", t)
+                    Log.w(TAG, "Failed to calculate amplitude", t)
                 }
+
+                val shouldStopForVad = vadDetector?.shouldStop(
+                    leveled.leveledPcm,
+                    leveled.leveledPcm.size
+                ) == true
+                val active = session
+                if (active != null && active.enqueuePcm(audioChunk)) {
+                    loggedAudioBytes.addAndGet(audioChunk.size)
+                }
+
+                if (maxDurationLimiter.acceptPcm(audioChunk.size)) {
+                    Log.d(TAG, "Max recording duration reached, stopping recording")
+                    try {
+                        listener.onStopped()
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "Failed to notify stopped", t)
+                    }
+                    stop()
+                }
+
+                // VAD 自动判停：当前块必须先进入队列，避免尾段在停止前被丢弃。
+                if (shouldStopForVad) {
+                    Log.d(TAG, "Silence detected, stopping recording")
+                    try {
+                        listener.onStopped()
+                    } catch (
+                        t: Throwable
+                    ) {
+                        Log.e(TAG, "Failed to notify stopped", t)
+                    }
+                    stop()
+                }
+                // 平台采集在 stop 后收完当前块即可退出；热采集要等到 Channel 关闭才能排空尾帧。
+                if (!running.get() && !fromContinuous) {
+                    throw CancellationException("xasr-capture-stop")
+                }
+            }
+        } catch (t: Throwable) {
+            if (t is kotlinx.coroutines.CancellationException) {
+                Log.d(TAG, "Audio streaming cancelled: ${t.message}")
+            } else {
+                Log.e(TAG, "Audio streaming failed: ${t.message}", t)
+                val msg = if (isLikelyMicInUseError(t)) {
+                    context.getString(R.string.asr_error_mic_in_use)
+                } else {
+                    context.getString(R.string.error_audio_error, t.message ?: "")
+                }
+                failStreamLog(msg)
+                try {
+                    listener.onError(msg)
+                } catch (
+                    err: Throwable
+                ) {
+                    Log.e(TAG, "notify error failed", err)
+                }
+
+                running.set(false)
+                session?.cancel()
+            }
+        } finally {
+            try {
+                vadDetector?.release()
+            } catch (t: Throwable) {
+                Log.w(TAG, "VAD release failed", t)
             }
         }
     }
@@ -516,133 +470,30 @@ class XAsrStreamAsrEngine(
         return false
     }
 
-    private suspend fun deliverChunk(stream: Any, bytes: ByteArray, len: Int) {
-        if (!running.get() && !closing.get()) return
-        if (currentStream !== stream) return
-        val floats = pcmToFloatArray(bytes, len)
-        if (floats.isEmpty()) return
+}
 
-        var partial: String? = null
-        streamMutex.withLock {
-            if (currentStream !== stream) return
-            mgr.acceptWaveform(stream, floats, sampleRate)
-            var loops = 0
-            while (mgr.isReady(stream) && loops < 8) {
-                mgr.decode(stream)
-                loops++
-            }
-            partial = mgr.getResultText(stream)
-        }
-
-        // 节流发送 partial
-        val now = SystemClock.uptimeMillis()
-        if (!partial.isNullOrBlank() && running.get() && !closing.get()) {
-            val normalized = formatXAsrText(partial, useItnForSession)
-            val needEmit = (now - lastEmitUptimeMs) >= FRAME_MS && normalized != lastEmittedText
-            if (needEmit) {
-                try {
-                    listener.onPartial(normalized)
-                } catch (
-                    t: Throwable
-                ) {
-                    Log.e(TAG, "notify partial failed", t)
-                }
-                lastEmitUptimeMs = now
-                lastEmittedText = normalized
-            }
-        }
+private class XAsrOnnxStreamSink(
+    private val mgr: XAsrOnnxManager,
+    private val stream: Any
+) : XAsrStreamSink {
+    override fun acceptWaveform(samples: FloatArray, sampleRate: Int) {
+        mgr.acceptWaveform(stream, samples, sampleRate)
     }
 
-    private suspend fun finalizeAndRelease(stream: Any): String {
-        var text: String? = null
-        streamMutex.withLock {
-            if (currentStream !== stream) return@withLock
-            val tailSamples = ((sampleRate * 0.6).toInt()).coerceAtLeast(1)
-            val tail = FloatArray(tailSamples)
-            mgr.acceptWaveform(stream, tail, sampleRate)
-            mgr.inputFinished(stream)
+    override fun isReady(): Boolean = mgr.isReady(stream)
 
-            val startUptimeMs = SystemClock.uptimeMillis()
-            val maxUptimeMs = startUptimeMs + 2500L
-            var loops = 0
-            while (loops < 512 && SystemClock.uptimeMillis() < maxUptimeMs) {
-                if (!mgr.isReady(stream)) break
-                mgr.decode(stream)
-                loops++
-            }
-            text = mgr.getResultText(stream)
-            try {
-                mgr.releaseStream(stream)
-            } catch (
-                t: Throwable
-            ) {
-                Log.e(TAG, "releaseStream failed", t)
-            }
-            currentStream = null
-        }
-        val out = formatXAsrText(text.orEmpty(), useItnForSession)
-        if (out.isEmpty()) return out
-        return out
+    override fun decode() {
+        mgr.decode(stream)
     }
 
-    private suspend fun releaseStreamSilently(stream: Any) {
-        streamMutex.withLock {
-            if (currentStream !== stream) return
-            try {
-                mgr.releaseStream(stream)
-            } catch (
-                t: Throwable
-            ) {
-                Log.e(TAG, "releaseStream failed", t)
-            }
-            currentStream = null
-        }
+    override fun getResultText(): String? = mgr.getResultText(stream)
+
+    override fun inputFinished() {
+        mgr.inputFinished(stream)
     }
 
-    private suspend fun appendPrebuffer(bytes: ByteArray) {
-        prebufferMutex.withLock {
-            if (bytes.isEmpty()) return@withLock
-            while (prebufferBytes + bytes.size > maxPrebufferBytes && prebuffer.isNotEmpty()) {
-                val rm = prebuffer.removeFirst()
-                prebufferBytes -= rm.size
-            }
-            prebuffer.addLast(bytes.copyOf())
-            prebufferBytes += bytes.size
-        }
-    }
-
-    private suspend fun drainPrebufferTo(stream: Any) {
-        val list = mutableListOf<ByteArray>()
-        prebufferMutex.withLock {
-            if (prebuffer.isEmpty()) return
-            list.addAll(prebuffer)
-            prebuffer.clear()
-            prebufferBytes = 0
-        }
-        for (b in list) {
-            deliverChunk(stream, b, b.size)
-        }
-    }
-
-    private fun pcmToFloatArray(src: ByteArray, len: Int): FloatArray {
-        if (len <= 1) return FloatArray(0)
-        val n = len / 2
-        val out = FloatArray(n)
-        var i = 0
-        var offset = 0
-        while (i < n) {
-            val s = (src[offset + 1].toInt() shl 8) or (src[offset].toInt() and 0xFF)
-            var f = s / 32768.0f
-            if (f > 1f) {
-                f = 1f
-            } else if (f < -1f) {
-                f = -1f
-            }
-            out[i] = f
-            i++
-            offset += 2
-        }
-        return out
+    override fun release() {
+        mgr.releaseStream(stream)
     }
 }
 
@@ -734,7 +585,7 @@ fun isXAsrPrepared(): Boolean {
 private const val X_ASR_CJK_PUNCT = "，。！？；：、（）《》〈〉【】「」『』“”‘’"
 private const val X_ASR_ASCII_PUNCT_NO_LEADING_SPACE = ",.!?;:%)]}"
 
-private fun formatXAsrText(text: String, useItn: Boolean): String {
+internal fun formatXAsrText(text: String, useItn: Boolean): String {
     var out = normalizeXAsrCjkSpacing(text.trim())
     if (useItn && out.isNotEmpty()) {
         out = normalizeXAsrCjkSpacing(ChineseItn.normalize(out))
@@ -1015,6 +866,24 @@ class XAsrOnnxManager private constructor() {
         ).joinToString("|")
     }
 
+    private fun buildTransducerModelConfig(encoder: String, decoder: String, joiner: String): Any {
+        val cls = clsOnlineTransducerModelConfig!!
+        // 1.13.3 起 data class 增加 qnnConfig 且无 @JvmOverloads，三 String 构造在 JVM 上消失。
+        val inst = try {
+            cls.getDeclaredConstructor().newInstance()
+        } catch (_: NoSuchMethodException) {
+            cls.getDeclaredConstructor(
+                String::class.java,
+                String::class.java,
+                String::class.java
+            ).newInstance(encoder, decoder, joiner)
+        }
+        trySetField(inst, "encoder", encoder)
+        trySetField(inst, "decoder", decoder)
+        trySetField(inst, "joiner", joiner)
+        return inst
+    }
+
     private fun buildModelConfig(
         tokens: String,
         encoder: String,
@@ -1025,12 +894,7 @@ class XAsrOnnxManager private constructor() {
         modelType: String,
         debug: Boolean
     ): Any {
-        val transducer = clsOnlineTransducerModelConfig!!.getDeclaredConstructor(
-            String::class.java,
-            String::class.java,
-            String::class.java
-        )
-            .newInstance(encoder, decoder, joiner)
+        val transducer = buildTransducerModelConfig(encoder, decoder, joiner)
         val model = clsOnlineModelConfig!!.getDeclaredConstructor().newInstance()
         // Android sherpa-onnx exposes Python from_transducer(...) through OnlineModelConfig.transducer.
         trySetField(model, "tokens", tokens)

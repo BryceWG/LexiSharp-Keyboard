@@ -512,8 +512,8 @@ class AsrSessionManager(
         val activeSeq = sessionSeq
         snapshotAudioDurationIfPossible()
         markLocalModelProcessingStartIfNeeded(activeSeq)
-        ContinuousCaptureCoordinator.endSession(activeSeq)
         asrEngine?.stop()
+        ContinuousCaptureCoordinator.endSession(activeSeq)
         try {
             DebugLogManager.log(
                 category = "asr",

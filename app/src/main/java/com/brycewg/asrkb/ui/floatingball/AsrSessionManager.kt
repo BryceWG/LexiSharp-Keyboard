@@ -365,8 +365,8 @@ class AsrSessionManager(
     fun stopRecording() {
         Log.d(TAG, "stopRecording called")
         snapshotAudioDurationIfPossible()
-        ContinuousCaptureCoordinator.endSession(activeSessionToken)
         asrEngine?.stop()
+        ContinuousCaptureCoordinator.endSession(activeSessionToken)
         releaseRecordingResources("stop_recording")
 
         // 进入处理阶段
