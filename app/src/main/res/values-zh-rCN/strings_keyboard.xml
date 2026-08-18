@@ -81,6 +81,7 @@
     <string name="label_ime_switch_target">指定输入法</string>
     <string name="ime_switch_target_previous">上一个输入法</string>
     <string name="label_hide_recent_task_card">后台隐藏任务卡片</string>
+    <string name="label_keep_alive_notification_click">点击常驻通知跳转</string>
 
     <!-- Section titles -->
     <string name="section_input_behavior">输入行为</string>

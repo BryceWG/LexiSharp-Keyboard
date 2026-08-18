@@ -82,6 +82,7 @@
     <string name="label_ime_switch_target">指定IME</string>
     <string name="ime_switch_target_previous">前の入力メソッド</string>
     <string name="label_hide_recent_task_card">最近のタスクプレビューを非表示</string>
+    <string name="label_keep_alive_notification_click">常駐通知のジャンプ先</string>
 
     <!-- Section titles -->
     <string name="section_input_behavior">入力動作</string>

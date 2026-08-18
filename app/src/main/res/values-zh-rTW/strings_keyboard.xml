@@ -81,6 +81,7 @@
     <string name="label_ime_switch_target">指定輸入法</string>
     <string name="ime_switch_target_previous">上一個輸入法</string>
     <string name="label_hide_recent_task_card">隱藏最近任務預覽</string>
+    <string name="label_keep_alive_notification_click">點擊常駐通知跳轉</string>
 
     <!-- Section titles -->
     <string name="section_input_behavior">輸入行為</string>

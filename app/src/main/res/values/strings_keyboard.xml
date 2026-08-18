@@ -81,6 +81,7 @@
     <string name="label_ime_switch_target">Target IME</string>
     <string name="ime_switch_target_previous">Previous input method</string>
     <string name="label_hide_recent_task_card">Hide recent task preview</string>
+    <string name="label_keep_alive_notification_click">Persistent notification tap</string>
 
     <!-- Section titles -->
     <string name="section_input_behavior">Input Behavior</string>

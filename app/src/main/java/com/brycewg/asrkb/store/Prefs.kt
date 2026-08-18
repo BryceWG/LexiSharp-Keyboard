@@ -392,6 +392,16 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_HIDE_RECENT_TASK_CARD, false)
         set(value) = sp.edit { putBoolean(KEY_HIDE_RECENT_TASK_CARD, value) }
 
+    // 点击常驻保活通知后打开的设置页（存路由 id；非法值由通知点击逻辑回退到默认）
+    var keepAliveNotificationClickRoute: String
+        get() = sp.getString(
+            KEY_KEEP_ALIVE_NOTIFICATION_CLICK_ROUTE,
+            DEFAULT_KEEP_ALIVE_NOTIFICATION_CLICK_ROUTE
+        ) ?: DEFAULT_KEEP_ALIVE_NOTIFICATION_CLICK_ROUTE
+        set(value) = sp.edit {
+            putString(KEY_KEEP_ALIVE_NOTIFICATION_CLICK_ROUTE, value.trim())
+        }
+
     // 应用内语言（空字符串表示跟随系统；如："zh-Hans"、"en"）
     var appLanguageTag: String
         get() = sp.getString(KEY_APP_LANGUAGE_TAG, "") ?: ""
@@ -2016,6 +2026,7 @@ class Prefs(context: Context) {
         const val SETTINGS_THEME_MODE_SYSTEM = "system"
         const val SETTINGS_THEME_MODE_LIGHT = "light"
         const val SETTINGS_THEME_MODE_DARK = "dark"
+        const val DEFAULT_KEEP_ALIVE_NOTIFICATION_CLICK_ROUTE = "history"
 
         // 输入/点击触觉反馈等级（兼容旧开关）
         const val HAPTIC_FEEDBACK_LEVEL_OFF = 0

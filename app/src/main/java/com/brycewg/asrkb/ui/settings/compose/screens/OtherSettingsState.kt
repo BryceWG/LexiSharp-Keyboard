@@ -6,6 +6,7 @@
 package com.brycewg.asrkb.ui.settings.compose.screens
 
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.floating.KeepAliveNotificationClick
 
 internal data class PunctuationFields(
     val punct1: String,
@@ -23,6 +24,7 @@ internal fun persistPunctuationIfChanged(prefs: Prefs, fields: PunctuationFields
 
 internal data class OtherSettingsUiState(
     val keepAliveEnabled: Boolean,
+    val keepAliveNotificationClickRoute: String,
     val privilegedKeepAliveEnabled: Boolean,
     val disableAsrHistory: Boolean,
     val audioHistoryRetentionCount: Int,
@@ -32,6 +34,7 @@ internal data class OtherSettingsUiState(
     companion object {
         fun fromPrefs(prefs: Prefs): OtherSettingsUiState = OtherSettingsUiState(
             keepAliveEnabled = prefs.floatingKeepAliveEnabled,
+            keepAliveNotificationClickRoute = KeepAliveNotificationClick.routeFromPrefs(prefs).id,
             privilegedKeepAliveEnabled = prefs.floatingKeepAlivePrivilegedEnabled,
             disableAsrHistory = prefs.disableAsrHistory,
             audioHistoryRetentionCount = prefs.audioHistoryRetentionCount,

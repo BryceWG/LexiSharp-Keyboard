@@ -81,6 +81,7 @@
     <string name="label_ime_switch_target">طريقة الإدخال المستهدفة</string>
     <string name="ime_switch_target_previous">طريقة الإدخال السابقة</string>
     <string name="label_hide_recent_task_card">إخفاء معاينة المهام الأخيرة</string>
+    <string name="label_keep_alive_notification_click">وجهة النقر على الإشعار المستمر</string>
 
     <!-- Section titles -->
     <string name="section_input_behavior">سلوك الإدخال</string>

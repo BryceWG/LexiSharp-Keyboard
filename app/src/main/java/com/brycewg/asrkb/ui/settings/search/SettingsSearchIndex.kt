@@ -125,8 +125,8 @@ object SettingsSearchIndex {
     private fun MutableList<DeclarativeEntry>.addUiSettingsEntries() {
         val route = BibiSettingsRoute.UiSettings
         val screen = R.string.section_ui_settings
-        fun item(@StringRes title: Int, @StringRes section: Int) {
-            add(DeclarativeEntry(title, screen, route, section))
+        fun item(@StringRes title: Int, @StringRes section: Int, vararg keywords: String) {
+            add(DeclarativeEntry(title, screen, route, section, keywords.toList()))
         }
         item(R.string.label_language, R.string.section_main_ui)
         item(R.string.settings_ui_mode, R.string.section_main_ui)
@@ -204,6 +204,14 @@ object SettingsSearchIndex {
             add(DeclarativeEntry(title, screen, route, section, keywords.toList()))
         }
         item(R.string.label_floating_keep_alive_foreground, R.string.section_general)
+        item(
+            R.string.label_keep_alive_notification_click,
+            R.string.section_general,
+            "notification",
+            "keep-alive",
+            "常驻通知",
+            "保活"
+        )
         item(R.string.label_floating_keep_alive_privileged, R.string.section_general, "shizuku", "root")
         item(R.string.label_request_battery_whitelist, R.string.section_general)
         item(R.string.label_disable_asr_history, R.string.section_data_retention)

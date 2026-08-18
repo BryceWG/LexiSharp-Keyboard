@@ -20,8 +20,6 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.ui.AsrVendorUi
-import com.brycewg.asrkb.ui.SettingsActivity
-import com.brycewg.asrkb.ui.settings.compose.core.BibiSettingsRoute
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -151,7 +149,8 @@ class FloatingKeepAliveService : Service() {
                         "keepalive",
                         "service_skip",
                         mapOf(
-                            "reason" to "already_started"
+                            "reason" to "already_started",
+                            "click_route" to notificationClickRouteId(prefs)
                         )
                     )
                     return START_STICKY
@@ -163,7 +162,8 @@ class FloatingKeepAliveService : Service() {
                     "keepalive",
                     "service_start",
                     mapOf(
-                        "action" to (intent?.action ?: "null")
+                        "action" to (intent?.action ?: "null"),
+                        "click_route" to notificationClickRouteId(prefs)
                     )
                 )
                 return START_STICKY
@@ -204,6 +204,12 @@ class FloatingKeepAliveService : Service() {
         return !provided.isNullOrBlank() && provided == expected
     }
 
+    private fun notificationClickRouteId(prefs: Prefs?): String = try {
+        KeepAliveNotificationClick.routeFromPrefs(prefs ?: Prefs(this)).id
+    } catch (_: Throwable) {
+        KeepAliveNotificationClick.defaultRoute.id
+    }
+
     private fun startForegroundWithNotification() {
         val notification = buildKeepAliveNotification()
         try {
@@ -232,10 +238,7 @@ class FloatingKeepAliveService : Service() {
     }
 
     private fun buildKeepAliveNotification(): android.app.Notification {
-        val openIntent = Intent(this, SettingsActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            putExtra(SettingsActivity.EXTRA_INITIAL_ROUTE, BibiSettingsRoute.Floating.id)
-        }
+        val openIntent = KeepAliveNotificationClick.openSettingsIntent(this)
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,

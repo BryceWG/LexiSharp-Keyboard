@@ -35,6 +35,7 @@ import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import com.brycewg.asrkb.clipboard.ClipboardSyncRuntimeService
 import com.brycewg.asrkb.clipboard.isSyncClipboardDownloadDirectory
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
+import com.brycewg.asrkb.ui.floating.KeepAliveNotificationClick
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveScheduler
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveStarter
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsChoiceSheet
@@ -290,6 +291,13 @@ fun OtherSettingsScreen(
                         PrivilegedKeepAliveScheduler.update(context)
                     }
                 ) { prefs.floatingKeepAliveEnabled = it }
+            },
+            onKeepAliveNotificationClickRouteChange = { routeId ->
+                prefs.keepAliveNotificationClickRoute = routeId
+                uiState = uiState.copy(
+                    keepAliveNotificationClickRoute = KeepAliveNotificationClick.routeFromPrefs(prefs).id
+                )
+                serviceManager.startKeepAliveService()
             },
             onPrivilegedKeepAliveToggle = { target ->
                 applyExplainedSwitch(

@@ -57,6 +57,7 @@ internal object PrefsBackup {
         o.put(KEY_RETURN_PREV_IME_ON_HIDE, returnPrevImeOnHide)
         o.put(KEY_IME_SWITCH_TARGET_ID, imeSwitchTargetId)
         o.put(KEY_HIDE_RECENT_TASK_CARD, hideRecentTaskCard)
+        o.put(KEY_KEEP_ALIVE_NOTIFICATION_CLICK_ROUTE, keepAliveNotificationClickRoute)
         o.put(KEY_APP_LANGUAGE_TAG, appLanguageTag)
         o.put(KEY_SETTINGS_UI_MODE, settingsUiMode)
         o.put(KEY_SETTINGS_THEME_MODE, settingsThemeMode)
@@ -317,6 +318,9 @@ internal object PrefsBackup {
             optBool(KEY_SWAP_AI_EDIT_IME_SWITCHER)?.let { swapAiEditWithImeSwitcher = it }
             optBool(KEY_FCITX5_RETURN_ON_SWITCHER)?.let { fcitx5ReturnOnImeSwitch = it }
             optBool(KEY_HIDE_RECENT_TASK_CARD)?.let { hideRecentTaskCard = it }
+            optString(KEY_KEEP_ALIVE_NOTIFICATION_CLICK_ROUTE)?.let {
+                keepAliveNotificationClickRoute = it
+            }
             optString(KEY_APP_LANGUAGE_TAG)?.let { appLanguageTag = it }
             optString(KEY_SETTINGS_UI_MODE)?.let { settingsUiMode = it }
             optString(KEY_SETTINGS_THEME_MODE)?.let { settingsThemeMode = it }

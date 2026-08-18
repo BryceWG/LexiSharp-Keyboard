@@ -19,11 +19,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.ui.floating.KeepAliveNotificationClick
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsLazyColumn
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMaterialItemSurface
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsPreference
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSliderPreference
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
+import com.brycewg.asrkb.ui.settings.compose.model.DropdownOption
+import com.brycewg.asrkb.ui.settings.compose.model.SettingsEntry
 import com.brycewg.asrkb.ui.settings.other.OtherSettingsViewModel
 
 @Composable
@@ -38,6 +42,7 @@ internal fun OtherSettingsRouteContent(
     focusNameAfterAdd: Boolean,
     onFocusNameHandled: () -> Unit,
     onKeepAliveToggle: (Boolean) -> Unit,
+    onKeepAliveNotificationClickRouteChange: (String) -> Unit,
     onPrivilegedKeepAliveToggle: (Boolean) -> Unit,
     onRequestBatteryWhitelist: () -> Unit,
     onDisableAsrHistoryToggle: (Boolean) -> Unit,
@@ -78,6 +83,10 @@ internal fun OtherSettingsRouteContent(
         verticalArrangement = Arrangement.spacedBy(SettingsLayoutMetrics.SectionSpacing)
     ) {
         item("keep_alive") {
+            val keepAliveItemCount = if (uiState.keepAliveEnabled) 3 else 2
+            val notificationClickOptions = KeepAliveNotificationClick.destinations.map { dest ->
+                DropdownOption(dest.route.id, stringResource(dest.titleRes))
+            }
             OtherSection(uiMode = uiMode, titleRes = R.string.section_general) {
                 OtherExplainedSwitch(
                     id = "floating_keep_alive",
@@ -85,15 +94,28 @@ internal fun OtherSettingsRouteContent(
                     checked = uiState.keepAliveEnabled,
                     onToggle = onKeepAliveToggle,
                     index = 0,
-                    count = 2
+                    count = keepAliveItemCount
                 )
+                if (uiState.keepAliveEnabled) {
+                    SettingsPreference(
+                        entry = SettingsEntry.Dropdown(
+                            id = "keep_alive_notification_click",
+                            titleRes = R.string.label_keep_alive_notification_click,
+                            options = notificationClickOptions,
+                            selectedOptionId = uiState.keepAliveNotificationClickRoute,
+                            onSelectedOptionChange = onKeepAliveNotificationClickRouteChange
+                        ),
+                        index = 1,
+                        count = keepAliveItemCount
+                    )
+                }
                 OtherExplainedSwitch(
                     id = "floating_keep_alive_privileged",
                     titleRes = R.string.label_floating_keep_alive_privileged,
                     checked = uiState.privilegedKeepAliveEnabled,
                     onToggle = onPrivilegedKeepAliveToggle,
-                    index = 1,
-                    count = 2
+                    index = if (uiState.keepAliveEnabled) 2 else 1,
+                    count = keepAliveItemCount
                 )
                 OtherButton(
                     text = stringResource(R.string.label_request_battery_whitelist),
