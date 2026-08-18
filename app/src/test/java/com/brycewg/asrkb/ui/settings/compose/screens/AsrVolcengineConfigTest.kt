@@ -7,18 +7,16 @@ class AsrVolcengineConfigTest {
     @Test
     fun primaryItemCountUsesOneCredentialFieldForNewAuth() {
         assertEquals(
-            9,
+            8,
             volcenginePrimaryItemCount(
                 streaming = true,
-                fileStandard = true,
                 useNewAuth = false
             )
         )
         assertEquals(
-            8,
+            7,
             volcenginePrimaryItemCount(
                 streaming = true,
-                fileStandard = true,
                 useNewAuth = true
             )
         )

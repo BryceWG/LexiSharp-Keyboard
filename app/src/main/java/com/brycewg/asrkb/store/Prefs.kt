@@ -16,6 +16,7 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BackupAsrLocalResidency
 import com.brycewg.asrkb.asr.LlmVendor
+import com.brycewg.asrkb.asr.VolcAsrModelCatalog
 import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import com.brycewg.asrkb.imebridge.ImeBridgeRuntimeShutdown
 import kotlin.reflect.KProperty
@@ -1332,6 +1333,27 @@ class Prefs(context: Context) {
     fun getSonioxLanguages(): List<String> = SonioxLanguagesStore.getSonioxLanguages(this, json)
 
     fun setSonioxLanguages(list: List<String>) = SonioxLanguagesStore.setSonioxLanguages(this, json, list)
+
+    // 火山引擎：canonical 模型选择（运行时主状态；旧三开关仅兼容备份/降级）
+    val volcAsrModelStored: String
+        get() = (sp.getString(KEY_VOLC_ASR_MODEL, null) ?: "").trim()
+
+    var volcAsrModel: String
+        get() {
+            val raw = volcAsrModelStored
+            if (raw.isEmpty()) return VolcAsrModelCatalog.DEFAULT_ID
+            return VolcAsrModelCatalog.fromIdOrDefault(raw).id
+        }
+        set(value) {
+            val model = VolcAsrModelCatalog.fromIdOrDefault(value.trim())
+            val flags = VolcAsrModelCatalog.legacyFlags(model.id)
+            sp.edit {
+                putString(KEY_VOLC_ASR_MODEL, model.id)
+                putBoolean(KEY_VOLC_STREAMING_ENABLED, flags.streamingEnabled)
+                putBoolean(KEY_VOLC_FILE_STANDARD_ENABLED, flags.fileStandardEnabled)
+                putBoolean(KEY_VOLC_MODEL_V2_ENABLED, flags.modelV2Enabled)
+            }
+        }
 
     // 火山引擎：流式识别开关（与文件模式共享凭证）
     var volcStreamingEnabled: Boolean

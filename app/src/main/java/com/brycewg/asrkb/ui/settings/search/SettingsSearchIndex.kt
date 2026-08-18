@@ -8,6 +8,7 @@ package com.brycewg.asrkb.ui.settings.search
 import android.content.Context
 import androidx.annotation.StringRes
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.ui.AsrVendorUi
 import com.brycewg.asrkb.ui.settings.compose.core.BibiSettingsRoute
@@ -165,8 +166,13 @@ object SettingsSearchIndex {
     private fun MutableList<DeclarativeEntry>.addAsrEntries() {
         val route = BibiSettingsRoute.Asr
         val screen = R.string.title_asr_settings
-        fun item(@StringRes title: Int, @StringRes section: Int, vararg keywords: String) {
-            add(DeclarativeEntry(title, screen, route, section, keywords.toList()))
+        fun item(
+            @StringRes title: Int,
+            @StringRes section: Int,
+            vararg keywords: String,
+            forceAsrVendorId: String? = null
+        ) {
+            add(DeclarativeEntry(title, screen, route, section, keywords.toList(), forceAsrVendorId))
         }
         item(R.string.label_recording_auto_stop_mode, R.string.section_silence_autostop, "auto stop", "判停")
         item(R.string.label_auto_stop_silence, R.string.label_auto_stop_silence)
@@ -174,6 +180,20 @@ object SettingsSearchIndex {
         item(R.string.label_silence_sensitivity, R.string.label_auto_stop_silence, "vad", "判停", "灵敏度")
         item(R.string.label_recording_max_duration, R.string.section_silence_autostop, "maximum duration", "最长")
         item(R.string.label_asr_vendor, R.string.label_asr_vendor)
+        item(
+            R.string.label_volc_asr_model,
+            R.string.label_asr_vendor,
+            "豆包",
+            "火山",
+            "streaming",
+            "file",
+            "V1",
+            "V2",
+            "极速",
+            "doubao",
+            "volc",
+            forceAsrVendorId = AsrVendor.Volc.id
+        )
         item(R.string.label_backup_asr_vendor, R.string.label_backup_asr_engine)
         item(R.string.label_backup_asr_timeout_sensitivity, R.string.label_backup_asr_engine)
         item(R.string.label_backup_asr_local_residency, R.string.label_backup_asr_engine)

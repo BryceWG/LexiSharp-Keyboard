@@ -1,6 +1,7 @@
 package com.brycewg.asrkb.store
 
 import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.VolcAsrModelCatalog
 import org.json.JSONObject
 
 /**
@@ -16,6 +17,7 @@ internal object PrefsAsrVendorFields {
             VendorField.credential(KEY_APP_KEY),
             VendorField.credential(KEY_ACCESS_KEY),
             VendorField.credential(KEY_VOLC_API_KEY, required = false),
+            VendorField.model(KEY_VOLC_ASR_MODEL, default = VolcAsrModelCatalog.DEFAULT_ID),
             VendorField.streamingToggle(KEY_VOLC_STREAMING_ENABLED, default = true),
             VendorField.boolean(KEY_VOLC_DDC_ENABLED, default = true),
             VendorField.boolean(KEY_VOLC_VAD_ENABLED, default = false),

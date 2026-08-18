@@ -305,6 +305,15 @@ fun AsrSettingsScreen(
         }
     }
 
+    fun showVolcModelPicker() {
+        choiceSheet = volcModelChoiceSheetState(
+            context = context,
+            selectedModel = uiState.volcAsrModel,
+        ) { modelId ->
+            viewModel.updateVolcAsrModel(modelId)
+        }
+    }
+
     fun showStepAudioModelPicker() {
         choiceSheet = stepAudioModelChoiceSheetState(
             context = context,
@@ -720,6 +729,7 @@ fun AsrSettingsScreen(
                 showSfFreeModelPicker = ::showSfFreeModelPicker,
                 showSfPaidModelPicker = ::showSfPaidModelPicker,
                 showDashModelPicker = ::showDashModelPicker,
+                showVolcModelPicker = ::showVolcModelPicker,
                 showDashLanguagePicker = ::showDashLanguagePicker,
                 showStepAudioModelPicker = ::showStepAudioModelPicker,
                 showSonioxLanguagePicker = ::showSonioxLanguagePicker,

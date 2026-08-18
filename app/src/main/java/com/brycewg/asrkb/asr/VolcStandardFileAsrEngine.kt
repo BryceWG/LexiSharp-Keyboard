@@ -36,8 +36,6 @@ class VolcStandardFileAsrEngine(
 
     companion object {
         private const val TAG = "VolcStandardFileAsr"
-        private const val RESOURCE_ID_STANDARD_V1 = "volc.bigasr.auc"
-        private const val RESOURCE_ID_STANDARD_V2 = "volc.seedasr.auc"
         private const val SUBMIT_URL = "https://openspeech.bytedance.com/api/v3/auc/bigmodel/submit"
         private const val QUERY_URL = "https://openspeech.bytedance.com/api/v3/auc/bigmodel/query"
         private const val MAX_POLL_ATTEMPTS = 120
@@ -56,7 +54,7 @@ class VolcStandardFileAsrEngine(
         .build()
 
     private val resourceId: String
-        get() = if (prefs.volcModelV2Enabled) RESOURCE_ID_STANDARD_V2 else RESOURCE_ID_STANDARD_V1
+        get() = VolcAsrModelCatalog.fromIdOrDefault(prefs.volcAsrModel).resourceId
 
     private sealed interface QueryResult {
         data class Success(val text: String) : QueryResult

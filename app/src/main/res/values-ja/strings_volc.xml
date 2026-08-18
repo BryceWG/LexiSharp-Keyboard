@@ -4,6 +4,13 @@
     <string name="vendor_volc">Volcano Engine</string>
 
     <!-- Volc configuration -->
+    <string name="label_volc_asr_model">Doubao ASRモデル</string>
+    <string name="volc_asr_model_streaming_v2">Doubaoストリーミング音声認識 2.0</string>
+    <string name="volc_asr_model_streaming_v1">Doubaoストリーミング音声認識 1.0</string>
+    <string name="volc_asr_model_file_v2">Doubao標準ファイル認識 2.0</string>
+    <string name="volc_asr_model_file_v1">Doubao標準ファイル認識 1.0</string>
+    <string name="volc_asr_model_file_turbo_v1">Doubao高速ファイル認識 1.0</string>
+    <string name="feature_volc_asr_model_desc">Doubaoの認識モデルを直接選べます。ストリーミングモデルは話しながら文字が出て、安定したネットワークが必要です。標準ファイル認識は録音終了後に音声全体をアップロードし、精度が高めです。高速ファイル認識も録音終了後にアップロードしますが、処理はより速いです。通常の認識以外の設定は変わりません。</string>
     <string name="label_volc_streaming">ストリーミング認識</string>
     <string name="label_volc_file_standard">ファイル認識（標準版）を使用</string>
     <string name="label_volc_model_v2">Doubao ASR 2.0モデルを使用</string>
@@ -15,10 +22,10 @@
     <string name="label_volc_api_key">X-Api-Key</string>
 
     <!-- Volc modes hint -->
-    <string name="volc_modes_hint">モード説明：\n
-1. ファイル認識（標準版・submit/query）：録音完了後にアップロード。高速版より遅いがDoubao ASR 2.0をサポート。ストリーミング無効時推奨。\n
-2. ファイル認識（高速版）：録音完了後にアップロード。速度は速いがDoubao ASR 2.0をサポートしない。\n
-3. ストリーミング（既定・双方向）：録音しながら送信し、リアルタイムで増分プレビューを返す。開始/終了の遅延が小さい。安定したネットワークが必要。Doubao ASR 2.0をサポート済み。</string>
+    <string name="volc_modes_hint">Doubaoの認識モデルを直接選べます：\n
+1. ストリーミング音声認識 2.0 / 1.0：話しながら文字が出て、開始と終了の遅延が小さくなります。安定したネットワークが必要です。\n
+2. 標準ファイル認識 2.0 / 1.0（submit/query）：録音終了後に音声全体をアップロードし、精度が高めです。\n
+3. 高速ファイル認識 1.0（flash）：録音終了後にアップロードし、処理はより速いです。</string>
 
     <!-- Volc language options -->
     <string name="volc_lang_auto">自動（中国語/英語+方言）</string>
@@ -40,8 +47,8 @@
     <!-- ============================================== -->
 
     <!-- 火山引擎 - ストリーミング認識 -->
-    <string name="feature_volc_streaming_off_desc">ファイル認識モードを使用します。録音完了後に全体を一度に送信して処理します。ネットワークが不安定な環境に適しています。</string>
-    <string name="feature_volc_streaming_on_desc">WebSocketの双方向ストリーミング認識を使用します。話している間に中間結果がリアルタイムで表示され、応答が速くなります。安定したネットワーク接続が必要です。</string>
+    <string name="feature_volc_streaming_off_desc">「Doubao ASRモデル」で標準ファイルまたは高速ファイル認識を選んでください。録音終了後に音声全体をアップロードします。</string>
+    <string name="feature_volc_streaming_on_desc">このモードは「Doubao ASRモデル」のストリーミング音声認識 1.0 または 2.0 で表されます。話しながら文字が出て、安定したネットワークが必要です。</string>
 
     <!-- 火山引擎 - DDC（意味スムージング） -->
     <string name="feature_volc_ddc_off_desc">追加処理なしで生の認識結果を出力します。</string>
@@ -56,12 +63,12 @@
     <string name="feature_volc_nonstream_on_desc">サービス側がストリーミング結果をもう一度修正します。最終結果が改善する場合がありますが、途中の文字は変わることがあります。</string>
 
     <!-- 火山引擎 - ファイル認識（標準版） -->
-    <string name="feature_volc_file_standard_off_desc">録音完了後にファイル認識（高速版）を使用します。速度は速いですが、Doubao ASR 2.0をサポートしません。</string>
-    <string name="feature_volc_file_standard_on_desc">録音完了後にファイル認識（標準版、submit/query）を使用します。高速版より遅いですが、Doubao ASR 2.0をサポートし、精度が向上します。</string>
+    <string name="feature_volc_file_standard_off_desc">「Doubao ASRモデル」で高速ファイル認識 1.0 を選んでください。録音終了後にアップロードし、処理はより速いです。</string>
+    <string name="feature_volc_file_standard_on_desc">「Doubao ASRモデル」で標準ファイル認識 1.0 または 2.0 を選んでください。録音終了後に音声全体をアップロード（submit/query）し、精度が高めです。</string>
 
     <!-- 火山引擎 - モデルバージョン -->
-    <string name="feature_volc_model_v2_off_desc">Doubao ASR 1.0モデルを使用します。以前のAPIバージョンとの互換性があります。</string>
-    <string name="feature_volc_model_v2_on_desc">Doubao ASR 2.0モデルを使用します（既定）。認識精度が向上し、より多くの言語をサポートします。</string>
+    <string name="feature_volc_model_v2_off_desc">「Doubao ASRモデル」で対応する 1.0 モデルを選んでください。</string>
+    <string name="feature_volc_model_v2_on_desc">「Doubao ASRモデル」で対応する 2.0 モデルを選んでください。精度が高く、対応言語も広がります。</string>
 
     <!-- Volcengine - 新しい認証 -->
     <string name="feature_volc_use_new_auth_off_desc">従来の App Key / Access Key 認証を使用します。</string>

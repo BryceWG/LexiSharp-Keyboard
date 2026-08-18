@@ -6,6 +6,8 @@ import android.util.Log
 import androidx.core.content.edit
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LEGACY_X_ASR_VENDOR_ID
+import com.brycewg.asrkb.asr.VolcAsrModelCatalog
+import com.brycewg.asrkb.asr.VolcLegacyFlags
 import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import java.io.File
@@ -58,6 +60,7 @@ internal object PrefsInitTasks {
         migrateLegacyLocalStreamingVendorToXAsrIfNeeded(sp)
         migrateLegacyXAsrPrefsIfNeeded(sp)
         normalizeXAsrVariantIfNeeded(sp)
+        migrateVolcAsrModelIfNeeded(sp)
         migrateFunAsrFromSenseVoiceIfNeeded(sp)
         ensureFunAsrItnDefaultIfMissing(sp)
         normalizeFunAsrVariantIfNeeded(sp)
@@ -386,6 +389,62 @@ internal object PrefsInitTasks {
                 Log.w(TAG, "Failed to register global toggle listener", t)
             }
         }
+    }
+
+    fun migrateVolcAsrModelIfNeeded(sp: SharedPreferences) {
+        try {
+            val raw = sp.getString(KEY_VOLC_ASR_MODEL, null)?.trim().orEmpty()
+            val known = if (raw.isNotEmpty()) VolcAsrModelCatalog.fromId(raw) else null
+            val (model, reason) = when {
+                known != null -> known to "canonical"
+                raw.isNotEmpty() -> VolcAsrModelCatalog.fromIdOrDefault(raw) to "unknown"
+                else -> {
+                    val streaming = sp.getBoolean(KEY_VOLC_STREAMING_ENABLED, true)
+                    val fileStandard = sp.getBoolean(KEY_VOLC_FILE_STANDARD_ENABLED, true)
+                    val modelV2 = sp.getBoolean(KEY_VOLC_MODEL_V2_ENABLED, true)
+                    VolcAsrModelCatalog.fromLegacyFlags(streaming, fileStandard, modelV2) to "legacy"
+                }
+            }
+            val flags = VolcAsrModelCatalog.legacyFlags(model.id)
+            val flagsMatch = storedVolcLegacyFlagsMatch(sp, flags)
+            if (raw == model.id && flagsMatch && sp.contains(KEY_VOLC_ASR_MODEL)) {
+                return
+            }
+            sp.edit {
+                putString(KEY_VOLC_ASR_MODEL, model.id)
+                putBoolean(KEY_VOLC_STREAMING_ENABLED, flags.streamingEnabled)
+                putBoolean(KEY_VOLC_FILE_STANDARD_ENABLED, flags.fileStandardEnabled)
+                putBoolean(KEY_VOLC_MODEL_V2_ENABLED, flags.modelV2Enabled)
+            }
+            val logReason = when {
+                reason != "canonical" -> reason
+                raw != model.id -> "normalize"
+                else -> "sync"
+            }
+            DebugLogManager.logBase(
+                "asr",
+                "volc_model_migrated",
+                mapOf(
+                    "raw" to raw,
+                    "canonical" to model.id,
+                    "reason" to logReason
+                )
+            )
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to migrate Volc ASR model prefs", t)
+        }
+    }
+
+    private fun storedVolcLegacyFlagsMatch(sp: SharedPreferences, flags: VolcLegacyFlags): Boolean {
+        if (!sp.contains(KEY_VOLC_STREAMING_ENABLED) ||
+            !sp.contains(KEY_VOLC_FILE_STANDARD_ENABLED) ||
+            !sp.contains(KEY_VOLC_MODEL_V2_ENABLED)
+        ) {
+            return false
+        }
+        return sp.getBoolean(KEY_VOLC_STREAMING_ENABLED, true) == flags.streamingEnabled &&
+            sp.getBoolean(KEY_VOLC_FILE_STANDARD_ENABLED, true) == flags.fileStandardEnabled &&
+            sp.getBoolean(KEY_VOLC_MODEL_V2_ENABLED, true) == flags.modelV2Enabled
     }
 
     fun migrateFunAsrFromSenseVoiceIfNeeded(sp: SharedPreferences) {

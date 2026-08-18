@@ -288,10 +288,11 @@ private fun AsrFileRecognizerFamily.toDirectMicrophoneFamily(): AsrDirectMicroph
     AsrFileRecognizerFamily.LocalFile -> AsrDirectMicrophoneEngineFamily.LocalFile
 }
 
-internal fun Prefs.asrEngineModePreferencesSnapshot(): AsrEngineModePreferences =
-    AsrEngineModePreferences(
-        volcStreamingEnabled = volcStreamingEnabled,
-        volcStandardFileEnabled = volcFileStandardEnabled,
+internal fun Prefs.asrEngineModePreferencesSnapshot(): AsrEngineModePreferences {
+    val volcModel = VolcAsrModelCatalog.fromIdOrDefault(volcAsrModel)
+    return AsrEngineModePreferences(
+        volcStreamingEnabled = volcModel.streaming,
+        volcStandardFileEnabled = volcModel.protocol == VolcAsrProtocolKind.StandardFile,
         elevenStreamingEnabled = elevenStreamingEnabled,
         openAiStreamingEnabled = isOpenAiStreamingEffective(),
         dashScopeStreamingEnabled = isDashStreamingModelSelected(),
@@ -299,3 +300,4 @@ internal fun Prefs.asrEngineModePreferencesSnapshot(): AsrEngineModePreferences 
         senseVoicePseudoStreamEnabled = svPseudoStreamEnabled,
         fireRedPseudoStreamEnabled = frPseudoStreamEnabled
     )
+}

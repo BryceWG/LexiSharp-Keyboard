@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.VolcAsrModelCatalog
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.model.DropdownOption
 
@@ -26,12 +27,9 @@ internal fun VolcengineConfig(
     onApiKeyChange: (String) -> Unit,
     useNewAuth: Boolean,
     onUseNewAuthChange: (Boolean) -> Unit,
-    streaming: Boolean,
-    onStreamingChange: (Boolean) -> Unit,
-    fileStandard: Boolean,
-    onFileStandardChange: (Boolean) -> Unit,
-    modelV2: Boolean,
-    onModelV2Change: (Boolean) -> Unit,
+    selectedModelId: String,
+    modelLabel: String,
+    onChooseModel: () -> Unit,
     nonstream: Boolean,
     onNonstreamChange: (Boolean) -> Unit,
     ddc: Boolean,
@@ -43,10 +41,10 @@ internal fun VolcengineConfig(
     primaryIndexOffset: Int = 0,
     primaryGroupCount: Int? = null
 ) {
+    val streaming = VolcAsrModelCatalog.isStreaming(selectedModelId)
     var itemIndex = primaryIndexOffset
     val itemCount = primaryGroupCount ?: volcenginePrimaryItemCount(
         streaming = streaming,
-        fileStandard = fileStandard,
         useNewAuth = useNewAuth
     )
     AsrSwitchPreference(
@@ -77,34 +75,15 @@ internal fun VolcengineConfig(
             count = itemCount
         )
     }
-    AsrSwitchPreference(
-        id = "volc_streaming",
-        titleRes = R.string.label_volc_streaming,
-        checked = streaming,
+    AsrValuePreference(
+        titleRes = R.string.label_volc_asr_model,
+        value = modelLabel,
+        uiMode = uiMode,
+        highlightId = "volc_asr_model",
         index = itemIndex++,
         count = itemCount,
-        onCheckedChange = onStreamingChange
+        onClick = onChooseModel
     )
-    if (!streaming) {
-        AsrSwitchPreference(
-            id = "volc_file_standard",
-            titleRes = R.string.label_volc_file_standard,
-            checked = fileStandard,
-            index = itemIndex++,
-            count = itemCount,
-            onCheckedChange = onFileStandardChange
-        )
-    }
-    if (streaming || fileStandard) {
-        AsrSwitchPreference(
-            id = "volc_model_v2",
-            titleRes = R.string.label_volc_model_v2,
-            checked = modelV2,
-            index = itemIndex++,
-            count = itemCount,
-            onCheckedChange = onModelV2Change
-        )
-    }
     AsrSwitchPreference(
         id = "volc_ddc",
         titleRes = R.string.label_volc_ddc,
@@ -145,14 +124,15 @@ internal fun VolcengineConfig(
 
 internal fun volcenginePrimaryItemCount(
     streaming: Boolean,
-    fileStandard: Boolean,
     useNewAuth: Boolean
 ): Int = 1 +
     (if (useNewAuth) 1 else 2) +
-    2 +
-    (if (!streaming) 1 else 0) +
-    (if (streaming || fileStandard) 1 else 0) +
+    1 +
+    1 +
     (if (streaming) 3 else 0)
+
+internal fun volcModelLabel(context: Context, modelId: String): String =
+    context.getString(VolcAsrModelCatalog.fromIdOrDefault(modelId).displayNameRes)
 
 internal fun volcLanguageOptions(context: Context): List<VolcChoice> = listOf(
     VolcChoice("", context.getString(R.string.volc_lang_auto)),
