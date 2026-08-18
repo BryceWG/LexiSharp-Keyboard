@@ -981,9 +981,12 @@ class Prefs(context: Context) {
     // - qwen3.5-omni-flash / qwen3.5-omni-plus：非流式多模态转写
     // - fun-asr-realtime：流式（Fun-ASR）
     // - qwen-audio-3.0-asr-flash-streaming：流式（Qwen-Audio 3.0）
+    val dashAsrModelStored: String
+        get() = (sp.getString(KEY_DASH_ASR_MODEL, "") ?: "").trim()
+
     var dashAsrModel: String
         get() {
-            val v = (sp.getString(KEY_DASH_ASR_MODEL, "") ?: "").trim()
+            val v = dashAsrModelStored
             if (v.isNotBlank()) {
                 val normalized = DashScopePrefsCompat.normalizeDashAsrModel(v)
                 if (normalized != v) {

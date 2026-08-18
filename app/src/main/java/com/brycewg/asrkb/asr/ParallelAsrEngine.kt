@@ -61,6 +61,7 @@ class ParallelAsrEngine(
     private val running = AtomicBoolean(false)
     override var audioFrameSink: AudioFrameSink? = null
     internal var modePreferencesOverride: AsrEngineModePreferences? = null
+    internal var modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
     private val modePreferences: AsrEngineModePreferences
         get() = modePreferencesOverride ?: prefs.asrEngineModePreferencesSnapshot()
     private val stopRequested = AtomicBoolean(false)
@@ -738,7 +739,8 @@ class ParallelAsrEngine(
             preferences = modePreferences,
             source = AsrEngineConstructionSource.App,
             onRequestDuration = onRequestDuration,
-            applyVoiceFilter = false
+            applyVoiceFilter = false,
+            modelOverride = modelOverride
         )
     }
 

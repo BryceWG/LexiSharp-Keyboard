@@ -13,7 +13,8 @@ internal data class AsrDirectMicrophoneEngineRequest(
     val vendor: AsrVendor,
     val preferences: AsrEngineModePreferences,
     val source: AsrEngineConstructionSource = AsrEngineConstructionSource.App,
-    val onRequestDuration: ((Long) -> Unit)? = null
+    val onRequestDuration: ((Long) -> Unit)? = null,
+    val modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
 )
 
 internal data class AsrDirectMicrophoneEnginePlan(
@@ -95,7 +96,8 @@ internal class AsrDirectMicrophoneEngineFactory(
         vendor: AsrVendor = prefs.asrVendor,
         preferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
         source: AsrEngineConstructionSource = AsrEngineConstructionSource.App,
-        onRequestDuration: ((Long) -> Unit)? = null
+        onRequestDuration: ((Long) -> Unit)? = null,
+        modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
     ): StreamingAsrEngine = create(
         AsrDirectMicrophoneEngineRequest(
             context = context,
@@ -105,7 +107,8 @@ internal class AsrDirectMicrophoneEngineFactory(
             vendor = vendor,
             preferences = preferences,
             source = source,
-            onRequestDuration = onRequestDuration
+            onRequestDuration = onRequestDuration,
+            modelOverride = modelOverride
         )
     )
 
@@ -117,7 +120,8 @@ internal class AsrDirectMicrophoneEngineFactory(
         vendor: AsrVendor = prefs.asrVendor,
         preferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
         source: AsrEngineConstructionSource = AsrEngineConstructionSource.App,
-        onRequestDuration: ((Long) -> Unit)? = null
+        onRequestDuration: ((Long) -> Unit)? = null,
+        modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
     ): StreamingAsrEngine? = createOrNull(
         AsrDirectMicrophoneEngineRequest(
             context = context,
@@ -127,7 +131,8 @@ internal class AsrDirectMicrophoneEngineFactory(
             vendor = vendor,
             preferences = preferences,
             source = source,
-            onRequestDuration = onRequestDuration
+            onRequestDuration = onRequestDuration,
+            modelOverride = modelOverride
         )
     )
 

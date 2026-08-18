@@ -95,6 +95,20 @@
     <string name="history_record_missing">該歷史記錄已不存在</string>
     <string name="btn_rerecognize">重新辨識</string>
     <string name="btn_reprocess">重新後處理</string>
+    <string name="history_rerecognition_notice_title">重新辨識說明</string>
+    <string name="history_rerecognition_current_engine">目前辨識引擎：%1$s</string>
+    <string name="history_rerecognition_fallback_supported">錄音重新辨識回退：支援，將使用「%1$s」</string>
+    <string name="history_rerecognition_fallback_direct">錄音重新辨識：將使用目前檔案辨識模型「%1$s」</string>
+    <string name="history_rerecognition_fallback_unsupported">錄音重新辨識回退：暫不支援</string>
+    <string name="history_rerecognition_notice_supported_hint">重新辨識會讀取歷史錄音並以完整音訊送出，不會改變目前的一般辨識設定。</string>
+    <string name="history_rerecognition_notice_unsupported_hint">請切換到非串流模型，或具備檔案辨識路徑的供應商後再試。</string>
+    <string name="history_rerecognition_btn_continue">繼續</string>
+    <string name="history_rerecognition_btn_got_it">知道了</string>
+    <string name="history_rerecognition_error_openai_streaming">目前的 OpenAI 串流模型不支援依錄音重新辨識。</string>
+    <string name="history_rerecognition_error_xasr">X-ASR 目前沒有檔案辨識路徑，暫不支援重新辨識。</string>
+    <string name="history_rerecognition_error_unknown_model">目前模型無法對應到檔案辨識路徑。</string>
+    <string name="history_rerecognition_error_no_file_fallback">目前引擎沒有檔案辨識回退路徑。</string>
+    <string name="history_rerecognition_error_unavailable_credentials">目前供應商憑證缺失或無效。</string>
     <string name="label_audio_history_retention_count">音訊歷史保留數量</string>
     <string name="audio_history_retention_count_value">%1$d 筆</string>
 </resources>

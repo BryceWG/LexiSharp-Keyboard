@@ -10,7 +10,8 @@ internal data class AsrFileRecognizerRequest(
     val scope: CoroutineScope,
     val prefs: Prefs,
     val listener: StreamingAsrEngine.Listener,
-    val onRequestDuration: ((Long) -> Unit)? = null
+    val onRequestDuration: ((Long) -> Unit)? = null,
+    val modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
 )
 
 internal enum class AsrFileRecognizerFamily {
@@ -83,9 +84,23 @@ internal object RealAsrFileRecognizerConstructorTable : AsrFileRecognizerConstru
         request: AsrFileRecognizerRequest
     ): PcmBatchRecognizer = when (key) {
         AsrFileRecognizerKey.VolcFile ->
-            VolcFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
+            VolcFileAsrEngine(
+                request.context,
+                request.scope,
+                request.prefs,
+                request.listener,
+                request.onRequestDuration,
+                modelIdOverride = request.modelOverride.volcAsrModel
+            )
         AsrFileRecognizerKey.VolcStandardFile ->
-            VolcStandardFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
+            VolcStandardFileAsrEngine(
+                request.context,
+                request.scope,
+                request.prefs,
+                request.listener,
+                request.onRequestDuration,
+                modelIdOverride = request.modelOverride.volcAsrModel
+            )
         AsrFileRecognizerKey.SiliconFlowFile ->
             SiliconFlowFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
         AsrFileRecognizerKey.ElevenLabsFile ->
@@ -97,7 +112,14 @@ internal object RealAsrFileRecognizerConstructorTable : AsrFileRecognizerConstru
         AsrFileRecognizerKey.MiMoFile ->
             MiMoFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
         AsrFileRecognizerKey.DashscopeFile ->
-            DashscopeFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
+            DashscopeFileAsrEngine(
+                request.context,
+                request.scope,
+                request.prefs,
+                request.listener,
+                request.onRequestDuration,
+                modelIdOverride = request.modelOverride.dashAsrModel
+            )
         AsrFileRecognizerKey.GeminiFile ->
             GeminiFileAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
         AsrFileRecognizerKey.SonioxFile ->
@@ -134,7 +156,8 @@ internal fun AsrDirectMicrophoneEngineRequest.toFileRecognizerRequest(): AsrFile
         scope = scope,
         prefs = prefs,
         listener = listener,
-        onRequestDuration = onRequestDuration
+        onRequestDuration = onRequestDuration,
+        modelOverride = modelOverride
     )
 
 internal fun AsrPushPcmEngineRequest.toFileRecognizerRequest(): AsrFileRecognizerRequest =
@@ -143,5 +166,6 @@ internal fun AsrPushPcmEngineRequest.toFileRecognizerRequest(): AsrFileRecognize
         scope = scope,
         prefs = prefs,
         listener = listener,
-        onRequestDuration = onRequestDuration
+        onRequestDuration = onRequestDuration,
+        modelOverride = modelOverride
     )

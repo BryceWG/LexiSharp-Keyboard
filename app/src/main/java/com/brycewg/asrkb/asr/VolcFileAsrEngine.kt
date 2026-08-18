@@ -28,12 +28,16 @@ class VolcFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null,
-    httpClient: OkHttpClient? = null
+    httpClient: OkHttpClient? = null,
+    modelIdOverride: String? = null
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration),
     PcmBatchRecognizer {
 
+    private val effectiveModelId: String =
+        modelIdOverride?.trim()?.takeIf { it.isNotEmpty() } ?: prefs.volcAsrModel
+
     private val fileResource: String
-        get() = VolcAsrModelCatalog.fromIdOrDefault(prefs.volcAsrModel).resourceId
+        get() = VolcAsrModelCatalog.fromIdOrDefault(effectiveModelId).resourceId
 
     // 火山引擎非流式：服务端上限 2h，本地稳妥限制为 1h
     override val maxRecordDurationMillis: Int = 60 * 60 * 1000

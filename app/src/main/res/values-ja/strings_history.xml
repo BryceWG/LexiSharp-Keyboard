@@ -96,6 +96,20 @@
     <string name="history_record_missing">この履歴は存在しません</string>
     <string name="btn_rerecognize">再認識</string>
     <string name="btn_reprocess">再後処理</string>
+    <string name="history_rerecognition_notice_title">再認識の説明</string>
+    <string name="history_rerecognition_current_engine">現在の認識エンジン：%1$s</string>
+    <string name="history_rerecognition_fallback_supported">録音の再認識フォールバック：対応済み。「%1$s」を使用します</string>
+    <string name="history_rerecognition_fallback_direct">録音の再認識：現在のファイル認識モデル「%1$s」を使用します</string>
+    <string name="history_rerecognition_fallback_unsupported">録音の再認識フォールバック：現在は非対応です</string>
+    <string name="history_rerecognition_notice_supported_hint">再認識では履歴の録音を読み取り、音声全体を送信します。通常の認識設定は変わりません。</string>
+    <string name="history_rerecognition_notice_unsupported_hint">非ストリーミングモデル、またはファイル認識経路のあるサービスに切り替えてから再試行してください。</string>
+    <string name="history_rerecognition_btn_continue">続行</string>
+    <string name="history_rerecognition_btn_got_it">了解</string>
+    <string name="history_rerecognition_error_openai_streaming">現在の OpenAI ストリーミングモデルは、録音からの再認識に対応していません。</string>
+    <string name="history_rerecognition_error_xasr">X-ASR には現在ファイル認識経路がないため、再認識できません。</string>
+    <string name="history_rerecognition_error_unknown_model">現在のモデルをファイル認識経路に対応付けできません。</string>
+    <string name="history_rerecognition_error_no_file_fallback">現在のエンジンにはファイル認識のフォールバックがありません。</string>
+    <string name="history_rerecognition_error_unavailable_credentials">現在のサービスの認証情報がないか、無効です。</string>
     <string name="label_audio_history_retention_count">音声履歴の保存件数</string>
     <string name="audio_history_retention_count_value">%1$d 件</string>
 </resources>

@@ -59,6 +59,7 @@ internal class LazyLocalBackupAsrEngine(
     private val onPrimaryRequestDuration: ((Long) -> Unit)? = null,
     private val externalPcmInput: Boolean = false,
     private val modePreferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
+    private val modelOverride: AsrRequestModelOverride = AsrRequestModelOverride(),
     private val maxBufferedPcmBytes: Int = defaultMaxBufferedPcmBytes(),
     private val hooks: LazyLocalBackupAsrEngineHooks = realHooks(
         context = context,
@@ -67,7 +68,8 @@ internal class LazyLocalBackupAsrEngine(
         primaryVendor = primaryVendor,
         backupVendor = backupVendor,
         onPrimaryRequestDuration = onPrimaryRequestDuration,
-        modePreferences = modePreferences
+        modePreferences = modePreferences,
+        modelOverride = modelOverride
     )
 ) : BackupAwareAsrEngine,
     ExternalPcmConsumer,
@@ -765,7 +767,8 @@ internal class LazyLocalBackupAsrEngine(
             primaryVendor: AsrVendor,
             backupVendor: AsrVendor,
             onPrimaryRequestDuration: ((Long) -> Unit)?,
-            modePreferences: AsrEngineModePreferences
+            modePreferences: AsrEngineModePreferences,
+            modelOverride: AsrRequestModelOverride
         ): LazyLocalBackupAsrEngineHooks {
             val pushPcmFactory = AsrPushPcmEngineFactory()
             return LazyLocalBackupAsrEngineHooks(
@@ -780,7 +783,8 @@ internal class LazyLocalBackupAsrEngine(
                         preferences = modePreferences,
                         source = AsrEngineConstructionSource.App,
                         onRequestDuration = onPrimaryRequestDuration,
-                        applyVoiceFilter = false
+                        applyVoiceFilter = false,
+                        modelOverride = modelOverride
                     )
                 },
                 createBackupEngine = { engineListener ->
@@ -794,7 +798,8 @@ internal class LazyLocalBackupAsrEngine(
                         preferences = modePreferences,
                         source = AsrEngineConstructionSource.App,
                         onRequestDuration = null,
-                        applyVoiceFilter = false
+                        applyVoiceFilter = false,
+                        modelOverride = modelOverride
                     )
                 },
                 preloadBackupVendor = { request ->

@@ -30,7 +30,8 @@ class VolcStandardFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null,
-    httpClient: OkHttpClient? = null
+    httpClient: OkHttpClient? = null,
+    modelIdOverride: String? = null
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration),
     PcmBatchRecognizer {
 
@@ -54,7 +55,10 @@ class VolcStandardFileAsrEngine(
         .build()
 
     private val resourceId: String
-        get() = VolcAsrModelCatalog.fromIdOrDefault(prefs.volcAsrModel).resourceId
+        get() = VolcAsrModelCatalog.fromIdOrDefault(effectiveModelId).resourceId
+
+    private val effectiveModelId: String =
+        modelIdOverride?.trim()?.takeIf { it.isNotEmpty() } ?: prefs.volcAsrModel
 
     private sealed interface QueryResult {
         data class Success(val text: String) : QueryResult

@@ -95,6 +95,20 @@
     <string name="history_record_missing">This history record no longer exists.</string>
     <string name="btn_rerecognize">Recognize again</string>
     <string name="btn_reprocess">Process again</string>
+    <string name="history_rerecognition_notice_title">Re-recognition details</string>
+    <string name="history_rerecognition_current_engine">Current recognition engine: %1$s</string>
+    <string name="history_rerecognition_fallback_supported">Recording re-recognition fallback: supported. Will use “%1$s”</string>
+    <string name="history_rerecognition_fallback_direct">Re-recognition: will use the current file recognition model “%1$s”</string>
+    <string name="history_rerecognition_fallback_unsupported">Recording re-recognition fallback: not supported yet</string>
+    <string name="history_rerecognition_notice_supported_hint">Re-recognition reads the saved recording and submits the complete audio. It does not change your current regular recognition settings.</string>
+    <string name="history_rerecognition_notice_unsupported_hint">Switch to a non-streaming model, or a vendor that has a file recognition path, then try again.</string>
+    <string name="history_rerecognition_btn_continue">Continue</string>
+    <string name="history_rerecognition_btn_got_it">Got it</string>
+    <string name="history_rerecognition_error_openai_streaming">The current OpenAI streaming model does not support re-recognition from recordings.</string>
+    <string name="history_rerecognition_error_xasr">X-ASR currently has no file recognition path, so re-recognition is not supported.</string>
+    <string name="history_rerecognition_error_unknown_model">The current model cannot be mapped to a file recognition path.</string>
+    <string name="history_rerecognition_error_no_file_fallback">The current engine has no file recognition fallback.</string>
+    <string name="history_rerecognition_error_unavailable_credentials">Current vendor credentials are missing or invalid.</string>
     <string name="label_audio_history_retention_count">Audio history retention</string>
     <string name="audio_history_retention_count_value">%1$d records</string>
 </resources>
