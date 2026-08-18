@@ -286,7 +286,7 @@ class KeyboardActionHandler(
             is KeyboardState.Processing -> {
                 // 强制停止：立即回到 Idle，并忽略本会话迟到的 onFinal/onStopped
                 processingTimeoutController.cancel()
-                dropPendingFinal = true
+                markDropPendingRecognition()
                 transitionToIdle(keepMessage = true)
                 uiListener?.onStatusMessage(context.getString(R.string.status_cancelled))
                 try {
@@ -346,7 +346,7 @@ class KeyboardActionHandler(
                 // 强制停止：根据模式决定后续动作
                 processingTimeoutController.cancel()
                 // 标记忽略上一会话的迟到回调
-                dropPendingFinal = true
+                markDropPendingRecognition()
                 if (!prefs.micTapToggleEnabled) {
                     // 长按模式：直接开始新一轮录音
                     startNormalListening()
@@ -409,7 +409,7 @@ class KeyboardActionHandler(
 
     fun handleMicGestureCancel() {
         val state = currentState as? KeyboardState.Listening ?: return
-        dropPendingFinal = true
+        markDropPendingRecognition()
         micHoldActive = false
         releaseAutoStopSuppression()
         autoEnterOnce = false
@@ -929,7 +929,7 @@ class KeyboardActionHandler(
             }
             if (audioMsVal in 1..250) {
                 // 将后续迟到回调丢弃并归位
-                dropPendingFinal = true
+                markDropPendingRecognition()
                 transitionToIdle()
                 uiListener?.onStatusMessage(context.getString(R.string.status_cancelled))
                 try {
@@ -1048,6 +1048,11 @@ class KeyboardActionHandler(
             } catch (_: Throwable) {}
         }
         uiListener?.onStateChanged(newState)
+    }
+
+    private fun markDropPendingRecognition() {
+        dropPendingFinal = true
+        asrManager.abandonPendingRecognition()
     }
 
     private fun transitionToIdle(keepMessage: Boolean = false) {

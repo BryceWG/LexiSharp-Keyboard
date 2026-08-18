@@ -20,7 +20,9 @@ import com.brycewg.asrkb.imebridge.ImeBridgeWarningToast
 import com.brycewg.asrkb.imebridge.imeBridgeWarningMessageRes
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
+import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.ui.AsrAccessibilityService.FocusContext
@@ -256,7 +258,7 @@ class AsrSessionManager(
 
     /** 开始录音 */
     fun startRecording() {
-        historyAudioCapture?.discard()
+        discardUncommittedHistoryRecords()
         Log.d(TAG, "startRecording called")
         val sessionToken = createSessionToken()
         stopActiveEngineIfRunning("start_recording")
@@ -388,14 +390,17 @@ class AsrSessionManager(
      * 取消当前会话并丢弃本轮迟到回调，供悬浮球在 Processing/Recording 态主动中止。
      */
     fun cancelSession() {
-        historyAudioCapture?.discard()
-        historyAudioCapture = null
-        activeHistoryRecordId = null
-        (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         Log.d(TAG, "cancelSession called")
         val sessionToken = activeSessionToken
         ContinuousCaptureCoordinator.endSession(sessionToken)
         val commitText = peekInterruptedPostProcessingCommitText(sessionToken)
+        if (commitText.isNullOrEmpty()) {
+            discardUncommittedHistoryRecords()
+        } else {
+            historyAudioCapture = null
+            activeHistoryRecordId = null
+        }
+        (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         postproc.cancelActiveRequest()
         clearActiveSessionToken(sessionToken)
         try {
@@ -477,6 +482,30 @@ class AsrSessionManager(
     fun popLastHistoryRawText(): String? =
         completedHistoryRawText.also { completedHistoryRawText = null }
 
+    private fun discardUncommittedHistoryRecords() {
+        val leftoverIds = ArrayList<String>(2)
+        completedHistoryRecordId?.let { leftoverIds.add(it) }
+        activeHistoryRecordId?.let { leftoverIds.add(it) }
+        completedHistoryRecordId = null
+        completedHistoryRawText = null
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        if (leftoverIds.isEmpty()) return
+        val store = AsrHistoryAudioStore(context)
+        leftoverIds.forEach { id -> store.delete(id) }
+        try {
+            DebugLogManager.logBase(
+                category = "asr",
+                event = "history_abandon",
+                data = mapOf(
+                    "source" to "float",
+                    "leftoverCount" to leftoverIds.size
+                )
+            )
+        } catch (_: Throwable) { }
+    }
+
     /** 最近一次请求耗时（毫秒），仅非流式模式有效 */
     fun getLastRequestDuration(): Long? = lastRequestDurationMs
 
@@ -509,9 +538,7 @@ class AsrSessionManager(
 
     /** 清理会话 */
     fun cleanup() {
-        historyAudioCapture?.discard()
-        historyAudioCapture = null
-        activeHistoryRecordId = null
+        discardUncommittedHistoryRecords()
         (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         clearActiveSessionToken()
         ContinuousCaptureCoordinator.endAnySession()

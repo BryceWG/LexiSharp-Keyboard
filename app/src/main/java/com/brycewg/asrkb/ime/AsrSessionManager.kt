@@ -14,6 +14,7 @@ import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
+import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import java.util.concurrent.atomic.AtomicLong
@@ -438,7 +439,7 @@ class AsrSessionManager(
         lastAudioMsForStats = 0L
         // 新会话开始时重置上次请求耗时，避免串台（流式模式不会更新此值）
         lastRequestDurationMs = null
-        historyAudioCapture?.discard()
+        discardUncommittedHistoryRecords()
         activeHistoryRecordId = UUID.randomUUID().toString()
         historyAudioCapture = AsrHistoryAudioCapture.create(
             context,
@@ -551,6 +552,40 @@ class AsrSessionManager(
     }
 
     /**
+     * 丢弃尚未写入历史的录音绑定，并让本会话后续 onFinal 失效。
+     * 处理中取消时必须调用，否则迟到的 onFinal 会把音频 ID 留给下一次提交。
+     */
+    fun abandonPendingRecognition() {
+        discardUncommittedHistoryRecords()
+        (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
+        clearActiveSession()
+    }
+
+    private fun discardUncommittedHistoryRecords() {
+        val leftoverIds = ArrayList<String>(completedHistoryRecordIds.size + 1)
+        while (completedHistoryRecordIds.isNotEmpty()) {
+            leftoverIds.add(completedHistoryRecordIds.removeFirst())
+        }
+        activeHistoryRecordId?.let { leftoverIds.add(it) }
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        if (leftoverIds.isEmpty()) return
+        val store = AsrHistoryAudioStore(context)
+        leftoverIds.forEach { id -> store.delete(id) }
+        try {
+            DebugLogManager.logBase(
+                category = "asr",
+                event = "history_abandon",
+                data = mapOf(
+                    "source" to "ime",
+                    "leftoverCount" to leftoverIds.size
+                )
+            )
+        } catch (_: Throwable) { }
+    }
+
+    /**
      * 读取并清空最近一次会话的录音时长（毫秒）。
      */
     fun popLastAudioMsForStats(): Long {
@@ -614,11 +649,8 @@ class AsrSessionManager(
         engineListenerBridge = null
         directEngineIdentity = null
         sessionStartTotalUptimeMs = 0L
-        historyAudioCapture?.discard()
-        historyAudioCapture = null
-        activeHistoryRecordId = null
+        discardUncommittedHistoryRecords()
         (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
-        completedHistoryRecordIds.clear()
         listener = null
     }
 
