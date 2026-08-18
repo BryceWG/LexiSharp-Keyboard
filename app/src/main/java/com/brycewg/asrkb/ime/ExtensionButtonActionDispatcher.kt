@@ -28,6 +28,7 @@ internal class ExtensionButtonActionDispatcher(
         ExtensionButtonAction.SELECT -> KeyboardActionHandler.ExtensionButtonActionResult.NEED_TOGGLE_SELECTION
         ExtensionButtonAction.SELECT_ALL -> selectAll(ic)
         ExtensionButtonAction.COPY -> copy(ic)
+        ExtensionButtonAction.ASR_HISTORY -> KeyboardActionHandler.ExtensionButtonActionResult.NEED_SHOW_ASR_HISTORY
         ExtensionButtonAction.PASTE -> paste(ic)
         ExtensionButtonAction.CURSOR_LEFT -> KeyboardActionHandler.ExtensionButtonActionResult.NEED_CURSOR_LEFT
         ExtensionButtonAction.CURSOR_RIGHT -> KeyboardActionHandler.ExtensionButtonActionResult.NEED_CURSOR_RIGHT

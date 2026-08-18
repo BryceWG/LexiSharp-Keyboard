@@ -48,6 +48,15 @@ enum class ExtensionButtonAction(val id: String, val titleResId: Int, val iconRe
     ),
 
     /**
+     * 打开识别历史面板（展示最终提交文本）
+     */
+    ASR_HISTORY(
+        id = "asr_history",
+        titleResId = R.string.ext_btn_asr_history,
+        iconResId = R.drawable.clock_counter_clockwise
+    ),
+
+    /**
      * 粘贴剪贴板内容到当前光标位置
      */
     PASTE(
@@ -186,7 +195,10 @@ enum class ExtensionButtonAction(val id: String, val titleResId: Int, val iconRe
         /**
          * 从ID获取动作类型
          */
-        fun fromId(id: String?): ExtensionButtonAction = values().firstOrNull { it.id == id } ?: NONE
+        fun fromId(id: String?): ExtensionButtonAction = when (id) {
+            "copy_last_asr" -> ASR_HISTORY
+            else -> values().firstOrNull { it.id == id } ?: NONE
+        }
 
         /**
          * 获取默认的4个按钮配置

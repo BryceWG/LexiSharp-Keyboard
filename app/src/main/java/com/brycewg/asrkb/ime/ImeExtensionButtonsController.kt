@@ -31,6 +31,7 @@ internal class ImeExtensionButtonsController(
     private val showNumpadPanel: () -> Unit,
     private val showNumpadPanelFromAi: () -> Unit,
     private val showClipboardPanel: () -> Unit,
+    private val showAsrHistoryPanel: () -> Unit,
     private val hideKeyboardPanel: () -> Unit,
     private val openSettings: () -> Unit,
     private val showPromptPicker: (View) -> Unit,
@@ -201,6 +202,10 @@ internal class ImeExtensionButtonsController(
 
             KeyboardActionHandler.ExtensionButtonActionResult.NEED_SHOW_CLIPBOARD -> {
                 showClipboardPanel()
+            }
+
+            KeyboardActionHandler.ExtensionButtonActionResult.NEED_SHOW_ASR_HISTORY -> {
+                showAsrHistoryPanel()
             }
 
             KeyboardActionHandler.ExtensionButtonActionResult.NEED_CURSOR_LEFT,

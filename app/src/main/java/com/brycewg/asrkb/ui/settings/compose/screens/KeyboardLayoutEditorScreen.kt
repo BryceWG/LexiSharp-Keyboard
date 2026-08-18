@@ -1608,6 +1608,7 @@ private val trayKeyOrder = listOf(
     "select",
     "select_all",
     "copy",
+    "asr_history",
     "paste",
     "cursor_left",
     "cursor_right",

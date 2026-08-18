@@ -64,6 +64,13 @@
     <item name="keyboardSystemBottomSpace" type="id" />
     <item name="layoutAiEditPanel" type="id" />
     <item name="layoutClipboardPanel" type="id" />
+    <item name="layoutAsrHistoryPanel" type="id" />
+    <item name="asr_hist_btnBack" type="id" />
+    <item name="asr_hist_headerEndSpacer" type="id" />
+    <item name="asr_hist_txtCount" type="id" />
+    <item name="asr_hist_list" type="id" />
+    <item name="asr_hist_empty" type="id" />
+    <item name="asr_hist_tvEntry" type="id" />
     <item name="layoutMainKeyboard" type="id" />
     <item name="layoutNumpadPanel" type="id" />
     <item name="np_btnBack" type="id" />

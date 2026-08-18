@@ -91,7 +91,14 @@ internal class ImeViewRefs private constructor(
     val clipBtnBack: ImageButton?,
     val clipBtnDelete: ImageButton?,
     val clipTxtCount: TextView?,
-    val clipList: RecyclerView?
+    val clipList: RecyclerView?,
+
+    // ASR history panel
+    val layoutAsrHistoryPanel: View?,
+    val asrHistBtnBack: ImageButton?,
+    val asrHistTxtCount: TextView?,
+    val asrHistList: RecyclerView?,
+    val asrHistEmpty: TextView?
 ) {
     companion object {
         fun bind(rootView: View): ImeViewRefs = ImeViewRefs(
@@ -104,6 +111,7 @@ internal class ImeViewRefs private constructor(
             layoutAiEditPanel = rootView.findViewById(R.id.layoutAiEditPanel),
             layoutNumpadPanel = rootView.findViewById(R.id.layoutNumpadPanel),
             layoutClipboardPanel = rootView.findViewById(R.id.layoutClipboardPanel),
+            layoutAsrHistoryPanel = rootView.findViewById(R.id.layoutAsrHistoryPanel),
 
             btnMic = rootView.findViewById(R.id.btnMic),
             btnSettings = rootView.findViewById(R.id.btnSettings),
@@ -163,7 +171,12 @@ internal class ImeViewRefs private constructor(
             clipBtnBack = rootView.findViewById(R.id.clip_btnBack),
             clipBtnDelete = rootView.findViewById(R.id.clip_btnDelete),
             clipTxtCount = rootView.findViewById(R.id.clip_txtCount),
-            clipList = rootView.findViewById(R.id.clip_list)
+            clipList = rootView.findViewById(R.id.clip_list),
+
+            asrHistBtnBack = rootView.findViewById(R.id.asr_hist_btnBack),
+            asrHistTxtCount = rootView.findViewById(R.id.asr_hist_txtCount),
+            asrHistList = rootView.findViewById(R.id.asr_hist_list),
+            asrHistEmpty = rootView.findViewById(R.id.asr_hist_empty)
         )
     }
 }

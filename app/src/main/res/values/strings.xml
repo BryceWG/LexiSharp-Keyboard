@@ -214,6 +214,7 @@
   <string name="ext_btn_select">Selection Mode</string>
   <string name="ext_btn_select_all">Select All</string>
   <string name="ext_btn_copy">Copy</string>
+  <string name="ext_btn_asr_history">Recognition history</string>
   <string name="ext_btn_paste">Paste</string>
   <string name="ext_btn_cursor_left">Move Left</string>
   <string name="ext_btn_cursor_right">Move Right</string>
@@ -231,6 +232,8 @@
   <string name="status_copied">Copied</string>
   <string name="status_pasted">Pasted</string>
   <string name="status_nothing_to_undo">Nothing to undo</string>
+  <string name="asr_history_empty">No recognition history</string>
+  <string name="cd_asr_history_back">Back</string>
 
   <!-- ============================================== -->
   <!-- General Buttons -->

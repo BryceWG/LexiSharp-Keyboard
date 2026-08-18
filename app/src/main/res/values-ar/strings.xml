@@ -214,6 +214,7 @@
   <string name="ext_btn_select">وضع التحديد</string>
   <string name="ext_btn_select_all">تحديد الكل</string>
   <string name="ext_btn_copy">نسخ</string>
+  <string name="ext_btn_asr_history">سجل التعرّف</string>
   <string name="ext_btn_paste">لصق</string>
   <string name="ext_btn_cursor_left">تحريك يساراً</string>
   <string name="ext_btn_cursor_right">تحريك يميناً</string>
@@ -231,6 +232,8 @@
   <string name="status_copied">تم النسخ</string>
   <string name="status_pasted">تم اللصق</string>
   <string name="status_nothing_to_undo">لا شيء للتراجع عنه</string>
+  <string name="asr_history_empty">لا يوجد سجل تعرّف</string>
+  <string name="cd_asr_history_back">رجوع</string>
 
   <!-- ============================================== -->
   <!-- General Buttons -->

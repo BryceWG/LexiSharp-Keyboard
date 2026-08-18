@@ -68,7 +68,8 @@ object KeyboardLayoutStore {
 
     fun defaultLayout(prefs: Prefs, panel: KeyboardLayoutPanel): KeyboardLayout = defaultBundle(prefs).layoutFor(panel)
 
-    fun normalizeBundle(prefs: Prefs, bundle: KeyboardLayoutBundle): KeyboardLayoutBundle = migrateRequiredBlocks(prefs, bundle.withPanelAllowedBlocks())
+    fun normalizeBundle(prefs: Prefs, bundle: KeyboardLayoutBundle): KeyboardLayoutBundle =
+        migrateRequiredBlocks(prefs, bundle.withMigratedDefIds().withPanelAllowedBlocks())
 
     fun encodeBundle(bundle: KeyboardLayoutBundle): String {
         val root = JSONObject()
@@ -256,6 +257,22 @@ object KeyboardLayoutStore {
         )
     }
 
+    private fun KeyboardLayoutBundle.withMigratedDefIds(): KeyboardLayoutBundle = KeyboardLayoutBundle(
+        main = main.withMigratedDefIds(),
+        aiEdit = aiEdit.withMigratedDefIds(),
+        recording = recording.withMigratedDefIds()
+    )
+
+    private fun KeyboardLayout.withMigratedDefIds(): KeyboardLayout {
+        var changed = false
+        val nextBlocks = blocks.map { block ->
+            val migratedId = LEGACY_DEF_IDS[block.defId] ?: return@map block
+            changed = true
+            block.copy(defId = migratedId)
+        }
+        return if (changed) copy(blocks = nextBlocks) else this
+    }
+
     private fun KeyboardLayoutBundle.withPanelAllowedBlocks(): KeyboardLayoutBundle = KeyboardLayoutBundle(
         main = main.withPanelAllowedBlocks(),
         aiEdit = aiEdit.withPanelAllowedBlocks(),
@@ -322,4 +339,8 @@ object KeyboardLayoutStore {
     }
 
     private val recordingGestureDefIds = setOf("gesture_cancel", "gesture_send")
+
+    private val LEGACY_DEF_IDS = mapOf(
+        "ext_copy_last_asr" to BlockDefRegistry.extensionDefId(ExtensionButtonAction.ASR_HISTORY)
+    )
 }

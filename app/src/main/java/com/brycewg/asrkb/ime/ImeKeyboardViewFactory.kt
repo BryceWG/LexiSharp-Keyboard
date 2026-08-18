@@ -59,6 +59,7 @@ internal object ImeKeyboardViewFactory {
             addView(createAiEditPanel(context, prefs))
             addView(createNumpadPanel(context))
             addView(createClipboardPanel(context))
+            addView(createAsrHistoryPanel(context))
             addView(createMicStatusGroup(context))
         }
         val panel = createKeyboardPanel(context).apply {
@@ -118,6 +119,7 @@ internal object ImeKeyboardViewFactory {
         val theme = BibiViewThemes.resolve(context, prefs)
         applyKeyboardPanelBackground(root, prefs, floating = false)
         root.findViewById<View>(R.id.layoutClipboardPanel)?.setBackgroundColor(theme.keyboardBackground)
+        root.findViewById<View>(R.id.layoutAsrHistoryPanel)?.setBackgroundColor(theme.keyboardBackground)
         root.findViewById<View>(R.id.keyboardSystemBottomSpace)?.setBackgroundColor(theme.keyboardBackground)
         root.findViewById<View>(R.id.keyboardDragHandle)?.background =
             GradientDrawable().apply {
@@ -167,6 +169,7 @@ internal object ImeKeyboardViewFactory {
         root.findViewById<TextView>(R.id.txtStatusText)?.setTextColor(theme.panelContent)
         root.findViewById<TextView>(R.id.txtAiEditInfo)?.setTextColor(theme.panelContent)
         root.findViewById<TextView>(R.id.clip_txtCount)?.setTextColor(theme.panelContent)
+        root.findViewById<TextView>(R.id.asr_hist_txtCount)?.setTextColor(theme.panelContent)
     }
 
     fun applyKeyboardPanelBackground(root: View, prefs: Prefs, floating: Boolean) {
@@ -334,6 +337,106 @@ internal object ImeKeyboardViewFactory {
                     topToTop = ConstraintLayout.LayoutParams.PARENT_ID
                     bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
                 }
+        )
+        return header
+    }
+
+    private fun createAsrHistoryPanel(context: Context): View = LinearLayout(context).apply {
+        id = R.id.layoutAsrHistoryPanel
+        orientation = LinearLayout.VERTICAL
+        background = ContextCompat.getDrawable(context, R.drawable.bg_keyboard_container)
+        setPadding(0, dp(context, 4), 0, 0)
+        visibility = View.GONE
+        layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.TOP
+        }
+        addView(createAsrHistoryHeader(context))
+        addView(
+            FrameLayout(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    0
+                ).apply {
+                    weight = 1f
+                }
+                addView(
+                    RecyclerView(context).apply {
+                        id = R.id.asr_hist_list
+                        overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+                        clipToPadding = false
+                        setPadding(dp(context, 2), dp(context, 4), dp(context, 2), dp(context, 8))
+                        layoutParams = FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.MATCH_PARENT
+                        )
+                    }
+                )
+                addView(
+                    TextView(context).apply {
+                        id = R.id.asr_hist_empty
+                        gravity = Gravity.CENTER
+                        includeFontPadding = false
+                        visibility = View.GONE
+                        setText(R.string.asr_history_empty)
+                        setTextColor(UiColors.get(context, UiColorTokens.panelFg))
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                        layoutParams = FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.MATCH_PARENT
+                        )
+                    }
+                )
+            }
+        )
+    }
+
+    private fun createAsrHistoryHeader(context: Context): View {
+        val header = ConstraintLayout(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(context, 48)
+            )
+            setPadding(dp(context, 2), 0, dp(context, 2), 0)
+        }
+        header.addView(
+            imageButton(context, R.id.asr_hist_btnBack, R.string.cd_asr_history_back, R.drawable.arrow_left_toggle)
+                .withConstraints {
+                    startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+                    topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                    bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+                }
+        )
+        header.addView(
+            View(context).apply {
+                id = R.id.asr_hist_headerEndSpacer
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                layoutParams = ConstraintLayout.LayoutParams(dp(context, 40), dp(context, 40)).apply {
+                    endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                    topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                    bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+                }
+            }
+        )
+        header.addView(
+            TextView(context).apply {
+                id = R.id.asr_hist_txtCount
+                gravity = Gravity.CENTER
+                includeFontPadding = false
+                setTextColor(UiColors.get(context, UiColorTokens.panelFg))
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                setTypeface(typeface, Typeface.BOLD)
+                layoutParams = ConstraintLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    startToEnd = R.id.asr_hist_btnBack
+                    endToStart = R.id.asr_hist_headerEndSpacer
+                    topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                    bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+                    marginStart = dp(context, 4)
+                    marginEnd = dp(context, 4)
+                }
+            }
         )
         return header
     }
@@ -895,6 +998,7 @@ internal object ImeKeyboardViewFactory {
             listOf(
                 R.id.clip_btnBack,
                 R.id.clip_btnDelete,
+                R.id.asr_hist_btnBack,
                 R.id.keyboardDockButtonLeft,
                 R.id.keyboardDockButtonRight
             )
@@ -910,7 +1014,9 @@ internal object ImeKeyboardViewFactory {
         R.id.txtStatusText,
         R.id.txtAiEditInfo,
         R.id.txtStatus,
-        R.id.clip_txtCount
+        R.id.clip_txtCount,
+        R.id.asr_hist_txtCount,
+        R.id.asr_hist_empty
     )
 
     private fun keyboardButtonIds(kind: ButtonViewKind): List<Int> = KeyboardLayoutPanel.values().flatMap { panel ->

@@ -656,6 +656,7 @@ class KeyboardActionHandler(
         NEED_CURSOR_RIGHT, // 需要 IME 处理右移（支持长按）
         NEED_SHOW_NUMPAD, // 需要 IME 显示数字键盘
         NEED_SHOW_CLIPBOARD, // 需要 IME 显示剪贴板面板
+        NEED_SHOW_ASR_HISTORY, // 需要 IME 显示识别历史面板
         NEED_HIDE_KEYBOARD, // 需要 IME 收起键盘
         NEED_TOGGLE_CONTINUOUS_TALK // 需要 IME 切换畅说模式
     }

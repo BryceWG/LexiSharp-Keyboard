@@ -212,6 +212,7 @@
   <string name="ext_btn_select">选择模式</string>
   <string name="ext_btn_select_all">全选</string>
   <string name="ext_btn_copy">复制</string>
+  <string name="ext_btn_asr_history">识别历史</string>
   <string name="ext_btn_paste">粘贴</string>
   <string name="ext_btn_cursor_left">左移</string>
   <string name="ext_btn_cursor_right">右移</string>
@@ -229,6 +230,8 @@
   <string name="status_copied">已复制</string>
   <string name="status_pasted">已粘贴</string>
   <string name="status_nothing_to_undo">无可撤销的操作</string>
+  <string name="asr_history_empty">暂无识别历史</string>
+  <string name="cd_asr_history_back">返回</string>
 
   <!-- ============================================== -->
   <!-- 通用按钮 -->

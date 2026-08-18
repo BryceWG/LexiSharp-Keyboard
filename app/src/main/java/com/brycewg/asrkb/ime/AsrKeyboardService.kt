@@ -126,6 +126,7 @@ class AsrKeyboardService :
     private var aiEditPanelController: AiEditPanelController? = null
     private var numpadPanelController: NumpadPanelController? = null
     private var clipboardPanelController: ClipboardPanelController? = null
+    private var asrHistoryPanelController: AsrHistoryPanelController? = null
     private var micGestureController: MicGestureController? = null
     private var imeViewVisible: Boolean = false
 
@@ -135,6 +136,8 @@ class AsrKeyboardService :
         get() = numpadPanelController?.isVisible == true
     private val isClipboardPanelVisible: Boolean
         get() = clipboardPanelController?.isVisible == true
+    private val isAsrHistoryPanelVisible: Boolean
+        get() = asrHistoryPanelController?.isVisible == true
 
     // ========== 剪贴板和其他辅助功能 ==========
     private var prefsReceiver: BroadcastReceiver? = null
@@ -589,6 +592,14 @@ class AsrKeyboardService :
             onOpenFile = coordinator::openFile,
             onDownloadFile = coordinator::downloadClipboardFile
         )
+        asrHistoryPanelController = AsrHistoryPanelController(
+            context = this,
+            serviceScope = serviceScope,
+            views = refs,
+            themeStyler = themeStyler,
+            performKeyHaptic = ::performKeyHaptic,
+            inputConnectionProvider = { currentInputConnection }
+        )
         micGestureController = MicGestureController(
             prefs = prefs,
             views = refs,
@@ -656,6 +667,7 @@ class AsrKeyboardService :
             showNumpadPanel = { showNumpadPanel(returnToAiPanel = false) },
             showNumpadPanelFromAi = { showNumpadPanel(returnToAiPanel = true) },
             showClipboardPanel = { showClipboardPanel() },
+            showAsrHistoryPanel = { showAsrHistoryPanel() },
             hideKeyboardPanel = { hideKeyboardPanel() },
             openSettings = { openSettings() },
             showPromptPicker = { anchor -> showPromptPicker(anchor) },
@@ -669,6 +681,7 @@ class AsrKeyboardService :
         aiEditPanelController?.bindListeners()
         numpadPanelController?.bindListeners()
         clipboardPanelController?.bindListeners()
+        asrHistoryPanelController?.bindListeners()
         micGestureController?.bindMicButton()
         micGestureController?.bindOverlayButtons()
         mainKeyboardBinder?.bind()
@@ -692,6 +705,7 @@ class AsrKeyboardService :
     private fun showAiEditPanel() {
         if (isAiEditPanelVisible) return
         hideClipboardPanel()
+        hideAsrHistoryPanel()
         hideNumpadPanel()
         aiEditPanelController?.show()
         if (layoutController?.applyKeyboardHeightScale() == true) {
@@ -708,6 +722,7 @@ class AsrKeyboardService :
     private fun showNumpadPanel(returnToAiPanel: Boolean = false) {
         if (isNumpadPanelVisible) return
         hideClipboardPanel()
+        hideAsrHistoryPanel()
         aiEditPanelController?.hide()
         numpadPanelController?.show(returnToAiPanel)
     }
@@ -719,6 +734,7 @@ class AsrKeyboardService :
     private fun showClipboardPanel() {
         if (isClipboardPanelVisible) return
         hideNumpadPanel()
+        hideAsrHistoryPanel()
         aiEditPanelController?.hide()
         clipboardPanelController?.show()
     }
@@ -727,14 +743,28 @@ class AsrKeyboardService :
         clipboardPanelController?.hide()
     }
 
+    private fun showAsrHistoryPanel() {
+        if (isAsrHistoryPanelVisible) return
+        hideNumpadPanel()
+        hideClipboardPanel()
+        aiEditPanelController?.hide()
+        asrHistoryPanelController?.show()
+    }
+
+    private fun hideAsrHistoryPanel() {
+        asrHistoryPanelController?.hide()
+    }
+
     private fun resetPanelsToMainKeyboard() {
         clipboardPanelController?.hide()
+        asrHistoryPanelController?.hide()
         numpadPanelController?.hide()
         aiEditPanelController?.hide()
         aiEditPanelController?.resetSelectionState()
 
         val refs = viewRefs
         refs?.layoutClipboardPanel?.visibility = View.GONE
+        refs?.layoutAsrHistoryPanel?.visibility = View.GONE
         refs?.layoutNumpadPanel?.visibility = View.GONE
         refs?.layoutAiEditPanel?.visibility = View.GONE
         refs?.layoutMainKeyboard?.visibility = View.VISIBLE

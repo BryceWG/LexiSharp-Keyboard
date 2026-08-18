@@ -213,6 +213,7 @@
   <string name="ext_btn_select">選択モード</string>
   <string name="ext_btn_select_all">すべて選択</string>
   <string name="ext_btn_copy">コピー</string>
+  <string name="ext_btn_asr_history">認識履歴</string>
   <string name="ext_btn_paste">貼り付け</string>
   <string name="ext_btn_cursor_left">左に移動</string>
   <string name="ext_btn_cursor_right">右に移動</string>
@@ -230,6 +231,8 @@
   <string name="status_copied">コピーしました</string>
   <string name="status_pasted">貼り付けました</string>
   <string name="status_nothing_to_undo">取り消す操作がありません</string>
+  <string name="asr_history_empty">認識履歴がありません</string>
+  <string name="cd_asr_history_back">戻る</string>
 
   <!-- ============================================== -->
   <!-- 通用按钮 -->

@@ -3,11 +3,15 @@ package com.brycewg.asrkb.store
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import java.io.InputStream
 import java.util.UUID
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.DecodeSequenceMode
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeToSequence
 
 /**
  * ASR 历史记录存储
@@ -114,6 +118,46 @@ class AsrHistoryStore(context: Context) {
 
     fun listAll(): List<AsrHistoryRecord> = synchronized(HISTORY_LOCK) {
         readAllInternal().sortedByDescending { it.timestamp }
+    }
+
+    /**
+     * 按写入顺序流式取出最近 [limit] 条非空记录。
+     * 磁盘 JSON 由 [writeAllInternal] 按 timestamp 降序保存，因此不必先反序列化整表。
+     */
+    fun listRecent(limit: Int): List<AsrHistoryRecord> {
+        if (limit <= 0) return emptyList()
+        return synchronized(HISTORY_LOCK) {
+            val raw = sp.getString(KEY_ASR_HISTORY_JSON, "").orEmpty()
+            if (raw.isBlank()) return@synchronized emptyList()
+            try {
+                raw.byteInputStream().use { input ->
+                    collectRecentFromStream(input, limit)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to stream recent history, falling back to full parse", e)
+                readAllInternal()
+                    .asSequence()
+                    .filter { it.text.isNotBlank() }
+                    .take(limit)
+                    .toList()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun collectRecentFromStream(
+        input: InputStream,
+        limit: Int
+    ): List<AsrHistoryRecord> {
+        val seenIds = HashSet<String>(limit)
+        val out = ArrayList<AsrHistoryRecord>(limit)
+        for (record in json.decodeToSequence<AsrHistoryRecord>(input, DecodeSequenceMode.ARRAY_WRAPPED)) {
+            if (record.text.isBlank()) continue
+            if (!seenIds.add(record.id)) continue
+            out.add(record)
+            if (out.size >= limit) break
+        }
+        return out
     }
 
     fun deleteByIds(ids: Set<String>): Int {

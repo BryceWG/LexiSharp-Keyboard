@@ -203,7 +203,12 @@ internal class ImeLayoutController(
             KeyboardLayoutPanel.values().flatMap { panel ->
                 BlockDefRegistry.default.defsFor(panel).mapNotNull { it.viewId }
             } +
-                listOf(R.id.clip_btnBack, R.id.clip_btnDelete)
+                listOf(
+                    R.id.clip_btnBack,
+                    R.id.clip_btnDelete,
+                    R.id.asr_hist_btnBack,
+                    R.id.asr_hist_headerEndSpacer
+                )
             )
             .filter { it != R.id.groupMicStatus }
             .distinct()
