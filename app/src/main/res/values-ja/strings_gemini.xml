@@ -3,7 +3,7 @@
     <string name="gemini_section_title">Gemini音声理解</string>
     <string name="label_gemini_endpoint">Endpoint</string>
     <string name="label_gemini_api_key">Gemini APIキー</string>
-    <string name="label_gemini_model">モデル（例：gemini-2.5-flash）</string>
+    <string name="label_gemini_model">認識モデル</string>
     <string name="label_gemini_prompt">文字起こしプロンプト</string>
     <string name="label_gemini_disable_thinking">思考を抑制</string>
 

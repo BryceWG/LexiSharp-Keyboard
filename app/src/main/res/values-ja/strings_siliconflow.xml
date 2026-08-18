@@ -5,7 +5,7 @@
 
     <!-- SiliconFlow configuration -->
     <string name="label_sf_api_key">APIキー（Bearer）</string>
-    <string name="label_sf_model_select">モデルを選択</string>
+    <string name="label_sf_model_select">認識モデル</string>
     <string name="sf_model_default_display">FunAudioLLM/SenseVoiceSmall</string>
     <string name="label_sf_omni_prompt">マルチモーダル文字起こしプロンプト（オプション）</string>
 

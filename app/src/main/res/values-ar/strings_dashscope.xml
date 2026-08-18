@@ -5,7 +5,7 @@
 
     <!-- DashScope configuration -->
     <string name="label_dash_api_key">مفتاح DashScope API (Bearer)</string>
-    <string name="label_dash_model">نموذج ASR</string>
+    <string name="label_dash_model">نموذج التعرّف</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash (غير متدفق)</string>
     <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash (غير متدفق)</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash (غير متدفق)</string>
@@ -19,7 +19,7 @@
     <string name="label_dash_fun_asr">استخدام نموذج Fun-ASR (fun-asr-realtime)</string>
     <string name="label_dash_semantic_punct">استخدام التقسيم الدلالي</string>
     <string name="dash_lang_auto">اكتشاف تلقائي</string>
-    <string name="label_dash_region">منطقة الخادم</string>
+    <string name="label_dash_region">نقطة النهاية</string>
     <string name="dash_region_cn">الصين القارية (aliyuncs.com)</string>
     <string name="dash_region_intl">سنغافورة/دولي (dashscope-intl.aliyuncs.com)</string>
 

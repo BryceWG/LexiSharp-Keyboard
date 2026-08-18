@@ -4,7 +4,7 @@
     <string name="vendor_volc">豆包语音</string>
 
     <!-- Volc configuration -->
-    <string name="label_volc_asr_model">豆包识别模型</string>
+    <string name="label_volc_asr_model">识别模型</string>
     <string name="volc_asr_model_streaming_v2">豆包流式语音识别 2.0</string>
     <string name="volc_asr_model_streaming_v1">豆包流式语音识别 1.0</string>
     <string name="volc_asr_model_file_v2">豆包普通文件识别 2.0</string>
@@ -48,8 +48,8 @@
     <!-- ============================================== -->
 
     <!-- 流式识别 - Streaming recognition -->
-    <string name="feature_volc_streaming_off_desc">请在「豆包识别模型」中选择普通文件或极速文件识别。录音结束后上传完整音频。</string>
-    <string name="feature_volc_streaming_on_desc">该模式已由「豆包识别模型」中的流式语音识别 1.0 或 2.0 表达。边说边出字，需要较稳定的网络。</string>
+    <string name="feature_volc_streaming_off_desc">请在「识别模型」中选择普通文件或极速文件识别。录音结束后上传完整音频。</string>
+    <string name="feature_volc_streaming_on_desc">该模式已由「识别模型」中的流式语音识别 1.0 或 2.0 表达。边说边出字，需要较稳定的网络。</string>
 
     <!-- 语义顺滑 - Semantic smoothing -->
     <string name="feature_volc_ddc_off_desc">输出原始识别结果，不做额外处理。</string>
@@ -64,12 +64,12 @@
     <string name="feature_volc_nonstream_on_desc">服务端会对流式识别结果再进行一次修正，最终文字可能更准确，但中间结果可能发生变化。</string>
 
   <!-- 文件识别普通版 - File recognition (standard mode) -->
-    <string name="feature_volc_file_standard_off_desc">请在「豆包识别模型」中选择极速文件识别 1.0。录音结束后上传，速度更快。</string>
-    <string name="feature_volc_file_standard_on_desc">请在「豆包识别模型」中选择普通文件识别 1.0 或 2.0。录音结束后上传完整音频（提交/查询），准确度更好。</string>
+    <string name="feature_volc_file_standard_off_desc">请在「识别模型」中选择极速文件识别 1.0。录音结束后上传，速度更快。</string>
+    <string name="feature_volc_file_standard_on_desc">请在「识别模型」中选择普通文件识别 1.0 或 2.0。录音结束后上传完整音频（提交/查询），准确度更好。</string>
 
     <!-- 模型版本 - Model version -->
-    <string name="feature_volc_model_v2_off_desc">请在「豆包识别模型」中选择对应的 1.0 模型。</string>
-    <string name="feature_volc_model_v2_on_desc">请在「豆包识别模型」中选择对应的 2.0 模型。准确度更好，支持更多语言。</string>
+    <string name="feature_volc_model_v2_off_desc">请在「识别模型」中选择对应的 1.0 模型。</string>
+    <string name="feature_volc_model_v2_on_desc">请在「识别模型」中选择对应的 2.0 模型。准确度更好，支持更多语言。</string>
 
     <!-- 新鉴权方式 - New auth -->
     <string name="feature_volc_use_new_auth_off_desc">使用经典的 App Key / Access Key 鉴权方式。</string>

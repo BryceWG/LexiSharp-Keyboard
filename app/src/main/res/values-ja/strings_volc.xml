@@ -4,7 +4,7 @@
     <string name="vendor_volc">Volcano Engine</string>
 
     <!-- Volc configuration -->
-    <string name="label_volc_asr_model">Doubao ASRモデル</string>
+    <string name="label_volc_asr_model">認識モデル</string>
     <string name="volc_asr_model_streaming_v2">Doubaoストリーミング音声認識 2.0</string>
     <string name="volc_asr_model_streaming_v1">Doubaoストリーミング音声認識 1.0</string>
     <string name="volc_asr_model_file_v2">Doubao標準ファイル認識 2.0</string>
@@ -47,8 +47,8 @@
     <!-- ============================================== -->
 
     <!-- 火山引擎 - ストリーミング認識 -->
-    <string name="feature_volc_streaming_off_desc">「Doubao ASRモデル」で標準ファイルまたは高速ファイル認識を選んでください。録音終了後に音声全体をアップロードします。</string>
-    <string name="feature_volc_streaming_on_desc">このモードは「Doubao ASRモデル」のストリーミング音声認識 1.0 または 2.0 で表されます。話しながら文字が出て、安定したネットワークが必要です。</string>
+    <string name="feature_volc_streaming_off_desc">「認識モデル」で標準ファイルまたは高速ファイル認識を選んでください。録音終了後に音声全体をアップロードします。</string>
+    <string name="feature_volc_streaming_on_desc">このモードは「認識モデル」のストリーミング音声認識 1.0 または 2.0 で表されます。話しながら文字が出て、安定したネットワークが必要です。</string>
 
     <!-- 火山引擎 - DDC（意味スムージング） -->
     <string name="feature_volc_ddc_off_desc">追加処理なしで生の認識結果を出力します。</string>
@@ -63,12 +63,12 @@
     <string name="feature_volc_nonstream_on_desc">サービス側がストリーミング結果をもう一度修正します。最終結果が改善する場合がありますが、途中の文字は変わることがあります。</string>
 
     <!-- 火山引擎 - ファイル認識（標準版） -->
-    <string name="feature_volc_file_standard_off_desc">「Doubao ASRモデル」で高速ファイル認識 1.0 を選んでください。録音終了後にアップロードし、処理はより速いです。</string>
-    <string name="feature_volc_file_standard_on_desc">「Doubao ASRモデル」で標準ファイル認識 1.0 または 2.0 を選んでください。録音終了後に音声全体をアップロード（submit/query）し、精度が高めです。</string>
+    <string name="feature_volc_file_standard_off_desc">「認識モデル」で高速ファイル認識 1.0 を選んでください。録音終了後にアップロードし、処理はより速いです。</string>
+    <string name="feature_volc_file_standard_on_desc">「認識モデル」で標準ファイル認識 1.0 または 2.0 を選んでください。録音終了後に音声全体をアップロード（submit/query）し、精度が高めです。</string>
 
     <!-- 火山引擎 - モデルバージョン -->
-    <string name="feature_volc_model_v2_off_desc">「Doubao ASRモデル」で対応する 1.0 モデルを選んでください。</string>
-    <string name="feature_volc_model_v2_on_desc">「Doubao ASRモデル」で対応する 2.0 モデルを選んでください。精度が高く、対応言語も広がります。</string>
+    <string name="feature_volc_model_v2_off_desc">「認識モデル」で対応する 1.0 モデルを選んでください。</string>
+    <string name="feature_volc_model_v2_on_desc">「認識モデル」で対応する 2.0 モデルを選んでください。精度が高く、対応言語も広がります。</string>
 
     <!-- Volcengine - 新しい認証 -->
     <string name="feature_volc_use_new_auth_off_desc">従来の App Key / Access Key 認証を使用します。</string>

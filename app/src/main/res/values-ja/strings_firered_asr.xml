@@ -4,7 +4,7 @@
     <string name="vendor_firered_asr">FireRedASR V2</string>
 
     <!-- FireRedASR V2 設定 -->
-    <string name="label_fr_model_variant">モデル種別</string>
+    <string name="label_fr_model_variant">モデルバージョン</string>
     <string name="label_fr_threads">スレッド数（1-8）</string>
     <string name="label_fr_keep_alive">モデルアンロード方針</string>
     <string name="label_fr_preload">積極的にモデルを読み込む</string>

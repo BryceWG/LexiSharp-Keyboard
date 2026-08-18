@@ -2,5 +2,5 @@
     <string name="vendor_openrouter">OpenRouter</string>
     <string name="label_openrouter_asr_endpoint">ASR Endpoint(../transcriptions)</string>
     <string name="label_openrouter_api_key">OpenRouter API Key</string>
-    <string name="label_openrouter_model">模型（例如：qwen/qwen3-asr-flash-2026-02-10）</string>
+    <string name="label_openrouter_model">辨識模型</string>
 </resources>

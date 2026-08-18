@@ -12,7 +12,7 @@
     <string name="label_openai_asr_endpoint">Endpoint(../transcriptions or ../chat/completions)</string>
     <string name="hint_openai_custom_endpoint_wav_upload">Custom compatible services will upload WAV audio to improve compatibility.</string>
     <string name="label_openai_api_key">API Key (Bearer)</string>
-    <string name="label_openai_model">Model (e.g., gpt-4o-mini-transcribe or whisper-1)</string>
+    <string name="label_openai_model">Recognition model</string>
     <string name="label_openai_streaming">Streaming recognition</string>
     <string name="label_openai_use_completions">Use Completions API</string>
     <string name="label_openai_use_prompt">Custom prompt (some models unsupported)</string>

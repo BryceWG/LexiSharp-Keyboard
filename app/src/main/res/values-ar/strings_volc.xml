@@ -4,7 +4,7 @@
     <string name="vendor_volc">Volcano Engine</string>
 
     <!-- Volc configuration -->
-    <string name="label_volc_asr_model">نموذج Doubao للتعرّف</string>
+    <string name="label_volc_asr_model">نموذج التعرّف</string>
     <string name="volc_asr_model_streaming_v2">التعرّف الصوتي المتدفق من Doubao 2.0</string>
     <string name="volc_asr_model_streaming_v1">التعرّف الصوتي المتدفق من Doubao 1.0</string>
     <string name="volc_asr_model_file_v2">تعرّف ملفات Doubao القياسي 2.0</string>
@@ -47,8 +47,8 @@
     <!-- ============================================== -->
 
     <!-- Volcengine - Streaming -->
-    <string name="feature_volc_streaming_off_desc">اختر تعرّف الملفات القياسي أو السريع في نموذج Doubao للتعرّف. يُرفع التسجيل كاملاً بعد التوقف.</string>
-    <string name="feature_volc_streaming_on_desc">يُختار هذا الوضع كتعرّف صوتي متدفق 1.0 أو 2.0 في نموذج Doubao للتعرّف. يظهر النص أثناء الكلام ويحتاج إلى شبكة مستقرة نسبياً.</string>
+    <string name="feature_volc_streaming_off_desc">اختر تعرّف الملفات القياسي أو السريع في نموذج التعرّف. يُرفع التسجيل كاملاً بعد التوقف.</string>
+    <string name="feature_volc_streaming_on_desc">يُختار هذا الوضع كتعرّف صوتي متدفق 1.0 أو 2.0 في نموذج التعرّف. يظهر النص أثناء الكلام ويحتاج إلى شبكة مستقرة نسبياً.</string>
 
     <!-- Volcengine - DDC (semantic smoothing) -->
     <string name="feature_volc_ddc_off_desc">يُخرج نتائج التعرّف الخام دون معالجة إضافية.</string>
@@ -63,12 +63,12 @@
     <string name="feature_volc_nonstream_on_desc">ينفّذ المزود مرور تصحيح ثانٍ على نتيجة البث. قد يتحسّن النص النهائي، وقد يتغيّر النص المؤقت.</string>
 
     <!-- Volcengine - File recognition (standard mode) -->
-    <string name="feature_volc_file_standard_off_desc">اختر تعرّف ملفات Doubao السريع 1.0 في نموذج Doubao للتعرّف. يُرفع بعد التوقف ويكون أسرع.</string>
-    <string name="feature_volc_file_standard_on_desc">اختر تعرّف ملفات Doubao القياسي 1.0 أو 2.0 في نموذج Doubao للتعرّف. يُرفع التسجيل كاملاً بعد التوقف (إرسال/استعلام) ودقته أعلى.</string>
+    <string name="feature_volc_file_standard_off_desc">اختر تعرّف ملفات Doubao السريع 1.0 في نموذج التعرّف. يُرفع بعد التوقف ويكون أسرع.</string>
+    <string name="feature_volc_file_standard_on_desc">اختر تعرّف ملفات Doubao القياسي 1.0 أو 2.0 في نموذج التعرّف. يُرفع التسجيل كاملاً بعد التوقف (إرسال/استعلام) ودقته أعلى.</string>
 
     <!-- Volcengine - Model version -->
-    <string name="feature_volc_model_v2_off_desc">اختر النموذج 1.0 المناسب في نموذج Doubao للتعرّف.</string>
-    <string name="feature_volc_model_v2_on_desc">اختر النموذج 2.0 المناسب في نموذج Doubao للتعرّف. دقته أعلى ودعم اللغات أوسع.</string>
+    <string name="feature_volc_model_v2_off_desc">اختر النموذج 1.0 المناسب في نموذج التعرّف.</string>
+    <string name="feature_volc_model_v2_on_desc">اختر النموذج 2.0 المناسب في نموذج التعرّف. دقته أعلى ودعم اللغات أوسع.</string>
 
     <!-- Volcengine - New auth -->
     <string name="feature_volc_use_new_auth_off_desc">يستخدم مصادقة App Key / Access Key التقليدية.</string>

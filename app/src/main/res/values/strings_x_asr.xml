@@ -4,7 +4,7 @@
     <string name="vendor_x_asr">X-ASR</string>
 
     <!-- X-ASR configuration -->
-    <string name="label_x_asr_model_variant">Model variant</string>
+    <string name="label_x_asr_model_variant">Model version</string>
     <string name="label_x_asr_threads">Threads (1-8)</string>
     <string name="label_x_asr_keep_alive">Model unload policy</string>
     <string name="x_asr_variant_480ms">Zh+En (480 ms, 530MB)</string>

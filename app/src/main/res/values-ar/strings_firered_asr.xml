@@ -4,7 +4,7 @@
     <string name="vendor_firered_asr">FireRedASR V2</string>
 
     <!-- FireRedASR V2 configuration -->
-    <string name="label_fr_model_variant">متغير النموذج</string>
+    <string name="label_fr_model_variant">إصدار النموذج</string>
     <string name="label_fr_threads">عدد الخيوط (1-8)</string>
     <string name="label_fr_keep_alive">سياسة إلغاء تحميل النموذج</string>
     <string name="label_fr_preload">تحميل النموذج بقوة</string>

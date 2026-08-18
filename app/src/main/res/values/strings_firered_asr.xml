@@ -4,7 +4,7 @@
     <string name="vendor_firered_asr">FireRedASR V2</string>
 
     <!-- FireRedASR V2 configuration -->
-    <string name="label_fr_model_variant">Model variant</string>
+    <string name="label_fr_model_variant">Model version</string>
     <string name="label_fr_threads">Threads (1-8)</string>
     <string name="label_fr_keep_alive">Model unload policy</string>
     <string name="label_fr_preload">Aggressive model loading</string>

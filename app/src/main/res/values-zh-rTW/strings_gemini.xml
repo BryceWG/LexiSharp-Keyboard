@@ -3,7 +3,7 @@
     <string name="gemini_section_title">Gemini 語音理解</string>
     <string name="label_gemini_endpoint">Endpoint</string>
     <string name="label_gemini_api_key">Gemini API Key</string>
-    <string name="label_gemini_model">模型（如：gemini-2.5-flash）</string>
+    <string name="label_gemini_model">辨識模型</string>
     <string name="label_gemini_prompt">轉錄提示詞（Prompt）</string>
     <string name="label_gemini_disable_thinking">降低思考強度</string>
 

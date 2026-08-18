@@ -2,8 +2,8 @@
     <string name="vendor_mimo">小米 MiMo</string>
     <string name="label_mimo_asr_api_key">MiMo API Key</string>
     <string name="label_mimo_asr_endpoint">MiMo Endpoint</string>
-    <string name="label_mimo_asr_endpoint_preset">Endpoint</string>
-    <string name="label_mimo_asr_model">模型</string>
+    <string name="label_mimo_asr_endpoint_preset">請求端點</string>
+    <string name="label_mimo_asr_model">辨識模型</string>
     <string name="label_mimo_asr_prompt">System Prompt（僅 v2.5 支援）</string>
     <string name="label_mimo_disable_thinking">停用推理</string>
     <string name="feature_mimo_disable_thinking_off_desc">使用模型預設的思考模式，可能更仔細但較慢。</string>
@@ -13,7 +13,7 @@
     <string name="mimo_endpoint_ams">Token Plan（歐洲）</string>
     <string name="mimo_endpoint_paygo">按量付費</string>
     <string name="mimo_endpoint_custom">自訂</string>
-    <string name="label_mimo_asr_language">語言</string>
+    <string name="label_mimo_asr_language">辨識語言</string>
     <string name="mimo_lang_auto">自動偵測</string>
     <string name="mimo_lang_zh">中文</string>
     <string name="mimo_lang_en">英文</string>

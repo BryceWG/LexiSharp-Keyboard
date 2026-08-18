@@ -5,7 +5,7 @@
 
     <!-- DashScope configuration -->
     <string name="label_dash_api_key">DashScope API Key (Bearer)</string>
-    <string name="label_dash_model">ASR Model</string>
+    <string name="label_dash_model">Recognition model</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash (non-streaming)</string>
     <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash (non-streaming)</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash (non-streaming)</string>
@@ -19,7 +19,7 @@
     <string name="label_dash_fun_asr">Use Fun-ASR model (fun-asr-realtime)</string>
     <string name="label_dash_semantic_punct">Use semantic segmentation</string>
     <string name="dash_lang_auto">Auto detect</string>
-    <string name="label_dash_region">Server region</string>
+    <string name="label_dash_region">Request endpoint</string>
     <string name="dash_region_cn">Mainland China (aliyuncs.com)</string>
     <string name="dash_region_intl">Singapore/International (dashscope-intl.aliyuncs.com)</string>
 

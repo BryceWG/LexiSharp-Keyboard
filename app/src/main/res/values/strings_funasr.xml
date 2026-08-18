@@ -4,7 +4,7 @@
     <string name="vendor_funasr_nano">FunASR Nano</string>
 
     <!-- FunASR Nano local settings -->
-    <string name="label_fn_model_variant">Model Version</string>
+    <string name="label_fn_model_variant">Model version</string>
     <string name="fn_model_nano_int8">FunASR Nano (int8, ~690MB)</string>
     <string name="fn_model_mlt_nano_int8">FunASR MLT Nano (multilingual, int8, ~690MB)</string>
     <string name="label_fn_language_preset">Recognition language</string>
