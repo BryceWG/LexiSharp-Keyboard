@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteDecision
+import com.brycewg.asrkb.asr.AsrRecordedAudioRouteKind
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteResolver
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
@@ -747,7 +748,7 @@ private fun HistoryDetailsDialog(
                     val errorMessage = when (it) {
                         "audio_unavailable" -> stringResource(R.string.history_audio_unavailable)
                         "llm_unavailable" -> stringResource(R.string.history_llm_unavailable)
-                        "engine_unavailable", "engine_pcm_unsupported" ->
+                        "engine_unavailable", "engine_pcm_unsupported", "engine_not_ready" ->
                             stringResource(R.string.history_rerun_engine_unavailable)
                         "record_missing" -> stringResource(R.string.history_record_missing)
                         AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_OPENAI_STREAMING ->
@@ -1290,6 +1291,12 @@ private fun historyRerecognitionFallbackLine(
 ): String {
     if (!decision.canContinue) {
         return context.getString(R.string.history_rerecognition_fallback_unsupported)
+    }
+    if (decision.kind == AsrRecordedAudioRouteKind.ReplayStream) {
+        return context.getString(
+            R.string.history_rerecognition_fallback_stream,
+            decision.currentEngineLabel
+        )
     }
     val fallbackLabel = decision.fallbackEngineLabel?.takeIf { it.isNotBlank() }
         ?: decision.currentEngineLabel

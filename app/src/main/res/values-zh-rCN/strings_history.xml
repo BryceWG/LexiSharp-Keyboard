@@ -99,6 +99,7 @@
     <string name="history_rerecognition_current_engine">当前识别引擎：%1$s</string>
     <string name="history_rerecognition_fallback_supported">录音重识别回退：支持，将使用“%1$s”</string>
     <string name="history_rerecognition_fallback_direct">录音重识别：将使用当前文件识别模型“%1$s”</string>
+    <string name="history_rerecognition_fallback_stream">录音重识别：将按当前流式识别回放录音“%1$s”</string>
     <string name="history_rerecognition_fallback_unsupported">录音重识别回退：暂不支持</string>
     <string name="history_rerecognition_notice_supported_hint">重新识别会读取历史录音并按完整音频提交，不会改变当前常规识别设置。</string>
     <string name="history_rerecognition_notice_unsupported_hint">请切换到非流式模型，或拥有文件识别路径的供应商后再试。</string>

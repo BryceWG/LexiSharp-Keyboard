@@ -1,5 +1,5 @@
 /**
- * 录音重识别路由：根据当前供应商与模型给出本次请求的文件路径决策。
+ * 录音重识别路由：根据当前供应商与模型给出本次请求的文件或流式回放决策。
  *
  * 归属模块：asr
  */
@@ -11,7 +11,7 @@ import com.brycewg.asrkb.store.DashScopePrefsCompat
 import com.brycewg.asrkb.store.Prefs
 
 internal enum class AsrRecordedAudioRouteKind {
-    DirectFile, MappedFallback, Unsupported, Unavailable
+    DirectFile, MappedFallback, ReplayStream, Unsupported, Unavailable
 }
 
 internal data class AsrRequestModelOverride(
@@ -37,6 +37,7 @@ internal data class AsrRecordedAudioRouteDecision(
 internal object AsrRecordedAudioRouteResolver {
     const val REASON_DIRECT_FILE = "direct_file"
     const val REASON_MAPPED_FALLBACK = "mapped_fallback"
+    const val REASON_REPLAY_STREAM = "replay_stream"
     const val REASON_UNSUPPORTED_OPENAI_STREAMING = "unsupported_openai_streaming"
     const val REASON_UNSUPPORTED_XASR = "unsupported_xasr"
     const val REASON_UNSUPPORTED_UNKNOWN_MODEL = "unsupported_unknown_model"
@@ -246,15 +247,23 @@ internal object AsrRecordedAudioRouteResolver {
         context: Context,
         snapshot: AsrEngineModePreferences,
         backupPolicy: AsrBackupPolicyDecision
-    ): AsrRecordedAudioRouteDecision = unsupported(
-        vendor = AsrVendor.XAsr,
-        reasonCode = REASON_UNSUPPORTED_XASR,
-        noticeKey = NOTICE_UNSUPPORTED_XASR,
-        currentModelKey = null,
-        currentEngineLabel = context.getString(R.string.vendor_x_asr),
-        snapshot = snapshot,
-        backupPolicy = backupPolicy
-    )
+    ): AsrRecordedAudioRouteDecision {
+        val label = context.getString(R.string.vendor_x_asr)
+        return AsrRecordedAudioRouteDecision(
+            kind = AsrRecordedAudioRouteKind.ReplayStream,
+            reasonCode = REASON_REPLAY_STREAM,
+            canContinue = true,
+            noticeKey = NOTICE_SUPPORTED_XASR_STREAM,
+            vendor = AsrVendor.XAsr,
+            currentModelKey = null,
+            fallbackModelKey = null,
+            currentEngineLabel = label,
+            fallbackEngineLabel = label,
+            modePreferences = snapshot,
+            modelOverride = AsrRequestModelOverride(),
+            backupPolicy = backupPolicy
+        )
+    }
 
     private fun resolveGenericFile(
         context: Context,
@@ -390,7 +399,7 @@ private const val NOTICE_DASH_QWEN_REALTIME = "history_rerecognition_supported_d
 private const val NOTICE_DASH_FILE = "history_rerecognition_supported_dash_file_v1"
 private const val NOTICE_UNSUPPORTED_OPENAI_STREAMING =
     "history_rerecognition_unsupported_openai_streaming_v1"
-private const val NOTICE_UNSUPPORTED_XASR = "history_rerecognition_unsupported_xasr_v1"
+private const val NOTICE_SUPPORTED_XASR_STREAM = "history_rerecognition_supported_xasr_stream_v1"
 private const val NOTICE_UNSUPPORTED_UNKNOWN_MODEL =
     "history_rerecognition_unsupported_unknown_model_v1"
 private const val NOTICE_GENERIC_FILE = "history_rerecognition_supported_generic_file_v1"

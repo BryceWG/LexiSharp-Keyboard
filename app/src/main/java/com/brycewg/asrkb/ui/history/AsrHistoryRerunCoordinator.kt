@@ -117,6 +117,7 @@ internal class AsrHistoryRerunCoordinator(
             )
             runningEngine.start()
             val consumer = runningEngine as? ExternalPcmConsumer ?: error("engine_pcm_unsupported")
+            if (!consumer.awaitReady()) error("engine_not_ready")
             pcm.asSequenceOfPcmChunks().forEach { chunk ->
                 consumer.appendPcm(chunk, 16_000, 1)
             }
@@ -253,10 +254,12 @@ internal class AsrHistoryRerunCoordinator(
             "audio_unavailable",
             "engine_unavailable",
             "engine_pcm_unsupported",
+            "engine_not_ready",
             "empty_result",
             "record_missing",
             AsrRecordedAudioRouteResolver.REASON_DIRECT_FILE,
             AsrRecordedAudioRouteResolver.REASON_MAPPED_FALLBACK,
+            AsrRecordedAudioRouteResolver.REASON_REPLAY_STREAM,
             AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_OPENAI_STREAMING,
             AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_XASR,
             AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_UNKNOWN_MODEL,

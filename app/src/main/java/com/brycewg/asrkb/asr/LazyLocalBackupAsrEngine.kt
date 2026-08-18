@@ -229,6 +229,12 @@ internal class LazyLocalBackupAsrEngine(
         finishResidencySession()
     }
 
+    override suspend fun awaitReady(timeoutMs: Long): Boolean {
+        val primaryOk = primaryConsumer?.awaitReady(timeoutMs) ?: true
+        val backupOk = backupConsumer?.awaitReady(timeoutMs) ?: true
+        return primaryOk && backupOk
+    }
+
     override fun appendPcm(pcm: ByteArray, sampleRate: Int, channels: Int) {
         if (!externalPcmInput) return
         if (!running.get()) return

@@ -99,6 +99,7 @@
     <string name="history_rerecognition_current_engine">Current recognition engine: %1$s</string>
     <string name="history_rerecognition_fallback_supported">Recording re-recognition fallback: supported. Will use “%1$s”</string>
     <string name="history_rerecognition_fallback_direct">Re-recognition: will use the current file recognition model “%1$s”</string>
+    <string name="history_rerecognition_fallback_stream">Re-recognition: will replay the recording through the current streaming engine “%1$s”</string>
     <string name="history_rerecognition_fallback_unsupported">Recording re-recognition fallback: not supported yet</string>
     <string name="history_rerecognition_notice_supported_hint">Re-recognition reads the saved recording and submits the complete audio. It does not change your current regular recognition settings.</string>
     <string name="history_rerecognition_notice_unsupported_hint">Switch to a non-streaming model, or a vendor that has a file recognition path, then try again.</string>

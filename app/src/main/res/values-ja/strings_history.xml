@@ -100,6 +100,7 @@
     <string name="history_rerecognition_current_engine">現在の認識エンジン：%1$s</string>
     <string name="history_rerecognition_fallback_supported">録音の再認識フォールバック：対応済み。「%1$s」を使用します</string>
     <string name="history_rerecognition_fallback_direct">録音の再認識：現在のファイル認識モデル「%1$s」を使用します</string>
+    <string name="history_rerecognition_fallback_stream">録音の再認識：現在のストリーミング認識「%1$s」で録音を再生します</string>
     <string name="history_rerecognition_fallback_unsupported">録音の再認識フォールバック：現在は非対応です</string>
     <string name="history_rerecognition_notice_supported_hint">再認識では履歴の録音を読み取り、音声全体を送信します。通常の認識設定は変わりません。</string>
     <string name="history_rerecognition_notice_unsupported_hint">非ストリーミングモデル、またはファイル認識経路のあるサービスに切り替えてから再試行してください。</string>

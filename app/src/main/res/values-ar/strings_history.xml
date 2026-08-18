@@ -99,6 +99,7 @@
     <string name="history_rerecognition_current_engine">محرك التعرّف الحالي: %1$s</string>
     <string name="history_rerecognition_fallback_supported">الرجوع لإعادة التعرّف من التسجيل: مدعوم، وسيُستخدم “%1$s”</string>
     <string name="history_rerecognition_fallback_direct">إعادة التعرّف: سيُستخدم نموذج تعرّف الملفات الحالي “%1$s”</string>
+    <string name="history_rerecognition_fallback_stream">إعادة التعرّف: سيُعاد تشغيل التسجيل عبر محرك البث الحالي “%1$s”</string>
     <string name="history_rerecognition_fallback_unsupported">الرجوع لإعادة التعرّف من التسجيل: غير مدعوم حالياً</string>
     <string name="history_rerecognition_notice_supported_hint">إعادة التعرّف تقرأ التسجيل المحفوظ وترسل الصوت كاملاً، دون تغيير إعدادات التعرّف المعتادة.</string>
     <string name="history_rerecognition_notice_unsupported_hint">بدّل إلى نموذج غير بثّي، أو إلى مزوّد يملك مسار تعرّف بالملفات ثم أعد المحاولة.</string>

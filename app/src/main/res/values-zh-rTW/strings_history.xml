@@ -99,6 +99,7 @@
     <string name="history_rerecognition_current_engine">目前辨識引擎：%1$s</string>
     <string name="history_rerecognition_fallback_supported">錄音重新辨識回退：支援，將使用「%1$s」</string>
     <string name="history_rerecognition_fallback_direct">錄音重新辨識：將使用目前檔案辨識模型「%1$s」</string>
+    <string name="history_rerecognition_fallback_stream">錄音重新辨識：將依目前串流辨識回放錄音「%1$s」</string>
     <string name="history_rerecognition_fallback_unsupported">錄音重新辨識回退：暫不支援</string>
     <string name="history_rerecognition_notice_supported_hint">重新辨識會讀取歷史錄音並以完整音訊送出，不會改變目前的一般辨識設定。</string>
     <string name="history_rerecognition_notice_unsupported_hint">請切換到非串流模型，或具備檔案辨識路徑的供應商後再試。</string>
