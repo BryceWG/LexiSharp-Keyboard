@@ -259,7 +259,8 @@ internal object AsrRecordedAudioRouteResolver {
             fallbackModelKey = null,
             currentEngineLabel = label,
             fallbackEngineLabel = label,
-            modePreferences = snapshot,
+            // X-ASR 本身始终走 ReplayStream；其余开关关掉，避免 backup 仍按实时流式构造。
+            modePreferences = fileModePreferences(snapshot, AsrVendor.XAsr),
             modelOverride = AsrRequestModelOverride(),
             backupPolicy = backupPolicy
         )
@@ -311,51 +312,24 @@ internal object AsrRecordedAudioRouteResolver {
         backupPolicy = backupPolicy
     )
 
+    // 并行/lazy backup 与主引擎共用同一份 preferences，必须关掉所有 vendor 的流式开关。
     private fun fileModePreferences(
         snapshot: AsrEngineModePreferences,
         vendor: AsrVendor,
         volcFileModel: VolcAsrModel? = null
     ): AsrEngineModePreferences = snapshot.copy(
-        volcStreamingEnabled = if (vendor == AsrVendor.Volc) {
-            false
-        } else {
-            snapshot.volcStreamingEnabled
-        },
+        volcStreamingEnabled = false,
         volcStandardFileEnabled = if (vendor == AsrVendor.Volc) {
             volcFileModel?.protocol == VolcAsrProtocolKind.StandardFile
         } else {
             snapshot.volcStandardFileEnabled
         },
-        elevenStreamingEnabled = if (vendor == AsrVendor.ElevenLabs) {
-            false
-        } else {
-            snapshot.elevenStreamingEnabled
-        },
-        openAiStreamingEnabled = if (vendor == AsrVendor.OpenAI) {
-            false
-        } else {
-            snapshot.openAiStreamingEnabled
-        },
-        dashScopeStreamingEnabled = if (vendor == AsrVendor.DashScope) {
-            false
-        } else {
-            snapshot.dashScopeStreamingEnabled
-        },
-        sonioxStreamingEnabled = if (vendor == AsrVendor.Soniox) {
-            false
-        } else {
-            snapshot.sonioxStreamingEnabled
-        },
-        senseVoicePseudoStreamEnabled = if (vendor == AsrVendor.SenseVoice) {
-            false
-        } else {
-            snapshot.senseVoicePseudoStreamEnabled
-        },
-        fireRedPseudoStreamEnabled = if (vendor == AsrVendor.FireRedAsr) {
-            false
-        } else {
-            snapshot.fireRedPseudoStreamEnabled
-        }
+        elevenStreamingEnabled = false,
+        openAiStreamingEnabled = false,
+        dashScopeStreamingEnabled = false,
+        sonioxStreamingEnabled = false,
+        senseVoicePseudoStreamEnabled = false,
+        fireRedPseudoStreamEnabled = false
     )
 
     private fun volcStreamingNoticeKey(current: VolcAsrModel): String =

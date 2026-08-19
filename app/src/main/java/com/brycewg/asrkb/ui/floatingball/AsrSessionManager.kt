@@ -258,7 +258,7 @@ class AsrSessionManager(
 
     /** 开始录音 */
     fun startRecording() {
-        discardUncommittedHistoryRecords()
+        discardInFlightHistoryCapture()
         Log.d(TAG, "startRecording called")
         val sessionToken = createSessionToken()
         stopActiveEngineIfRunning("start_recording")
@@ -481,6 +481,15 @@ class AsrSessionManager(
 
     fun popLastHistoryRawText(): String? =
         completedHistoryRawText.also { completedHistoryRawText = null }
+
+    private fun discardInFlightHistoryCapture() {
+        val leftoverId = activeHistoryRecordId
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        if (leftoverId.isNullOrEmpty()) return
+        AsrHistoryAudioStore(context).delete(leftoverId)
+    }
 
     private fun discardUncommittedHistoryRecords() {
         val leftoverIds = ArrayList<String>(2)

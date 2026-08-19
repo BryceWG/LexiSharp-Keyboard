@@ -439,7 +439,7 @@ class AsrSessionManager(
         lastAudioMsForStats = 0L
         // 新会话开始时重置上次请求耗时，避免串台（流式模式不会更新此值）
         lastRequestDurationMs = null
-        discardUncommittedHistoryRecords()
+        discardInFlightHistoryCapture()
         activeHistoryRecordId = UUID.randomUUID().toString()
         historyAudioCapture = AsrHistoryAudioCapture.create(
             context,
@@ -559,6 +559,15 @@ class AsrSessionManager(
         discardUncommittedHistoryRecords()
         (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         clearActiveSession()
+    }
+
+    private fun discardInFlightHistoryCapture() {
+        val leftoverId = activeHistoryRecordId
+        historyAudioCapture?.discard()
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        if (leftoverId.isNullOrEmpty()) return
+        AsrHistoryAudioStore(context).delete(leftoverId)
     }
 
     private fun discardUncommittedHistoryRecords() {
