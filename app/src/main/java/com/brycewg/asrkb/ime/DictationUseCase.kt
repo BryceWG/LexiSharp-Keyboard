@@ -5,7 +5,9 @@ import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.AsrFailReasonCodes
 import com.brycewg.asrkb.asr.BackupAwareAsrEngine
+import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
 
 internal class DictationUseCase(
@@ -33,6 +35,14 @@ internal class DictationUseCase(
         state: KeyboardState.Listening,
         seq: Long
     ) {
+        if (text.isBlank()) {
+            transitionToIdle(true)
+            uiListenerProvider()?.onStatusMessage(
+                context.getString(R.string.asr_error_empty_result)
+            )
+            uiListenerProvider()?.onVibrate()
+            return
+        }
         if (prefs.postProcessEnabled && prefs.hasLlmKeys()) {
             handleWithPostprocess(ic, text, state, seq)
         } else {
@@ -71,6 +81,12 @@ internal class DictationUseCase(
         val aiUsed = postprocessResult.aiUsed
         val aiPostMs = postprocessResult.aiPostMs
         val aiPostStatus = postprocessResult.aiPostStatus
+
+        if (finalOut.isBlank()) {
+            inputHelper.setComposingText(ic, "")
+            archiveEmptyFilteredResult()
+            return
+        }
 
         inputHelper.setComposingText(ic, finalOut)
         inputHelper.finishComposingText(ic)
@@ -143,11 +159,7 @@ internal class DictationUseCase(
         val finalToCommit = com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, text)
 
         if (finalToCommit.isBlank()) {
-            transitionToIdle(true)
-            uiListenerProvider()?.onStatusMessage(
-                context.getString(R.string.asr_error_empty_result)
-            )
-            uiListenerProvider()?.onVibrate()
+            archiveEmptyFilteredResult()
             return
         }
 
@@ -209,6 +221,19 @@ internal class DictationUseCase(
         transitionToState(KeyboardState.Processing)
         scheduleProcessingTimeout(null)
         transitionToIdleWithTiming(usedBackupResult)
+    }
+
+    private fun archiveEmptyFilteredResult() {
+        asrManager.archiveQueuedHistoryFailure(
+            status = AsrHistoryStore.AsrHistoryStatus.FAILED,
+            failStage = AsrHistoryStore.AsrHistoryFailStage.RECOGNITION,
+            failReasonCode = AsrFailReasonCodes.EMPTY_RESULT
+        )
+        transitionToIdle(true)
+        uiListenerProvider()?.onStatusMessage(
+            context.getString(R.string.asr_error_empty_result)
+        )
+        uiListenerProvider()?.onVibrate()
     }
 
     private fun notifyInputSolidifiedIfReady(committedText: String) {

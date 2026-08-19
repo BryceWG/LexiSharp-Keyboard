@@ -6,9 +6,11 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.BackupAwareAsrEngine
+import com.brycewg.asrkb.asr.AsrFailReasonCodes
 import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.VadAutoStopGuard
+import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import kotlinx.coroutines.CoroutineScope
@@ -80,7 +82,15 @@ class KeyboardActionHandler(
         backupEngineProvider = {
             asrManager.getEngine() as? BackupAwareAsrEngine
         },
-        onTimeout = { transitionToIdle() }
+        onTimeout = {
+            dropPendingFinal = true
+            asrManager.abandonPendingRecognition(
+                status = AsrHistoryStore.AsrHistoryStatus.FAILED,
+                failStage = AsrHistoryStore.AsrHistoryFailStage.RECOGNITION,
+                failReasonCode = AsrFailReasonCodes.TIMEOUT
+            )
+            transitionToIdle()
+        }
     )
 
     private val commitRecorder = AsrCommitRecorder(
@@ -1053,7 +1063,15 @@ class KeyboardActionHandler(
 
     private fun markDropPendingRecognition() {
         dropPendingFinal = true
-        asrManager.abandonPendingRecognition()
+        val failStage = when (currentState) {
+            is KeyboardState.Listening -> AsrHistoryStore.AsrHistoryFailStage.RECORDING
+            else -> AsrHistoryStore.AsrHistoryFailStage.RECOGNITION
+        }
+        asrManager.abandonPendingRecognition(
+            status = AsrHistoryStore.AsrHistoryStatus.CANCELLED,
+            failStage = failStage,
+            failReasonCode = AsrFailReasonCodes.USER_CANCEL
+        )
     }
 
     private fun transitionToIdle(keepMessage: Boolean = false) {
