@@ -442,6 +442,8 @@ internal class FloatingAsrInteractionController(
         handler.post {
             if (success) {
                 viewManager.showCompletionTick()
+            }
+            if (text.isNotBlank() || success) {
                 try {
                     val audioMs = asrSessionManager.popLastAudioMsForStats()
                     val historyRecordId = asrSessionManager.popLastHistoryRecordId()
@@ -530,7 +532,8 @@ internal class FloatingAsrInteractionController(
                 } catch (t: Throwable) {
                     Log.e(tag, "Failed to record usage stats (floating)", t)
                 }
-
+            }
+            if (success) {
                 schedulePostCommitPartialHide()
             }
         }

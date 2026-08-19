@@ -47,7 +47,8 @@ fun filterHistoryRecords(
     records: List<AsrHistoryStore.AsrHistoryRecord>,
     query: String,
     filterState: HistoryFilterState,
-    now: Long = System.currentTimeMillis()
+    now: Long = System.currentTimeMillis(),
+    failDisplayText: (AsrHistoryStore.AsrHistoryRecord) -> String = { "" }
 ): List<AsrHistoryStore.AsrHistoryRecord> {
     val trimmedQuery = query.trim()
     val startOfToday = startOfToday(now)
@@ -60,7 +61,8 @@ fun filterHistoryRecords(
         val okSource = filterState.sources.isEmpty() || record.source in filterState.sources
         val okText = trimmedQuery.isEmpty() ||
             record.text.contains(trimmedQuery, ignoreCase = true) ||
-            record.rawText?.contains(trimmedQuery, ignoreCase = true) == true
+            record.rawText?.contains(trimmedQuery, ignoreCase = true) == true ||
+            failDisplayText(record).contains(trimmedQuery, ignoreCase = true)
         val okTime = when (filterState.timeFilter) {
             TimeFilter.ALL -> true
             TimeFilter.WITHIN_2H -> record.timestamp >= now - twoHoursMs

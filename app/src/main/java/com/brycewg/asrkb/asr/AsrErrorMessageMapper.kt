@@ -9,10 +9,25 @@ internal object AsrErrorMessageMapper {
         if (raw.isEmpty()) return null
         if (raw == context.getString(R.string.error_audio_empty_skipped)) return raw
 
+        return when (classify(context, raw)) {
+            AsrFailReasonCodes.EMPTY_RESULT -> context.getString(R.string.asr_error_empty_result)
+            AsrFailReasonCodes.AUTH_INVALID -> context.getString(R.string.asr_error_auth_invalid)
+            AsrFailReasonCodes.AUTH_FORBIDDEN -> context.getString(R.string.asr_error_auth_forbidden)
+            AsrFailReasonCodes.MIC_PERMISSION -> context.getString(R.string.asr_error_mic_permission_denied)
+            AsrFailReasonCodes.MIC_IN_USE -> context.getString(R.string.asr_error_mic_in_use)
+            AsrFailReasonCodes.NETWORK_HANDSHAKE -> context.getString(R.string.asr_error_network_handshake)
+            AsrFailReasonCodes.NETWORK -> context.getString(R.string.asr_error_network_unavailable)
+            AsrFailReasonCodes.TIMEOUT -> context.getString(R.string.error_asr_timeout)
+            else -> null
+        }
+    }
+
+    fun classify(context: Context, raw: String): String {
+        if (raw.isEmpty()) return AsrFailReasonCodes.UNKNOWN
         val lower = raw.lowercase(Locale.ROOT)
 
         if (isEmptyResult(context, raw) || isEmptyAudio(context, raw)) {
-            return context.getString(R.string.asr_error_empty_result)
+            return AsrFailReasonCodes.EMPTY_RESULT
         }
 
         // Realtime / streaming：音频太短导致提交失败
@@ -20,23 +35,22 @@ internal object AsrErrorMessageMapper {
             lower.contains("expected at least 100ms") ||
             (lower.contains("commit") && lower.contains("input audio buffer") && lower.contains("too small"))
         ) {
-            return context.getString(R.string.asr_error_empty_result)
+            return AsrFailReasonCodes.EMPTY_RESULT
         }
 
         // HTTP 状态码
         val httpCode = Regex("HTTP\\s+(\\d{3})").find(raw)?.groupValues?.getOrNull(1)?.toIntOrNull()
         when (httpCode) {
-            401 -> return context.getString(R.string.asr_error_auth_invalid)
-            403 -> return context.getString(R.string.asr_error_auth_forbidden)
-            429 -> return context.getString(R.string.asr_error_auth_invalid)
+            401, 429 -> return AsrFailReasonCodes.AUTH_INVALID
+            403 -> return AsrFailReasonCodes.AUTH_FORBIDDEN
         }
 
         // WebSocket code
         val code = Regex("(?:ASR\\s*Error|status|code)\\s*(\\d{3})")
             .find(raw)?.groupValues?.getOrNull(1)?.toIntOrNull()
         when (code) {
-            401 -> return context.getString(R.string.asr_error_auth_invalid)
-            403 -> return context.getString(R.string.asr_error_auth_forbidden)
+            401 -> return AsrFailReasonCodes.AUTH_INVALID
+            403 -> return AsrFailReasonCodes.AUTH_FORBIDDEN
         }
 
         // 录音权限
@@ -46,7 +60,7 @@ internal object AsrErrorMessageMapper {
             "record audio permission"
         )
         if (containsAny(lower, permHints)) {
-            return context.getString(R.string.asr_error_mic_permission_denied)
+            return AsrFailReasonCodes.MIC_PERMISSION
         }
 
         // 麦克风被占用
@@ -58,7 +72,7 @@ internal object AsrErrorMessageMapper {
             "device busy"
         )
         if (containsAny(lower, micBusyHints)) {
-            return context.getString(R.string.asr_error_mic_in_use)
+            return AsrFailReasonCodes.MIC_IN_USE
         }
 
         // SSL/TLS 握手失败
@@ -67,10 +81,20 @@ internal object AsrErrorMessageMapper {
             lower.contains("trust anchor") ||
             lower.contains("certificate")
         ) {
-            return context.getString(R.string.asr_error_network_handshake)
+            return AsrFailReasonCodes.NETWORK_HANDSHAKE
         }
 
-        // 网络不可用
+        // 识别超时（须在网络兜底之前，避免英文 timed out 被当成 NETWORK）
+        val timeoutHints = listOf(
+            context.getString(R.string.error_asr_timeout),
+            "recognition timed out",
+            "asr timeout"
+        )
+        if (containsAny(lower, timeoutHints)) {
+            return AsrFailReasonCodes.TIMEOUT
+        }
+
+        // 网络不可用（含连接/读超时）
         if (lower.contains("unable to resolve host") ||
             lower.contains("no address associated") ||
             lower.contains("failed to connect") ||
@@ -80,10 +104,10 @@ internal object AsrErrorMessageMapper {
             lower.contains("timeout") ||
             lower.contains("timed out")
         ) {
-            return context.getString(R.string.asr_error_network_unavailable)
+            return AsrFailReasonCodes.NETWORK
         }
 
-        return null
+        return AsrFailReasonCodes.UNKNOWN
     }
 
     fun isEmptyResult(context: Context, raw: String): Boolean {

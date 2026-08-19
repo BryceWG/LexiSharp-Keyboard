@@ -14,7 +14,8 @@ import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
-import com.brycewg.asrkb.store.AsrHistoryAudioStore
+import com.brycewg.asrkb.store.AsrHistoryFailureRecorder
+import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import java.util.concurrent.atomic.AtomicLong
@@ -133,6 +134,7 @@ class AsrSessionManager(
     private var historyAudioCapture: AsrHistoryAudioCapture? = null
     private var activeHistoryRecordId: String? = null
     private val completedHistoryRecordIds = java.util.ArrayDeque<String>()
+    private var lastPartialText: String? = null
 
     // 统计/历史：端到端耗时起点（从开始录音到最终提交完成）
     private var sessionStartTotalUptimeMs: Long = 0L
@@ -437,6 +439,7 @@ class AsrSessionManager(
         // 端到端耗时使用独立的起点，避免在 onStopped/onFinal 中被清零影响后续统计
         sessionStartTotalUptimeMs = sessionStartUptimeMs
         lastAudioMsForStats = 0L
+        lastPartialText = null
         // 新会话开始时重置上次请求耗时，避免串台（流式模式不会更新此值）
         lastRequestDurationMs = null
         discardInFlightHistoryCapture()
@@ -554,44 +557,130 @@ class AsrSessionManager(
     /**
      * 丢弃尚未写入历史的录音绑定，并让本会话后续 onFinal 失效。
      * 处理中取消时必须调用，否则迟到的 onFinal 会把音频 ID 留给下一次提交。
+     * 若已采到可用音频，则归档为失败/取消记录而不是直接删除。
      */
-    fun abandonPendingRecognition() {
-        discardUncommittedHistoryRecords()
+    fun abandonPendingRecognition(
+        status: AsrHistoryStore.AsrHistoryStatus = AsrHistoryStore.AsrHistoryStatus.CANCELLED,
+        failStage: AsrHistoryStore.AsrHistoryFailStage = currentHistoryFailStage(),
+        failReasonCode: String = AsrFailReasonCodes.USER_CANCEL
+    ) {
+        archiveUncommittedHistoryRecords(status, failStage, failReasonCode)
         (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         clearActiveSession()
     }
 
-    private fun discardInFlightHistoryCapture() {
-        val leftoverId = activeHistoryRecordId
-        historyAudioCapture?.discard()
-        historyAudioCapture = null
-        activeHistoryRecordId = null
-        if (leftoverId.isNullOrEmpty()) return
-        AsrHistoryAudioStore(context).delete(leftoverId)
+    fun archiveQueuedHistoryFailure(
+        status: AsrHistoryStore.AsrHistoryStatus,
+        failStage: AsrHistoryStore.AsrHistoryFailStage,
+        failReasonCode: String
+    ): Boolean {
+        val queuedId = completedHistoryRecordIds.pollFirst() ?: return false
+        return archiveHistoryFailure(
+            status = status,
+            failStage = failStage,
+            failReasonCode = failReasonCode,
+            capture = null,
+            recordId = queuedId,
+            audioAlreadySaved = true
+        )
     }
 
-    private fun discardUncommittedHistoryRecords() {
-        val leftoverIds = ArrayList<String>(completedHistoryRecordIds.size + 1)
+    private fun discardInFlightHistoryCapture() {
+        val leftoverId = activeHistoryRecordId
+        val capture = historyAudioCapture
+        historyAudioCapture = null
+        activeHistoryRecordId = null
+        if (leftoverId.isNullOrEmpty() && capture == null) return
+        archiveHistoryFailure(
+            status = AsrHistoryStore.AsrHistoryStatus.CANCELLED,
+            failStage = AsrHistoryStore.AsrHistoryFailStage.RECORDING,
+            failReasonCode = AsrFailReasonCodes.USER_CANCEL,
+            capture = capture,
+            recordId = leftoverId
+        )
+    }
+
+    private fun archiveUncommittedHistoryRecords(
+        status: AsrHistoryStore.AsrHistoryStatus,
+        failStage: AsrHistoryStore.AsrHistoryFailStage,
+        failReasonCode: String
+    ) {
+        snapshotAudioDurationIfPossible()
+        val leftoverIds = ArrayList<String>(completedHistoryRecordIds.size)
         while (completedHistoryRecordIds.isNotEmpty()) {
             leftoverIds.add(completedHistoryRecordIds.removeFirst())
         }
-        activeHistoryRecordId?.let { leftoverIds.add(it) }
-        historyAudioCapture?.discard()
+        val activeId = activeHistoryRecordId
+        val capture = historyAudioCapture
         historyAudioCapture = null
         activeHistoryRecordId = null
-        if (leftoverIds.isEmpty()) return
-        val store = AsrHistoryAudioStore(context)
-        leftoverIds.forEach { id -> store.delete(id) }
-        try {
-            DebugLogManager.logBase(
-                category = "asr",
-                event = "history_abandon",
-                data = mapOf(
-                    "source" to "ime",
-                    "leftoverCount" to leftoverIds.size
-                )
+        leftoverIds.forEach { id ->
+            archiveHistoryFailure(
+                status = status,
+                failStage = failStage,
+                failReasonCode = failReasonCode,
+                capture = null,
+                recordId = id,
+                audioAlreadySaved = true
             )
-        } catch (_: Throwable) { }
+        }
+        if (!activeId.isNullOrEmpty() || capture != null) {
+            archiveHistoryFailure(
+                status = status,
+                failStage = failStage,
+                failReasonCode = failReasonCode,
+                capture = capture,
+                recordId = activeId
+            )
+        }
+    }
+
+    private fun archiveHistoryFailure(
+        status: AsrHistoryStore.AsrHistoryStatus,
+        failStage: AsrHistoryStore.AsrHistoryFailStage,
+        failReasonCode: String,
+        capture: AsrHistoryAudioCapture? = historyAudioCapture,
+        recordId: String? = activeHistoryRecordId,
+        audioAlreadySaved: Boolean = false,
+        rawText: String? = lastPartialText
+    ): Boolean {
+        snapshotAudioDurationIfPossible()
+        return AsrHistoryFailureRecorder.archive(
+            context = context,
+            prefs = prefs,
+            capture = capture,
+            recordId = recordId,
+            source = "ime",
+            vendorId = peekLastFinalVendorForStats().id,
+            audioMs = lastAudioMsForStats,
+            totalElapsedMs = peekTotalElapsedMsForStats(),
+            procMs = lastRequestDurationMs ?: 0L,
+            rawText = rawText,
+            status = status,
+            failStage = failStage,
+            failReasonCode = failReasonCode,
+            audioAlreadySaved = audioAlreadySaved
+        )
+    }
+
+    private fun currentHistoryFailStage(): AsrHistoryStore.AsrHistoryFailStage {
+        return if (isRunning()) {
+            AsrHistoryStore.AsrHistoryFailStage.RECORDING
+        } else {
+            AsrHistoryStore.AsrHistoryFailStage.RECOGNITION
+        }
+    }
+
+    private fun peekTotalElapsedMsForStats(): Long {
+        val start = sessionStartTotalUptimeMs
+        if (start <= 0L) return 0L
+        val now = try {
+            SystemClock.uptimeMillis()
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to peek total elapsed ms", t)
+            return 0L
+        }
+        return if (now >= start) (now - start).coerceAtLeast(0L) else 0L
     }
 
     /**
@@ -658,7 +747,11 @@ class AsrSessionManager(
         engineListenerBridge = null
         directEngineIdentity = null
         sessionStartTotalUptimeMs = 0L
-        discardUncommittedHistoryRecords()
+        archiveUncommittedHistoryRecords(
+            status = AsrHistoryStore.AsrHistoryStatus.CANCELLED,
+            failStage = currentHistoryFailStage(),
+            failReasonCode = AsrFailReasonCodes.USER_CANCEL
+        )
         (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         listener = null
     }
@@ -734,7 +827,12 @@ class AsrSessionManager(
             activeHistoryRecordId?.let { completedHistoryRecordIds.addLast(it) }
             historyAudioCapture?.complete()
         } else {
-            historyAudioCapture?.discard()
+            archiveHistoryFailure(
+                status = AsrHistoryStore.AsrHistoryStatus.FAILED,
+                failStage = AsrHistoryStore.AsrHistoryFailStage.RECOGNITION,
+                failReasonCode = AsrFailReasonCodes.EMPTY_RESULT,
+                rawText = lastPartialText
+            )
         }
         historyAudioCapture = null
         activeHistoryRecordId = null
@@ -774,6 +872,9 @@ class AsrSessionManager(
             return
         }
         Log.d(TAG, "onPartial: text='$text'")
+        if (text.isNotBlank()) {
+            lastPartialText = text
+        }
         listener?.onAsrPartial(text)
     }
 
@@ -802,7 +903,12 @@ class AsrSessionManager(
             )
         } catch (_: Throwable) { }
         recordingAudioFocusController.release()
-        historyAudioCapture?.discard()
+        archiveHistoryFailure(
+            status = AsrHistoryStore.AsrHistoryStatus.FAILED,
+            failStage = currentHistoryFailStage(),
+            failReasonCode = AsrErrorMessageMapper.classify(context, message),
+            rawText = lastPartialText
+        )
         historyAudioCapture = null
         activeHistoryRecordId = null
         (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null

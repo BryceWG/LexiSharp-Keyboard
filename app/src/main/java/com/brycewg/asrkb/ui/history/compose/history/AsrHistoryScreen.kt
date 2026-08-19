@@ -67,11 +67,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.AsrFailReasonCodes
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteDecision
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteKind
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteResolver
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.history.AsrHistoryFailDisplay
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsAlertDialog
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogButtonRow
@@ -131,8 +133,14 @@ fun AsrHistoryScreen(
     hasRecentApiErrors: Boolean,
     onHapticTap: () -> Unit
 ) {
-    val filteredRecords = remember(records, query, filterState) {
-        filterHistoryRecords(records, query, filterState)
+    val context = LocalContext.current
+    val filteredRecords = remember(records, query, filterState, context) {
+        filterHistoryRecords(
+            records,
+            query,
+            filterState,
+            failDisplayText = { AsrHistoryFailDisplay.format(context, it) }
+        )
     }
     val filteredIds = remember(filteredRecords) { filteredRecords.map { it.id }.toSet() }
     val selectedVisibleIds = remember(selectedIds, filteredIds) { selectedIds.intersect(filteredIds) }
@@ -595,6 +603,8 @@ private fun HistoryItemContent(
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", LocaleHelper.locale(context))
     }
     val timestamp = remember(record.timestamp) { formatter.format(Date(record.timestamp)) }
+    val bodyText = AsrHistoryFailDisplay.cardText(context, record)
+    val copyText = AsrHistoryFailDisplay.copyText(record)
     // 卡片内边距由内容区统一承担；MiuixCard 默认 insideMargin 会与这里叠加，造成顶部空洞。
     val contentPadding = PaddingValues(start = 14.dp, top = 12.dp, end = 14.dp, bottom = 14.dp)
     Column(
@@ -617,11 +627,11 @@ private fun HistoryItemContent(
                 uiMode = uiMode,
                 label = stringResource(R.string.btn_copy),
                 icon = Icons.Rounded.ContentCopy,
-                onClick = { onCopy(record.text) }
+                onClick = copyText?.let { text -> { onCopy(text) } }
             )
         }
         HistoryText(
-            text = record.text,
+            text = bodyText,
             uiMode = uiMode,
             emphasized = true,
             maxLines = 4
@@ -707,6 +717,13 @@ private fun HistoryDetailsDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                if (record.isUnsuccessful) {
+                    HistoryText(
+                        text = AsrHistoryFailDisplay.format(LocalContext.current, record),
+                        uiMode = uiMode,
+                        emphasized = true
+                    )
+                }
                 HistoryResultSection(
                     title = stringResource(R.string.history_raw_text),
                     value = record.rawText ?: stringResource(R.string.history_raw_unavailable),
@@ -716,7 +733,13 @@ private fun HistoryDetailsDialog(
                 )
                 HistoryResultSection(
                     title = stringResource(R.string.history_final_text),
-                    value = record.text,
+                    value = record.text.ifBlank {
+                        if (record.isUnsuccessful) {
+                            stringResource(R.string.history_final_unavailable)
+                        } else {
+                            record.text
+                        }
+                    },
                     canCopy = record.text.isNotBlank(),
                     uiMode = uiMode,
                     onCopy = { onCopy(record.text) }
@@ -751,6 +774,8 @@ private fun HistoryDetailsDialog(
                         "engine_unavailable", "engine_pcm_unsupported", "engine_not_ready" ->
                             stringResource(R.string.history_rerun_engine_unavailable)
                         "record_missing" -> stringResource(R.string.history_record_missing)
+                        AsrFailReasonCodes.EMPTY_RESULT ->
+                            stringResource(R.string.history_fail_reason_empty_result)
                         AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_OPENAI_STREAMING ->
                             stringResource(R.string.history_rerecognition_error_openai_streaming)
                         AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_XASR ->

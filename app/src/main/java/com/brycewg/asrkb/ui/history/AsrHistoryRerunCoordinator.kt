@@ -142,7 +142,10 @@ internal class AsrHistoryRerunCoordinator(
                 aiProcessed = processed.aiUsed,
                 aiPostMs = processed.aiMs,
                 aiPostStatus = processed.status,
-                charCount = TextSanitizer.countEffectiveChars(processed.text)
+                charCount = TextSanitizer.countEffectiveChars(processed.text),
+                status = AsrHistoryStore.AsrHistoryStatus.SUCCESS,
+                failStage = AsrHistoryStore.AsrHistoryFailStage.NONE,
+                failReasonCode = null
             )
             val saved = withContext(Dispatchers.IO) {
                 store.updateById(record.id) { updated } ?: error("record_missing")

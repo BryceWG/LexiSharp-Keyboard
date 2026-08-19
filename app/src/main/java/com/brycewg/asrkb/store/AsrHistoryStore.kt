@@ -44,6 +44,20 @@ class AsrHistoryStore(context: Context) {
     }
 
     @Serializable
+    enum class AsrHistoryStatus {
+        SUCCESS,
+        FAILED,
+        CANCELLED
+    }
+
+    @Serializable
+    enum class AsrHistoryFailStage {
+        NONE,
+        RECORDING,
+        RECOGNITION
+    }
+
+    @Serializable
     data class AsrHistoryRecord(
         val id: String = UUID.randomUUID().toString(),
         val timestamp: Long,
@@ -63,8 +77,17 @@ class AsrHistoryStore(context: Context) {
         val aiPostMs: Long = 0,
         // AI 后处理状态。旧记录无该字段时视为 NONE。
         val aiPostStatus: AiPostStatus = AiPostStatus.NONE,
-        val charCount: Int
-    )
+        val charCount: Int,
+        // 会话结果。旧记录无该字段时视为 SUCCESS。
+        val status: AsrHistoryStatus = AsrHistoryStatus.SUCCESS,
+        // 失败/取消发生的阶段。旧记录无该字段时视为 NONE。
+        val failStage: AsrHistoryFailStage = AsrHistoryFailStage.NONE,
+        // 稳定失败原因码，不存本地化文案。成功记录为 null。
+        val failReasonCode: String? = null
+    ) {
+        val isUnsuccessful: Boolean
+            get() = status != AsrHistoryStatus.SUCCESS
+    }
 
     private fun readAllInternal(): MutableList<AsrHistoryRecord> {
         val raw = sp.getString(KEY_ASR_HISTORY_JSON, "").orEmpty()
