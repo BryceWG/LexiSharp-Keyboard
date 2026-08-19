@@ -14,6 +14,7 @@ import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
 import com.brycewg.asrkb.clipboard.DownloadStatus
 import com.brycewg.asrkb.clipboard.EntryType
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.BibiViewThemes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -138,9 +139,35 @@ internal class ClipboardPanelController(
         views.clipList?.adapter = adapter
         views.clipList?.addItemDecoration(ClipboardItemSpacingDecoration(context))
 
-        val callback = ClipboardSwipeActionCallback(
+        val theme = BibiViewThemes.resolve(context, prefs)
+        val callback = ImePanelSwipeActionCallback(
             context = context,
-            entryAt = { pos -> adapter?.currentList?.getOrNull(pos) },
+            swipeDirsAt = { pos ->
+                val item = adapter?.currentList?.getOrNull(pos)
+                if (item != null && item.pinned) {
+                    ItemTouchHelper.RIGHT
+                } else {
+                    ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+                }
+            },
+            revealAt = { pos, dX ->
+                val entry = adapter?.currentList?.getOrNull(pos)
+                when {
+                    dX > 0f -> ImePanelSwipeReveal(
+                        backgroundColor = theme.primary,
+                        label = if (entry?.pinned == true) {
+                            context.getString(R.string.clip_swipe_unpin)
+                        } else {
+                            context.getString(R.string.clip_swipe_pin)
+                        }
+                    )
+                    dX < 0f -> ImePanelSwipeReveal(
+                        backgroundColor = theme.error,
+                        label = context.getString(R.string.clip_swipe_delete)
+                    )
+                    else -> null
+                }
+            },
             onThresholdReached = { v -> performKeyHaptic(v) },
             onSwiped = { pos, direction -> handleSwipeAction(pos, direction) }
         )

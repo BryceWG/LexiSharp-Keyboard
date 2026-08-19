@@ -19,6 +19,7 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.BibiViewThemes
+import com.brycewg.asrkb.ui.history.AsrHistoryFailDisplay
 
 internal class AsrHistoryPanelAdapter(
     private val onItemClick: (AsrHistoryStore.AsrHistoryRecord) -> Unit
@@ -34,14 +35,41 @@ internal class AsrHistoryPanelAdapter(
             override fun areContentsTheSame(
                 oldItem: AsrHistoryStore.AsrHistoryRecord,
                 newItem: AsrHistoryStore.AsrHistoryRecord
-            ): Boolean = oldItem.text == newItem.text && oldItem.timestamp == newItem.timestamp
+            ): Boolean = oldItem.text == newItem.text &&
+                oldItem.rawText == newItem.rawText &&
+                oldItem.timestamp == newItem.timestamp &&
+                oldItem.status == newItem.status &&
+                oldItem.failStage == newItem.failStage &&
+                oldItem.failReasonCode == newItem.failReasonCode
         }
+    }
+
+    private var overlay: ItemOverlay? = null
+
+    fun setOverlay(id: String, text: String, error: Boolean) {
+        val previousId = overlay?.id
+        overlay = ItemOverlay(id = id, text = text, error = error)
+        if (previousId != null && previousId != id) notifyById(previousId)
+        notifyById(id)
+    }
+
+    fun clearOverlay() {
+        val previousId = overlay?.id ?: return
+        overlay = null
+        notifyById(previousId)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH = VH(createItemView(parent))
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.bind(getItem(position), onItemClick)
+        val record = getItem(position)
+        val itemOverlay = overlay.takeIf { it?.id == record.id }
+        holder.bind(
+            record = record,
+            overlayText = itemOverlay?.text,
+            overlayError = itemOverlay?.error == true,
+            onClick = onItemClick
+        )
     }
 
     class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -49,12 +77,43 @@ internal class AsrHistoryPanelAdapter(
 
         fun bind(
             record: AsrHistoryStore.AsrHistoryRecord,
+            overlayText: String?,
+            overlayError: Boolean,
             onClick: (AsrHistoryStore.AsrHistoryRecord) -> Unit
         ) {
-            tv.text = clipboardTextPreview(record.text)
-            itemView.setOnClickListener { onClick(record) }
+            val context = itemView.context
+            val theme = BibiViewThemes.resolve(context, Prefs(context))
+            val working = overlayText != null && !overlayError
+            tv.text = clipboardTextPreview(
+                overlayText ?: AsrHistoryFailDisplay.cardText(context, record)
+            )
+            tv.setTextColor(
+                when {
+                    overlayError || (overlayText == null && record.isUnsuccessful) -> theme.error
+                    working -> theme.panelSummary
+                    else -> theme.keyContent
+                }
+            )
+            if (working) {
+                itemView.isClickable = false
+                itemView.setOnClickListener(null)
+            } else {
+                itemView.isClickable = true
+                itemView.setOnClickListener { onClick(record) }
+            }
         }
     }
+
+    private fun notifyById(id: String) {
+        val index = currentList.indexOfFirst { it.id == id }
+        if (index >= 0) notifyItemChanged(index)
+    }
+
+    private data class ItemOverlay(
+        val id: String,
+        val text: String,
+        val error: Boolean
+    )
 
     private fun createItemView(parent: ViewGroup): View {
         val context = parent.context

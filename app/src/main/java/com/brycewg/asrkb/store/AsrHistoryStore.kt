@@ -144,7 +144,7 @@ class AsrHistoryStore(context: Context) {
     }
 
     /**
-     * 按写入顺序流式取出最近 [limit] 条非空记录。
+     * 按写入顺序流式取出最近 [limit] 条记录（含失败/取消；跳过空白成功记录）。
      * 磁盘 JSON 由 [writeAllInternal] 按 timestamp 降序保存，因此不必先反序列化整表。
      */
     fun listRecent(limit: Int): List<AsrHistoryRecord> {
@@ -160,7 +160,7 @@ class AsrHistoryStore(context: Context) {
                 Log.e(TAG, "Failed to stream recent history, falling back to full parse", e)
                 readAllInternal()
                     .asSequence()
-                    .filter { it.text.isNotBlank() }
+                    .filter { it.shouldIncludeInRecent() }
                     .take(limit)
                     .toList()
             }
@@ -175,7 +175,7 @@ class AsrHistoryStore(context: Context) {
         val seenIds = HashSet<String>(limit)
         val out = ArrayList<AsrHistoryRecord>(limit)
         for (record in json.decodeToSequence<AsrHistoryRecord>(input, DecodeSequenceMode.ARRAY_WRAPPED)) {
-            if (record.text.isBlank()) continue
+            if (!record.shouldIncludeInRecent()) continue
             if (!seenIds.add(record.id)) continue
             out.add(record)
             if (out.size >= limit) break
@@ -196,5 +196,9 @@ class AsrHistoryStore(context: Context) {
 
     fun clearAll() {
         synchronized(HISTORY_LOCK) { writeAllInternal(emptyList()) }
+    }
+
+    private fun AsrHistoryRecord.shouldIncludeInRecent(): Boolean {
+        return text.isNotBlank() || isUnsuccessful
     }
 }

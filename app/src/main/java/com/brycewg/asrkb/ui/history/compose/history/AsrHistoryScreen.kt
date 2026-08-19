@@ -67,13 +67,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.asr.AsrFailReasonCodes
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteDecision
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteKind
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteResolver
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.history.AsrHistoryFailDisplay
+import com.brycewg.asrkb.ui.history.AsrHistoryRerunErrorMessages
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsAlertDialog
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogButtonRow
@@ -163,7 +163,6 @@ fun AsrHistoryScreen(
     var rerunJob by remember { mutableStateOf<Job?>(null) }
     var rerunError by remember { mutableStateOf<String?>(null) }
     var rerecognitionNotice by remember { mutableStateOf<SettingsNoticeDialogState?>(null) }
-    val context = LocalContext.current
     val prefs = remember(context.applicationContext) { Prefs(context.applicationContext) }
     val scope = rememberCoroutineScope()
 
@@ -634,6 +633,7 @@ private fun HistoryItemContent(
             text = bodyText,
             uiMode = uiMode,
             emphasized = true,
+            error = record.isUnsuccessful,
             maxLines = 4
         )
         HistoryText(
@@ -721,7 +721,8 @@ private fun HistoryDetailsDialog(
                     HistoryText(
                         text = AsrHistoryFailDisplay.format(LocalContext.current, record),
                         uiMode = uiMode,
-                        emphasized = true
+                        emphasized = true,
+                        error = true
                     )
                 }
                 HistoryResultSection(
@@ -768,32 +769,11 @@ private fun HistoryDetailsDialog(
                     )
                 }
                 error?.let {
-                    val errorMessage = when (it) {
-                        "audio_unavailable" -> stringResource(R.string.history_audio_unavailable)
-                        "llm_unavailable" -> stringResource(R.string.history_llm_unavailable)
-                        "engine_unavailable", "engine_pcm_unsupported", "engine_not_ready" ->
-                            stringResource(R.string.history_rerun_engine_unavailable)
-                        "record_missing" -> stringResource(R.string.history_record_missing)
-                        AsrFailReasonCodes.EMPTY_RESULT ->
-                            stringResource(R.string.history_fail_reason_empty_result)
-                        AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_OPENAI_STREAMING ->
-                            stringResource(R.string.history_rerecognition_error_openai_streaming)
-                        AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_XASR ->
-                            stringResource(R.string.history_rerecognition_error_xasr)
-                        AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_UNKNOWN_MODEL ->
-                            stringResource(R.string.history_rerecognition_error_unknown_model)
-                        AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_NO_FILE_FALLBACK ->
-                            stringResource(R.string.history_rerecognition_error_no_file_fallback)
-                        AsrRecordedAudioRouteResolver.REASON_UNAVAILABLE_CREDENTIALS ->
-                            stringResource(R.string.history_rerecognition_error_unavailable_credentials)
-                        else -> if (it.startsWith("unsupported_") || it.startsWith("unavailable_")) {
-                            stringResource(R.string.history_rerun_engine_unavailable)
-                        } else {
-                            it
-                        }
-                    }
                     HistoryText(
-                        text = stringResource(R.string.history_rerun_error, errorMessage),
+                        text = AsrHistoryRerunErrorMessages.format(
+                            LocalContext.current,
+                            it
+                        ),
                         uiMode = uiMode,
                         secondary = true
                     )
@@ -920,6 +900,7 @@ private fun HistoryText(
     compact: Boolean = false,
     secondary: Boolean = false,
     emphasized: Boolean = false,
+    error: Boolean = false,
     maxLines: Int = 2,
     overflow: TextOverflow = TextOverflow.Ellipsis
 ) {
@@ -939,10 +920,10 @@ private fun HistoryText(
                 else -> MaterialTheme.typography.bodyLarge
             },
             fontWeight = fontWeight,
-            color = if (secondary) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.onSurface
+            color = when {
+                error -> MaterialTheme.colorScheme.error
+                secondary -> MaterialTheme.colorScheme.onSurfaceVariant
+                else -> MaterialTheme.colorScheme.onSurface
             },
             maxLines = maxLines,
             overflow = overflow
@@ -958,10 +939,10 @@ private fun HistoryText(
                 else -> MiuixTheme.textStyles.body1
             },
             fontWeight = fontWeight,
-            color = if (secondary) {
-                MiuixTheme.colorScheme.onSurfaceVariantSummary
-            } else {
-                MiuixTheme.colorScheme.onSurface
+            color = when {
+                error -> MiuixTheme.colorScheme.error
+                secondary -> MiuixTheme.colorScheme.onSurfaceVariantSummary
+                else -> MiuixTheme.colorScheme.onSurface
             },
             maxLines = maxLines,
             overflow = overflow

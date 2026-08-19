@@ -1,5 +1,5 @@
 /**
- * 剪贴板列表左滑删除 / 右滑固定时的背景与文案提示。
+ * IME 列表面板滑动露出层：阈值、触感与圆角背景文案。
  *
  * 归属模块：ime
  */
@@ -14,15 +14,19 @@ import android.graphics.Typeface
 import android.view.View
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.brycewg.asrkb.R
-import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.BibiViewThemes
 import kotlin.math.abs
 
-internal class ClipboardSwipeActionCallback(
+internal data class ImePanelSwipeReveal(
+    val backgroundColor: Int,
+    val label: String
+)
+
+internal class ImePanelSwipeActionCallback(
     context: Context,
-    private val entryAt: (Int) -> ClipboardHistoryStore.Entry?,
+    private val swipeDirsAt: (Int) -> Int,
+    private val revealAt: (position: Int, dX: Float) -> ImePanelSwipeReveal?,
     private val onThresholdReached: (View) -> Unit,
     private val onSwiped: (position: Int, direction: Int) -> Unit
 ) : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
@@ -53,12 +57,9 @@ internal class ClipboardSwipeActionCallback(
         recyclerView: RecyclerView,
         viewHolder: RecyclerView.ViewHolder
     ): Int {
-        val item = entryAt(viewHolder.bindingAdapterPosition)
-        return if (item != null && item.pinned) {
-            ItemTouchHelper.RIGHT
-        } else {
-            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
-        }
+        val pos = viewHolder.bindingAdapterPosition
+        if (pos == RecyclerView.NO_POSITION) return 0
+        return swipeDirsAt(pos)
     }
 
     override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float = SWIPE_THRESHOLD
@@ -85,28 +86,19 @@ internal class ClipboardSwipeActionCallback(
         if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
             val itemView = viewHolder.itemView
             updateThresholdHaptic(itemView, dX, isCurrentlyActive)
-            val entry = entryAt(viewHolder.bindingAdapterPosition)
-            when {
-                dX > 0f -> drawReveal(
-                    canvas = c,
-                    itemView = itemView,
-                    revealWidth = dX,
-                    fromStart = true,
-                    backgroundColor = theme.primary,
-                    label = if (entry?.pinned == true) {
-                        recyclerView.context.getString(R.string.clip_swipe_unpin)
-                    } else {
-                        recyclerView.context.getString(R.string.clip_swipe_pin)
-                    }
-                )
-                dX < 0f -> drawReveal(
-                    canvas = c,
-                    itemView = itemView,
-                    revealWidth = dX,
-                    fromStart = false,
-                    backgroundColor = theme.error,
-                    label = recyclerView.context.getString(R.string.clip_swipe_delete)
-                )
+            val pos = viewHolder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) {
+                val reveal = revealAt(pos, dX)
+                if (reveal != null && dX != 0f) {
+                    drawReveal(
+                        canvas = c,
+                        itemView = itemView,
+                        revealWidth = dX,
+                        fromStart = dX > 0f,
+                        backgroundColor = reveal.backgroundColor,
+                        label = reveal.label
+                    )
+                }
             }
         }
         super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
