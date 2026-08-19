@@ -11,11 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -37,6 +33,7 @@ internal fun SfFreeLlmSection(
     sfReasoningEnabled: Boolean,
     sfReasoningOnJson: String,
     sfReasoningOffJson: String,
+    customReasoningParamsEnabled: Boolean,
     sfTemperature: Float,
     customModelInputVisible: Boolean,
     testEnabled: Boolean,
@@ -116,7 +113,9 @@ internal fun SfFreeLlmSection(
             uiMode = uiMode,
             checked = sfReasoningEnabled,
             showParams = showCustomReasoningParams,
+            customParamsEnabled = customReasoningParamsEnabled,
             onCheckedChange = actions.onReasoningChange,
+            onCustomParamsEnabledChange = actions.onCustomReasoningParamsEnabledChange,
             onJson = sfReasoningOnJson,
             offJson = sfReasoningOffJson,
             onOnJsonChange = actions.onReasoningOnJsonChange,
@@ -154,6 +153,7 @@ internal fun BuiltinLlmSection(
     onCustomModelChange: (String) -> Unit,
     onFetchModels: () -> Unit,
     onReasoningChange: (Boolean) -> Unit,
+    onCustomReasoningParamsEnabledChange: (Boolean) -> Unit,
     onReasoningOnJsonChange: (String) -> Unit,
     onReasoningOffJsonChange: (String) -> Unit,
     onTemperatureChange: (Float) -> Unit,
@@ -223,7 +223,9 @@ internal fun BuiltinLlmSection(
             uiMode = uiMode,
             checked = config.reasoningEnabled,
             showParams = showCustomReasoningParams,
+            customParamsEnabled = config.customReasoningParamsEnabled,
             onCheckedChange = onReasoningChange,
+            onCustomParamsEnabledChange = onCustomReasoningParamsEnabledChange,
             onJson = reasoningOnJson,
             offJson = reasoningOffJson,
             onOnJsonChange = onReasoningOnJsonChange,
@@ -259,6 +261,7 @@ internal fun CustomLlmSection(
     onModelChange: (String) -> Unit,
     onFetchModels: () -> Unit,
     onReasoningChange: (Boolean) -> Unit,
+    onCustomReasoningParamsEnabledChange: (Boolean) -> Unit,
     onReasoningOnJsonChange: (String) -> Unit,
     onReasoningOffJsonChange: (String) -> Unit,
     onTemperatureChange: (Float) -> Unit,
@@ -355,7 +358,9 @@ internal fun CustomLlmSection(
         uiMode = uiMode,
         checked = provider?.enableReasoning ?: false,
         showParams = true,
+        customParamsEnabled = provider?.useCustomReasoningParams ?: false,
         onCheckedChange = onReasoningChange,
+        onCustomParamsEnabledChange = onCustomReasoningParamsEnabledChange,
         onJson = provider?.reasoningParamsOnJson.orEmpty(),
         offJson = provider?.reasoningParamsOffJson.orEmpty(),
         onOnJsonChange = onReasoningOnJsonChange,
@@ -378,15 +383,14 @@ private fun ReasoningSection(
     uiMode: BibiUiMode,
     checked: Boolean,
     showParams: Boolean,
+    customParamsEnabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    onCustomParamsEnabledChange: (Boolean) -> Unit,
     onJson: String,
     offJson: String,
     onOnJsonChange: (String) -> Unit,
     onOffJsonChange: (String) -> Unit
 ) {
-    var customParamsEnabled by rememberSaveable(showParams) {
-        mutableStateOf(false)
-    }
     var itemIndex = 0
     val itemCount = 1 + (if (showParams) 1 else 0) + (if (showParams && customParamsEnabled) 2 else 0)
 
@@ -406,7 +410,7 @@ private fun ReasoningSection(
             checked = customParamsEnabled,
             index = itemIndex++,
             count = itemCount,
-            onCheckedChange = { customParamsEnabled = it }
+            onCheckedChange = onCustomParamsEnabledChange
         )
         if (customParamsEnabled) {
             AiTextField(
@@ -439,6 +443,7 @@ internal data class AiVendorActions(
     val onCustomModelChange: (String) -> Unit,
     val onFetchModels: () -> Unit,
     val onReasoningChange: (Boolean) -> Unit,
+    val onCustomReasoningParamsEnabledChange: (Boolean) -> Unit,
     val onReasoningOnJsonChange: (String) -> Unit,
     val onReasoningOffJsonChange: (String) -> Unit,
     val onTemperatureChange: (Float) -> Unit,

@@ -257,6 +257,12 @@ internal object PrefsBackup {
                 o.put("${keyPrefix}_reasoning_enabled", getLlmVendorReasoningEnabled(vendor))
             } catch (_: Throwable) {}
             try {
+                o.put(
+                    "${keyPrefix}_custom_reasoning_params",
+                    getLlmVendorCustomReasoningParamsEnabled(vendor)
+                )
+            } catch (_: Throwable) {}
+            try {
                 o.put("${keyPrefix}_reasoning_on_json", getLlmVendorReasoningParamsOnJson(vendor))
             } catch (_: Throwable) {}
             try {
@@ -599,6 +605,9 @@ internal object PrefsBackup {
                 optFloat("${keyPrefix}_temperature")?.let { setLlmVendorTemperature(vendor, it) }
                 optBool("${keyPrefix}_reasoning_enabled")?.let {
                     setLlmVendorReasoningEnabled(vendor, it)
+                }
+                optBool("${keyPrefix}_custom_reasoning_params")?.let {
+                    setLlmVendorCustomReasoningParamsEnabled(vendor, it)
                 }
                 optString("${keyPrefix}_reasoning_on_json")?.let {
                     setLlmVendorReasoningParamsOnJson(vendor, it)

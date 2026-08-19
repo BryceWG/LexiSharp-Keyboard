@@ -60,6 +60,20 @@ internal object PrefsLlmVendorStore {
         sp.edit { putBoolean(key, enabled) }
     }
 
+    fun getLlmVendorCustomReasoningParamsEnabled(sp: SharedPreferences, vendor: LlmVendor): Boolean {
+        val key = "llm_vendor_${vendor.id}_custom_reasoning_params"
+        return sp.getBoolean(key, false)
+    }
+
+    fun setLlmVendorCustomReasoningParamsEnabled(
+        sp: SharedPreferences,
+        vendor: LlmVendor,
+        enabled: Boolean
+    ) {
+        val key = "llm_vendor_${vendor.id}_custom_reasoning_params"
+        sp.edit { putBoolean(key, enabled) }
+    }
+
     fun getLlmVendorModels(
         sp: SharedPreferences,
         json: Json,
@@ -104,10 +118,14 @@ internal object PrefsLlmVendorStore {
         sp.edit { putString(key, raw.trim()) }
     }
 
-    fun getLlmVendorReasoningParamsOnJson(sp: SharedPreferences, vendor: LlmVendor): String {
+    private fun getStoredLlmVendorReasoningParamsOnJson(sp: SharedPreferences, vendor: LlmVendor): String {
         val key = "llm_vendor_${vendor.id}_reasoning_on_json"
-        val stored = sp.getString(key, "") ?: ""
-        return stored.ifBlank { defaultReasoningParamsOnJson(vendor) }
+        return sp.getString(key, "") ?: ""
+    }
+
+    fun getLlmVendorReasoningParamsOnJson(sp: SharedPreferences, vendor: LlmVendor): String {
+        return getStoredLlmVendorReasoningParamsOnJson(sp, vendor)
+            .ifBlank { defaultReasoningParamsOnJson(vendor) }
     }
 
     fun setLlmVendorReasoningParamsOnJson(sp: SharedPreferences, vendor: LlmVendor, json: String) {
@@ -115,10 +133,14 @@ internal object PrefsLlmVendorStore {
         sp.edit { putString(key, json.trim()) }
     }
 
-    fun getLlmVendorReasoningParamsOffJson(sp: SharedPreferences, vendor: LlmVendor): String {
+    private fun getStoredLlmVendorReasoningParamsOffJson(sp: SharedPreferences, vendor: LlmVendor): String {
         val key = "llm_vendor_${vendor.id}_reasoning_off_json"
-        val stored = sp.getString(key, "") ?: ""
-        return stored.ifBlank { defaultReasoningParamsOffJson(vendor) }
+        return sp.getString(key, "") ?: ""
+    }
+
+    fun getLlmVendorReasoningParamsOffJson(sp: SharedPreferences, vendor: LlmVendor): String {
+        return getStoredLlmVendorReasoningParamsOffJson(sp, vendor)
+            .ifBlank { defaultReasoningParamsOffJson(vendor) }
     }
 
     fun setLlmVendorReasoningParamsOffJson(sp: SharedPreferences, vendor: LlmVendor, json: String) {
@@ -146,7 +168,8 @@ internal object PrefsLlmVendorStore {
                         temperature = getLlmVendorTemperature(sp, LlmVendor.SF_FREE),
                         vendor = vendor,
                         enableReasoning = getLlmVendorReasoningEnabled(sp, vendor),
-                        useCustomReasoningParams = !isBuiltinLlmPresetModel(
+                        useCustomReasoningParams = resolveUseCustomReasoningParams(
+                            sp,
                             vendor,
                             model,
                             prefs.sfFreeLlmUsePaidKey
@@ -165,7 +188,8 @@ internal object PrefsLlmVendorStore {
                     temperature = Prefs.DEFAULT_LLM_TEMPERATURE,
                     vendor = vendor,
                     enableReasoning = getLlmVendorReasoningEnabled(sp, vendor),
-                    useCustomReasoningParams = !isBuiltinLlmPresetModel(
+                    useCustomReasoningParams = resolveUseCustomReasoningParams(
+                        sp,
                         vendor,
                         model,
                         prefs.sfFreeLlmUsePaidKey
@@ -186,7 +210,7 @@ internal object PrefsLlmVendorStore {
                     temperature = provider.temperature,
                     vendor = vendor,
                     enableReasoning = provider.enableReasoning,
-                    useCustomReasoningParams = true,
+                    useCustomReasoningParams = provider.useCustomReasoningParams,
                     reasoningParamsOnJson = provider.reasoningParamsOnJson,
                     reasoningParamsOffJson = provider.reasoningParamsOffJson
                 )
@@ -208,7 +232,8 @@ internal object PrefsLlmVendorStore {
                     temperature = getLlmVendorTemperature(sp, vendor),
                     vendor = vendor,
                     enableReasoning = getLlmVendorReasoningEnabled(sp, vendor),
-                    useCustomReasoningParams = !isBuiltinLlmPresetModel(
+                    useCustomReasoningParams = resolveUseCustomReasoningParams(
+                        sp,
                         vendor,
                         model,
                         prefs.sfFreeLlmUsePaidKey
@@ -237,6 +262,16 @@ internal object PrefsLlmVendorStore {
             ReasoningMode.MODEL_SELECTION,
             ReasoningMode.NONE -> Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_OFF_JSON
         }
+    }
+
+    private fun resolveUseCustomReasoningParams(
+        sp: SharedPreferences,
+        vendor: LlmVendor,
+        model: String,
+        sfFreeLlmUsePaidKey: Boolean
+    ): Boolean {
+        if (isBuiltinLlmPresetModel(vendor, model, sfFreeLlmUsePaidKey)) return false
+        return getLlmVendorCustomReasoningParamsEnabled(sp, vendor)
     }
 
     private fun isBuiltinLlmPresetModel(

@@ -143,6 +143,7 @@ internal fun AiSettingsRouteContent(
                         builtinCustomModelInputVisible = builtinCustomModelInputVisible,
                         builtinReasoningOnJson = builtinReasoningOnJson,
                         builtinReasoningOffJson = builtinReasoningOffJson,
+                        sfCustomReasoningParamsEnabled = sfCustomReasoningParamsEnabled,
                         customModelInputVisible = customModelInputVisible,
                         focusProfileNameAfterAdd = focusProfileNameAfterAdd,
                         llmTestRunning = llmTestRunning,
@@ -180,6 +181,10 @@ internal fun AiSettingsRouteContent(
                             onReasoningChange = { checked ->
                                 onSfReasoningEnabledChange(checked)
                                 prefs.setLlmVendorReasoningEnabled(LlmVendor.SF_FREE, checked)
+                            },
+                            onCustomReasoningParamsEnabledChange = { checked ->
+                                onSfCustomReasoningParamsEnabledChange(checked)
+                                prefs.setLlmVendorCustomReasoningParamsEnabled(LlmVendor.SF_FREE, checked)
                             },
                             onReasoningOnJsonChange = { value ->
                                 onSfReasoningOnJsonChange(value)
@@ -235,6 +240,11 @@ internal fun AiSettingsRouteContent(
                                 it.copy(enableReasoning = checked)
                             }
                         },
+                        onCustomReasoningParamsEnabledChange = { checked ->
+                            viewModel.updateActiveLlmProvider(prefs) {
+                                it.copy(useCustomReasoningParams = checked)
+                            }
+                        },
                         onCustomReasoningOnJsonChange = { value ->
                             viewModel.updateActiveLlmProvider(prefs) {
                                 it.copy(reasoningParamsOnJson = value)
@@ -278,6 +288,9 @@ internal fun AiSettingsRouteContent(
                         },
                         onBuiltinReasoningChange = { checked ->
                             viewModel.updateBuiltinReasoningEnabled(prefs, checked)
+                        },
+                        onBuiltinCustomReasoningParamsEnabledChange = { checked ->
+                            viewModel.updateBuiltinCustomReasoningParamsEnabled(prefs, checked)
                         },
                         onBuiltinReasoningOnJsonChange = { value ->
                             onBuiltinReasoningOnJsonChange(value)

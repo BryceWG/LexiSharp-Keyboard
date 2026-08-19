@@ -275,6 +275,9 @@ fun AiSettingsScreen(
                 onSfReasoningEnabledChange = { localState.sfReasoningEnabled = it },
                 onSfReasoningOnJsonChange = { localState.sfReasoningOnJson = it },
                 onSfReasoningOffJsonChange = { localState.sfReasoningOffJson = it },
+                onSfCustomReasoningParamsEnabledChange = {
+                    localState.sfCustomReasoningParamsEnabled = it
+                },
                 onSfTemperatureChange = { localState.sfTemperature = it },
                 onSfCustomModelInputVisibleChange = { localState.sfCustomModelInputVisible = it },
                 onBuiltinCustomModelInputVisibleChange = { localState.builtinCustomModelInputVisible = it },

@@ -33,7 +33,8 @@ class AiPostSettingsViewModel : ViewModel() {
         val apiKey: String = "",
         val model: String = "",
         val temperature: Float = Prefs.DEFAULT_LLM_TEMPERATURE,
-        val reasoningEnabled: Boolean = false
+        val reasoningEnabled: Boolean = false,
+        val customReasoningParamsEnabled: Boolean = false
     )
 
     private val _builtinVendorConfig = MutableStateFlow(BuiltinVendorConfig())
@@ -98,7 +99,8 @@ class AiPostSettingsViewModel : ViewModel() {
             apiKey = prefs.getLlmVendorApiKey(vendor),
             model = prefs.getLlmVendorModel(vendor),
             temperature = prefs.getLlmVendorTemperature(vendor),
-            reasoningEnabled = prefs.getLlmVendorReasoningEnabled(vendor)
+            reasoningEnabled = prefs.getLlmVendorReasoningEnabled(vendor),
+            customReasoningParamsEnabled = prefs.getLlmVendorCustomReasoningParamsEnabled(vendor)
         )
     }
 
@@ -175,6 +177,22 @@ class AiPostSettingsViewModel : ViewModel() {
             _builtinVendorConfig.value = _builtinVendorConfig.value.copy(reasoningEnabled = enabled)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update builtin reasoning enabled", e)
+        }
+    }
+
+    /**
+     * Updates builtin vendor custom reasoning params enabled state
+     */
+    fun updateBuiltinCustomReasoningParamsEnabled(prefs: Prefs, enabled: Boolean) {
+        rememberPrefs(prefs)
+        val vendor = _selectedVendor.value
+        if (vendor == LlmVendor.CUSTOM || vendor == LlmVendor.SF_FREE) return
+        try {
+            prefs.setLlmVendorCustomReasoningParamsEnabled(vendor, enabled)
+            _builtinVendorConfig.value =
+                _builtinVendorConfig.value.copy(customReasoningParamsEnabled = enabled)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update builtin custom reasoning params enabled", e)
         }
     }
 

@@ -34,6 +34,9 @@ internal class AiSettingsLocalState(
     var sfReasoningEnabled by mutableStateOf(prefs.getLlmVendorReasoningEnabled(LlmVendor.SF_FREE))
     var sfReasoningOnJson by mutableStateOf(prefs.getLlmVendorReasoningParamsOnJson(LlmVendor.SF_FREE))
     var sfReasoningOffJson by mutableStateOf(prefs.getLlmVendorReasoningParamsOffJson(LlmVendor.SF_FREE))
+    var sfCustomReasoningParamsEnabled by mutableStateOf(
+        prefs.getLlmVendorCustomReasoningParamsEnabled(LlmVendor.SF_FREE)
+    )
     var sfTemperature by mutableStateOf(prefs.getLlmVendorTemperature(LlmVendor.SF_FREE).coerceIn(0f, 2f))
     var sfCustomModelInputVisible by mutableStateOf(
         sfModel.isNotBlank() && !sfPresetModels.contains(sfModel)
@@ -57,6 +60,7 @@ internal class AiSettingsLocalState(
         sfReasoningEnabled = prefs.getLlmVendorReasoningEnabled(LlmVendor.SF_FREE)
         sfReasoningOnJson = prefs.getLlmVendorReasoningParamsOnJson(LlmVendor.SF_FREE)
         sfReasoningOffJson = prefs.getLlmVendorReasoningParamsOffJson(LlmVendor.SF_FREE)
+        sfCustomReasoningParamsEnabled = prefs.getLlmVendorCustomReasoningParamsEnabled(LlmVendor.SF_FREE)
         sfTemperature = prefs.getLlmVendorTemperature(LlmVendor.SF_FREE).coerceIn(0f, 2f)
         sfCustomModelInputVisible = sfModel.isNotBlank() && !sfPresetModels.contains(sfModel)
     }
@@ -102,6 +106,7 @@ internal class AiSettingsLocalState(
         sfReasoningEnabled = sfReasoningEnabled,
         sfReasoningOnJson = sfReasoningOnJson,
         sfReasoningOffJson = sfReasoningOffJson,
+        sfCustomReasoningParamsEnabled = sfCustomReasoningParamsEnabled,
         sfTemperature = sfTemperature,
         sfPresetModels = sfPresetModels,
         sfStaticModels = sfStaticModels,

@@ -642,6 +642,7 @@ class Prefs(context: Context) {
         val temperature: Float,
         val models: List<String> = emptyList(),
         val enableReasoning: Boolean = false,
+        val useCustomReasoningParams: Boolean = false,
         val reasoningParamsOnJson: String = "",
         val reasoningParamsOffJson: String = ""
     )
@@ -900,6 +901,12 @@ class Prefs(context: Context) {
     fun getLlmVendorReasoningEnabled(vendor: LlmVendor): Boolean = PrefsLlmVendorStore.getLlmVendorReasoningEnabled(sp, vendor)
 
     fun setLlmVendorReasoningEnabled(vendor: LlmVendor, enabled: Boolean) = PrefsLlmVendorStore.setLlmVendorReasoningEnabled(sp, vendor, enabled)
+
+    fun getLlmVendorCustomReasoningParamsEnabled(vendor: LlmVendor): Boolean =
+        PrefsLlmVendorStore.getLlmVendorCustomReasoningParamsEnabled(sp, vendor)
+
+    fun setLlmVendorCustomReasoningParamsEnabled(vendor: LlmVendor, enabled: Boolean) =
+        PrefsLlmVendorStore.setLlmVendorCustomReasoningParamsEnabled(sp, vendor, enabled)
 
     fun getLlmVendorModels(vendor: LlmVendor): List<String> = PrefsLlmVendorStore.getLlmVendorModels(sp, json, vendor, sfFreeLlmUsePaidKey)
 
