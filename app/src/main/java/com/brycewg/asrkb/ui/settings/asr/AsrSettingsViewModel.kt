@@ -10,6 +10,7 @@ import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LocalModelCheck
 import com.brycewg.asrkb.asr.LocalModelSpecs
 import com.brycewg.asrkb.asr.SherpaPunctuationManager
+import com.brycewg.asrkb.asr.VolcAsrModelCatalog
 import com.brycewg.asrkb.asr.requireModelFilesCached
 import com.brycewg.asrkb.store.Prefs
 import java.io.File
@@ -68,12 +69,10 @@ class AsrSettingsViewModel : ViewModel() {
             recordingMaxDurationMs = prefs.recordingMaxDurationMs,
             aiEditPreferLastAsr = prefs.aiEditDefaultToLastAsr,
             // Volc settings
-            volcStreamingEnabled = prefs.volcStreamingEnabled,
+            volcAsrModel = prefs.volcAsrModel,
             volcDdcEnabled = prefs.volcDdcEnabled,
             volcVadEnabled = prefs.volcVadEnabled,
             volcNonstreamEnabled = prefs.volcNonstreamEnabled,
-            volcFileStandardEnabled = prefs.volcFileStandardEnabled,
-            volcModelV2Enabled = prefs.volcModelV2Enabled,
             volcUseNewAuth = prefs.volcUseNewAuth,
             volcLanguage = prefs.volcLanguage,
             // SiliconFlow settings
@@ -306,9 +305,9 @@ class AsrSettingsViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(recordingMaxDurationMs = prefs.recordingMaxDurationMs)
     }
 
-    fun updateVolcStreaming(enabled: Boolean) {
-        prefs.volcStreamingEnabled = enabled
-        _uiState.value = _uiState.value.copy(volcStreamingEnabled = enabled)
+    fun updateVolcAsrModel(modelId: String) {
+        prefs.volcAsrModel = modelId
+        _uiState.value = _uiState.value.copy(volcAsrModel = modelId)
     }
 
     fun updateVolcDdc(enabled: Boolean) {
@@ -324,16 +323,6 @@ class AsrSettingsViewModel : ViewModel() {
     fun updateVolcNonstream(enabled: Boolean) {
         prefs.volcNonstreamEnabled = enabled
         _uiState.value = _uiState.value.copy(volcNonstreamEnabled = enabled)
-    }
-
-    fun updateVolcFileStandard(enabled: Boolean) {
-        prefs.volcFileStandardEnabled = enabled
-        _uiState.value = _uiState.value.copy(volcFileStandardEnabled = enabled)
-    }
-
-    fun updateVolcModelV2(enabled: Boolean) {
-        prefs.volcModelV2Enabled = enabled
-        _uiState.value = _uiState.value.copy(volcModelV2Enabled = enabled)
     }
 
     fun updateVolcUseNewAuth(enabled: Boolean) {
@@ -944,12 +933,10 @@ data class AsrSettingsUiState(
     val recordingMaxDurationMs: Int = Prefs.DEFAULT_RECORDING_MAX_DURATION_MS,
     val aiEditPreferLastAsr: Boolean = false,
     // Volcengine settings
-    val volcStreamingEnabled: Boolean = false,
+    val volcAsrModel: String = VolcAsrModelCatalog.DEFAULT_ID,
     val volcDdcEnabled: Boolean = false,
     val volcVadEnabled: Boolean = false,
     val volcNonstreamEnabled: Boolean = false,
-    val volcFileStandardEnabled: Boolean = true,
-    val volcModelV2Enabled: Boolean = true,
     val volcUseNewAuth: Boolean = false,
     val volcLanguage: String = "",
     // SiliconFlow settings
@@ -1004,6 +991,9 @@ data class AsrSettingsUiState(
     val xAsrPreloadEnabled: Boolean = true,
     val xAsrUseItn: Boolean = false
 ) {
+    val isVolcStreaming: Boolean
+        get() = VolcAsrModelCatalog.isStreaming(volcAsrModel)
+
     // Computed visibility properties based on selected vendor
     val isVolcVisible: Boolean get() = selectedVendor == AsrVendor.Volc
     val isSfVisible: Boolean get() = selectedVendor == AsrVendor.SiliconFlow

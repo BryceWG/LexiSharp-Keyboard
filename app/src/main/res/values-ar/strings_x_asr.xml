@@ -4,7 +4,7 @@
     <string name="vendor_x_asr">X-ASR</string>
 
     <!-- X-ASR configuration -->
-    <string name="label_x_asr_model_variant">متغير النموذج</string>
+    <string name="label_x_asr_model_variant">إصدار النموذج</string>
     <string name="label_x_asr_threads">عدد الخيوط (1-8)</string>
     <string name="label_x_asr_keep_alive">سياسة إلغاء تحميل النموذج</string>
     <string name="x_asr_variant_480ms">صيني+إنجليزي (480 مللي ثانية، 530MB)</string>

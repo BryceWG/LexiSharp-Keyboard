@@ -138,7 +138,8 @@ class XAsrStreamAsrEngine(
                 }
                 running.set(false)
             },
-            logDiag = { event, data -> logDiag(event, data) }
+            logDiag = { event, data -> logDiag(event, data) },
+            dropOverflowBeforeSink = !externalPcmMode
         )
         val previous = stopController.onNewSession(newSession)
         previous?.cancel()
@@ -216,6 +217,20 @@ class XAsrStreamAsrEngine(
     }
 
     // ========== ExternalPcmConsumer（外部推流） ==========
+    override suspend fun awaitReady(timeoutMs: Long): Boolean {
+        val active = session ?: return false
+        val started = SystemClock.uptimeMillis()
+        val ok = active.awaitSinkReady(timeoutMs)
+        logDiag(
+            "xasr_sink_ready",
+            mapOf(
+                "waitedMs" to (SystemClock.uptimeMillis() - started).coerceAtLeast(0L),
+                "ok" to ok
+            )
+        )
+        return ok
+    }
+
     override fun appendPcm(pcm: ByteArray, sampleRate: Int, channels: Int) {
         val active = session ?: return
         if (sampleRate != 16000 || channels != 1) return

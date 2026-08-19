@@ -2,8 +2,8 @@
     <string name="vendor_mimo">小米 MiMo</string>
     <string name="label_mimo_asr_api_key">MiMo API Key</string>
     <string name="label_mimo_asr_endpoint">MiMo Endpoint</string>
-    <string name="label_mimo_asr_endpoint_preset">Endpoint</string>
-    <string name="label_mimo_asr_model">Model</string>
+    <string name="label_mimo_asr_endpoint_preset">Request endpoint</string>
+    <string name="label_mimo_asr_model">Recognition model</string>
     <string name="label_mimo_asr_prompt">System Prompt (v2.5 only)</string>
     <string name="label_mimo_disable_thinking">Disable thinking</string>
     <string name="feature_mimo_disable_thinking_off_desc">Uses the model default thinking mode, which may be more careful but slower.</string>
@@ -13,7 +13,7 @@
     <string name="mimo_endpoint_ams">Token Plan (Europe)</string>
     <string name="mimo_endpoint_paygo">Pay-as-you-go</string>
     <string name="mimo_endpoint_custom">Custom</string>
-    <string name="label_mimo_asr_language">Language</string>
+    <string name="label_mimo_asr_language">Recognition language</string>
     <string name="mimo_lang_auto">Auto detect</string>
     <string name="mimo_lang_zh">Chinese</string>
     <string name="mimo_lang_en">English</string>

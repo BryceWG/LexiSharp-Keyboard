@@ -106,9 +106,9 @@ internal fun AsrSettingsRouteContent(
                             onAppKeyChange = onlineState.onVolcAppKeyChange,
                             onAccessKeyChange = onlineState.onVolcAccessKeyChange,
                             onApiKeyChange = onlineState.onVolcApiKeyChange,
-                            onUpdateStreaming = viewModel::updateVolcStreaming,
-                            onUpdateFileStandard = viewModel::updateVolcFileStandard,
-                            onUpdateModelV2 = viewModel::updateVolcModelV2,
+                            selectedModelId = uiState.volcAsrModel,
+                            modelLabel = volcModelLabel(context, uiState.volcAsrModel),
+                            onChooseModel = showVolcModelPicker,
                             onUpdateUseNewAuth = viewModel::updateVolcUseNewAuth,
                             onUpdateNonstream = viewModel::updateVolcNonstream,
                             onUpdateDdc = viewModel::updateVolcDdc,
@@ -324,8 +324,7 @@ private fun currentAsrVendorPrimaryItemCount(
     onlineState: AsrOnlineSettingsRouteState
 ): Int = when (selectedVendor) {
     AsrVendor.Volc -> volcenginePrimaryItemCount(
-        streaming = uiState.volcStreamingEnabled,
-        fileStandard = uiState.volcFileStandardEnabled,
+        streaming = uiState.isVolcStreaming,
         useNewAuth = uiState.volcUseNewAuth
     )
 

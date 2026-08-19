@@ -7,7 +7,7 @@
     <string name="stepaudio_endpoint_paygo">الدفع حسب الاستخدام</string>
     <string name="stepaudio_endpoint_coding_plan">Coding Plan</string>
     <string name="stepaudio_endpoint_custom">مخصص</string>
-    <string name="label_stepaudio_model">النموذج</string>
+    <string name="label_stepaudio_model">نموذج التعرّف</string>
     <string name="stepaudio_model_25_asr">stepaudio-2.5-asr</string>
     <string name="label_stepaudio_language">لغة التعرّف</string>
     <string name="stepaudio_lang_zh">الصينية</string>

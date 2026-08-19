@@ -12,7 +12,7 @@
     <string name="label_openai_asr_endpoint">Endpoint（../transcriptions 或 ../chat/completions）</string>
     <string name="hint_openai_custom_endpoint_wav_upload">自定义兼容服务将使用 WAV 上传，以提高兼容性。</string>
     <string name="label_openai_api_key">API Key（Bearer）</string>
-    <string name="label_openai_model">模型名称（如：gpt-4o-mini-transcribe 或 whisper-1）</string>
+    <string name="label_openai_model">识别模型</string>
     <string name="label_openai_streaming">流式识别</string>
     <string name="label_openai_use_completions">使用 Completions 接口</string>
     <string name="label_openai_use_prompt">自定义 Prompt（仅部分模型可用）</string>

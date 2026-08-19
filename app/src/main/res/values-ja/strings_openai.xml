@@ -12,7 +12,7 @@
     <string name="label_openai_asr_endpoint">エンドポイント（../transcriptions または ../chat/completions）</string>
     <string name="hint_openai_custom_endpoint_wav_upload">カスタム互換サービスでは、互換性を高めるため WAV 音声をアップロードします。</string>
     <string name="label_openai_api_key">APIキー（Bearer）</string>
-    <string name="label_openai_model">モデル（例：gpt-4o-mini-transcribe または whisper-1）</string>
+    <string name="label_openai_model">認識モデル</string>
     <string name="label_openai_streaming">ストリーミング認識</string>
     <string name="label_openai_use_completions">Completions APIを使用</string>
     <string name="label_openai_use_prompt">カスタムプロンプトを使用（一部のモデルでは非対応）</string>

@@ -1,7 +1,7 @@
 <resources>
     <string name="vendor_cohere">Cohere</string>
     <string name="label_cohere_api_key">Cohere API Key</string>
-    <string name="label_cohere_model">Model ID</string>
+    <string name="label_cohere_model">Recognition model</string>
     <string name="label_cohere_language">Recognition language</string>
     <string name="error_missing_cohere_key">Cohere API Key not set</string>
     <string name="error_missing_cohere_model">Cohere model ID not set</string>

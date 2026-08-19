@@ -11,6 +11,15 @@ internal object DashScopePrefsCompat {
     private const val DASH_LEGACY_QWEN3_REALTIME_VERSIONED_MODEL = "qwen3-asr-flash-realtime-2026-02-10"
     const val MAX_QWEN_AUDIO_LANGUAGE_HINTS = 4
 
+    private val KNOWN_ASR_MODELS = setOf(
+        Prefs.DASH_MODEL_FUN_ASR_FLASH,
+        Prefs.DASH_MODEL_QWEN_AUDIO_FLASH,
+        Prefs.DASH_MODEL_QWEN35_OMNI_FLASH,
+        Prefs.DASH_MODEL_QWEN35_OMNI_PLUS,
+        Prefs.DASH_MODEL_FUN_ASR_REALTIME,
+        Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME
+    )
+
     fun getDashHttpBaseUrl(dashRegion: String): String = if (dashRegion.equals("intl", ignoreCase = true)) {
         "https://dashscope-intl.aliyuncs.com/api/v1"
     } else {
@@ -53,6 +62,22 @@ internal object DashScopePrefsCompat {
 
     fun isStreamingModel(model: String): Boolean =
         isRecognitionStreamingModel(model)
+
+    fun isKnownAsrModel(model: String): Boolean {
+        val normalized = normalizeDashAsrModel(model)
+        return KNOWN_ASR_MODELS.any { it.equals(normalized, ignoreCase = true) }
+    }
+
+    fun fileFallbackModel(model: String): String? {
+        val normalized = normalizeDashAsrModel(model)
+        return when {
+            normalized.equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true) ->
+                Prefs.DASH_MODEL_FUN_ASR_FLASH
+            normalized.equals(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME, ignoreCase = true) ->
+                Prefs.DASH_MODEL_QWEN_AUDIO_FLASH
+            else -> null
+        }
+    }
 
     fun isSemanticPunctuationSupported(model: String): Boolean =
         isRecognitionStreamingModel(model)

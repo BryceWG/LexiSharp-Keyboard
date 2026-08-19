@@ -3,7 +3,7 @@
     <string name="label_mimo_asr_api_key">MiMo API Key</string>
     <string name="label_mimo_asr_endpoint">MiMo Endpoint</string>
     <string name="label_mimo_asr_endpoint_preset">请求端点</string>
-    <string name="label_mimo_asr_model">模型</string>
+    <string name="label_mimo_asr_model">识别模型</string>
     <string name="label_mimo_asr_prompt">System Prompt（仅 v2.5 支持）</string>
     <string name="label_mimo_disable_thinking">禁用推理</string>
     <string name="feature_mimo_disable_thinking_off_desc">使用模型默认的思考模式，可能更仔细但更慢。</string>
@@ -13,7 +13,7 @@
     <string name="mimo_endpoint_ams">Token Plan（欧洲）</string>
     <string name="mimo_endpoint_paygo">按量付费</string>
     <string name="mimo_endpoint_custom">自定义</string>
-    <string name="label_mimo_asr_language">语言</string>
+    <string name="label_mimo_asr_language">识别语言</string>
     <string name="mimo_lang_auto">自动检测</string>
     <string name="mimo_lang_zh">中文</string>
     <string name="mimo_lang_en">英文</string>

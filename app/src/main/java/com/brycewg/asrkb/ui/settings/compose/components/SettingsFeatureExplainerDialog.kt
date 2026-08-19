@@ -309,7 +309,7 @@ private fun FeatureDescriptionRow(
 }
 
 @Composable
-private fun DontShowAgainRow(
+internal fun DontShowAgainRow(
     text: String,
     uiMode: BibiUiMode,
     checked: Boolean,
@@ -390,12 +390,13 @@ private fun FeatureExplainerText(
     }
 }
 
-private fun Context.hasFeatureExplainerFlag(key: String): Boolean {
+/** 功能说明弹窗与轻量 notice 弹窗共用的本地免打扰标记，不进入 ASR vendor backup。 */
+internal fun Context.hasFeatureExplainerFlag(key: String): Boolean {
     val prefs = getSharedPreferences(FEATURE_EXPLAINER_PREFS, Context.MODE_PRIVATE)
     return prefs.getBoolean(key, false)
 }
 
-private fun Context.saveFeatureExplainerFlag(key: String) {
+internal fun Context.saveFeatureExplainerFlag(key: String) {
     val prefs = getSharedPreferences(FEATURE_EXPLAINER_PREFS, Context.MODE_PRIVATE)
     prefs.edit().putBoolean(key, true).apply()
 }

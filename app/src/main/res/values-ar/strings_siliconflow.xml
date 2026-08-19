@@ -5,7 +5,7 @@
 
     <!-- SiliconFlow configuration -->
     <string name="label_sf_api_key">مفتاح API (Bearer)</string>
-    <string name="label_sf_model_select">اختر النموذج</string>
+    <string name="label_sf_model_select">نموذج التعرّف</string>
     <string name="sf_model_default_display">FunAudioLLM/SenseVoiceSmall</string>
     <string name="label_sf_omni_prompt">موجّه النسخ النصي متعدد الوسائط (اختياري)</string>
 

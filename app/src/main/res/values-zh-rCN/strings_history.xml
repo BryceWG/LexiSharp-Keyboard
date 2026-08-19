@@ -95,6 +95,21 @@
     <string name="history_record_missing">该历史记录已不存在</string>
     <string name="btn_rerecognize">重新识别</string>
     <string name="btn_reprocess">重新后处理</string>
+    <string name="history_rerecognition_notice_title">重新识别说明</string>
+    <string name="history_rerecognition_current_engine">当前识别引擎：%1$s</string>
+    <string name="history_rerecognition_fallback_supported">录音重识别回退：支持，将使用“%1$s”</string>
+    <string name="history_rerecognition_fallback_direct">录音重识别：将使用当前文件识别模型“%1$s”</string>
+    <string name="history_rerecognition_fallback_stream">录音重识别：将按当前流式识别回放录音“%1$s”</string>
+    <string name="history_rerecognition_fallback_unsupported">录音重识别回退：暂不支持</string>
+    <string name="history_rerecognition_notice_supported_hint">重新识别会读取历史录音并按完整音频提交，不会改变当前常规识别设置。</string>
+    <string name="history_rerecognition_notice_unsupported_hint">请切换到非流式模型，或拥有文件识别路径的供应商后再试。</string>
+    <string name="history_rerecognition_btn_continue">继续</string>
+    <string name="history_rerecognition_btn_got_it">知道了</string>
+    <string name="history_rerecognition_error_openai_streaming">当前 OpenAI 流式模型不支持根据录音重新识别。</string>
+    <string name="history_rerecognition_error_xasr">X-ASR 目前没有文件识别路径，暂不支持重新识别。</string>
+    <string name="history_rerecognition_error_unknown_model">当前模型无法映射到文件识别路径。</string>
+    <string name="history_rerecognition_error_no_file_fallback">当前引擎没有文件识别回退路径。</string>
+    <string name="history_rerecognition_error_unavailable_credentials">当前供应商凭证缺失或无效。</string>
     <string name="label_audio_history_retention_count">音频历史保留数量</string>
     <string name="audio_history_retention_count_value">%1$d 条</string>
 </resources>

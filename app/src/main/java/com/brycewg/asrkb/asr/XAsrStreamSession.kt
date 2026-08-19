@@ -4,6 +4,7 @@ package com.brycewg.asrkb.asr
 import android.util.Log
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -11,8 +12,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 internal interface XAsrStreamSink {
     fun acceptWaveform(samples: FloatArray, sampleRate: Int)
@@ -36,7 +40,8 @@ internal class XAsrStreamSession(
     private val onPartial: (String) -> Unit,
     private val onFinal: (String) -> Unit,
     private val logDiag: (event: String, data: Map<String, Any?>) -> Unit = { _, _ -> },
-    private val processorDispatcher: CoroutineDispatcher = Dispatchers.Default
+    private val processorDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val dropOverflowBeforeSink: Boolean = true
 ) {
     private val events = Channel<XAsrStreamEvent>(Channel.UNLIMITED)
     private val sinkReady = CompletableDeferred<XAsrStreamSink>()
@@ -76,7 +81,7 @@ internal class XAsrStreamSession(
             droppedAfterFinish.addAndGet(bytes.size)
             return false
         }
-        if (!sinkReady.isCompleted) {
+        if (dropOverflowBeforeSink && !sinkReady.isCompleted) {
             val pending = queuedPcmBytes.get() - acceptedPcmBytes.get()
             if (pending + bytes.size > MAX_PREBUFFER_BYTES) {
                 droppedOverflow.addAndGet(bytes.size)
@@ -123,6 +128,17 @@ internal class XAsrStreamSession(
 
     suspend fun awaitCompletion() {
         processorJob?.join()
+    }
+
+    suspend fun awaitSinkReady(timeoutMs: Long): Boolean {
+        return try {
+            withTimeoutOrNull(timeoutMs) { sinkReady.await() } != null
+        } catch (_: CancellationException) {
+            currentCoroutineContext().ensureActive()
+            false
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     private fun closeEvents() {

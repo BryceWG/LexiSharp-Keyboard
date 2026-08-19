@@ -34,9 +34,9 @@ internal fun AsrVolcRouteSection(
     onAppKeyChange: (String) -> Unit,
     onAccessKeyChange: (String) -> Unit,
     onApiKeyChange: (String) -> Unit,
-    onUpdateStreaming: (Boolean) -> Unit,
-    onUpdateFileStandard: (Boolean) -> Unit,
-    onUpdateModelV2: (Boolean) -> Unit,
+    selectedModelId: String,
+    modelLabel: String,
+    onChooseModel: () -> Unit,
     onUpdateUseNewAuth: (Boolean) -> Unit,
     onUpdateNonstream: (Boolean) -> Unit,
     onUpdateDdc: (Boolean) -> Unit,
@@ -66,42 +66,9 @@ internal fun AsrVolcRouteSection(
                 onUpdateUseNewAuth
             )
         },
-        streaming = uiState.volcStreamingEnabled,
-        onStreamingChange = { checked ->
-            applySwitch(
-                checked,
-                R.string.label_volc_streaming,
-                R.string.feature_volc_streaming_off_desc,
-                R.string.feature_volc_streaming_on_desc,
-                uiState.volcStreamingEnabled,
-                "volc_streaming_explained",
-                onUpdateStreaming
-            )
-        },
-        fileStandard = uiState.volcFileStandardEnabled,
-        onFileStandardChange = { checked ->
-            applySwitch(
-                checked,
-                R.string.label_volc_file_standard,
-                R.string.feature_volc_file_standard_off_desc,
-                R.string.feature_volc_file_standard_on_desc,
-                uiState.volcFileStandardEnabled,
-                "volc_file_standard_explained",
-                onUpdateFileStandard
-            )
-        },
-        modelV2 = uiState.volcModelV2Enabled,
-        onModelV2Change = { checked ->
-            applySwitch(
-                checked,
-                R.string.label_volc_model_v2,
-                R.string.feature_volc_model_v2_off_desc,
-                R.string.feature_volc_model_v2_on_desc,
-                uiState.volcModelV2Enabled,
-                "volc_model_v2_explained",
-                onUpdateModelV2
-            )
-        },
+        selectedModelId = selectedModelId,
+        modelLabel = modelLabel,
+        onChooseModel = onChooseModel,
         nonstream = uiState.volcNonstreamEnabled,
         onNonstreamChange = { checked ->
             applySwitch(

@@ -9,6 +9,7 @@ import android.content.Context
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BackupAsrLocalResidency
+import com.brycewg.asrkb.asr.VolcAsrModelCatalog
 import com.brycewg.asrkb.asr.partitionAsrVendorsByConfigured
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.AsrVendorUi
@@ -143,6 +144,25 @@ internal fun volcLanguageChoiceSheetState(
     labelOf = { it.label },
     onSelected = onSelected
 )
+
+internal fun volcModelChoiceSheetState(
+    context: Context,
+    selectedModel: String,
+    onSelected: (String) -> Unit
+): SettingsChoiceSheetState? {
+    val options = VolcAsrModelCatalog.all()
+    val selected = VolcAsrModelCatalog.fromIdOrDefault(selectedModel)
+    return asrValueChoiceSheetState(
+        context = context,
+        titleResId = R.string.label_volc_asr_model,
+        options = options,
+        selectedValue = selected.id,
+        fallbackValue = VolcAsrModelCatalog.DEFAULT_ID,
+        valueOf = { it.id },
+        labelOf = { context.getString(it.displayNameRes) },
+        onSelected = onSelected
+    )
+}
 
 internal fun dashModelChoiceSheetState(
     context: Context,

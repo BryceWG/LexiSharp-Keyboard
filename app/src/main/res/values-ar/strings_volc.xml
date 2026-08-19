@@ -4,6 +4,13 @@
     <string name="vendor_volc">Volcano Engine</string>
 
     <!-- Volc configuration -->
+    <string name="label_volc_asr_model">نموذج التعرّف</string>
+    <string name="volc_asr_model_streaming_v2">التعرّف الصوتي المتدفق من Doubao 2.0</string>
+    <string name="volc_asr_model_streaming_v1">التعرّف الصوتي المتدفق من Doubao 1.0</string>
+    <string name="volc_asr_model_file_v2">تعرّف ملفات Doubao القياسي 2.0</string>
+    <string name="volc_asr_model_file_v1">تعرّف ملفات Doubao القياسي 1.0</string>
+    <string name="volc_asr_model_file_turbo_v1">تعرّف ملفات Doubao السريع 1.0</string>
+    <string name="feature_volc_asr_model_desc">اختر نموذج تعرّف Doubao مباشرة. نماذج البث تُظهر النص أثناء الكلام وتحتاج إلى شبكة مستقرة نسبياً. التعرّف القياسي للملفات يرفع التسجيل كاملاً بعد التوقف، ودقته أعلى. التعرّف السريع للملفات يرفع أيضاً بعد التوقف، وهو أسرع. لا يغيّر هذا الإعدادات الأخرى خارج التعرّف الاعتيادي.</string>
     <string name="label_volc_streaming">التعرّف بالبث</string>
     <string name="label_volc_file_standard">استخدام تعرّف الملفات (قياسي)</string>
     <string name="label_volc_model_v2">استخدام نموذج Doubao ASR 2.0</string>
@@ -15,10 +22,10 @@
     <string name="label_volc_api_key">X-Api-Key</string>
 
     <!-- Volc modes hint -->
-    <string name="volc_modes_hint">الأوضاع:\n
-1. تعرّف الملفات (قياسي، إرسال/استعلام): الرفع بعد اكتمال التسجيل؛ أبطأ من وضع flash لكنه يدعم Doubao ASR 2.0؛ موصى به عند تعطيل البث.\n
-2. تعرّف الملفات (flash): الرفع بعد اكتمال التسجيل؛ أسرع لكنه لا يدعم Doubao ASR 2.0.\n
-3. البث (افتراضي، ثنائي الاتجاه): الرفع أثناء التسجيل مع معاينة تدريجية فورية؛ زمن بدء/انتهاء أقل؛ يتطلّب شبكة مستقرة. يدعم الآن Doubao ASR 2.0.</string>
+    <string name="volc_modes_hint">اختر أحد نماذج تعرّف Doubao مباشرة:\n
+1. التعرّف الصوتي المتدفق 2.0 / 1.0: يظهر النص أثناء الكلام، وزمن البدء والانتهاء أقل؛ يحتاج إلى شبكة مستقرة نسبياً.\n
+2. تعرّف الملفات القياسي 2.0 / 1.0 (إرسال/استعلام): يرفع التسجيل كاملاً بعد التوقف، ودقته أعلى.\n
+3. تعرّف الملفات السريع 1.0 (flash): يرفع بعد التوقف، وهو أسرع.</string>
 
     <!-- Volc language options -->
     <string name="volc_lang_auto">تلقائي (صيني/إنجليزي + لهجات)</string>
@@ -40,8 +47,8 @@
     <!-- ============================================== -->
 
     <!-- Volcengine - Streaming -->
-    <string name="feature_volc_streaming_off_desc">يستخدم وضع تعرّف الملفات. يُرسل التسجيل كاملاً دفعة واحدة بعد الانتهاء. مناسب للشبكات غير المستقرة.</string>
-    <string name="feature_volc_streaming_on_desc">يستخدم تعرّف البث ثنائي الاتجاه عبر WebSocket. تُعرض النتائج الوسيطة فوراً أثناء الكلام. يتطلّب اتصالاً مستقراً.</string>
+    <string name="feature_volc_streaming_off_desc">اختر تعرّف الملفات القياسي أو السريع في نموذج التعرّف. يُرفع التسجيل كاملاً بعد التوقف.</string>
+    <string name="feature_volc_streaming_on_desc">يُختار هذا الوضع كتعرّف صوتي متدفق 1.0 أو 2.0 في نموذج التعرّف. يظهر النص أثناء الكلام ويحتاج إلى شبكة مستقرة نسبياً.</string>
 
     <!-- Volcengine - DDC (semantic smoothing) -->
     <string name="feature_volc_ddc_off_desc">يُخرج نتائج التعرّف الخام دون معالجة إضافية.</string>
@@ -56,12 +63,12 @@
     <string name="feature_volc_nonstream_on_desc">ينفّذ المزود مرور تصحيح ثانٍ على نتيجة البث. قد يتحسّن النص النهائي، وقد يتغيّر النص المؤقت.</string>
 
     <!-- Volcengine - File recognition (standard mode) -->
-    <string name="feature_volc_file_standard_off_desc">يستخدم تعرّف الملفات (وضع flash) بعد اكتمال التسجيل. أسرع لكنه لا يدعم Doubao ASR 2.0.</string>
-    <string name="feature_volc_file_standard_on_desc">يستخدم تعرّف الملفات (قياسي، إرسال/استعلام) بعد اكتمال التسجيل. أبطأ من flash لكنه يدعم Doubao ASR 2.0 لدقة أفضل.</string>
+    <string name="feature_volc_file_standard_off_desc">اختر تعرّف ملفات Doubao السريع 1.0 في نموذج التعرّف. يُرفع بعد التوقف ويكون أسرع.</string>
+    <string name="feature_volc_file_standard_on_desc">اختر تعرّف ملفات Doubao القياسي 1.0 أو 2.0 في نموذج التعرّف. يُرفع التسجيل كاملاً بعد التوقف (إرسال/استعلام) ودقته أعلى.</string>
 
     <!-- Volcengine - Model version -->
-    <string name="feature_volc_model_v2_off_desc">يستخدم نموذج Doubao ASR 1.0. متوافق مع إصدارات API الأقدم.</string>
-    <string name="feature_volc_model_v2_on_desc">يستخدم نموذج Doubao ASR 2.0 (افتراضي). دقة أفضل ودعم لغات أوسع.</string>
+    <string name="feature_volc_model_v2_off_desc">اختر النموذج 1.0 المناسب في نموذج التعرّف.</string>
+    <string name="feature_volc_model_v2_on_desc">اختر النموذج 2.0 المناسب في نموذج التعرّف. دقته أعلى ودعم اللغات أوسع.</string>
 
     <!-- Volcengine - New auth -->
     <string name="feature_volc_use_new_auth_off_desc">يستخدم مصادقة App Key / Access Key التقليدية.</string>

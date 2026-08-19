@@ -4,7 +4,7 @@
     <string name="vendor_x_asr">X-ASR</string>
 
     <!-- X-ASR configuration -->
-    <string name="label_x_asr_model_variant">モデルバリアント</string>
+    <string name="label_x_asr_model_variant">モデルバージョン</string>
     <string name="label_x_asr_threads">スレッド数（1-8）</string>
     <string name="label_x_asr_keep_alive">モデルアンロード方針</string>
     <string name="x_asr_variant_480ms">中英（480 ms，530MB）</string>

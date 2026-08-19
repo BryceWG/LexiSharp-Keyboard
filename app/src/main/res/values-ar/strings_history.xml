@@ -95,6 +95,21 @@
     <string name="history_record_missing">لم يعد سجل التاريخ موجوداً</string>
     <string name="btn_rerecognize">إعادة التعرّف</string>
     <string name="btn_reprocess">إعادة المعالجة</string>
+    <string name="history_rerecognition_notice_title">توضيح إعادة التعرّف</string>
+    <string name="history_rerecognition_current_engine">محرك التعرّف الحالي: %1$s</string>
+    <string name="history_rerecognition_fallback_supported">الرجوع لإعادة التعرّف من التسجيل: مدعوم، وسيُستخدم “%1$s”</string>
+    <string name="history_rerecognition_fallback_direct">إعادة التعرّف: سيُستخدم نموذج تعرّف الملفات الحالي “%1$s”</string>
+    <string name="history_rerecognition_fallback_stream">إعادة التعرّف: سيُعاد تشغيل التسجيل عبر محرك البث الحالي “%1$s”</string>
+    <string name="history_rerecognition_fallback_unsupported">الرجوع لإعادة التعرّف من التسجيل: غير مدعوم حالياً</string>
+    <string name="history_rerecognition_notice_supported_hint">إعادة التعرّف تقرأ التسجيل المحفوظ وترسل الصوت كاملاً، دون تغيير إعدادات التعرّف المعتادة.</string>
+    <string name="history_rerecognition_notice_unsupported_hint">بدّل إلى نموذج غير بثّي، أو إلى مزوّد يملك مسار تعرّف بالملفات ثم أعد المحاولة.</string>
+    <string name="history_rerecognition_btn_continue">متابعة</string>
+    <string name="history_rerecognition_btn_got_it">حسناً</string>
+    <string name="history_rerecognition_error_openai_streaming">نموذج OpenAI البثّي الحالي لا يدعم إعادة التعرّف من التسجيلات.</string>
+    <string name="history_rerecognition_error_xasr">لا يملك X-ASR حالياً مسار تعرّف بالملفات، لذا إعادة التعرّف غير مدعومة.</string>
+    <string name="history_rerecognition_error_unknown_model">لا يمكن ربط النموذج الحالي بمسار تعرّف بالملفات.</string>
+    <string name="history_rerecognition_error_no_file_fallback">المحرك الحالي لا يملك مساراً بديلاً لتعرّف الملفات.</string>
+    <string name="history_rerecognition_error_unavailable_credentials">بيانات اعتماد المزوّد الحالي ناقصة أو غير صالحة.</string>
     <string name="label_audio_history_retention_count">عدد ملفات سجل الصوت</string>
     <string name="audio_history_retention_count_value">%1$d سجل</string>
 </resources>

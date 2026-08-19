@@ -5,7 +5,7 @@
 
     <!-- DashScope configuration -->
     <string name="label_dash_api_key">DashScope API Key（Bearer）</string>
-    <string name="label_dash_model">ASR 模型</string>
+    <string name="label_dash_model">识别模型</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash（非流式）</string>
     <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash（非流式）</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash（非流式）</string>
@@ -19,7 +19,7 @@
     <string name="label_dash_fun_asr">使用 Fun-ASR 模型进行识别（fun-asr-realtime）</string>
     <string name="label_dash_semantic_punct">使用语义断句</string>
     <string name="dash_lang_auto">自动识别</string>
-    <string name="label_dash_region">服务器地区</string>
+    <string name="label_dash_region">请求端点</string>
     <string name="dash_region_cn">中国大陆（aliyuncs.com）</string>
     <string name="dash_region_intl">新加坡/国际（dashscope-intl.aliyuncs.com）</string>
 

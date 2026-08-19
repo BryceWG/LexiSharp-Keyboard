@@ -7,6 +7,7 @@
 
 package com.brycewg.asrkb.ui.history.compose.history
 
+import android.content.Context
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -64,9 +65,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.brycewg.asrkb.R
 import com.brycewg.asrkb.LocaleHelper
+import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.AsrRecordedAudioRouteDecision
+import com.brycewg.asrkb.asr.AsrRecordedAudioRouteKind
+import com.brycewg.asrkb.asr.AsrRecordedAudioRouteResolver
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsAlertDialog
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogButtonRow
@@ -76,9 +81,13 @@ import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogActionRow
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsFilterChip
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsNoticeDialog
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsNoticeDialogState
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSearchField
 import com.brycewg.asrkb.ui.settings.compose.components.animateSettingsDialogExitAlpha
+import com.brycewg.asrkb.ui.settings.compose.components.hasFeatureExplainerFlag
 import com.brycewg.asrkb.ui.settings.compose.components.rememberSettingsDialogExitController
+import com.brycewg.asrkb.ui.settings.compose.components.saveFeatureExplainerFlag
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import java.text.SimpleDateFormat
@@ -145,7 +154,42 @@ fun AsrHistoryScreen(
     var selectedRecord by remember { mutableStateOf<AsrHistoryStore.AsrHistoryRecord?>(null) }
     var rerunJob by remember { mutableStateOf<Job?>(null) }
     var rerunError by remember { mutableStateOf<String?>(null) }
+    var rerecognitionNotice by remember { mutableStateOf<SettingsNoticeDialogState?>(null) }
+    val context = LocalContext.current
+    val prefs = remember(context.applicationContext) { Prefs(context.applicationContext) }
     val scope = rememberCoroutineScope()
+
+    fun launchReRecognize(target: AsrHistoryStore.AsrHistoryRecord) {
+        rerunError = null
+        rerunJob = scope.launch {
+            runCatching { onReRecognize(target) }
+                .onSuccess {
+                    selectedRecord = it
+                    onRecordUpdated(it)
+                }
+                .onFailure { rerunError = it.message ?: "rerun_failed" }
+        }
+    }
+
+    fun requestReRecognize(target: AsrHistoryStore.AsrHistoryRecord) {
+        if (rerunJob?.isActive == true || rerecognitionNotice != null) return
+        val decision = AsrRecordedAudioRouteResolver.resolve(context, prefs)
+        val noticeKey = decision.noticeKey.takeIf { it.isNotBlank() }
+        if (noticeKey != null && context.hasFeatureExplainerFlag(noticeKey)) {
+            if (decision.canContinue) {
+                launchReRecognize(target)
+            } else {
+                rerunError = decision.reasonCode
+            }
+            return
+        }
+        rerecognitionNotice = historyRerecognitionNoticeState(
+            context = context,
+            decision = decision,
+            noticeKey = noticeKey,
+            onContinue = { launchReRecognize(target) }
+        )
+    }
 
     LaunchedEffect(filteredIds, selectedIds) {
         if (selectedVisibleIds != selectedIds) {
@@ -266,22 +310,13 @@ fun AsrHistoryScreen(
                 rerunJob?.cancel()
                 rerunJob = null
                 rerunError = null
+                rerecognitionNotice = null
             },
             onDismiss = {
                 selectedRecord = null
             },
             onCopy = { onCopy(it) },
-            onReRecognize = {
-                rerunError = null
-                rerunJob = scope.launch {
-                    runCatching { onReRecognize(record) }
-                        .onSuccess {
-                            selectedRecord = it
-                            onRecordUpdated(it)
-                        }
-                        .onFailure { rerunError = it.message ?: "rerun_failed" }
-                }
-            },
+            onReRecognize = { requestReRecognize(record) },
             onReprocess = {
                 rerunError = null
                 rerunJob = scope.launch {
@@ -295,6 +330,11 @@ fun AsrHistoryScreen(
             }
         )
     }
+    SettingsNoticeDialog(
+        state = rerecognitionNotice,
+        uiMode = uiMode,
+        onDismiss = { rerecognitionNotice = null }
+    )
 }
 
 @Composable
@@ -708,10 +748,24 @@ private fun HistoryDetailsDialog(
                     val errorMessage = when (it) {
                         "audio_unavailable" -> stringResource(R.string.history_audio_unavailable)
                         "llm_unavailable" -> stringResource(R.string.history_llm_unavailable)
-                        "engine_unavailable", "engine_pcm_unsupported" ->
+                        "engine_unavailable", "engine_pcm_unsupported", "engine_not_ready" ->
                             stringResource(R.string.history_rerun_engine_unavailable)
                         "record_missing" -> stringResource(R.string.history_record_missing)
-                        else -> it
+                        AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_OPENAI_STREAMING ->
+                            stringResource(R.string.history_rerecognition_error_openai_streaming)
+                        AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_XASR ->
+                            stringResource(R.string.history_rerecognition_error_xasr)
+                        AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_UNKNOWN_MODEL ->
+                            stringResource(R.string.history_rerecognition_error_unknown_model)
+                        AsrRecordedAudioRouteResolver.REASON_UNSUPPORTED_NO_FILE_FALLBACK ->
+                            stringResource(R.string.history_rerecognition_error_no_file_fallback)
+                        AsrRecordedAudioRouteResolver.REASON_UNAVAILABLE_CREDENTIALS ->
+                            stringResource(R.string.history_rerecognition_error_unavailable_credentials)
+                        else -> if (it.startsWith("unsupported_") || it.startsWith("unavailable_")) {
+                            stringResource(R.string.history_rerun_engine_unavailable)
+                        } else {
+                            it
+                        }
                     }
                     HistoryText(
                         text = stringResource(R.string.history_rerun_error, errorMessage),
@@ -1188,3 +1242,70 @@ private fun FilterOptionChip(
 }
 
 private fun toggleId(ids: Set<String>, id: String): Set<String> = if (id in ids) ids - id else ids + id
+
+private fun historyRerecognitionNoticeState(
+    context: Context,
+    decision: AsrRecordedAudioRouteDecision,
+    noticeKey: String?,
+    onContinue: () -> Unit
+): SettingsNoticeDialogState {
+    val canContinue = decision.canContinue
+    return SettingsNoticeDialogState(
+        title = context.getString(R.string.history_rerecognition_notice_title),
+        paragraphs = listOf(
+            context.getString(R.string.history_rerecognition_current_engine, decision.currentEngineLabel),
+            historyRerecognitionFallbackLine(context, decision),
+            context.getString(
+                if (canContinue) {
+                    R.string.history_rerecognition_notice_supported_hint
+                } else {
+                    R.string.history_rerecognition_notice_unsupported_hint
+                }
+            )
+        ),
+        dontShowAgainText = noticeKey?.let {
+            context.getString(R.string.dialog_feature_explainer_dont_show_again)
+        },
+        confirmText = if (canContinue) {
+            context.getString(R.string.history_rerecognition_btn_continue)
+        } else {
+            null
+        },
+        dismissText = if (canContinue) {
+            context.getString(R.string.btn_cancel)
+        } else {
+            context.getString(R.string.history_rerecognition_btn_got_it)
+        },
+        onDontShowAgain = {
+            noticeKey?.let { context.saveFeatureExplainerFlag(it) }
+        },
+        onConfirm = {
+            if (canContinue) onContinue()
+        }
+    )
+}
+
+private fun historyRerecognitionFallbackLine(
+    context: Context,
+    decision: AsrRecordedAudioRouteDecision
+): String {
+    if (!decision.canContinue) {
+        return context.getString(R.string.history_rerecognition_fallback_unsupported)
+    }
+    if (decision.kind == AsrRecordedAudioRouteKind.ReplayStream) {
+        return context.getString(
+            R.string.history_rerecognition_fallback_stream,
+            decision.currentEngineLabel
+        )
+    }
+    val fallbackLabel = decision.fallbackEngineLabel?.takeIf { it.isNotBlank() }
+        ?: decision.currentEngineLabel
+    val useDirectCopy = decision.reasonCode == AsrRecordedAudioRouteResolver.REASON_DIRECT_FILE ||
+        decision.fallbackEngineLabel.isNullOrBlank() ||
+        decision.fallbackEngineLabel == decision.currentEngineLabel
+    return if (useDirectCopy) {
+        context.getString(R.string.history_rerecognition_fallback_direct, fallbackLabel)
+    } else {
+        context.getString(R.string.history_rerecognition_fallback_supported, fallbackLabel)
+    }
+}

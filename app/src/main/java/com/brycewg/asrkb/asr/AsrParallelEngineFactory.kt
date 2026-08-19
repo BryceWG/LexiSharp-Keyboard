@@ -14,7 +14,8 @@ internal data class AsrParallelEngineRequest(
     val backupVendor: AsrVendor,
     val externalPcmInput: Boolean = false,
     val modePreferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
-    val onPrimaryRequestDuration: ((Long) -> Unit)? = null
+    val onPrimaryRequestDuration: ((Long) -> Unit)? = null,
+    val modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
 )
 
 internal data class AsrParallelEnginePlan(
@@ -63,7 +64,10 @@ internal class AsrParallelEngineFactory(
                     backupVendor = plan.backupVendor,
                     onPrimaryRequestDuration = request.onPrimaryRequestDuration,
                     externalPcmInput = plan.externalPcmInput
-                ).also { it.modePreferencesOverride = request.modePreferences }
+                ).also {
+                    it.modePreferencesOverride = request.modePreferences
+                    it.modelOverride = request.modelOverride
+                }
                 AsrParallelEngineDecision.UseLazyLocalBackup -> LazyLocalBackupAsrEngine(
                     context = request.context,
                     scope = request.scope,
@@ -73,7 +77,8 @@ internal class AsrParallelEngineFactory(
                     backupVendor = plan.backupVendor,
                     onPrimaryRequestDuration = request.onPrimaryRequestDuration,
                     externalPcmInput = plan.externalPcmInput,
-                    modePreferences = request.modePreferences
+                    modePreferences = request.modePreferences,
+                    modelOverride = request.modelOverride
                 )
                 AsrParallelEngineDecision.UsePrimaryOnly ->
                     error("Primary-only plan cannot construct a backup wrapper")
@@ -90,7 +95,8 @@ internal class AsrParallelEngineFactory(
         backupVendor: AsrVendor = prefs.backupAsrVendor,
         externalPcmInput: Boolean = false,
         modePreferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
-        onPrimaryRequestDuration: ((Long) -> Unit)? = null
+        onPrimaryRequestDuration: ((Long) -> Unit)? = null,
+        modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
     ): StreamingAsrEngine? = createOrNull(
         AsrParallelEngineRequest(
             context = context,
@@ -101,7 +107,8 @@ internal class AsrParallelEngineFactory(
             backupVendor = backupVendor,
             externalPcmInput = externalPcmInput,
             modePreferences = modePreferences,
-            onPrimaryRequestDuration = onPrimaryRequestDuration
+            onPrimaryRequestDuration = onPrimaryRequestDuration,
+            modelOverride = modelOverride
         )
     )
 

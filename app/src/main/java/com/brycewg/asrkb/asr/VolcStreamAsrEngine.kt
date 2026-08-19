@@ -52,10 +52,6 @@ class VolcStreamAsrEngine(
         private const val TAG = "VolcStreamAsrEngine"
         private const val WS_ENDPOINT_BIDI_ASYNC = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async"
 
-        // 流式识别模型 1.0 / 2.0
-        private const val STREAM_RESOURCE_V1 = "volc.bigasr.sauc.duration"
-        private const val STREAM_RESOURCE_V2 = "volc.seedasr.sauc.duration"
-
         private const val PROTOCOL_VERSION = 0x1
         private const val HEADER_SIZE_UNITS = 0x1 // 4 bytes
 
@@ -80,7 +76,7 @@ class VolcStreamAsrEngine(
     }
 
     private val streamResource: String
-        get() = if (prefs.volcModelV2Enabled) STREAM_RESOURCE_V2 else STREAM_RESOURCE_V1
+        get() = VolcAsrModelCatalog.fromIdOrDefault(prefs.volcAsrModel).resourceId
 
     private val http: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(ApiLogInterceptor())

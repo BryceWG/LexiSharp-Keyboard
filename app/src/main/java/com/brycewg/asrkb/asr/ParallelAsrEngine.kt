@@ -61,6 +61,7 @@ class ParallelAsrEngine(
     private val running = AtomicBoolean(false)
     override var audioFrameSink: AudioFrameSink? = null
     internal var modePreferencesOverride: AsrEngineModePreferences? = null
+    internal var modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
     private val modePreferences: AsrEngineModePreferences
         get() = modePreferencesOverride ?: prefs.asrEngineModePreferencesSnapshot()
     private val stopRequested = AtomicBoolean(false)
@@ -266,6 +267,12 @@ class ParallelAsrEngine(
         } catch (t: Throwable) {
             Log.w(TAG, "$label cancel failed", t)
         }
+    }
+
+    override suspend fun awaitReady(timeoutMs: Long): Boolean {
+        val primaryOk = primaryConsumer?.awaitReady(timeoutMs) ?: true
+        val backupOk = backupConsumer?.awaitReady(timeoutMs) ?: true
+        return primaryOk && backupOk
     }
 
     override fun appendPcm(pcm: ByteArray, sampleRate: Int, channels: Int) {
@@ -738,7 +745,8 @@ class ParallelAsrEngine(
             preferences = modePreferences,
             source = AsrEngineConstructionSource.App,
             onRequestDuration = onRequestDuration,
-            applyVoiceFilter = false
+            applyVoiceFilter = false,
+            modelOverride = modelOverride
         )
     }
 

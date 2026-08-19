@@ -8,6 +8,7 @@ package com.brycewg.asrkb.store
 import android.util.Log
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LlmVendor
+import com.brycewg.asrkb.asr.VolcAsrModelCatalog
 import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 
 /**
@@ -448,6 +449,20 @@ internal object PrefsBackup {
             // 供应商设置（通用导入）
             // OpenRouter ASR 字符串字段（endpoint/apiKey/model）在这里随 vendorFields 导入。
             PrefsAsrVendorFields.importFromJson(asVendorFieldStore(), o)
+            val importedVolcModel = optString(KEY_VOLC_ASR_MODEL)
+            if (!importedVolcModel.isNullOrBlank()) {
+                volcAsrModel = importedVolcModel
+            } else if (
+                o.has(KEY_VOLC_STREAMING_ENABLED) ||
+                o.has(KEY_VOLC_FILE_STANDARD_ENABLED) ||
+                o.has(KEY_VOLC_MODEL_V2_ENABLED)
+            ) {
+                volcAsrModel = VolcAsrModelCatalog.fromLegacyFlags(
+                    volcStreamingEnabled,
+                    volcFileStandardEnabled,
+                    volcModelV2Enabled
+                ).id
+            }
             if (hasOpenAiProviders) {
                 openAiAsrProvidersJson = importedOpenAiProviders.orEmpty()
                 activeOpenAiAsrProviderId = importedOpenAiActiveId.orEmpty()

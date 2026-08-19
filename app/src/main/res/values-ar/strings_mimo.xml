@@ -3,7 +3,7 @@
     <string name="label_mimo_asr_api_key">مفتاح MiMo API</string>
     <string name="label_mimo_asr_endpoint">نقطة نهاية MiMo</string>
     <string name="label_mimo_asr_endpoint_preset">نقطة النهاية</string>
-    <string name="label_mimo_asr_model">النموذج</string>
+    <string name="label_mimo_asr_model">نموذج التعرّف</string>
     <string name="label_mimo_asr_prompt">موجّه النظام (v2.5 فقط)</string>
     <string name="label_mimo_disable_thinking">تعطيل التفكير</string>
     <string name="feature_mimo_disable_thinking_off_desc">يستخدم وضع التفكير الافتراضي للنموذج، وقد يكون أدق لكنه أبطأ.</string>
@@ -13,7 +13,7 @@
     <string name="mimo_endpoint_ams">Token Plan (أوروبا)</string>
     <string name="mimo_endpoint_paygo">الدفع حسب الاستخدام</string>
     <string name="mimo_endpoint_custom">مخصص</string>
-    <string name="label_mimo_asr_language">اللغة</string>
+    <string name="label_mimo_asr_language">لغة التعرّف</string>
     <string name="mimo_lang_auto">اكتشاف تلقائي</string>
     <string name="mimo_lang_zh">الصينية</string>
     <string name="mimo_lang_en">الإنجليزية</string>

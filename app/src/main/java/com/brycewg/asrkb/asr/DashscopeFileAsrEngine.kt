@@ -31,7 +31,8 @@ class DashscopeFileAsrEngine(
     prefs: Prefs,
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null,
-    httpClient: OkHttpClient? = null
+    httpClient: OkHttpClient? = null,
+    private val modelIdOverride: String? = null
 ) : BaseFileAsrEngine(context, scope, prefs, listener, onRequestDuration),
     PcmBatchRecognizer {
 
@@ -51,10 +52,7 @@ class DashscopeFileAsrEngine(
         .build()
 
     override val uploadAudioEncodingSpec: UploadAudioEncodingSpec?
-        get() {
-            val model = prefs.dashAsrModel.trim().ifBlank { Prefs.DEFAULT_DASH_MODEL }
-            return dashscopeUploadAudioEncodingSpecForModel(model)
-        }
+        get() = dashscopeUploadAudioEncodingSpecForModel(effectiveDashModel())
 
     override fun ensureReady(): Boolean {
         if (!super.ensureReady()) return false
@@ -66,7 +64,7 @@ class DashscopeFileAsrEngine(
     }
 
     override suspend fun recognize(pcm: ByteArray) {
-        val model = prefs.dashAsrModel.trim().ifBlank { Prefs.DEFAULT_DASH_MODEL }
+        val model = effectiveDashModel()
         val audio = encodePcmForUploadIfEnabled(pcm, model)
         when {
             prefs.isDashGenerationAsrModelId(model) -> recognizeWithGenerationApi(audio, model)
@@ -76,7 +74,7 @@ class DashscopeFileAsrEngine(
     }
 
     override suspend fun recognizeEncoded(audio: UploadAudioData) {
-        val model = prefs.dashAsrModel.trim().ifBlank { Prefs.DEFAULT_DASH_MODEL }
+        val model = effectiveDashModel()
         when {
             prefs.isDashGenerationAsrModelId(model) -> recognizeWithGenerationApi(audio, model)
             prefs.isDashOmniModelId(model) -> recognizeWithOmni(audio, model)
@@ -86,6 +84,14 @@ class DashscopeFileAsrEngine(
 
     override suspend fun recognizeFromPcm(pcm: ByteArray) {
         recognize(pcm)
+    }
+
+    private fun effectiveDashModel(): String {
+        val override = modelIdOverride?.trim().orEmpty()
+        if (override.isNotEmpty()) {
+            return DashScopePrefsCompat.normalizeDashAsrModel(override)
+        }
+        return prefs.dashAsrModel.trim().ifBlank { Prefs.DEFAULT_DASH_MODEL }
     }
 
     private fun reportUnsupportedModel(model: String) {

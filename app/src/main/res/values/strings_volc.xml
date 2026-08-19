@@ -4,6 +4,13 @@
     <string name="vendor_volc">Volcano Engine</string>
 
     <!-- Volc configuration -->
+    <string name="label_volc_asr_model">Recognition model</string>
+    <string name="volc_asr_model_streaming_v2">Doubao streaming speech recognition 2.0</string>
+    <string name="volc_asr_model_streaming_v1">Doubao streaming speech recognition 1.0</string>
+    <string name="volc_asr_model_file_v2">Doubao standard file recognition 2.0</string>
+    <string name="volc_asr_model_file_v1">Doubao standard file recognition 1.0</string>
+    <string name="volc_asr_model_file_turbo_v1">Doubao turbo file recognition 1.0</string>
+    <string name="feature_volc_asr_model_desc">Choose a Doubao recognition model directly. Streaming models show text as you speak and need a stable network. Standard file recognition uploads the full recording after you stop and is more accurate. Turbo file recognition also uploads after you stop and is faster. Does not change settings other than regular recognition.</string>
     <string name="label_volc_streaming">Streaming recognition</string>
     <string name="label_volc_file_standard">Use file recognition (standard)</string>
     <string name="label_volc_model_v2">Use Doubao ASR 2.0 model</string>
@@ -15,10 +22,10 @@
     <string name="label_volc_api_key">X-Api-Key</string>
 
     <!-- Volc modes hint -->
-    <string name="volc_modes_hint">Modes:\n
-1. File recognition (standard, submit/query): upload after recording complete; slower than flash mode but supports Doubao ASR 2.0; recommended when streaming is disabled.\n
-2. File recognition (flash): upload after recording complete; faster speed but does not support Doubao ASR 2.0.\n
-3. Streaming (default, bidirectional): upload while recording with real-time incremental preview; lower start/end latency; requires a stable network. Now supports Doubao ASR 2.0.</string>
+    <string name="volc_modes_hint">Choose a Doubao recognition model directly:\n
+1. Streaming speech recognition 2.0 / 1.0: text appears as you speak, with lower start/end latency; needs a stable network.\n
+2. Standard file recognition 2.0 / 1.0 (submit/query): uploads the full recording after you stop; more accurate.\n
+3. Turbo file recognition 1.0 (flash): uploads after you stop; faster.</string>
 
     <!-- Volc language options -->
     <string name="volc_lang_auto">Auto (Chinese/English + dialects)</string>
@@ -40,8 +47,8 @@
     <!-- ============================================== -->
 
     <!-- Volcengine - Streaming -->
-    <string name="feature_volc_streaming_off_desc">Uses file recognition mode. The entire recording is sent at once after completion. Suitable for unstable network conditions.</string>
-    <string name="feature_volc_streaming_on_desc">Uses bidirectional WebSocket streaming recognition. Intermediate results are displayed in real time as you speak. Requires stable network connection.</string>
+    <string name="feature_volc_streaming_off_desc">Choose standard or turbo file recognition under Recognition model. The full recording is uploaded after you stop.</string>
+    <string name="feature_volc_streaming_on_desc">This mode is now selected as streaming speech recognition 1.0 or 2.0 under Recognition model. Text appears as you speak; a stable network is required.</string>
 
     <!-- Volcengine - DDC (semantic smoothing) -->
     <string name="feature_volc_ddc_off_desc">Outputs raw recognition results without additional processing.</string>
@@ -56,12 +63,12 @@
     <string name="feature_volc_nonstream_on_desc">The provider performs a second correction pass on the streaming result. Final text may improve, but interim text may change.</string>
 
     <!-- Volcengine - File recognition (standard mode) -->
-    <string name="feature_volc_file_standard_off_desc">Uses file recognition (flash mode) after recording completion. Faster speed but does not support Doubao ASR 2.0.</string>
-    <string name="feature_volc_file_standard_on_desc">Uses file recognition (standard, submit/query) after recording completion. Slower than flash mode but supports Doubao ASR 2.0 for better accuracy.</string>
+    <string name="feature_volc_file_standard_off_desc">Choose turbo file recognition 1.0 under Recognition model. Uploads after you stop and is faster.</string>
+    <string name="feature_volc_file_standard_on_desc">Choose standard file recognition 1.0 or 2.0 under Recognition model. Uploads the full recording after you stop (submit/query) and is more accurate.</string>
 
     <!-- Volcengine - Model version -->
-    <string name="feature_volc_model_v2_off_desc">Uses Doubao ASR 1.0 model. Compatible with earlier API versions.</string>
-    <string name="feature_volc_model_v2_on_desc">Uses Doubao ASR 2.0 model (default). Better recognition accuracy and more language support.</string>
+    <string name="feature_volc_model_v2_off_desc">Choose the matching 1.0 model under Recognition model.</string>
+    <string name="feature_volc_model_v2_on_desc">Choose the matching 2.0 model under Recognition model. Better accuracy and broader language support.</string>
 
     <!-- Volcengine - New auth -->
     <string name="feature_volc_use_new_auth_off_desc">Uses the classic App Key / Access Key authentication.</string>

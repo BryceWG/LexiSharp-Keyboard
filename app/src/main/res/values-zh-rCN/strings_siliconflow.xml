@@ -5,7 +5,7 @@
 
     <!-- SiliconFlow configuration -->
     <string name="label_sf_api_key">API Key（Bearer）</string>
-    <string name="label_sf_model_select">选择模型</string>
+    <string name="label_sf_model_select">识别模型</string>
     <string name="sf_model_default_display">FunAudioLLM/SenseVoiceSmall</string>
     <string name="label_sf_omni_prompt">多模态识别提示词（可选）</string>
 

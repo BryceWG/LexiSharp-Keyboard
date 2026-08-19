@@ -15,7 +15,8 @@ internal data class AsrPushPcmEngineRequest(
     val preferences: AsrEngineModePreferences,
     val source: AsrEngineConstructionSource = AsrEngineConstructionSource.ExternalIntegration,
     val onRequestDuration: ((Long) -> Unit)? = null,
-    val applyVoiceFilter: Boolean = true
+    val applyVoiceFilter: Boolean = true,
+    val modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
 )
 
 internal data class AsrPushPcmEnginePlan(
@@ -95,7 +96,8 @@ internal class AsrPushPcmEngineFactory(
         preferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
         source: AsrEngineConstructionSource = AsrEngineConstructionSource.ExternalIntegration,
         onRequestDuration: ((Long) -> Unit)? = null,
-        applyVoiceFilter: Boolean = true
+        applyVoiceFilter: Boolean = true,
+        modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
     ): StreamingAsrEngine = create(
         AsrPushPcmEngineRequest(
             context = context,
@@ -107,7 +109,8 @@ internal class AsrPushPcmEngineFactory(
             preferences = preferences,
             source = source,
             onRequestDuration = onRequestDuration,
-            applyVoiceFilter = applyVoiceFilter
+            applyVoiceFilter = applyVoiceFilter,
+            modelOverride = modelOverride
         )
     )
 
@@ -121,7 +124,8 @@ internal class AsrPushPcmEngineFactory(
         preferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
         source: AsrEngineConstructionSource = AsrEngineConstructionSource.ExternalIntegration,
         onRequestDuration: ((Long) -> Unit)? = null,
-        applyVoiceFilter: Boolean = true
+        applyVoiceFilter: Boolean = true,
+        modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
     ): StreamingAsrEngine? = createOrNull(
         AsrPushPcmEngineRequest(
             context = context,
@@ -133,7 +137,8 @@ internal class AsrPushPcmEngineFactory(
             preferences = preferences,
             source = source,
             onRequestDuration = onRequestDuration,
-            applyVoiceFilter = applyVoiceFilter
+            applyVoiceFilter = applyVoiceFilter,
+            modelOverride = modelOverride
         )
     )
 

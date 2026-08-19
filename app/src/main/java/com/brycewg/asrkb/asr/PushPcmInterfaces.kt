@@ -9,6 +9,8 @@ package com.brycewg.asrkb.asr
  */
 interface ExternalPcmConsumer {
     fun appendPcm(pcm: ByteArray, sampleRate: Int, channels: Int)
+
+    suspend fun awaitReady(timeoutMs: Long = LOCAL_MODEL_READY_WAIT_MAX_MS): Boolean = true
 }
 
 /**

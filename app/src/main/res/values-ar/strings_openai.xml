@@ -12,7 +12,7 @@
     <string name="label_openai_asr_endpoint">نقطة النهاية (../transcriptions أو ../chat/completions)</string>
     <string name="hint_openai_custom_endpoint_wav_upload">الخدمات المتوافقة المخصصة سترفع صوت WAV لتحسين التوافق.</string>
     <string name="label_openai_api_key">مفتاح API (Bearer)</string>
-    <string name="label_openai_model">النموذج (مثل gpt-4o-mini-transcribe أو whisper-1)</string>
+    <string name="label_openai_model">نموذج التعرّف</string>
     <string name="label_openai_streaming">التعرّف بالبث</string>
     <string name="label_openai_use_completions">استخدام Completions API</string>
     <string name="label_openai_use_prompt">موجّه مخصص (بعض النماذج غير مدعومة)</string>
