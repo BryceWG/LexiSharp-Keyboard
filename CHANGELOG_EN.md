@@ -1,5 +1,31 @@
 # Changelog
 
+## v4.4.1 (2026-08-20)
+
+### New Features
+
+- **Keyboard History Panel**: New keyboard extension button to browse and insert recent transcripts; swipe to re-recognize or re-process
+- **Keep Failed Recognition Records**: Failed, timed-out, or cancelled sessions keep audio and appear in history with a reason, so they can be re-recognized or re-processed
+- **Doubao Model Picker**: Volcano Engine now uses a direct model picker for streaming/file 1.0/2.0 instead of stacked toggles
+- **Qwen3-ASR 1.7B Int8**: Added the Qwen3-ASR 1.7B Int8 local model
+- **Switch IME After Input**: After recognition (and post-processing) finishes, optionally switch back to a chosen IME for further editing
+- **Keep-Alive Notification Tap**: When background keep-alive is on, choose which page the persistent notification opens
+
+### Improvements
+
+- **Recording Re-recognition**: When a streaming model is selected, re-recognition automatically switches to a file recognition engine or model to improve success rate (X-ASR supports streaming replay)
+- **Vendor Setting Labels**: Unified recognition model, language, and endpoint labels across vendors
+- **Pro Intro**: Refined the Pro introduction page
+
+### Bug Fixes
+
+- **Streaming Preview Logs**: Added more detailed streaming-preview process logs; export detailed logs if you hit related issues
+- **Slider Commit**: Slider values apply only after release, avoiding repeated local-model reloads while dragging thread count
+- **Custom Reasoning Params**: Fixed LLM vendor custom reasoning parameters not being saved
+- **History Audio Mix-up**: Cancelled recognition no longer reuses the previous audio
+
+---
+
 ## v4.4.0 (2026-08-02)
 
 ### New Features
