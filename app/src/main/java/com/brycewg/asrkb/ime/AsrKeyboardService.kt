@@ -409,7 +409,7 @@ class AsrKeyboardService :
         imeViewVisible = false
         layoutController?.onInputViewFinished()
         stopImeRecordingIfRunning()
-        inputHelper.resetStreamingPreviewState()
+        inputHelper.resetStreamingPreviewState("finish_input_view")
         super.onFinishInputView(finishingInput)
         DebugLogManager.log("ime", "finish_input_view")
         // 停止剪贴板预览监听与默认节能下的自动同步
@@ -466,12 +466,16 @@ class AsrKeyboardService :
 
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
-        inputHelper.resetStreamingPreviewState()
         inputHelper.diagHostPkg = attribute?.packageName.orEmpty()
+        val ic = currentInputConnection
+        // 同一输入框被宿主重启时保留预览归属，避免按已含 composing 的光标文本重采锚点。
+        if (!inputHelper.hasStreamingPreviewOwnershipFor(ic)) {
+            inputHelper.resetStreamingPreviewState("start_input")
+        }
 
         // 若正在录音，同步中间结果为 composing
         if (asrManager.isRunning()) {
-            actionHandler.restorePartialAsComposing(currentInputConnection)
+            actionHandler.restorePartialAsComposing(ic)
         }
     }
 

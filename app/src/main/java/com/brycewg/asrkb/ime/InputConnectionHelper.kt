@@ -226,9 +226,23 @@ class InputConnectionHelper(private val tag: String = "InputConnectionHelper") {
         }
     }
 
+    /** 当前输入连接是否仍持有可复用的流式预览归属。 */
+    fun hasStreamingPreviewOwnershipFor(ic: InputConnection?): Boolean {
+        if (ic == null) return false
+        return streamingPreviewOwnership?.inputConnection?.get() === ic
+    }
+
     /** 清理输入会话结束后不可再复用的流式预览归属。 */
-    fun resetStreamingPreviewState() {
+    fun resetStreamingPreviewState(reason: String) {
+        val hadOwnership = streamingPreviewOwnership != null
         streamingPreviewOwnership = null
+        logDiagBase(
+            "preview_ownership_reset",
+            diagBase() + mapOf(
+                "reason" to reason,
+                "hadOwnership" to hadOwnership
+            )
+        )
     }
 
     /**
