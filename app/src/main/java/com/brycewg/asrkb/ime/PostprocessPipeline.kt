@@ -6,6 +6,8 @@ import android.view.inputmethod.InputConnection
 import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import com.brycewg.asrkb.util.AsrFinalFilters
 import com.brycewg.asrkb.util.TextSanitizer
 import com.brycewg.asrkb.util.TypewriterTextAnimator
@@ -72,8 +74,19 @@ internal class PostprocessPipeline(
         val onStreamingUpdate: (String) -> Unit = onStreamingUpdate@{ streamed ->
             if (isCancelled() || committed) return@onStreamingUpdate
             if (streamed.isEmpty() || streamed == lastStreamingText) return@onStreamingUpdate
+            val prevStream = lastStreamingText
             lastStreamingText = streamed
+            if (DebugLogManager.isRecording()) {
+                logDiag(
+                    "ai_stream",
+                    StreamingPreviewDiag.shape(prevStream, streamed) + mapOf(
+                        "tw" to (typewriter != null)
+                    )
+                )
+                StreamingPreviewDiag.maybeWarnDup("ime", "ai_stream", prevStream, streamed)
+            }
             if (typewriter != null) {
+                logTypewriterSubmit(typewriter, streamed, rush = false)
                 typewriter.submit(streamed)
             } else {
                 scope.launch {
@@ -148,6 +161,7 @@ internal class PostprocessPipeline(
 
         if (typewriter != null && aiUsed && finalText.isNotEmpty()) {
             // 最终结果到达后：不再“秒出”，改为让打字机以最快速度追到最终文本
+            logTypewriterSubmit(typewriter, finalText, rush = true)
             typewriter.submit(finalText, rush = true)
             val finalLen = finalText.length
             val t0 = try {
@@ -170,7 +184,24 @@ internal class PostprocessPipeline(
         }
 
         committed = true
+        val twLen = typewriter?.currentText()?.length ?: -1
         typewriter?.cancel()
+        val timedOut = typewriter != null && aiUsed && finalText.isNotEmpty() && twLen != finalText.length
+        val snapshot = if (DebugLogManager.isRecording()) {
+            StreamingPreviewDiag.editorSnapshot(ic)
+        } else {
+            emptyMap()
+        }
+        logDiagBase(
+            "ai_commit",
+            snapshot + mapOf(
+                "fp" to StreamingPreviewDiag.fingerprint(finalText),
+                "aiUsed" to aiUsed,
+                "twLen" to twLen,
+                "timedOut" to timedOut,
+                "streamed" to StreamingPreviewDiag.fingerprint(lastStreamingText)
+            )
+        )
         inputHelper.setComposingText(ic, finalText)
 
         return Result(
@@ -181,5 +212,35 @@ internal class PostprocessPipeline(
             aiPostMs = aiPostMs,
             aiPostStatus = aiPostStatus
         )
+    }
+
+    private fun logTypewriterSubmit(
+        typewriter: TypewriterTextAnimator,
+        target: String,
+        rush: Boolean
+    ) {
+        if (!DebugLogManager.isRecording()) return
+        val current = typewriter.currentText()
+        logDiag(
+            "typewriter_submit",
+            StreamingPreviewDiag.shape(current, target) + mapOf(
+                "rush" to rush,
+                "curLen" to current.length,
+                "tgtLen" to target.length,
+                "rewrite" to !target.startsWith(current)
+            )
+        )
+    }
+
+    private fun logDiag(event: String, data: Map<String, Any?> = emptyMap()) {
+        try {
+            DebugLogManager.log(category = "ime", event = event, data = data)
+        } catch (_: Throwable) { }
+    }
+
+    private fun logDiagBase(event: String, data: Map<String, Any?> = emptyMap()) {
+        try {
+            DebugLogManager.logBase(category = "ime", event = event, data = data)
+        } catch (_: Throwable) { }
     }
 }

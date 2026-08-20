@@ -321,6 +321,7 @@ class AsrKeyboardService :
             androidx.core.view.ViewCompat.requestApplyInsets(it)
             scheduleInsetsWarmup(it)
         }
+        inputHelper.diagHostPkg = info?.packageName.orEmpty()
         DebugLogManager.log(
             category = "ime",
             event = "start_input_view",
@@ -408,6 +409,7 @@ class AsrKeyboardService :
         imeViewVisible = false
         layoutController?.onInputViewFinished()
         stopImeRecordingIfRunning()
+        inputHelper.resetStreamingPreviewState()
         super.onFinishInputView(finishingInput)
         DebugLogManager.log("ime", "finish_input_view")
         // 停止剪贴板预览监听与默认节能下的自动同步
@@ -464,6 +466,8 @@ class AsrKeyboardService :
 
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
+        inputHelper.resetStreamingPreviewState()
+        inputHelper.diagHostPkg = attribute?.packageName.orEmpty()
 
         // 若正在录音，同步中间结果为 composing
         if (asrManager.isRunning()) {

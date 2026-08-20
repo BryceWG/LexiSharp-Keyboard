@@ -17,6 +17,7 @@ import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import java.util.concurrent.atomic.AtomicLong
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
@@ -136,6 +137,7 @@ class AsrSessionManager(
 
     // 统计/历史：端到端耗时起点（从开始录音到最终提交完成）
     private var sessionStartTotalUptimeMs: Long = 0L
+    private var lastPartialText: String? = null
 
     private fun nextSessionSeq(): Long {
         sessionSeq += 1L
@@ -439,6 +441,7 @@ class AsrSessionManager(
         lastAudioMsForStats = 0L
         // 新会话开始时重置上次请求耗时，避免串台（流式模式不会更新此值）
         lastRequestDurationMs = null
+        lastPartialText = null
         discardInFlightHistoryCapture()
         activeHistoryRecordId = UUID.randomUUID().toString()
         historyAudioCapture = AsrHistoryAudioCapture.create(
@@ -774,6 +777,17 @@ class AsrSessionManager(
             return
         }
         Log.d(TAG, "onPartial: text='$text'")
+        if (text != lastPartialText) {
+            val prev = lastPartialText
+            lastPartialText = text
+            StreamingPreviewDiag.logVerbose(
+                category = "asr",
+                event = "partial",
+                prev = prev,
+                next = text,
+                extra = mapOf("sessionSeq" to seq)
+            )
+        }
         listener?.onAsrPartial(text)
     }
 
