@@ -16,6 +16,8 @@ import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.AsrHistoryFailureRecorder
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.util.TypewriterTextAnimator
@@ -76,6 +78,7 @@ internal class ExternalSpeechSession(
     private var lastAudioMsForStats: Long = 0L
     private var lastRequestDurationMs: Long? = null
     private var lastPostprocPreview: String? = null
+    private var lastAsrPartial: String? = null
     private var vendor: AsrVendor? = null
     private var processingStartUptimeMs: Long = 0L
     private var processingEndUptimeMs: Long = 0L
@@ -361,6 +364,7 @@ internal class ExternalSpeechSession(
             lastRequestDurationMs = null
             lastAudioMsForStats = 0L
             lastPostprocPreview = null
+            lastAsrPartial = null
             processingStartUptimeMs = 0L
             processingEndUptimeMs = 0L
             localModelWaitStartUptimeMs = 0L
@@ -540,8 +544,24 @@ internal class ExternalSpeechSession(
                     ) {
                         return@onStreamingUpdate
                     }
+                    val prevStream = lastPostprocTarget
                     lastPostprocTarget = streamed
+                    StreamingPreviewDiag.logVerbose(
+                        category = "asr",
+                        event = "ai_stream",
+                        prev = prevStream,
+                        next = streamed,
+                        extra = mapOf("src" to "external", "id" to id, "tw" to (typewriter != null))
+                    )
                     if (typewriter != null) {
+                        val current = typewriter.currentText()
+                        StreamingPreviewDiag.logVerbose(
+                            category = "asr",
+                            event = "typewriter_submit",
+                            prev = current,
+                            next = streamed,
+                            extra = mapOf("src" to "external", "rush" to false)
+                        )
                         typewriter.submit(streamed)
                     } else {
                         if (streamed.isEmpty() ||
@@ -585,6 +605,14 @@ internal class ExternalSpeechSession(
                         }
                     }
                     if (typewriter != null && aiUsed && finalOut.isNotEmpty()) {
+                        val current = typewriter.currentText()
+                        StreamingPreviewDiag.logVerbose(
+                            category = "asr",
+                            event = "typewriter_submit",
+                            prev = current,
+                            next = finalOut,
+                            extra = mapOf("src" to "external", "rush" to true)
+                        )
                         typewriter.submit(finalOut, rush = true)
                         val finalLen = finalOut.length
                         val t0 = SystemClock.uptimeMillis()
@@ -595,6 +623,20 @@ internal class ExternalSpeechSession(
                             delay(20)
                         }
                     }
+                    val twLen = typewriter?.currentText()?.length ?: -1
+                    try {
+                        DebugLogManager.logBase(
+                            category = "asr",
+                            event = "ai_commit",
+                            data = StreamingPreviewDiag.shape(lastAsrPartial, finalOut) + mapOf(
+                                "src" to "external",
+                                "id" to id,
+                                "aiUsed" to aiUsed,
+                                "twLen" to twLen,
+                                "timedOut" to (typewriter != null && aiUsed && twLen != finalOut.length)
+                            )
+                        )
+                    } catch (_: Throwable) { }
                     finalOut
                 } catch (t: Throwable) {
                     Log.w(TAG, "applyWithAi failed, fallback to simple", t)
@@ -702,6 +744,17 @@ internal class ExternalSpeechSession(
                 Log.w(TAG, "applySimple failed, fallback to raw text", t)
                 text
             }
+            try {
+                DebugLogManager.logBase(
+                    category = "asr",
+                    event = "ai_commit",
+                    data = StreamingPreviewDiag.shape(lastAsrPartial, out) + mapOf(
+                        "src" to "external",
+                        "id" to id,
+                        "aiUsed" to false
+                    )
+                )
+            } catch (_: Throwable) { }
             // 记录使用统计与识别历史（来源标记为 external；尊重开关）
             try {
                 val audioMs = lastAudioMsForStats
@@ -807,6 +860,16 @@ internal class ExternalSpeechSession(
     override fun onPartial(text: String) {
         if (canceled || terminalGate.isFinished) return
         if (text.isNotEmpty()) {
+            if (text != lastAsrPartial) {
+                StreamingPreviewDiag.logVerbose(
+                    category = "asr",
+                    event = "partial",
+                    prev = lastAsrPartial,
+                    next = text,
+                    extra = mapOf("src" to "external", "id" to id)
+                )
+                lastAsrPartial = text
+            }
             hasAsrPartial = true
             lastPartialText = text
             safe { callbacks.onPartial(id, text) }

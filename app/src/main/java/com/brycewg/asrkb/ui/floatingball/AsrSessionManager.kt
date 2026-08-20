@@ -22,6 +22,8 @@ import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.AsrHistoryFailureRecorder
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.ui.AsrAccessibilityService.FocusContext
@@ -760,8 +762,20 @@ class AsrSessionManager(
                     ) {
                         return@onStreamingUpdate
                     }
+                    val prevStream = lastStreamingText
                     lastStreamingText = streamed
+                    StreamingPreviewDiag.logVerbose(
+                        category = "float",
+                        event = "ai_stream",
+                        prev = prevStream,
+                        next = streamed,
+                        extra = mapOf(
+                            "sessionToken" to sessionToken,
+                            "tw" to (typewriter != null)
+                        )
+                    )
                     if (typewriter != null) {
+                        logFloatTypewriterSubmit(typewriter, streamed, rush = false)
                         typewriter.submit(streamed)
                     } else {
                         rememberAiPostProcessingPreview(sessionToken, streamed)
@@ -808,6 +822,7 @@ class AsrSessionManager(
                     focusContext != null
                 ) {
                     // 最终结果到达后：让打字机以最快速度追到最终文本，再进行最终提交
+                    logFloatTypewriterSubmit(typewriter, finalText, rush = true)
                     typewriter.submit(finalText, rush = true)
                     val finalLen = finalText.length
                     val t0 = try {
@@ -827,6 +842,25 @@ class AsrSessionManager(
                     typewriter?.cancel()
                     return@launch
                 }
+                val twLen = typewriter?.currentText()?.length ?: -1
+                val timedOut = typewriter != null &&
+                    aiUsed &&
+                    finalText.isNotEmpty() &&
+                    twLen != finalText.length
+                try {
+                    DebugLogManager.logBase(
+                        category = "float",
+                        event = "ai_commit",
+                        data = mapOf(
+                            "sessionToken" to sessionToken,
+                            "fp" to StreamingPreviewDiag.fingerprint(finalText),
+                            "aiUsed" to aiUsed,
+                            "twLen" to twLen,
+                            "timedOut" to timedOut,
+                            "streamed" to StreamingPreviewDiag.fingerprint(lastStreamingText)
+                        )
+                    )
+                } catch (_: Throwable) { }
                 postprocCommitted = true
                 typewriter?.cancel()
                 lastAiUsed = aiUsed
@@ -1229,11 +1263,24 @@ class AsrSessionManager(
     }
 
     private fun insertTextToFocus(text: String): Boolean {
+        val preview = lastPartialForPreview
+        val hadPreview = !preview.isNullOrEmpty()
         if (useImeBridgeForSession) {
             val bridgeResult = synchronized(bridgeOperationLock) {
                 bridgePreviewSequence.incrementAndGet()
                 imeBridgeClient.insertText(text, sessionId = imeBridgeSessionId)
             }
+            logInsertFinal(
+                path = "bridge",
+                text = text,
+                preview = preview,
+                hadPreview = hadPreview,
+                ok = bridgeResult.isSuccess,
+                extra = mapOf(
+                    "code" to bridgeResult.code,
+                    "pkg" to bridgeResult.targetPackage
+                )
+            )
             if (bridgeResult.isSuccess) {
                 imeBridgeSessionId = null
                 recordAsrUsage(text)
@@ -1265,6 +1312,18 @@ class AsrSessionManager(
         val pasteTarget = pkg != null && isPackageInPasteTargets(pkg)
         if (writePaste && pasteTarget) {
             try {
+                DebugLogManager.logBase(
+                    category = "float",
+                    event = "insert_final",
+                    data = StreamingPreviewDiag.shape(preview, text) + mapOf(
+                        "path" to "paste",
+                        "hadPreview" to hadPreview,
+                        "pkg" to pkg,
+                        "ok" to false
+                    )
+                )
+            } catch (_: Throwable) { }
+            try {
                 val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText("ASR Result", text)
                 cm.setPrimaryClip(clip)
@@ -1284,6 +1343,19 @@ class AsrSessionManager(
         val wrote: Boolean = com.brycewg.asrkb.ui.AsrAccessibilityService.insertText(
             context,
             toWrite
+        )
+        logInsertFinal(
+            path = "a11y",
+            text = text,
+            preview = preview,
+            hadPreview = hadPreview,
+            ok = wrote,
+            extra = mapOf(
+                "pkg" to pkg,
+                "prefixLen" to (ctx?.prefix?.length ?: 0),
+                "suffixLen" to (ctx?.suffix?.length ?: 0),
+                "toWriteLen" to toWrite.length
+            )
         )
 
         if (wrote) {
@@ -1430,6 +1502,19 @@ class AsrSessionManager(
 
     private fun updatePreviewText(text: String) {
         if (text.isEmpty() || lastPartialForPreview == text) return
+        val prev = lastPartialForPreview
+        StreamingPreviewDiag.logVerbose(
+            category = "float",
+            event = "preview_write",
+            prev = prev,
+            next = text,
+            extra = mapOf(
+                "bridge" to useImeBridgeForSession,
+                "composing" to useImeBridgeComposingPreviewForSession,
+                "prefixLen" to (focusContext?.prefix?.length ?: -1),
+                "suffixLen" to (focusContext?.suffix?.length ?: -1)
+            )
+        )
         if (useImeBridgeForSession) {
             lastPartialForPreview = text
             if (useImeBridgeComposingPreviewForSession) {
@@ -1462,6 +1547,21 @@ class AsrSessionManager(
                 } else {
                     imeBridgeClient.setComposingText(text, sessionId = imeBridgeSessionId)
                 }
+            }
+            if (result != null) {
+                try {
+                    DebugLogManager.log(
+                        category = "float",
+                        event = "bridge_composing",
+                        data = mapOf(
+                            "ok" to result.isSuccess,
+                            "code" to result.code,
+                            "pkg" to result.targetPackage,
+                            "fp" to StreamingPreviewDiag.fingerprint(text),
+                            "seq" to previewSequence
+                        )
+                    )
+                } catch (_: Throwable) { }
             }
             if (result != null && !result.isSuccess && result.isBridgePresent) {
                 Log.d(
@@ -1522,5 +1622,54 @@ class AsrSessionManager(
         val rules = raw.split('\n').map { it.trim() }.filter { it.isNotEmpty() }
         // 前缀匹配（包名边界）
         return rules.any { rule -> pkg == rule || pkg.startsWith("$rule.") }
+    }
+
+    private fun logFloatTypewriterSubmit(
+        typewriter: TypewriterTextAnimator,
+        target: String,
+        rush: Boolean
+    ) {
+        val current = typewriter.currentText()
+        try {
+            DebugLogManager.log(
+                category = "float",
+                event = "typewriter_submit",
+                data = StreamingPreviewDiag.shape(current, target) + mapOf(
+                    "rush" to rush,
+                    "curLen" to current.length,
+                    "tgtLen" to target.length,
+                    "rewrite" to !target.startsWith(current)
+                )
+            )
+        } catch (_: Throwable) { }
+    }
+
+    private fun logInsertFinal(
+        path: String,
+        text: String,
+        preview: String?,
+        hadPreview: Boolean,
+        ok: Boolean,
+        extra: Map<String, Any?> = emptyMap()
+    ) {
+        try {
+            DebugLogManager.logBase(
+                category = "float",
+                event = "insert_final",
+                data = extra + StreamingPreviewDiag.shape(preview, text) + mapOf(
+                    "path" to path,
+                    "hadPreview" to hadPreview,
+                    "ok" to ok,
+                    "textLen" to text.length
+                )
+            )
+        } catch (_: Throwable) { }
+        StreamingPreviewDiag.maybeWarnDup(
+            category = "float",
+            at = "insert_final",
+            prev = preview,
+            next = text,
+            extra = mapOf("path" to path)
+        )
     }
 }

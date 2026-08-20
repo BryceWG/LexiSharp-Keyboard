@@ -558,6 +558,7 @@ class AsrAccessibilityService : AccessibilityService() {
                             "hasPaste" to hasPaste,
                             "hasLongClick" to hasLongClick,
                             "textLen" to textLen,
+                            "toWriteLen" to text.length,
                             "selStart" to selStart,
                             "selEnd" to selEnd
                         )
@@ -579,6 +580,11 @@ class AsrAccessibilityService : AccessibilityService() {
                     Log.e(TAG, "Error focusing target node", e)
                 }
 
+                val beforeLen = try {
+                    target.text?.length ?: 0
+                } catch (_: Throwable) {
+                    -1
+                }
                 val setOk = try {
                     target.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
                 } catch (e: Throwable) {
@@ -587,7 +593,24 @@ class AsrAccessibilityService : AccessibilityService() {
                 }
 
                 if (setOk) {
-                    DebugLogManager.log("insert", "path_set_text")
+                    if (DebugLogManager.isRecording()) {
+                        val afterLen = try {
+                            target.refresh()
+                            target.text?.length ?: -1
+                        } catch (_: Throwable) {
+                            -1
+                        }
+                        DebugLogManager.log(
+                            "insert",
+                            "path_set_text",
+                            mapOf(
+                                "toWriteLen" to text.length,
+                                "beforeLen" to beforeLen,
+                                "afterLen" to afterLen,
+                                "delta" to if (afterLen >= 0 && beforeLen >= 0) afterLen - beforeLen else -1
+                            )
+                        )
+                    }
                     @Suppress("DEPRECATION")
                     target.recycle()
                     return true
@@ -637,12 +660,39 @@ class AsrAccessibilityService : AccessibilityService() {
 
     // 静默版本：仅尝试设置文本，不做 Toast/复制
     private fun performInsertTextSilent(text: String): Boolean = withFocusedEditableNode { focusedNode ->
+        val beforeLen = try {
+            focusedNode.text?.length ?: 0
+        } catch (_: Throwable) {
+            -1
+        }
         val arguments = Bundle()
         arguments.putCharSequence(
             AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
             text
         )
-        focusedNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+        val ok = focusedNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+        if (DebugLogManager.isRecording()) {
+            val afterLen = try {
+                focusedNode.refresh()
+                focusedNode.text?.length ?: -1
+            } catch (_: Throwable) {
+                -1
+            }
+            try {
+                DebugLogManager.log(
+                    "insert",
+                    "silent_set_text",
+                    mapOf(
+                        "ok" to ok,
+                        "toWriteLen" to text.length,
+                        "beforeLen" to beforeLen,
+                        "afterLen" to afterLen,
+                        "delta" to if (afterLen >= 0 && beforeLen >= 0) afterLen - beforeLen else -1
+                    )
+                )
+            } catch (_: Throwable) { }
+        }
+        ok
     } ?: false
 
     // 静默粘贴：使用剪贴板 + ACTION_PASTE，尽量不干扰用户当前剪贴板内容

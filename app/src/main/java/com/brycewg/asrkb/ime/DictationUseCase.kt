@@ -9,6 +9,8 @@ import com.brycewg.asrkb.asr.AsrFailReasonCodes
 import com.brycewg.asrkb.asr.BackupAwareAsrEngine
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 
 internal class DictationUseCase(
     private val context: Context,
@@ -58,6 +60,14 @@ internal class DictationUseCase(
     ) {
         if (isCancelled(seq)) return
 
+        logCommitPath(
+            mode = "postprocess",
+            seq = seq,
+            partial = state.partialText,
+            finalText = text,
+            stableLen = state.committedStableLen,
+            ai = true
+        )
         transitionToState(KeyboardState.AiProcessing(rawText = text))
         inputHelper.replaceStreamingPreview(ic, text)
 
@@ -167,8 +177,17 @@ internal class DictationUseCase(
 
         val partial = state.partialText
         if (!partial.isNullOrEmpty()) {
+            val remainderMode = finalToCommit.startsWith(partial)
+            logCommitPath(
+                mode = if (remainderMode) "remainder" else "rewrite",
+                seq = seq,
+                partial = partial,
+                finalText = finalToCommit,
+                stableLen = state.committedStableLen,
+                ai = false
+            )
             inputHelper.finishComposingText(ic)
-            if (finalToCommit.startsWith(partial)) {
+            if (remainderMode) {
                 val remainder = finalToCommit.substring(partial.length)
                 if (remainder.isNotEmpty()) {
                     inputHelper.commitText(ic, remainder)
@@ -184,6 +203,15 @@ internal class DictationUseCase(
             } else {
                 ""
             }
+            logCommitPath(
+                mode = "stable_remainder",
+                seq = seq,
+                partial = null,
+                finalText = finalToCommit,
+                stableLen = committedStableLen,
+                ai = false,
+                extra = mapOf("remainderLen" to remainder.length)
+            )
             inputHelper.finishComposingText(ic)
             if (remainder.isNotEmpty()) {
                 inputHelper.commitText(ic, remainder)
@@ -245,6 +273,38 @@ internal class DictationUseCase(
             return
         }
         uiListenerProvider()?.onDictationInputSolidified()
+    }
+
+    private fun logCommitPath(
+        mode: String,
+        seq: Long,
+        partial: String?,
+        finalText: String,
+        stableLen: Int,
+        ai: Boolean,
+        extra: Map<String, Any?> = emptyMap()
+    ) {
+        try {
+            DebugLogManager.logBase(
+                category = "ime",
+                event = "commit_path",
+                data = extra + StreamingPreviewDiag.shape(partial, finalText) + mapOf(
+                    "mode" to mode,
+                    "seq" to seq,
+                    "partialLen" to (partial?.length ?: 0),
+                    "finalLen" to finalText.length,
+                    "stableLen" to stableLen,
+                    "ai" to ai
+                )
+            )
+        } catch (_: Throwable) { }
+        StreamingPreviewDiag.maybeWarnDup(
+            category = "ime",
+            at = "commit_path",
+            prev = partial,
+            next = finalText,
+            extra = mapOf("mode" to mode, "seq" to seq)
+        )
     }
 
     companion object {

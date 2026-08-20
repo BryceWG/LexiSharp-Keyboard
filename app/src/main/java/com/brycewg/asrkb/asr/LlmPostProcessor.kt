@@ -9,6 +9,8 @@ import android.util.Log
 import com.brycewg.asrkb.BuildConfig
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -549,6 +551,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     ): String {
         val contentBuilder = StringBuilder()
         var lastEmittedText: String? = null
+        var warnedCumulative = false
         val timeout = source.timeout()
         // 仅首个数据块启用超时，之后允许长间隔
         timeout.timeout(FIRST_TOKEN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -594,28 +597,12 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 val delta = choice.optJSONObject("delta")
                 var appended = false
                 if (delta != null) {
-                    when (val content = delta.opt("content")) {
-                        is String -> if (content.isNotEmpty()) {
-                            contentBuilder.append(content)
-                            appended = true
+                    val deltaText = extractDeltaContent(delta)
+                    if (!deltaText.isNullOrEmpty()) {
+                        if (appendStreamDelta(contentBuilder, deltaText, warnedCumulative)) {
+                            warnedCumulative = true
                         }
-                        is JSONArray -> {
-                            for (i in 0 until content.length()) {
-                                when (val item = content.get(i)) {
-                                    is String -> if (item.isNotEmpty()) {
-                                        contentBuilder.append(item)
-                                        appended = true
-                                    }
-                                    is JSONObject -> {
-                                        val textPart = item.optString("text")
-                                        if (textPart.isNotEmpty()) {
-                                            contentBuilder.append(textPart)
-                                            appended = true
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        appended = true
                     }
                 }
                 if (appended) {
@@ -656,6 +643,67 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         }
 
         return contentBuilder.toString()
+    }
+
+    private fun extractDeltaContent(delta: JSONObject): String? {
+        return when (val content = delta.opt("content")) {
+            is String -> content.takeIf { it.isNotEmpty() }
+            is JSONArray -> buildString {
+                for (i in 0 until content.length()) {
+                    when (val item = content.get(i)) {
+                        is String -> if (item.isNotEmpty()) append(item)
+                        is JSONObject -> {
+                            val textPart = item.optString("text")
+                            if (textPart.isNotEmpty()) append(textPart)
+                        }
+                    }
+                }
+            }.takeIf { it.isNotEmpty() }
+            else -> null
+        }
+    }
+
+    /**
+     * @return true if a cumulative-delta warning was emitted
+     */
+    private fun appendStreamDelta(
+        builder: StringBuilder,
+        deltaText: String,
+        alreadyWarned: Boolean
+    ): Boolean {
+        if (!DebugLogManager.isRecording()) {
+            builder.append(deltaText)
+            return false
+        }
+
+        try {
+            DebugLogManager.log(
+                category = "asr",
+                event = "llm_delta",
+                data = mapOf(
+                    "builderLen" to builder.length,
+                    "deltaLen" to deltaText.length,
+                    "rel" to StreamingPreviewDiag.relation(builder, deltaText)
+                )
+            )
+        } catch (_: Throwable) { }
+        var warned = false
+        if (!alreadyWarned && StreamingPreviewDiag.looksCumulativeDelta(builder, deltaText)) {
+            try {
+                DebugLogManager.logWarning(
+                    category = "asr",
+                    event = "llm_delta_cumulative",
+                    data = mapOf(
+                        "builderLen" to builder.length,
+                        "deltaLen" to deltaText.length,
+                        "rel" to StreamingPreviewDiag.relation(builder, deltaText)
+                    )
+                )
+            } catch (_: Throwable) { }
+            warned = true
+        }
+        builder.append(deltaText)
+        return warned
     }
 
     /**

@@ -12,6 +12,8 @@ import android.widget.TextView
 import android.widget.Toast
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import java.util.WeakHashMap
 
 internal class ImeUiRenderer(
@@ -42,6 +44,7 @@ internal class ImeUiRenderer(
     private var postprocessUndoTimeout: Runnable? = null
     private var lastRenderMode: RenderMode? = null
     private var forceNextStructuralRender: Boolean = true
+    private var lastPreviewWritten: String? = null
     private val imageResCache = WeakHashMap<android.widget.ImageView, Int>()
 
     fun forceStructuralRenderOnNextFrame() {
@@ -68,6 +71,20 @@ internal class ImeUiRenderer(
         // 更新中间结果到 composing
         if (state is KeyboardState.Listening && state.partialText != null) {
             inputConnectionProvider()?.let { ic ->
+                val sameText = lastPreviewWritten == state.partialText
+                if (sameText && DebugLogManager.isRecording()) {
+                    try {
+                        DebugLogManager.log(
+                            "ime",
+                            "preview_render",
+                            mapOf(
+                                "sameText" to true,
+                                "fp" to StreamingPreviewDiag.fingerprint(state.partialText)
+                            )
+                        )
+                    } catch (_: Throwable) { }
+                }
+                lastPreviewWritten = state.partialText
                 inputHelper.setStreamingPreview(ic, state.partialText)
             }
         }
@@ -336,6 +353,14 @@ internal class ImeUiRenderer(
 
         setMicButtons(selected = false, imageRes = R.drawable.microphone)
         setImageResourceIfChanged(views.btnPromptPicker, R.drawable.pencil_simple_line)
+        lastPreviewWritten = null
+        try {
+            DebugLogManager.log(
+                "ime",
+                "idle_finish_composing",
+                mapOf("icNull" to (inputConnectionProvider() == null))
+            )
+        } catch (_: Throwable) { }
         inputConnectionProvider()?.let { inputHelper.finishComposingText(it) }
     }
 

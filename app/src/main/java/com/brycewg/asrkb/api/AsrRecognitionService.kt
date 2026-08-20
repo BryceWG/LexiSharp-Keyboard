@@ -20,6 +20,8 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.util.TypewriterTextAnimator
@@ -289,6 +291,7 @@ class AsrRecognitionService : RecognitionService() {
         private val localModelReadyWaitMs = AtomicLong(0L)
         private var processingTimeoutJob: Job? = null
         private var lastPostprocPreview: String? = null
+        private var lastAsrPartial: String? = null
 
         private fun ensureAutoStopSuppressed() {
             if (autoStopSuppression != null) return
@@ -321,6 +324,7 @@ class AsrRecognitionService : RecognitionService() {
             lastRequestDurationMs = null
             localModelReadyWaitMs.set(0L)
             lastPostprocPreview = null
+            lastAsrPartial = null
             cancelProcessingTimeout()
             ensureAutoStopSuppressed()
             if (prefs.duckMediaOnRecordEnabled) {
@@ -423,8 +427,24 @@ class AsrRecognitionService : RecognitionService() {
                             ) {
                                 return@onStreamingUpdate
                             }
+                            val prevStream = lastPostprocTarget
                             lastPostprocTarget = streamed
+                            StreamingPreviewDiag.logVerbose(
+                                category = "asr",
+                                event = "ai_stream",
+                                prev = prevStream,
+                                next = streamed,
+                                extra = mapOf("src" to "speech", "tw" to (typewriter != null))
+                            )
                             if (typewriter != null) {
+                                val current = typewriter.currentText()
+                                StreamingPreviewDiag.logVerbose(
+                                    category = "asr",
+                                    event = "typewriter_submit",
+                                    prev = current,
+                                    next = streamed,
+                                    extra = mapOf("src" to "speech", "rush" to false)
+                                )
                                 typewriter.submit(streamed)
                             } else {
                                 if (streamed.isEmpty() ||
@@ -459,6 +479,14 @@ class AsrRecognitionService : RecognitionService() {
                             }
                         }
                         if (typewriter != null && aiUsed && finalOut.isNotEmpty()) {
+                            val current = typewriter.currentText()
+                            StreamingPreviewDiag.logVerbose(
+                                category = "asr",
+                                event = "typewriter_submit",
+                                prev = current,
+                                next = finalOut,
+                                extra = mapOf("src" to "speech", "rush" to true)
+                            )
                             typewriter.submit(finalOut, rush = true)
                             val finalLen = finalOut.length
                             val t0 = SystemClock.uptimeMillis()
@@ -470,6 +498,23 @@ class AsrRecognitionService : RecognitionService() {
                                 delay(20)
                             }
                         }
+                        val twLen = typewriter?.currentText()?.length ?: -1
+                        try {
+                            DebugLogManager.logBase(
+                                category = "asr",
+                                event = "ai_commit",
+                                data = StreamingPreviewDiag.shape(lastAsrPartial, finalOut) + mapOf(
+                                    "src" to "speech",
+                                    "aiUsed" to aiUsed,
+                                    "twLen" to twLen,
+                                    "timedOut" to (
+                                        typewriter != null &&
+                                            aiUsed &&
+                                            twLen != finalOut.length
+                                        )
+                                )
+                            )
+                        } catch (_: Throwable) { }
                         finalOut
                     } catch (t: Throwable) {
                         Log.w(TAG, "applyWithAi failed, fallback to simple", t)
@@ -496,6 +541,17 @@ class AsrRecognitionService : RecognitionService() {
                     } catch (t: Throwable) {
                         Log.w(TAG, "Post-processing failed", t)
                         text
+                    }.also { simpleOut ->
+                        try {
+                            DebugLogManager.logBase(
+                                category = "asr",
+                                event = "ai_commit",
+                                data = StreamingPreviewDiag.shape(lastAsrPartial, simpleOut) + mapOf(
+                                    "src" to "speech",
+                                    "aiUsed" to false
+                                )
+                            )
+                        } catch (_: Throwable) { }
                     }
                 }
 
@@ -532,6 +588,16 @@ class AsrRecognitionService : RecognitionService() {
         override fun onPartial(text: String) {
             if (canceled || finished || finalReceived) return
             if (text.isEmpty()) return
+            if (text != lastAsrPartial) {
+                StreamingPreviewDiag.logVerbose(
+                    category = "asr",
+                    event = "partial",
+                    prev = lastAsrPartial,
+                    next = text,
+                    extra = mapOf("src" to "speech")
+                )
+                lastAsrPartial = text
+            }
             Log.d(TAG, "onPartial: $text")
 
             // 首次检测到语音时通知

@@ -13,6 +13,7 @@ import com.brycewg.asrkb.asr.VadAutoStopGuard
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -567,6 +568,20 @@ class KeyboardActionHandler(
         llmPostProcessor.cancelActiveRequest()
         isAutoStartedRecording = false
 
+        try {
+            DebugLogManager.logBase(
+                category = "ime",
+                event = "commit_path",
+                data = mapOf(
+                    "mode" to "cancel_ai_raw",
+                    "seq" to opSeq,
+                    "finalLen" to rawText.length,
+                    "ai" to false,
+                    "fp" to StreamingPreviewDiag.fingerprint(rawText)
+                )
+            )
+        } catch (_: Throwable) { }
+
         inputHelper.setComposingText(ic, rawText)
         inputHelper.finishComposingText(ic)
 
@@ -776,6 +791,16 @@ class KeyboardActionHandler(
         if (state is KeyboardState.Listening) {
             val partial = state.partialText
             if (!partial.isNullOrEmpty()) {
+                try {
+                    DebugLogManager.log(
+                        "ime",
+                        "restore_partial",
+                        mapOf(
+                            "seq" to opSeq,
+                            "fp" to StreamingPreviewDiag.fingerprint(partial)
+                        )
+                    )
+                } catch (_: Throwable) { }
                 inputHelper.setStreamingPreview(ic, partial)
             }
         }
@@ -1094,6 +1119,7 @@ class KeyboardActionHandler(
     private fun startNormalListening() {
         // 开启新一轮录音：递增操作序列，取消在途处理
         opSeq++
+        inputHelper.diagSession = opSeq
         try {
             DebugLogManager.log(
                 "ime",
