@@ -311,6 +311,25 @@ class KeyboardActionHandler(
                     )
                 } catch (_: Throwable) { }
             }
+            is KeyboardState.AiProcessing -> {
+                // 用户主动点麦：打断后处理并开始新一轮录音
+                abortAiPostProcessing(
+                    reason = "mic_tap",
+                    allowAutoEnter = false,
+                    notifySolidified = false
+                )
+                startNormalListening()
+                try {
+                    DebugLogManager.log(
+                        "ime",
+                        "mic_tap_action",
+                        mapOf(
+                            "action" to "abort_ai_and_start_listening",
+                            "opSeq" to opSeq
+                        )
+                    )
+                } catch (_: Throwable) { }
+            }
             else -> {
                 // 其他状态忽略
                 Log.w(TAG, "handleMicTapToggle: ignored in state $currentState")
@@ -352,6 +371,24 @@ class KeyboardActionHandler(
             is KeyboardState.Listening -> {
                 // 如果正在录音（可能是自动启动的），长按应该停止并重新开始
                 isAutoStartedRecording = false // 清除自动启动标志
+            }
+            is KeyboardState.AiProcessing -> {
+                abortAiPostProcessing(
+                    reason = "mic_down",
+                    allowAutoEnter = false,
+                    notifySolidified = false
+                )
+                startNormalListening()
+                try {
+                    DebugLogManager.log(
+                        "ime",
+                        "mic_down_action",
+                        mapOf(
+                            "action" to "abort_ai_and_start_listening",
+                            "opSeq" to opSeq
+                        )
+                    )
+                } catch (_: Throwable) { }
             }
             is KeyboardState.Processing -> {
                 // 强制停止：根据模式决定后续动作
@@ -546,14 +583,37 @@ class KeyboardActionHandler(
     }
 
     fun handleInfoBarClick() {
-        if (currentState is KeyboardState.AiProcessing) {
-            cancelAiPostProcessingAndCommitRaw()
-        }
+        abortAiPostProcessing(
+            reason = "info_bar",
+            allowAutoEnter = true,
+            notifySolidified = true
+        )
     }
 
-    private fun cancelAiPostProcessingAndCommitRaw(): Boolean {
+    /**
+     * 输入视图被收起：仅打断已经在跑的 AI 后处理（提交原文并回到 Idle）。
+     * 听写录音/识别中的收起仍走 stopRecording → 出结果提交，不在这里整段丢弃；
+     * 因此再次显示时不得无条件 abort，否则会误杀收起后才开始的后处理。
+     */
+    fun onInputViewHidden() {
+        abortAiPostProcessing(
+            reason = "input_view_hidden",
+            allowAutoEnter = false,
+            notifySolidified = false
+        )
+    }
+
+    /**
+     * 取消进行中的 LLM 后处理并回到 Idle。
+     * InputConnection 缺失时仍必须清状态并取消 HTTP，否则麦键会一直被忽略。
+     */
+    private fun abortAiPostProcessing(
+        reason: String,
+        allowAutoEnter: Boolean,
+        notifySolidified: Boolean
+    ): Boolean {
         val state = currentState as? KeyboardState.AiProcessing ?: return false
-        val ic = getCurrentInputConnection() ?: return false
+        val ic = getCurrentInputConnection()
         val rawText = state.rawText
 
         opSeq++
@@ -561,12 +621,25 @@ class KeyboardActionHandler(
             DebugLogManager.log(
                 "ime",
                 "opseq_inc",
-                mapOf("at" to "cancel_ai_postprocess", "opSeq" to opSeq)
+                mapOf("at" to "abort_ai_postprocess", "reason" to reason, "opSeq" to opSeq)
             )
         } catch (_: Throwable) { }
         processingTimeoutController.cancel()
         llmPostProcessor.cancelActiveRequest()
         isAutoStartedRecording = false
+
+        try {
+            DebugLogManager.logBase(
+                category = "ime",
+                event = "abort_ai_postprocess",
+                data = mapOf(
+                    "reason" to reason,
+                    "hasIc" to (ic != null),
+                    "seq" to opSeq,
+                    "finalLen" to rawText.length
+                )
+            )
+        } catch (_: Throwable) { }
 
         try {
             DebugLogManager.logBase(
@@ -582,14 +655,15 @@ class KeyboardActionHandler(
             )
         } catch (_: Throwable) { }
 
-        inputHelper.setComposingText(ic, rawText)
-        inputHelper.finishComposingText(ic)
-
-        if (rawText.isNotEmpty() && consumeAutoEnterOnce()) {
-            try {
-                inputHelper.sendEnter(ic, getCurrentEditorInfo())
-            } catch (t: Throwable) {
-                Log.w(TAG, "sendEnter after interrupted postprocess failed", t)
+        if (ic != null) {
+            inputHelper.setComposingText(ic, rawText)
+            inputHelper.finishComposingText(ic)
+            if (allowAutoEnter && rawText.isNotEmpty() && consumeAutoEnterOnce()) {
+                try {
+                    inputHelper.sendEnter(ic, getCurrentEditorInfo())
+                } catch (t: Throwable) {
+                    Log.w(TAG, "sendEnter after interrupted postprocess failed", t)
+                }
             }
         }
         autoEnterOnce = false
@@ -601,8 +675,12 @@ class KeyboardActionHandler(
         commitRecorder.record(text = rawText, rawText = rawText, aiProcessed = false)
         transitionToState(KeyboardState.Idle)
         uiListener?.onStatusMessage(context.getString(R.string.status_postprocess_interrupted_raw))
-        uiListener?.onVibrate()
-        if (AsrInputCompletionPolicy.shouldNotifyInputSolidified(
+        if (reason != "input_view_hidden") {
+            uiListener?.onVibrate()
+        }
+        if (notifySolidified &&
+            ic != null &&
+            AsrInputCompletionPolicy.shouldNotifyInputSolidified(
                 committedText = rawText,
                 sessionStillRunning = asrManager.isRunning()
             )

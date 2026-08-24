@@ -368,6 +368,9 @@ class AsrKeyboardService :
         }
         ContinuousCaptureCoordinator.acquire(ContinuousCaptureOwner.Ime, this)
 
+        // 识别中收起后可能仍在 Processing/AiProcessing：按真实状态刷新，避免面板停在 Idle
+        uiRenderer?.render(actionHandler.getCurrentState())
+
         // 自动启动录音（如果开启了设置）
         if (prefs.autoStartRecordingOnShow) {
             // 与手动开始保持一致的就绪性校验，避免在缺少 Key/模型时进入 Listening 状态
@@ -378,9 +381,9 @@ class AsrKeyboardService :
                 rootView?.postDelayed({
                     // 再次确认仍然就绪（期间用户可能改了设置/权限）
                     if (!checkAsrReady()) return@postDelayed
-                    if (!asrManager.isRunning()) {
-                        actionHandler.startAutoRecording()
-                    }
+                    if (asrManager.isRunning()) return@postDelayed
+                    if (actionHandler.getCurrentState() !is KeyboardState.Idle) return@postDelayed
+                    actionHandler.startAutoRecording()
                 }, 100)
             }
         }
@@ -409,6 +412,7 @@ class AsrKeyboardService :
         imeViewVisible = false
         layoutController?.onInputViewFinished()
         stopImeRecordingIfRunning()
+        actionHandler.onInputViewHidden()
         inputHelper.resetStreamingPreviewState("finish_input_view")
         super.onFinishInputView(finishingInput)
         DebugLogManager.log("ime", "finish_input_view")
@@ -873,7 +877,8 @@ class AsrKeyboardService :
 
     private fun hideKeyboardPanel() {
         stopImeRecordingIfRunning()
-        uiRenderer?.render(KeyboardState.Idle)
+        actionHandler.onInputViewHidden()
+        uiRenderer?.render(actionHandler.getCurrentState())
         // 开启「收起后切换」时，由 requestHideSelf 在显示中交接目标 IME（并拉起其面板）
         try {
             requestHideSelf(0)
