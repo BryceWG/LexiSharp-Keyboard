@@ -46,6 +46,8 @@ internal fun interface BridgePcmAudioFocusPolicy {
 
 internal fun interface BridgePcmSessionFactory {
     fun create(config: BridgePcmSessionConfig, onEnded: (String) -> Unit): BridgePcmSession?
+
+    fun close() = Unit
 }
 
 internal interface BridgePcmSession {
@@ -65,9 +67,13 @@ internal class ImeBridgePcmSessionController(
     private val clockMs: () -> Long = { System.currentTimeMillis() }
 ) {
     private var active: ActiveSession? = null
+    private var closed = false
+    private var closeWhenEnded = false
+    private var factoryClosed = false
 
     @Synchronized
     fun begin(request: BridgePcmBeginRequest): BridgePcmOperationResult {
+        if (closed) return result(ImeBridgePcmContract.RESULT_SESSION_UNAVAILABLE, "service closed")
         if (!featureGate.isEnabled()) return result(ImeBridgePcmContract.RESULT_FEATURE_DISABLED)
         if (!isValidSessionId(request.sessionId)) {
             return result(ImeBridgePcmContract.RESULT_BAD_REQUEST, "invalid session id")
@@ -229,9 +235,29 @@ internal class ImeBridgePcmSessionController(
     }
 
     @Synchronized
+    fun close() {
+        if (closed) return
+        closed = true
+        cancelActiveForShutdown()
+        if (active?.state == ActiveState.Finishing) {
+            closeWhenEnded = true
+        } else {
+            closeFactory()
+        }
+    }
+
+    @Synchronized
     private fun onSessionEnded(sessionId: String) {
         val current = active ?: return
-        if (current.sessionId == sessionId) active = null
+        if (current.sessionId != sessionId) return
+        active = null
+        if (closeWhenEnded) closeFactory()
+    }
+
+    private fun closeFactory() {
+        if (factoryClosed) return
+        factoryClosed = true
+        sessionFactory.close()
     }
 
     private fun activeRecording(request: BridgePcmSessionOperationRequest): ActiveSession? {

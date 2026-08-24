@@ -31,7 +31,7 @@ class ImeBridgePcmSessionService : Service() {
     override fun onBind(intent: Intent?): IBinder = binder
 
     override fun onDestroy() {
-        controller.cancelActiveForShutdown()
+        controller.close()
         if (activeController === controller) activeController = null
         super.onDestroy()
     }
