@@ -178,7 +178,8 @@ internal class Qwen3AsrFileAsrEngine(
                         notifyLoadDone()
                     }
                 )
-                if (!text.isNullOrBlank()) texts += text.trim()
+                val sanitized = sanitizeQwen3AsrResult(text)
+                if (sanitized.isNotEmpty()) texts += sanitized
             }
             val text = joinNonStreamingChunkTexts(texts)
 
@@ -230,6 +231,24 @@ internal class Qwen3AsrFileAsrEngine(
     private companion object {
         private const val TAG = "Qwen3AsrFileAsrEngine"
     }
+}
+
+internal fun sanitizeQwen3AsrResult(text: String?): String {
+    if (text.isNullOrBlank()) return ""
+    val marker = "<asr_text>"
+    var out = text.trim().trimStart('\u200B', '\uFEFF')
+    val markerIndex = out.indexOf(marker)
+    if (markerIndex >= 0) {
+        val prefix = out.substring(0, markerIndex).trim()
+        if (prefix.isEmpty() || prefix.startsWith("language ", ignoreCase = true)) {
+            out = out.substring(markerIndex + marker.length)
+        }
+        out = out.replace(marker, "")
+    }
+    return out
+        .replace("<|im_end|>", "")
+        .replace("<|im_start|>", "")
+        .trim()
 }
 
 internal fun unloadQwen3AsrRecognizer() {
