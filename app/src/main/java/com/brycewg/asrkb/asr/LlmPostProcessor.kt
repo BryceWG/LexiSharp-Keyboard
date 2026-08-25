@@ -12,6 +12,7 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import java.io.IOException
+import java.io.InterruptedIOException
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -104,9 +105,6 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
 
         /** 连接超时（秒） */
         private const val CONNECT_TIMEOUT_SECONDS = 30L
-
-        /** 首 token 超时（秒）- streaming 模式下等待首个数据块的最大时间 */
-        private const val FIRST_TOKEN_TIMEOUT_SECONDS = 60L
 
         private val sharedHttpClient: OkHttpClient by lazy {
             OkHttpClient.Builder()
@@ -444,13 +442,10 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     }
 
     /**
-     * 获取或创建 OkHttpClient
+     * 获取或创建 OkHttpClient。
      *
-     * 超时策略说明：
-     * - connectTimeout: 建立连接的超时时间
-     * - readTimeout: 等待首个数据块的超时时间（首 token 超时）
-     * - writeTimeout: 写入请求体的超时时间
-     * - 不设置 callTimeout: streaming 模式下总时长不受限制
+     * 连接/写入 30s；readTimeout 为 0。后处理的正文首 token 与输出阶段
+     * 由 [LlmPostprocessTimeouts] 在 Call/source 上设绝对 deadline，不设 callTimeout。
      */
     private fun getHttpClient(): OkHttpClient = client ?: sharedHttpClient
 
@@ -540,24 +535,26 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     }
 
     /**
-     * 从 SSE 流中解析并拼接所有文本内容
-     *
-     * @param source 响应的 BufferedSource
-     * @return 拼接后的完整文本
+     * 从 SSE 流中解析并拼接所有文本内容。
+     * 首 token 指过滤 think 后的可见正文，不是任意 SSE / 推理增量。
      */
     private fun parseStreamingResponse(
         source: BufferedSource,
+        timeoutBudget: LlmPostprocessTimeouts.Budget?,
+        firstTokenDeadlineNs: Long?,
         onStreamingUpdate: ((String) -> Unit)? = null
     ): String {
         val contentBuilder = StringBuilder()
         var lastEmittedText: String? = null
         var warnedCumulative = false
         val timeout = source.timeout()
-        // 仅首个数据块启用超时，之后允许长间隔
-        timeout.timeout(FIRST_TOKEN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        var waitingFirstEvent = true
+        var waitingFirstContent = true
         var shouldStop = false
         val eventBuilder = StringBuilder()
+
+        if (timeoutBudget != null && firstTokenDeadlineNs != null) {
+            applyAbsoluteDeadline(timeout, firstTokenDeadlineNs)
+        }
 
         fun emitStreamingUpdateIfNeeded() {
             val handler = onStreamingUpdate ?: return
@@ -571,16 +568,21 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             }
         }
 
+        fun armOutputDeadlineIfFirstContentArrived() {
+            if (!waitingFirstContent) return
+            val visible = filterThinkTagsForStreaming(contentBuilder.toString())
+            if (visible.isEmpty()) return
+            waitingFirstContent = false
+            if (timeoutBudget == null) return
+            val outputDeadlineNs = System.nanoTime() +
+                TimeUnit.MILLISECONDS.toNanos(timeoutBudget.outputMs)
+            applyAbsoluteDeadline(timeout, outputDeadlineNs)
+        }
+
         fun flushEvent() {
             if (eventBuilder.isEmpty()) return
             val rawData = eventBuilder.toString().trim()
             eventBuilder.clear()
-
-            if (waitingFirstEvent) {
-                timeout.timeout(0, TimeUnit.MILLISECONDS)
-                timeout.clearDeadline()
-                waitingFirstEvent = false
-            }
 
             if (rawData.isEmpty()) return
             if (rawData == "[DONE]") {
@@ -607,6 +609,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 }
                 if (appended) {
                     emitStreamingUpdateIfNeeded()
+                    armOutputDeadlineIfFirstContentArrived()
                 }
 
                 val finishReason = choice.optString("finish_reason", "")
@@ -618,12 +621,27 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             }
         }
 
-        while (!source.exhausted() && !shouldStop) {
+        while (!shouldStop) {
+            val exhausted = try {
+                source.exhausted()
+            } catch (e: IOException) {
+                if (cancelRequested) throw e
+                if (timeoutBudget != null && isTimeoutThrowable(e)) {
+                    val reason = if (waitingFirstContent) "first_token" else "output"
+                    throw LlmPostprocessTimeoutException(reason)
+                }
+                throw e
+            }
+            if (exhausted) break
             val line = try {
                 source.readUtf8Line() ?: break
             } catch (e: IOException) {
-                Log.w(TAG, "Read line failed", e)
-                break
+                if (cancelRequested) throw e
+                if (timeoutBudget != null && isTimeoutThrowable(e)) {
+                    val reason = if (waitingFirstContent) "first_token" else "output"
+                    throw LlmPostprocessTimeoutException(reason)
+                }
+                throw e
             }
 
             if (line.isEmpty()) {
@@ -714,15 +732,18 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     private fun performChat(
         config: LlmRequestConfig,
         messages: JSONArray,
-        onStreamingUpdate: ((String) -> Unit)? = null
+        onStreamingUpdate: ((String) -> Unit)? = null,
+        timeoutBudget: LlmPostprocessTimeouts.Budget? = null
     ): RawCallResult {
         val streamingResult = performChatInternal(
             config,
             messages,
             streaming = true,
-            onStreamingUpdate = onStreamingUpdate
+            onStreamingUpdate = onStreamingUpdate,
+            timeoutBudget = timeoutBudget
         )
         if (streamingResult.ok) return streamingResult
+        if (isNonRetryableFailure(streamingResult)) return streamingResult
 
         // 若服务端拒绝或不支持流式，尝试回退到非流模式
         val shouldRetryWithoutStream =
@@ -736,7 +757,12 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             TAG,
             "Streaming call failed (code=${streamingResult.httpCode}): ${streamingResult.error ?: ""}. Retrying without stream."
         )
-        val fallback = performChatInternal(config, messages, streaming = false)
+        val fallback = performChatInternal(
+            config,
+            messages,
+            streaming = false,
+            timeoutBudget = timeoutBudget
+        )
         if (fallback.ok) return fallback
 
         return fallback.copy(error = fallback.error ?: streamingResult.error)
@@ -746,7 +772,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         config: LlmRequestConfig,
         messages: JSONArray,
         streaming: Boolean,
-        onStreamingUpdate: ((String) -> Unit)? = null
+        onStreamingUpdate: ((String) -> Unit)? = null,
+        timeoutBudget: LlmPostprocessTimeouts.Budget? = null
     ): RawCallResult {
         val req = try {
             buildRequest(config, messages, streaming = streaming)
@@ -758,11 +785,27 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val http = getHttpClient()
         val call = http.newCall(req)
         activeCall = call
+        val startedAtNs = System.nanoTime()
+        val firstTokenDeadlineNs = timeoutBudget?.let {
+            startedAtNs + TimeUnit.MILLISECONDS.toNanos(it.firstTokenMs)
+        }
+        if (timeoutBudget != null) {
+            val callDeadlineNs = startedAtNs +
+                TimeUnit.MILLISECONDS.toNanos(timeoutBudget.combinedMs)
+            applyAbsoluteDeadline(call.timeout(), callDeadlineNs)
+        }
         val resp = try {
             call.execute()
         } catch (t: Throwable) {
             if (activeCall === call) {
                 activeCall = null
+            }
+            if (cancelRequested) {
+                return RawCallResult(false, error = "Request canceled")
+            }
+            if (timeoutBudget != null && isTimeoutThrowable(t)) {
+                logLlmTimeout("first_token", timeoutBudget, streaming)
+                return RawCallResult(false, error = "timeout:first_token")
             }
             Log.e(TAG, "HTTP request failed", t)
             return RawCallResult(false, error = t.message ?: "Network error")
@@ -792,8 +835,23 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 streaming && contentType.contains("text/event-stream", ignoreCase = true)
 
             val parsed = if (isEventStream) {
-                parseStreamingResponse(body.source(), onStreamingUpdate = onStreamingUpdate)
+                if (timeoutBudget != null && firstTokenDeadlineNs != null &&
+                    System.nanoTime() >= firstTokenDeadlineNs
+                ) {
+                    throw LlmPostprocessTimeoutException("first_token")
+                }
+                parseStreamingResponse(
+                    body.source(),
+                    timeoutBudget = timeoutBudget,
+                    firstTokenDeadlineNs = firstTokenDeadlineNs,
+                    onStreamingUpdate = onStreamingUpdate
+                )
             } else {
+                if (timeoutBudget != null) {
+                    val combinedDeadlineNs = startedAtNs +
+                        TimeUnit.MILLISECONDS.toNanos(timeoutBudget.combinedMs)
+                    applyAbsoluteDeadline(body.source().timeout(), combinedDeadlineNs)
+                }
                 val respText = body.string()
                 extractTextFromResponse(respText, fallback = "")
             }
@@ -803,7 +861,17 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 return RawCallResult(false, error = "Empty result")
             }
             filtered
+        } catch (t: LlmPostprocessTimeoutException) {
+            logLlmTimeout(t.reason, timeoutBudget, streaming)
+            return RawCallResult(false, error = "timeout:${t.reason}")
         } catch (t: Throwable) {
+            if (cancelRequested) {
+                return RawCallResult(false, error = "Request canceled")
+            }
+            if (timeoutBudget != null && isTimeoutThrowable(t)) {
+                logLlmTimeout("output", timeoutBudget, streaming)
+                return RawCallResult(false, error = "timeout:output")
+            }
             Log.e(
                 TAG,
                 "Failed to parse ${if (streaming) "streaming" else "non-streaming"} response",
@@ -845,7 +913,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         config: LlmRequestConfig,
         messages: JSONArray,
         maxRetry: Int = 1,
-        onStreamingUpdate: ((String) -> Unit)? = null
+        onStreamingUpdate: ((String) -> Unit)? = null,
+        timeoutBudget: LlmPostprocessTimeouts.Budget? = null
     ): RawCallResult {
         var attempt = 0
         var last: RawCallResult
@@ -854,9 +923,15 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 return RawCallResult(false, error = "Request canceled")
             }
             attempt++
-            last = performChat(config, messages, onStreamingUpdate = onStreamingUpdate)
+            last = performChat(
+                config,
+                messages,
+                onStreamingUpdate = onStreamingUpdate,
+                timeoutBudget = timeoutBudget
+            )
             if (last.ok) return last
             if (cancelRequested) return last.copy(error = last.error ?: "Request canceled")
+            if (isNonRetryableFailure(last)) return last
             if (attempt > maxRetry) return last
             Log.w(
                 TAG,
@@ -895,7 +970,10 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             )
         }
 
-        val result = performChat(active, messages)
+        val timeoutBudget = LlmPostprocessTimeouts.connectivityBudget(
+            reasoningEnabled = active.enableReasoning
+        )
+        val result = performChat(active, messages, timeoutBudget = timeoutBudget)
         if (result.ok) {
             return@withContext LlmTestResult(true, contentPreview = result.text?.take(120))
         } else {
@@ -1031,7 +1109,16 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         }
 
         val t0 = System.nanoTime()
-        val result = performChatWithRetry(config, messages, onStreamingUpdate = onStreamingUpdate)
+        val timeoutBudget = LlmPostprocessTimeouts.budget(
+            reasoningEnabled = config.enableReasoning,
+            inputCharCount = input.length
+        )
+        val result = performChatWithRetry(
+            config,
+            messages,
+            onStreamingUpdate = onStreamingUpdate,
+            timeoutBudget = timeoutBudget
+        )
         val dt = TimeUnit.NANOSECONDS
             .toMillis((System.nanoTime() - t0).coerceAtLeast(0L))
             .coerceAtLeast(0L)
@@ -1113,7 +1200,11 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         }
 
         val t0 = System.nanoTime()
-        val result = performChatWithRetry(config, messages)
+        val timeoutBudget = LlmPostprocessTimeouts.budget(
+            reasoningEnabled = config.enableReasoning,
+            inputCharCount = original.length
+        )
+        val result = performChatWithRetry(config, messages, timeoutBudget = timeoutBudget)
         val dt = TimeUnit.NANOSECONDS
             .toMillis((System.nanoTime() - t0).coerceAtLeast(0L))
             .coerceAtLeast(0L)
@@ -1144,5 +1235,53 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             attempted = true,
             llmMs = dt
         )
+    }
+
+    private class LlmPostprocessTimeoutException(val reason: String) : IOException("timeout:$reason")
+
+    private fun applyAbsoluteDeadline(timeout: okio.Timeout, deadlineNs: Long) {
+        timeout.clearTimeout()
+        timeout.deadlineNanoTime(deadlineNs)
+    }
+
+    private fun isTimeoutThrowable(t: Throwable): Boolean {
+        if (t is LlmPostprocessTimeoutException) return true
+        var cur: Throwable? = t
+        while (cur != null) {
+            if (cur is InterruptedIOException || cur is java.net.SocketTimeoutException) {
+                return true
+            }
+            val msg = cur.message.orEmpty().lowercase()
+            if (msg.contains("timeout") || msg.contains("deadline")) return true
+            cur = cur.cause
+        }
+        return false
+    }
+
+    private fun isNonRetryableFailure(result: RawCallResult): Boolean {
+        val err = result.error ?: return false
+        return err.startsWith("timeout:") || err == "Request canceled"
+    }
+
+    private fun logLlmTimeout(
+        reason: String,
+        budget: LlmPostprocessTimeouts.Budget?,
+        streaming: Boolean
+    ) {
+        Log.w(TAG, "LLM postprocess timeout: reason=$reason")
+        try {
+            DebugLogManager.logBase(
+                category = "asr",
+                event = "llm_timeout",
+                data = mapOf(
+                    "reason" to reason,
+                    "reasoning" to (budget?.reasoningEnabled ?: false),
+                    "charCount" to (budget?.charCount ?: 0),
+                    "firstTokenMs" to (budget?.firstTokenMs ?: 0),
+                    "outputMs" to (budget?.outputMs ?: 0),
+                    "stream" to streaming
+                )
+            )
+        } catch (_: Throwable) { }
     }
 }
