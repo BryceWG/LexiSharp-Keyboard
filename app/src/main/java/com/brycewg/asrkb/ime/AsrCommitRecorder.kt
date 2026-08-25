@@ -19,7 +19,8 @@ internal class AsrCommitRecorder(
         rawText: String = text,
         aiProcessed: Boolean,
         aiPostMs: Long = 0L,
-        aiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+        aiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE,
+        llmVendorId: String? = null
     ) {
         val historyRecordId = asrManager.popLastHistoryRecordId()
         try {
@@ -69,6 +70,7 @@ internal class AsrCommitRecorder(
                                 aiProcessed = aiProcessed,
                                 aiPostMs = aiPostMs,
                                 aiPostStatus = aiPostStatus,
+                                llmVendorId = llmVendorId,
                                 charCount = chars
                             )
                         )

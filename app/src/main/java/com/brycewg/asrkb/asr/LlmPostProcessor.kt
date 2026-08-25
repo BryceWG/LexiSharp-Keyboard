@@ -81,7 +81,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         // 是否实际发起了 LLM 请求（跳过/空输入等场景为 false）
         val attempted: Boolean = false,
         // LLM 请求耗时（毫秒）；未尝试时为 0
-        val llmMs: Long = 0
+        val llmMs: Long = 0,
+        // 实际请求使用的 LLM 渠道；未尝试时为 null。
+        val llmVendorId: String? = null
     )
 
     /**
@@ -1135,7 +1137,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 httpCode = result.httpCode,
                 usedAi = false,
                 attempted = true,
-                llmMs = dt
+                llmMs = dt,
+                llmVendorId = config.vendor.id
             )
         }
 
@@ -1146,7 +1149,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             text = text,
             usedAi = true,
             attempted = true,
-            llmMs = dt
+            llmMs = dt,
+            llmVendorId = config.vendor.id
         )
     }
 

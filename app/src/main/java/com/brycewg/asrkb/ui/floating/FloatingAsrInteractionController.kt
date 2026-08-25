@@ -474,6 +474,11 @@ internal class FloatingAsrInteractionController(
                             com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
                         }
                     }
+                    val llmVendorId = try {
+                        asrSessionManager.getLastLlmVendorId()
+                    } catch (_: Throwable) {
+                        null
+                    }
                     val vendorForRecord = try {
                         asrSessionManager.peekLastFinalVendorForStats()
                     } catch (t: Throwable) {
@@ -515,6 +520,7 @@ internal class FloatingAsrInteractionController(
                                     aiProcessed = ai,
                                     aiPostMs = aiPostMs,
                                     aiPostStatus = aiPostStatus,
+                                    llmVendorId = llmVendorId,
                                     charCount = chars
                                 )
                             )

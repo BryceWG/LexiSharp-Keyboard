@@ -142,6 +142,7 @@ internal class AsrHistoryRerunCoordinator(
                 aiProcessed = processed.aiUsed,
                 aiPostMs = processed.aiMs,
                 aiPostStatus = processed.status,
+                llmVendorId = processed.llmVendorId,
                 charCount = TextSanitizer.countEffectiveChars(processed.text),
                 status = AsrHistoryStore.AsrHistoryStatus.SUCCESS,
                 failStage = AsrHistoryStore.AsrHistoryFailStage.NONE,
@@ -202,6 +203,7 @@ internal class AsrHistoryRerunCoordinator(
                 result.attempted -> AsrHistoryStore.AiPostStatus.FAILED
                 else -> AsrHistoryStore.AiPostStatus.NONE
             },
+            llmVendorId = result.llmVendorId,
             charCount = TextSanitizer.countEffectiveChars(result.text)
         )
         return withContext(Dispatchers.IO) {
@@ -222,7 +224,8 @@ internal class AsrHistoryRerunCoordinator(
                 result.attempted && aiUsed -> AsrHistoryStore.AiPostStatus.SUCCESS
                 result.attempted -> AsrHistoryStore.AiPostStatus.FAILED
                 else -> AsrHistoryStore.AiPostStatus.NONE
-            }
+            },
+            llmVendorId = result.llmVendorId
         )
     }
 
@@ -230,7 +233,8 @@ internal class AsrHistoryRerunCoordinator(
         val text: String,
         val aiUsed: Boolean,
         val aiMs: Long,
-        val status: AsrHistoryStore.AiPostStatus
+        val status: AsrHistoryStore.AiPostStatus,
+        val llmVendorId: String?
     )
 
     private fun ByteArray.asSequenceOfPcmChunks(): Sequence<ByteArray> = sequence {

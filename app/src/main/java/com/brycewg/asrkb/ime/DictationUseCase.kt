@@ -127,7 +127,8 @@ internal class DictationUseCase(
             rawText = text,
             aiProcessed = aiUsed,
             aiPostMs = aiPostMs,
-            aiPostStatus = aiPostStatus
+            aiPostStatus = aiPostStatus,
+            llmVendorId = postprocessResult.llmVendorId
         )
 
         uiListenerProvider()?.onVibrate()

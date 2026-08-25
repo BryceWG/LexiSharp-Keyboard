@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.store.Prefs
+import kotlinx.coroutines.CancellationException
 
 /**
  * 识别结果末处理：统一封装去尾处理与可选 AI 后处理
@@ -140,6 +141,7 @@ object AsrFinalFilters {
         var err: String? = null
         var aiAttempted = false
         var aiMs: Long = 0
+        var llmVendorId: String? = null
 
         // 少于阈值时自动跳过 AI 后处理（forceAi 时不跳过）
         val skipForShort = try {
@@ -167,6 +169,7 @@ object AsrFinalFilters {
                 processed = res.text
                 http = res.httpCode
                 err = res.errorMessage
+                llmVendorId = res.llmVendorId
                 aiMs =
                     if (res.llmMs >
                         0
@@ -175,6 +178,8 @@ object AsrFinalFilters {
                     } else {
                         ((System.nanoTime() - t0) / 1_000_000L).coerceAtLeast(0L)
                     }
+            } catch (t: CancellationException) {
+                throw t
             } catch (t: Throwable) {
                 Log.e(TAG, "LLM post-processing threw", t)
                 ok = false
@@ -212,7 +217,8 @@ object AsrFinalFilters {
             httpCode = http,
             usedAi = usedAi,
             attempted = aiAttempted,
-            llmMs = if (aiAttempted) aiMs.coerceAtLeast(0L) else 0
+            llmMs = if (aiAttempted) aiMs.coerceAtLeast(0L) else 0,
+            llmVendorId = llmVendorId
         )
     }
 }

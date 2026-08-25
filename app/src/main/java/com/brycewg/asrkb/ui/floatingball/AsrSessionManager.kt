@@ -31,6 +31,7 @@ import com.brycewg.asrkb.util.TextSanitizer
 import com.brycewg.asrkb.util.TypewriterTextAnimator
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -109,6 +110,7 @@ class AsrSessionManager(
     // 统计/历史：最近一次 AI 后处理耗时与状态
     private var lastAiPostMs: Long = 0L
     private var lastAiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+    private var lastLlmVendorId: String? = null
 
     // 统计/历史：最近一次最终结果的实际供应商（备用引擎场景下不再固定记录 prefs.asrVendor）
     private var sessionPrimaryVendor: AsrVendor = try {
@@ -291,6 +293,7 @@ class AsrSessionManager(
         lastAiUsed = false
         lastAiPostMs = 0L
         lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+        lastLlmVendorId = null
 
         val localModelError = checkLocalModelError()
         if (localModelError != null) {
@@ -426,6 +429,7 @@ class AsrSessionManager(
             lastAiUsed = false
             lastAiPostMs = 0L
             lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+            lastLlmVendorId = null
             val success = insertTextToFocus(commitText)
             hasCommittedResult = true
             listener.onResultCommitted(commitText, success)
@@ -615,6 +619,9 @@ class AsrSessionManager(
     /** 最近一次 AI 后处理状态 */
     fun getLastAiPostStatus(): AsrHistoryStore.AiPostStatus = lastAiPostStatus
 
+    /** 最近一次实际尝试后处理使用的 LLM 渠道。 */
+    fun getLastLlmVendorId(): String? = lastLlmVendorId
+
     fun peekLastFinalVendorForStats(): AsrVendor = lastFinalVendorForStats ?: sessionPrimaryVendor
 
     /** 清理会话 */
@@ -700,6 +707,7 @@ class AsrSessionManager(
             lastAiUsed = false
             lastAiPostMs = 0L
             lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+            lastLlmVendorId = null
             val stillRecording = (asrEngine?.isRunning == true)
             // 若未收到 onStopped，则在此近似计算录音时长
             if (lastAudioMsForStats == 0L && sessionStartUptimeMs > 0L) {
@@ -814,6 +822,7 @@ class AsrSessionManager(
                     res.attempted -> AsrHistoryStore.AiPostStatus.FAILED
                     else -> AsrHistoryStore.AiPostStatus.NONE
                 }
+                lastLlmVendorId = res.llmVendorId
                 finalText = res.text.ifBlank { text }
                 rememberAiPostProcessingResolvedText(sessionToken, finalText)
                 if (typewriter != null &&
@@ -871,6 +880,7 @@ class AsrSessionManager(
                 lastAiUsed = false
                 lastAiPostMs = 0L
                 lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+                lastLlmVendorId = null
             }
             if (!isSessionActive(sessionToken)) return@launch
 
@@ -1219,6 +1229,7 @@ class AsrSessionManager(
                     candidate,
                     postproc
                 )
+                if (!isSessionActive(sessionToken)) return
                 val aiUsed = (res.usedAi && res.ok)
                 lastAiUsed = aiUsed
                 lastAiPostMs = if (res.attempted) res.llmMs else 0L
@@ -1227,20 +1238,27 @@ class AsrSessionManager(
                     res.attempted -> AsrHistoryStore.AiPostStatus.FAILED
                     else -> AsrHistoryStore.AiPostStatus.NONE
                 }
+                lastLlmVendorId = res.llmVendorId
                 res.text.ifBlank {
                     com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, candidate)
                 }
+            } catch (t: CancellationException) {
+                throw t
             } catch (t: Throwable) {
+                if (!isSessionActive(sessionToken)) return
                 Log.e(TAG, "applyWithAi failed in timeout fallback", t)
                 lastAiUsed = false
                 lastAiPostMs = 0L
                 lastAiPostStatus = AsrHistoryStore.AiPostStatus.FAILED
+                lastLlmVendorId = null
                 com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, candidate)
             }
         } else {
+            if (!isSessionActive(sessionToken)) return
             lastAiUsed = false
             lastAiPostMs = 0L
             lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
+            lastLlmVendorId = null
             com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, candidate)
         }
         if (!isSessionActive(sessionToken)) return

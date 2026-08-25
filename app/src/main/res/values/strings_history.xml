@@ -28,6 +28,7 @@
     <string name="meta_proc_seconds">recognition time %1$.1fs</string>
     <string name="meta_ai_postproc_seconds">post-processing time %1$.1fs</string>
     <string name="ai_processed_yes">Post-processed</string>
+    <string name="ai_processed_by_vendor">Post-processed by %1$s</string>
     <string name="ai_processed_no">Not post-processed</string>
     <string name="ai_processed_failed">Post-processing failed</string>
     <string name="label_timestamp">Time</string>

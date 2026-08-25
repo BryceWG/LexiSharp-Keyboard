@@ -77,6 +77,8 @@ class AsrHistoryStore(context: Context) {
         val aiPostMs: Long = 0,
         // AI 后处理状态。旧记录无该字段时视为 NONE。
         val aiPostStatus: AiPostStatus = AiPostStatus.NONE,
+        // 当次实际尝试后处理使用的 LLM 渠道。旧记录没有该字段。
+        val llmVendorId: String? = null,
         val charCount: Int,
         // 会话结果。旧记录无该字段时视为 SUCCESS。
         val status: AsrHistoryStatus = AsrHistoryStatus.SUCCESS,

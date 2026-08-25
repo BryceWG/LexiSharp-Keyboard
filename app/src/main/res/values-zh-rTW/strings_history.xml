@@ -28,6 +28,7 @@
     <string name="meta_proc_seconds">識別耗時 %1$.1f 秒</string>
     <string name="meta_ai_postproc_seconds">後處理用時 %1$.1f 秒</string>
     <string name="ai_processed_yes">已後處理</string>
+    <string name="ai_processed_by_vendor">%1$s後處理</string>
     <string name="ai_processed_no">未後處理</string>
     <string name="ai_processed_failed">後處理失敗</string>
     <string name="label_timestamp">時間</string>

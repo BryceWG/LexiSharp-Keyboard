@@ -576,6 +576,7 @@ internal class ExternalSpeechSession(
                 var aiUsed = false
                 var aiPostMs = 0L
                 var aiPostStatus = com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
+                var llmVendorId: String? = null
                 val out = try {
                     val res = com.brycewg.asrkb.util.AsrFinalFilters.applyWithAi(
                         context,
@@ -590,6 +591,7 @@ internal class ExternalSpeechSession(
                         res.attempted -> com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.FAILED
                         else -> com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
                     }
+                    llmVendorId = res.llmVendorId
 
                     val processed = res.text
                     val finalOut = processed.ifBlank {
@@ -711,6 +713,7 @@ internal class ExternalSpeechSession(
                                     aiProcessed = aiUsed,
                                     aiPostMs = aiPostMs,
                                     aiPostStatus = aiPostStatus,
+                                    llmVendorId = llmVendorId,
                                     charCount = chars
                                 )
                             )

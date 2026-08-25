@@ -29,6 +29,7 @@
     <string name="meta_proc_seconds">認識時間%1$.1f秒</string>
     <string name="meta_ai_postproc_seconds">後処理時間%1$.1f秒</string>
     <string name="ai_processed_yes">後処理済み</string>
+    <string name="ai_processed_by_vendor">%1$sで後処理</string>
     <string name="ai_processed_no">未処理</string>
     <string name="ai_processed_failed">後処理失敗</string>
     <string name="label_timestamp">時間</string>

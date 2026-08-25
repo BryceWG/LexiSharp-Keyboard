@@ -28,6 +28,7 @@
     <string name="meta_proc_seconds">وقت التعرّف %1$.1fث</string>
     <string name="meta_ai_postproc_seconds">وقت المعالجة اللاحقة %1$.1fث</string>
     <string name="ai_processed_yes">تمت المعالجة اللاحقة</string>
+    <string name="ai_processed_by_vendor">معالجة لاحقة بواسطة %1$s</string>
     <string name="ai_processed_no">بدون معالجة لاحقة</string>
     <string name="ai_processed_failed">فشلت المعالجة اللاحقة</string>
     <string name="label_timestamp">الوقت</string>

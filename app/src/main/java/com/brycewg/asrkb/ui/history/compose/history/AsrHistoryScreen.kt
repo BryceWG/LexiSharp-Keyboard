@@ -70,6 +70,7 @@ import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteDecision
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteKind
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteResolver
+import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.history.AsrHistoryFailDisplay
@@ -659,7 +660,18 @@ private fun buildMeta(
         else -> record.source
     }
     val aiStatus = when (record.aiPostStatus) {
-        AsrHistoryStore.AiPostStatus.SUCCESS -> stringResource(R.string.ai_processed_yes)
+        AsrHistoryStore.AiPostStatus.SUCCESS -> {
+            val llmVendorId = record.llmVendorId
+            if (llmVendorId == null) {
+                stringResource(R.string.ai_processed_yes)
+            } else {
+                val llmVendorName = LlmVendor.allVendors()
+                    .firstOrNull { it.id == llmVendorId }
+                    ?.let { stringResource(it.displayNameResId) }
+                    ?: llmVendorId
+                stringResource(R.string.ai_processed_by_vendor, llmVendorName)
+            }
+        }
         AsrHistoryStore.AiPostStatus.FAILED -> stringResource(R.string.ai_processed_failed)
         AsrHistoryStore.AiPostStatus.NONE -> if (record.aiProcessed) {
             stringResource(R.string.ai_processed_yes)

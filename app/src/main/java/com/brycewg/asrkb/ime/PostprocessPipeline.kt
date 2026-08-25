@@ -29,7 +29,8 @@ internal class PostprocessPipeline(
         val postprocFailed: Boolean,
         val aiUsed: Boolean,
         val aiPostMs: Long,
-        val aiPostStatus: AsrHistoryStore.AiPostStatus
+        val aiPostStatus: AsrHistoryStore.AiPostStatus,
+        val llmVendorId: String?
     )
 
     suspend fun process(
@@ -210,7 +211,8 @@ internal class PostprocessPipeline(
             postprocFailed = postprocFailed,
             aiUsed = aiUsed,
             aiPostMs = aiPostMs,
-            aiPostStatus = aiPostStatus
+            aiPostStatus = aiPostStatus,
+            llmVendorId = res.llmVendorId
         )
     }
 
