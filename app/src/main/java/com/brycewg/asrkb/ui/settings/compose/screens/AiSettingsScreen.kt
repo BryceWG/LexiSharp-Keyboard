@@ -68,6 +68,7 @@ fun AiSettingsScreen(
     var messageDialog by remember { mutableStateOf<SettingsMessageDialogState?>(null) }
     var progressDialog by remember { mutableStateOf<SettingsProgressDialogState?>(null) }
     var featureExplainerDialog by remember { mutableStateOf<SettingsFeatureExplainerDialogState?>(null) }
+    var llmTestResultDialog by remember { mutableStateOf<AiLlmTestResultDialogState?>(null) }
     val llmTestRunning = llmTestJob?.isActive == true
 
     LaunchedEffect(context) {
@@ -90,6 +91,7 @@ fun AiSettingsScreen(
             llmTestJob?.cancel(CancellationException("AI settings disposed"))
             progressDialog = null
             messageDialog = null
+            llmTestResultDialog = null
         }
     }
 
@@ -209,10 +211,12 @@ fun AiSettingsScreen(
             isActiveSession = { it == llmTestSessionId },
             onProcessorChange = { llmTestProcessor = it },
             onProgressChange = { progressDialog = it },
-            onSuccess = { message ->
-                showMessageDialog(
-                    titleRes = R.string.llm_test_success_title,
-                    message = message
+            onSuccess = { result ->
+                llmTestResultDialog = AiLlmTestResultDialogState(
+                    connectMs = result.connectMs,
+                    firstTokenMs = result.firstTokenMs,
+                    outputMs = result.outputMs,
+                    preview = result.contentPreview
                 )
             },
             onFailed = { message ->
@@ -241,11 +245,13 @@ fun AiSettingsScreen(
             messageDialog = messageDialog,
             progressDialog = progressDialog,
             featureExplainerDialog = featureExplainerDialog,
+            llmTestResultDialog = llmTestResultDialog,
             onDismissChoiceSheet = { choiceSheet = null },
             onDismissMultiChoiceSheet = { multiChoiceSheet = null },
             onDismissMessageDialog = { messageDialog = null },
             onDismissProgressDialog = { progressDialog = null },
-            onDismissFeatureExplainerDialog = { featureExplainerDialog = null }
+            onDismissFeatureExplainerDialog = { featureExplainerDialog = null },
+            onDismissLlmTestResultDialog = { llmTestResultDialog = null }
         )
         AiSettingsRouteContent(
             uiMode = uiMode,

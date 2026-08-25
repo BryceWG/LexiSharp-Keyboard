@@ -25,6 +25,12 @@
     <string name="llm_test_running">Testing LLM call…</string>
     <string name="llm_test_success_title">Test Succeeded</string>
     <string name="llm_test_success_preview">Response preview: %1$s</string>
+    <string name="llm_test_timing_connect">Connect</string>
+    <string name="llm_test_timing_first_token">First token</string>
+    <string name="llm_test_timing_output">Output</string>
+    <string name="llm_test_timing_ms">%1$d ms</string>
+    <string name="llm_test_timing_total">Total %1$d ms</string>
+    <string name="llm_test_timing_bar_description">Connect %1$d ms, first token %2$d ms, output %3$d ms</string>
     <string name="llm_test_failed_title">Test Failed</string>
     <string name="llm_test_failed_reason">Reason: %1$s</string>
     <string name="llm_test_failed_generic">Call failed</string>

@@ -26,6 +26,12 @@
     <string name="llm_test_running">LLM呼び出しをテスト中…</string>
     <string name="llm_test_success_title">テスト成功</string>
     <string name="llm_test_success_preview">レスポンスプレビュー：%1$s</string>
+    <string name="llm_test_timing_connect">接続</string>
+    <string name="llm_test_timing_first_token">最初のトークン</string>
+    <string name="llm_test_timing_output">出力</string>
+    <string name="llm_test_timing_ms">%1$d ms</string>
+    <string name="llm_test_timing_total">合計 %1$d ms</string>
+    <string name="llm_test_timing_bar_description">接続 %1$d ms、最初のトークン %2$d ms、出力 %3$d ms</string>
     <string name="llm_test_failed_title">テスト失敗</string>
     <string name="llm_test_failed_reason">理由：%1$s</string>
     <string name="llm_test_failed_generic">呼び出し失敗</string>

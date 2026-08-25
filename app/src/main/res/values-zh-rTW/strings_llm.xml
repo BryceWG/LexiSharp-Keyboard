@@ -25,6 +25,12 @@
     <string name="llm_test_running">正在測試 LLM 呼叫…</string>
     <string name="llm_test_success_title">測試成功</string>
     <string name="llm_test_success_preview">回應片段：%1$s</string>
+    <string name="llm_test_timing_connect">連線</string>
+    <string name="llm_test_timing_first_token">首 token</string>
+    <string name="llm_test_timing_output">輸出</string>
+    <string name="llm_test_timing_ms">%1$d ms</string>
+    <string name="llm_test_timing_total">合計 %1$d ms</string>
+    <string name="llm_test_timing_bar_description">連線 %1$d ms，首 token %2$d ms，輸出 %3$d ms</string>
     <string name="llm_test_failed_title">測試失敗</string>
     <string name="llm_test_failed_reason">原因：%1$s</string>
     <string name="llm_test_failed_generic">呼叫失敗</string>

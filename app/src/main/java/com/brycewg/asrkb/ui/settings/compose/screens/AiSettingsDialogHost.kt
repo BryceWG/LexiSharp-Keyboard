@@ -28,11 +28,13 @@ internal fun AiSettingsDialogHost(
     messageDialog: SettingsMessageDialogState?,
     progressDialog: SettingsProgressDialogState?,
     featureExplainerDialog: SettingsFeatureExplainerDialogState?,
+    llmTestResultDialog: AiLlmTestResultDialogState?,
     onDismissChoiceSheet: () -> Unit,
     onDismissMultiChoiceSheet: () -> Unit,
     onDismissMessageDialog: () -> Unit,
     onDismissProgressDialog: () -> Unit,
-    onDismissFeatureExplainerDialog: () -> Unit
+    onDismissFeatureExplainerDialog: () -> Unit,
+    onDismissLlmTestResultDialog: () -> Unit
 ) {
     SettingsChoiceSheet(
         state = choiceSheet,
@@ -58,5 +60,10 @@ internal fun AiSettingsDialogHost(
         state = featureExplainerDialog,
         uiMode = uiMode,
         onDismiss = onDismissFeatureExplainerDialog
+    )
+    AiLlmTestResultDialog(
+        state = llmTestResultDialog,
+        uiMode = uiMode,
+        onDismiss = onDismissLlmTestResultDialog
     )
 }

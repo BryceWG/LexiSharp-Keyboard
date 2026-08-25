@@ -5,6 +5,7 @@
  */
 package com.brycewg.asrkb.asr
 
+import android.os.SystemClock
 import android.util.Log
 import com.brycewg.asrkb.BuildConfig
 import com.brycewg.asrkb.R
@@ -44,7 +45,10 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val ok: Boolean,
         val httpCode: Int? = null,
         val message: String? = null,
-        val contentPreview: String? = null
+        val contentPreview: String? = null,
+        val connectMs: Long = 0,
+        val firstTokenMs: Long = 0,
+        val outputMs: Long = 0
     )
 
     /**
@@ -64,7 +68,15 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val ok: Boolean,
         val httpCode: Int? = null,
         val text: String? = null,
-        val error: String? = null
+        val error: String? = null,
+        val connectMs: Long = 0,
+        val firstTokenMs: Long = 0,
+        val outputMs: Long = 0
+    )
+
+    private data class StreamParseResult(
+        val text: String,
+        val firstVisibleAtElapsed: Long
     )
 
     /**
@@ -548,7 +560,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     private fun parseStreamingResponse(
         source: BufferedSource,
         onStreamingUpdate: ((String) -> Unit)? = null
-    ): String {
+    ): StreamParseResult {
         val contentBuilder = StringBuilder()
         var lastEmittedText: String? = null
         var warnedCumulative = false
@@ -557,7 +569,14 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         timeout.timeout(FIRST_TOKEN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         var waitingFirstEvent = true
         var shouldStop = false
+        var firstVisibleAtElapsed = 0L
         val eventBuilder = StringBuilder()
+
+        fun noteFirstVisibleContentIfNeeded() {
+            if (firstVisibleAtElapsed != 0L) return
+            if (filterThinkTagsForStreaming(contentBuilder.toString()).isEmpty()) return
+            firstVisibleAtElapsed = SystemClock.elapsedRealtime()
+        }
 
         fun emitStreamingUpdateIfNeeded() {
             val handler = onStreamingUpdate ?: return
@@ -606,6 +625,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                     }
                 }
                 if (appended) {
+                    noteFirstVisibleContentIfNeeded()
                     emitStreamingUpdateIfNeeded()
                 }
 
@@ -642,7 +662,10 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             flushEvent()
         }
 
-        return contentBuilder.toString()
+        return StreamParseResult(
+            text = contentBuilder.toString(),
+            firstVisibleAtElapsed = firstVisibleAtElapsed
+        )
     }
 
     private fun extractDeltaContent(delta: JSONObject): String? {
@@ -758,6 +781,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val http = getHttpClient()
         val call = http.newCall(req)
         activeCall = call
+        val t0 = SystemClock.elapsedRealtime()
         val resp = try {
             call.execute()
         } catch (t: Throwable) {
@@ -767,6 +791,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             Log.e(TAG, "HTTP request failed", t)
             return RawCallResult(false, error = t.message ?: "Network error")
         }
+        val tHeaders = SystemClock.elapsedRealtime()
+        val connectMs = (tHeaders - t0).coerceAtLeast(0L)
 
         if (!resp.isSuccessful) {
             val code = resp.code
@@ -783,6 +809,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             return RawCallResult(false, httpCode = code, error = err?.take(256) ?: "HTTP $code")
         }
 
+        var firstTokenMs = 0L
+        var outputMs = 0L
         val text = try {
             val body = resp.body
 
@@ -792,9 +820,22 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 streaming && contentType.contains("text/event-stream", ignoreCase = true)
 
             val parsed = if (isEventStream) {
-                parseStreamingResponse(body.source(), onStreamingUpdate = onStreamingUpdate)
+                val stream = parseStreamingResponse(
+                    body.source(),
+                    onStreamingUpdate = onStreamingUpdate
+                )
+                val doneAt = SystemClock.elapsedRealtime()
+                val firstAt = stream.firstVisibleAtElapsed
+                if (firstAt > 0L) {
+                    firstTokenMs = (firstAt - tHeaders).coerceAtLeast(0L)
+                    outputMs = (doneAt - firstAt).coerceAtLeast(0L)
+                } else {
+                    firstTokenMs = (doneAt - tHeaders).coerceAtLeast(0L)
+                }
+                stream.text
             } else {
                 val respText = body.string()
+                firstTokenMs = (SystemClock.elapsedRealtime() - tHeaders).coerceAtLeast(0L)
                 extractTextFromResponse(respText, fallback = "")
             }
 
@@ -821,7 +862,13 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             }
         }
 
-        return RawCallResult(true, text = text)
+        return RawCallResult(
+            ok = true,
+            text = text,
+            connectMs = connectMs,
+            firstTokenMs = firstTokenMs,
+            outputMs = outputMs
+        )
     }
 
     /**
@@ -897,7 +944,13 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
 
         val result = performChat(active, messages)
         if (result.ok) {
-            return@withContext LlmTestResult(true, contentPreview = result.text?.take(120))
+            return@withContext LlmTestResult(
+                ok = true,
+                contentPreview = result.text?.take(120),
+                connectMs = result.connectMs,
+                firstTokenMs = result.firstTokenMs,
+                outputMs = result.outputMs
+            )
         } else {
             return@withContext LlmTestResult(
                 false,

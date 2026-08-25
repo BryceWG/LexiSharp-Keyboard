@@ -77,6 +77,9 @@ internal object SettingsLayoutMetrics {
     val FeatureExplainerDontShowSpacing = 16.dp
     val FeatureExplainerIconVerticalPadding = 4.dp
     val FeatureExplainerLabelSpacing = 8.dp
+    val TimingBarHeight = 10.dp
+    val TimingBarCorner = 6.dp
+    val TimingLegendSwatchSize = 10.dp
     val ChoiceTagTopPadding = 6.dp
     val ChoiceTagSpacing = 6.dp
     val ChoiceTagHorizontalPadding = 8.dp

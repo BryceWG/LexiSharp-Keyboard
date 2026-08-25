@@ -25,6 +25,12 @@
     <string name="llm_test_running">جارٍ اختبار استدعاء LLM…</string>
     <string name="llm_test_success_title">نجح الاختبار</string>
     <string name="llm_test_success_preview">معاينة الاستجابة: %1$s</string>
+    <string name="llm_test_timing_connect">الاتصال</string>
+    <string name="llm_test_timing_first_token">أول رمز</string>
+    <string name="llm_test_timing_output">الإخراج</string>
+    <string name="llm_test_timing_ms">%1$d ms</string>
+    <string name="llm_test_timing_total">الإجمالي %1$d ms</string>
+    <string name="llm_test_timing_bar_description">الاتصال %1$d ms، أول رمز %2$d ms، الإخراج %3$d ms</string>
     <string name="llm_test_failed_title">فشل الاختبار</string>
     <string name="llm_test_failed_reason">السبب: %1$s</string>
     <string name="llm_test_failed_generic">فشل الاستدعاء</string>

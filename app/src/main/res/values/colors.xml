@@ -40,4 +40,9 @@
     <color name="recording_latency_on_blue">#FFFFFF</color>
     <color name="recording_latency_orange">#8F3F08</color>
     <color name="recording_latency_on_orange">#FFFFFF</color>
+
+    <!-- LLM 测试耗时分段固定色（与动态主题无关） -->
+    <color name="llm_timing_blue">#1565C0</color>
+    <color name="llm_timing_green">#2E7D32</color>
+    <color name="llm_timing_yellow">#C79100</color>
 </resources>
