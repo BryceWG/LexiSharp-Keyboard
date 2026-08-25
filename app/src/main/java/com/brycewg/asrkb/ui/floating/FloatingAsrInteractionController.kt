@@ -524,6 +524,19 @@ internal class FloatingAsrInteractionController(
                                     charCount = chars
                                 )
                             )
+                            val timingTrace = asrSessionManager.completeLastHistoryTiming()
+                            if (timingTrace != null) {
+                                store.updateById(historyRecordId) { record ->
+                                    record.copy(
+                                        totalElapsedMs = timingTrace.totalElapsedMs,
+                                        timingTrace = timingTrace
+                                    )
+                                }
+                                com.brycewg.asrkb.store.AsrHistoryTimingDiagnostics.logSaved(
+                                    "floating",
+                                    timingTrace
+                                )
+                            }
                             com.brycewg.asrkb.store.AsrHistoryAudioStore.pruneAsync(
                                 context,
                                 store.listAll(),
@@ -534,6 +547,7 @@ internal class FloatingAsrInteractionController(
                         }
                     } else {
                         com.brycewg.asrkb.store.AsrHistoryAudioStore(context).delete(historyRecordId)
+                        asrSessionManager.completeLastHistoryTiming()
                     }
                 } catch (t: Throwable) {
                     Log.e(tag, "Failed to record usage stats (floating)", t)

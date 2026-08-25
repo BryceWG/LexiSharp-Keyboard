@@ -85,7 +85,9 @@ class AsrHistoryStore(context: Context) {
         // 失败/取消发生的阶段。旧记录无该字段时视为 NONE。
         val failStage: AsrHistoryFailStage = AsrHistoryFailStage.NONE,
         // 稳定失败原因码，不存本地化文案。成功记录为 null。
-        val failReasonCode: String? = null
+        val failReasonCode: String? = null,
+        // 阶段耗时轨迹。旧版本创建的记录没有该字段。
+        val timingTrace: AsrHistoryTimingTrace? = null
     ) {
         val isUnsuccessful: Boolean
             get() = status != AsrHistoryStatus.SUCCESS

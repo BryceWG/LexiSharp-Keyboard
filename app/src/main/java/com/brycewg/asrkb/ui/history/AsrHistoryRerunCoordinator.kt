@@ -2,7 +2,6 @@
 package com.brycewg.asrkb.ui.history
 
 import android.content.Context
-import android.os.SystemClock
 import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.asr.AsrEngineConstructionSource
 import com.brycewg.asrkb.asr.AsrEngineInvocationMode
@@ -16,6 +15,10 @@ import com.brycewg.asrkb.asr.ExternalPcmConsumer
 import com.brycewg.asrkb.asr.StreamingAsrEngine
 import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.AsrHistoryTimingDiagnostics
+import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
+import com.brycewg.asrkb.store.AsrHistoryTimingRecorder
+import com.brycewg.asrkb.store.AsrHistoryTimingStage
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.util.AsrFinalFilters
@@ -45,6 +48,7 @@ internal class AsrHistoryRerunCoordinator(
     }
 
     suspend fun reRecognize(record: AsrHistoryStore.AsrHistoryRecord): AsrHistoryStore.AsrHistoryRecord {
+        val timingRecorder = AsrHistoryTimingRecorder(AsrHistoryTimingOrigin.RERECOGNITION)
         val localizedContext = LocaleHelper.wrap(appContext)
         val decision = AsrRecordedAudioRouteResolver.resolve(localizedContext, prefs)
         logDiag(
@@ -68,9 +72,9 @@ internal class AsrHistoryRerunCoordinator(
             )
             error(decision.reasonCode)
         }
+        timingRecorder.begin(AsrHistoryTimingStage.AUDIO_INPUT)
         val pcm = withContext(Dispatchers.IO) { audioStore.readAudio(record.id) }
             ?: error("audio_unavailable")
-        val started = SystemClock.uptimeMillis()
         var requestMs = 0L
         val finalText = CompletableDeferred<String>()
         val listener = object : StreamingAsrEngine.Listener {
@@ -122,9 +126,14 @@ internal class AsrHistoryRerunCoordinator(
                 consumer.appendPcm(chunk, 16_000, 1)
             }
             runningEngine.stop()
+            timingRecorder.end(AsrHistoryTimingStage.AUDIO_INPUT)
+            timingRecorder.begin(AsrHistoryTimingStage.RECOGNITION)
             val raw = withTimeout(120_000L) { finalText.await() }
             if (raw.isBlank()) error("empty_result")
-            val processed = processNormal(raw)
+            timingRecorder.end(AsrHistoryTimingStage.RECOGNITION)
+            timingRecorder.begin(AsrHistoryTimingStage.POSTPROCESS)
+            val processed = processNormal(raw, timingRecorder)
+            timingRecorder.end(AsrHistoryTimingStage.POSTPROCESS)
             val actualVendor = when (runningEngine) {
                 is BackupAwareAsrEngine -> if (runningEngine.wasLastResultFromBackup()) {
                     runningEngine.backupVendor
@@ -133,11 +142,11 @@ internal class AsrHistoryRerunCoordinator(
                 }
                 else -> primary
             }
+            timingRecorder.begin(AsrHistoryTimingStage.TEXT_DELIVERY)
             val updated = record.copy(
                 rawText = raw,
                 text = processed.text,
                 vendorId = actualVendor.id,
-                totalElapsedMs = (SystemClock.uptimeMillis() - started).coerceAtLeast(0L),
                 procMs = requestMs,
                 aiProcessed = processed.aiUsed,
                 aiPostMs = processed.aiMs,
@@ -148,18 +157,29 @@ internal class AsrHistoryRerunCoordinator(
                 failStage = AsrHistoryStore.AsrHistoryFailStage.NONE,
                 failReasonCode = null
             )
-            val saved = withContext(Dispatchers.IO) {
+            withContext(Dispatchers.IO) {
                 store.updateById(record.id) { updated } ?: error("record_missing")
+            }
+            timingRecorder.end(AsrHistoryTimingStage.TEXT_DELIVERY)
+            val timingTrace = timingRecorder.complete()
+            val saved = withContext(Dispatchers.IO) {
+                store.updateById(record.id) {
+                    it.copy(
+                        totalElapsedMs = timingTrace.totalElapsedMs,
+                        timingTrace = timingTrace
+                    )
+                } ?: error("record_missing")
             }
             logDiag(
                 "history_rerun_finished",
                 mapOf(
                     "vendor" to actualVendor.id,
                     "kind" to decision.kind.name,
-                    "elapsedMs" to (SystemClock.uptimeMillis() - started).coerceAtLeast(0L),
+                    "elapsedMs" to timingTrace.totalElapsedMs,
                     "reason" to decision.reasonCode
                 )
             )
+            AsrHistoryTimingDiagnostics.logSaved("rerecognition", timingTrace)
             return saved
         } catch (t: CancellationException) {
             throw t
@@ -169,7 +189,7 @@ internal class AsrHistoryRerunCoordinator(
                 mapOf(
                     "vendor" to decision.vendor.id,
                     "kind" to decision.kind.name,
-                    "elapsedMs" to (SystemClock.uptimeMillis() - started).coerceAtLeast(0L),
+                    "elapsedMs" to timingRecorder.snapshot().totalElapsedMs,
                     "reason" to stableFailReason(t)
                 )
             )
@@ -184,6 +204,8 @@ internal class AsrHistoryRerunCoordinator(
     }
 
     suspend fun reprocess(record: AsrHistoryStore.AsrHistoryRecord): AsrHistoryStore.AsrHistoryRecord {
+        val timingRecorder = AsrHistoryTimingRecorder(AsrHistoryTimingOrigin.REPROCESS)
+        timingRecorder.begin(AsrHistoryTimingStage.POSTPROCESS)
         val localizedContext = LocaleHelper.wrap(appContext)
         if (!prefs.hasLlmKeys()) error("llm_unavailable")
         val input = record.rawText?.takeIf { it.isNotBlank() } ?: record.text
@@ -191,9 +213,12 @@ internal class AsrHistoryRerunCoordinator(
             localizedContext,
             prefs,
             input,
-            forceAi = true
+            forceAi = true,
+            aiTimingObserver = timingRecorder.asAiTimingObserver()
         )
         if (!result.ok || result.text.isBlank()) error(result.errorMessage ?: "postprocess_failed")
+        timingRecorder.end(AsrHistoryTimingStage.POSTPROCESS)
+        timingRecorder.begin(AsrHistoryTimingStage.TEXT_DELIVERY)
         val updated = record.copy(
             text = result.text,
             aiProcessed = result.usedAi,
@@ -206,14 +231,34 @@ internal class AsrHistoryRerunCoordinator(
             llmVendorId = result.llmVendorId,
             charCount = TextSanitizer.countEffectiveChars(result.text)
         )
-        return withContext(Dispatchers.IO) {
+        withContext(Dispatchers.IO) {
             store.updateById(record.id) { updated } ?: error("record_missing")
         }
+        timingRecorder.end(AsrHistoryTimingStage.TEXT_DELIVERY)
+        val timingTrace = timingRecorder.complete()
+        val saved = withContext(Dispatchers.IO) {
+            store.updateById(record.id) {
+                it.copy(
+                    totalElapsedMs = timingTrace.totalElapsedMs,
+                    timingTrace = timingTrace
+                )
+            } ?: error("record_missing")
+        }
+        AsrHistoryTimingDiagnostics.logSaved("reprocess", timingTrace)
+        return saved
     }
 
-    private suspend fun processNormal(raw: String): ProcessedText {
+    private suspend fun processNormal(
+        raw: String,
+        timingRecorder: AsrHistoryTimingRecorder? = null
+    ): ProcessedText {
         val localizedContext = LocaleHelper.wrap(appContext)
-        val result = AsrFinalFilters.applyWithAi(localizedContext, prefs, raw)
+        val result = AsrFinalFilters.applyWithAi(
+            localizedContext,
+            prefs,
+            raw,
+            aiTimingObserver = timingRecorder?.asAiTimingObserver()
+        )
         val text = result.text.ifBlank { AsrFinalFilters.applySimple(localizedContext, prefs, raw) }
         val aiUsed = result.ok && result.usedAi
         return ProcessedText(
@@ -236,6 +281,20 @@ internal class AsrHistoryRerunCoordinator(
         val status: AsrHistoryStore.AiPostStatus,
         val llmVendorId: String?
     )
+
+    private fun AsrHistoryTimingRecorder.asAiTimingObserver(): AsrFinalFilters.AiPostprocessTimingObserver {
+        return object : AsrFinalFilters.AiPostprocessTimingObserver {
+            override fun onAiPostprocessStarted() {
+                end(AsrHistoryTimingStage.POSTPROCESS)
+                begin(AsrHistoryTimingStage.AI_POSTPROCESS)
+            }
+
+            override fun onAiPostprocessFinished() {
+                end(AsrHistoryTimingStage.AI_POSTPROCESS)
+                begin(AsrHistoryTimingStage.POSTPROCESS)
+            }
+        }
+    }
 
     private fun ByteArray.asSequenceOfPcmChunks(): Sequence<ByteArray> = sequence {
         val chunkBytes = 16_000 * 2 * 200 / 1_000

@@ -58,8 +58,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +74,8 @@ import com.brycewg.asrkb.asr.AsrRecordedAudioRouteKind
 import com.brycewg.asrkb.asr.AsrRecordedAudioRouteResolver
 import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
+import com.brycewg.asrkb.store.AsrHistoryTimingStage
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.history.AsrHistoryFailDisplay
 import com.brycewg.asrkb.ui.history.AsrHistoryRerunErrorMessages
@@ -87,6 +91,9 @@ import com.brycewg.asrkb.ui.settings.compose.components.SettingsFilterChip
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsNoticeDialog
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsNoticeDialogState
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSearchField
+import com.brycewg.asrkb.ui.settings.compose.components.TimingBarInterval
+import com.brycewg.asrkb.ui.settings.compose.components.TimingIntervalBar
+import com.brycewg.asrkb.ui.settings.compose.components.TimingLegendRow
 import com.brycewg.asrkb.ui.settings.compose.components.animateSettingsDialogExitAlpha
 import com.brycewg.asrkb.ui.settings.compose.components.hasFeatureExplainerFlag
 import com.brycewg.asrkb.ui.settings.compose.components.rememberSettingsDialogExitController
@@ -737,6 +744,7 @@ private fun HistoryDetailsDialog(
                         error = true
                     )
                 }
+                HistoryTimingTraceSection(record = record, uiMode = uiMode)
                 HistoryResultSection(
                     title = stringResource(R.string.history_raw_text),
                     value = record.rawText ?: stringResource(R.string.history_raw_unavailable),
@@ -845,6 +853,176 @@ private fun HistoryDetailsDialog(
         }
     }
 }
+
+@Composable
+private fun HistoryTimingTraceSection(
+    record: AsrHistoryStore.AsrHistoryRecord,
+    uiMode: BibiUiMode
+) {
+    val trace = record.timingTrace
+    if (trace == null) {
+        HistoryText(
+            text = stringResource(R.string.history_timing_legacy_unavailable),
+            uiMode = uiMode,
+            compact = true,
+            secondary = true
+        )
+        return
+    }
+
+    val stageStyles = historyTimingStageStyles(record.source)
+    val stageDurations = trace.intervals
+        .groupBy { it.stage }
+        .mapValues { (_, intervals) ->
+            intervals.sumOf { interval ->
+                (interval.endOffsetMs - interval.startOffsetMs).coerceAtLeast(0L)
+            }
+        }
+    val visibleStages = stageStyles.mapNotNull { style ->
+        stageDurations[style.stage]
+            ?.takeIf { it > 0L }
+            ?.let { durationMs -> style.copy(durationMs = durationMs) }
+    }
+    val totalDuration = formatHistoryTimingDuration(trace.totalElapsedMs)
+    val origin = stringResource(historyTimingOriginLabel(trace.origin))
+    var stageDescription = ""
+    for (stage in visibleStages) {
+        val nextDescription = stringResource(
+            R.string.history_timing_stage_description,
+            stage.label,
+            formatHistoryTimingDuration(stage.durationMs)
+        )
+        stageDescription = if (stageDescription.isEmpty()) {
+            nextDescription
+        } else {
+            stringResource(
+                R.string.history_timing_summary,
+                stageDescription,
+                nextDescription
+            )
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        HistoryText(
+            text = stringResource(
+                R.string.history_timing_summary,
+                origin,
+                stringResource(R.string.history_timing_total, totalDuration)
+            ),
+            uiMode = uiMode,
+            compact = true,
+            secondary = true
+        )
+        TimingIntervalBar(
+            totalElapsedMs = trace.totalElapsedMs,
+            intervals = trace.intervals.mapNotNull { interval ->
+                stageStyles.firstOrNull { it.stage == interval.stage }?.let { style ->
+                    TimingBarInterval(
+                        startOffsetMs = interval.startOffsetMs,
+                        endOffsetMs = interval.endOffsetMs,
+                        color = style.color
+                    )
+                }
+            },
+            contentDescription = stringResource(
+                R.string.history_timing_bar_description,
+                origin,
+                totalDuration,
+                stageDescription
+            ),
+            trackColor = historyTimingTrackColor(uiMode)
+        )
+        HistoryTimingLegendGrid(stages = visibleStages, uiMode = uiMode)
+    }
+}
+
+@Composable
+private fun HistoryTimingLegendGrid(
+    stages: List<HistoryTimingStageStyle>,
+    uiMode: BibiUiMode
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        stages.forEach { stage ->
+            TimingLegendRow(
+                label = stage.label,
+                value = formatHistoryTimingDuration(stage.durationMs),
+                color = stage.color,
+                uiMode = uiMode,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = SettingsLayoutMetrics.ProDialogTinySpacing)
+            )
+        }
+    }
+}
+
+@Composable
+private fun historyTimingStageStyles(source: String): List<HistoryTimingStageStyle> = listOf(
+    HistoryTimingStageStyle(
+        stage = AsrHistoryTimingStage.AUDIO_INPUT,
+        label = stringResource(R.string.history_timing_audio_input),
+        color = colorResource(R.color.history_timing_audio_input)
+    ),
+    HistoryTimingStageStyle(
+        stage = AsrHistoryTimingStage.RECOGNITION,
+        label = stringResource(R.string.history_timing_recognition),
+        color = colorResource(R.color.history_timing_recognition)
+    ),
+    HistoryTimingStageStyle(
+        stage = AsrHistoryTimingStage.POSTPROCESS,
+        label = stringResource(R.string.history_timing_postprocess),
+        color = colorResource(R.color.history_timing_postprocess)
+    ),
+    HistoryTimingStageStyle(
+        stage = AsrHistoryTimingStage.AI_POSTPROCESS,
+        label = stringResource(R.string.history_timing_ai_postprocess),
+        color = colorResource(R.color.history_timing_ai_postprocess)
+    ),
+    HistoryTimingStageStyle(
+        stage = AsrHistoryTimingStage.TEXT_DELIVERY,
+        label = stringResource(
+            if (source == "external") {
+                R.string.history_timing_result_delivery
+            } else {
+                R.string.history_timing_text_delivery
+            }
+        ),
+        color = colorResource(R.color.history_timing_text_delivery)
+    )
+)
+
+private fun historyTimingOriginLabel(origin: AsrHistoryTimingOrigin): Int = when (origin) {
+    AsrHistoryTimingOrigin.ORIGINAL -> R.string.history_timing_origin_original
+    AsrHistoryTimingOrigin.RERECOGNITION -> R.string.history_timing_origin_rerecognition
+    AsrHistoryTimingOrigin.REPROCESS -> R.string.history_timing_origin_reprocess
+}
+
+@Composable
+private fun formatHistoryTimingDuration(durationMs: Long): String {
+    val safeDurationMs = durationMs.coerceAtLeast(0L)
+    return if (safeDurationMs < 1_000L) {
+        stringResource(R.string.history_timing_duration_ms, safeDurationMs)
+    } else {
+        stringResource(
+            R.string.history_timing_duration_seconds,
+            safeDurationMs / 1_000.0
+        )
+    }
+}
+
+@Composable
+private fun historyTimingTrackColor(uiMode: BibiUiMode): Color = when (uiMode) {
+    BibiUiMode.Material -> MaterialTheme.colorScheme.surfaceVariant
+    BibiUiMode.Miuix -> MiuixTheme.colorScheme.surfaceVariant
+}
+
+private data class HistoryTimingStageStyle(
+    val stage: AsrHistoryTimingStage,
+    val label: String,
+    val color: Color,
+    val durationMs: Long = 0L
+)
 
 private val HistoryDetailBodyMaxHeight = 200.dp
 

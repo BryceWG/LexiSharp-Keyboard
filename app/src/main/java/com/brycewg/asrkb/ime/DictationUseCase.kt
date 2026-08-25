@@ -45,10 +45,12 @@ internal class DictationUseCase(
             uiListenerProvider()?.onVibrate()
             return
         }
+        val historyTiming = asrManager.acquireNextHistoryCommitContext()
+        historyTiming?.timing?.begin(com.brycewg.asrkb.store.AsrHistoryTimingStage.POSTPROCESS)
         if (prefs.postProcessEnabled && prefs.hasLlmKeys()) {
-            handleWithPostprocess(ic, text, state, seq)
+            handleWithPostprocess(ic, text, state, seq, historyTiming)
         } else {
-            handleWithoutPostprocess(ic, text, state, seq)
+            handleWithoutPostprocess(ic, text, state, seq, historyTiming)
         }
     }
 
@@ -56,7 +58,8 @@ internal class DictationUseCase(
         ic: InputConnection,
         text: String,
         state: KeyboardState.Listening,
-        seq: Long
+        seq: Long,
+        historyTiming: AsrSessionManager.HistoryCommitContext?
     ) {
         if (isCancelled(seq)) return
 
@@ -75,11 +78,28 @@ internal class DictationUseCase(
             ic = ic,
             text = text,
             isCancelled = { isCancelled(seq) },
-            onFinalReady = { processingTimeoutController.cancel() },
+            onFinalReady = {
+                historyTiming?.timing?.end(com.brycewg.asrkb.store.AsrHistoryTimingStage.POSTPROCESS)
+                historyTiming?.timing?.begin(com.brycewg.asrkb.store.AsrHistoryTimingStage.TEXT_DELIVERY)
+                processingTimeoutController.cancel()
+            },
             onPostprocFailed = {
                 uiListenerProvider()?.onStatusMessage(
                     context.getString(R.string.status_llm_failed_used_raw)
                 )
+            },
+            aiTimingObserver = historyTiming?.let { context ->
+                object : com.brycewg.asrkb.util.AsrFinalFilters.AiPostprocessTimingObserver {
+                    override fun onAiPostprocessStarted() {
+                        context.timing.end(com.brycewg.asrkb.store.AsrHistoryTimingStage.POSTPROCESS)
+                        context.timing.begin(com.brycewg.asrkb.store.AsrHistoryTimingStage.AI_POSTPROCESS)
+                    }
+
+                    override fun onAiPostprocessFinished() {
+                        context.timing.end(com.brycewg.asrkb.store.AsrHistoryTimingStage.AI_POSTPROCESS)
+                        context.timing.begin(com.brycewg.asrkb.store.AsrHistoryTimingStage.POSTPROCESS)
+                    }
+                }
             }
         ) ?: return
 
@@ -94,7 +114,7 @@ internal class DictationUseCase(
 
         if (finalOut.isBlank()) {
             inputHelper.setComposingText(ic, "")
-            archiveEmptyFilteredResult()
+            archiveEmptyFilteredResult(historyTiming)
             return
         }
 
@@ -128,7 +148,8 @@ internal class DictationUseCase(
             aiProcessed = aiUsed,
             aiPostMs = aiPostMs,
             aiPostStatus = aiPostStatus,
-            llmVendorId = postprocessResult.llmVendorId
+            llmVendorId = postprocessResult.llmVendorId,
+            historyTiming = historyTiming
         )
 
         uiListenerProvider()?.onVibrate()
@@ -165,16 +186,21 @@ internal class DictationUseCase(
         ic: InputConnection,
         text: String,
         state: KeyboardState.Listening,
-        seq: Long
+        seq: Long,
+        historyTiming: AsrSessionManager.HistoryCommitContext?
     ) {
         val finalToCommit = com.brycewg.asrkb.util.AsrFinalFilters.applySimple(context, prefs, text)
 
         if (finalToCommit.isBlank()) {
-            archiveEmptyFilteredResult()
+            historyTiming?.timing?.end(com.brycewg.asrkb.store.AsrHistoryTimingStage.POSTPROCESS)
+            archiveEmptyFilteredResult(historyTiming)
             return
         }
 
         if (isCancelled(seq)) return
+
+        historyTiming?.timing?.end(com.brycewg.asrkb.store.AsrHistoryTimingStage.POSTPROCESS)
+        historyTiming?.timing?.begin(com.brycewg.asrkb.store.AsrHistoryTimingStage.TEXT_DELIVERY)
 
         val partial = state.partialText
         if (!partial.isNullOrEmpty()) {
@@ -234,7 +260,12 @@ internal class DictationUseCase(
             }
         }
 
-        commitRecorder.record(text = finalToCommit, rawText = text, aiProcessed = false)
+        commitRecorder.record(
+            text = finalToCommit,
+            rawText = text,
+            aiProcessed = false,
+            historyTiming = historyTiming
+        )
 
         uiListenerProvider()?.onVibrate()
         notifyInputSolidifiedIfReady(finalToCommit)
@@ -252,11 +283,12 @@ internal class DictationUseCase(
         transitionToIdleWithTiming(usedBackupResult)
     }
 
-    private fun archiveEmptyFilteredResult() {
+    private fun archiveEmptyFilteredResult(historyTiming: AsrSessionManager.HistoryCommitContext? = null) {
         asrManager.archiveQueuedHistoryFailure(
             status = AsrHistoryStore.AsrHistoryStatus.FAILED,
             failStage = AsrHistoryStore.AsrHistoryFailStage.RECOGNITION,
-            failReasonCode = AsrFailReasonCodes.EMPTY_RESULT
+            failReasonCode = AsrFailReasonCodes.EMPTY_RESULT,
+            context = historyTiming
         )
         transitionToIdle(true)
         uiListenerProvider()?.onStatusMessage(

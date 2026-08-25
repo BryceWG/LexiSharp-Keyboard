@@ -20,9 +20,12 @@ internal class AsrCommitRecorder(
         aiProcessed: Boolean,
         aiPostMs: Long = 0L,
         aiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE,
-        llmVendorId: String? = null
+        llmVendorId: String? = null,
+        historyTiming: AsrSessionManager.HistoryCommitContext? = null
     ) {
-        val historyRecordId = asrManager.popLastHistoryRecordId()
+        val historyRecordId = historyTiming?.recordId ?: asrManager.consumeHistoryCommitContext(null)
+        var historyStore: AsrHistoryStore? = null
+        var historyWritten = false
         try {
             val chars = TextSanitizer.countEffectiveChars(text)
             if (!prefs.disableUsageStats) {
@@ -30,7 +33,8 @@ internal class AsrCommitRecorder(
             }
             try {
                 val audioMs = asrManager.popLastAudioMsForStats()
-                val totalElapsedMs = asrManager.popLastTotalElapsedMsForStats()
+                val legacyTotalElapsedMs = asrManager.popLastTotalElapsedMsForStats()
+                val totalElapsedMs = legacyTotalElapsedMs
                 val procMs = asrManager.getLastRequestDuration() ?: 0L
                 val vendorForRecord = try {
                     asrManager.peekLastFinalVendorForStats()
@@ -56,6 +60,7 @@ internal class AsrCommitRecorder(
                 if (!prefs.disableAsrHistory) {
                     try {
                         val store = AsrHistoryStore(context)
+                        historyStore = store
                         store.add(
                             AsrHistoryStore.AsrHistoryRecord(
                                 id = historyRecordId,
@@ -74,6 +79,7 @@ internal class AsrCommitRecorder(
                                 charCount = chars
                             )
                         )
+                        historyWritten = true
                         AsrHistoryAudioStore.pruneAsync(
                             context,
                             store.listAll(),
@@ -90,6 +96,26 @@ internal class AsrCommitRecorder(
             }
         } catch (t: Throwable) {
             Log.e(logTag, "Failed to record ASR commit", t)
+        } finally {
+            historyTiming?.timing?.end(com.brycewg.asrkb.store.AsrHistoryTimingStage.TEXT_DELIVERY)
+            val timingTrace = historyTiming?.timing?.complete()
+            if (historyWritten && timingTrace != null) {
+                try {
+                    historyStore?.updateById(historyRecordId) { record ->
+                        record.copy(
+                            totalElapsedMs = timingTrace.totalElapsedMs,
+                            timingTrace = timingTrace
+                        )
+                    }
+                    com.brycewg.asrkb.store.AsrHistoryTimingDiagnostics.logSaved(
+                        "ime",
+                        timingTrace
+                    )
+                } catch (t: Throwable) {
+                    Log.w(logTag, "Failed to finalize ASR history timing", t)
+                }
+            }
+            asrManager.consumeHistoryCommitContext(historyTiming)
         }
     }
 }

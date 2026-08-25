@@ -16,6 +16,9 @@ import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.AsrHistoryFailureRecorder
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
+import com.brycewg.asrkb.store.AsrHistoryTimingRecorder
+import com.brycewg.asrkb.store.AsrHistoryTimingStage
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
@@ -95,6 +98,8 @@ internal class ExternalSpeechSession(
     private var historyRecordId: String = UUID.randomUUID().toString()
     private var historyAudioCapture: AsrHistoryAudioCapture? = null
     private var pushPcmInput: Boolean = false
+    private var historyTiming: AsrHistoryTimingRecorder? = null
+    private var historySuccessStored: Boolean = false
 
     @Volatile private var processingTimeoutJob: Job? = null
 
@@ -384,6 +389,10 @@ internal class ExternalSpeechSession(
             historyAudioCapture = null
             historyRecordId = UUID.randomUUID().toString()
             historyAudioCapture = AsrHistoryAudioCapture.create(context, prefs, historyRecordId)
+            historyTiming = AsrHistoryTimingRecorder(AsrHistoryTimingOrigin.ORIGINAL).also {
+                it.begin(AsrHistoryTimingStage.AUDIO_INPUT)
+            }
+            historySuccessStored = false
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to mark session start", t)
         }
@@ -399,6 +408,7 @@ internal class ExternalSpeechSession(
     fun stop() {
         if (canceled || terminalGate.isFinished) return
         releaseAutoStopSuppression()
+        transitionAudioInputToRecognition()
         // 记录一次会话录音时长（用于超时与统计）；部分引擎 stop() 不会回调 onStopped（如外部推流的本地流式），因此这里也做一次兜底快照。
         if (sessionStartUptimeMs > 0L) {
             try {
@@ -472,6 +482,9 @@ internal class ExternalSpeechSession(
     override fun onFinal(text: String) {
         if (canceled || !terminalGate.tryFinish()) return
         releaseAutoStopSuppression()
+        transitionAudioInputToRecognition()
+        historyTiming?.end(AsrHistoryTimingStage.RECOGNITION)
+        historyTiming?.begin(AsrHistoryTimingStage.POSTPROCESS)
         cancelProcessingTimeout()
         processingEndUptimeMs = SystemClock.uptimeMillis()
         historyAudioCapture?.complete()
@@ -582,7 +595,18 @@ internal class ExternalSpeechSession(
                         context,
                         prefs,
                         text,
-                        onStreamingUpdate = onStreamingUpdate
+                        onStreamingUpdate = onStreamingUpdate,
+                        aiTimingObserver = object : com.brycewg.asrkb.util.AsrFinalFilters.AiPostprocessTimingObserver {
+                            override fun onAiPostprocessStarted() {
+                                historyTiming?.end(AsrHistoryTimingStage.POSTPROCESS)
+                                historyTiming?.begin(AsrHistoryTimingStage.AI_POSTPROCESS)
+                            }
+
+                            override fun onAiPostprocessFinished() {
+                                historyTiming?.end(AsrHistoryTimingStage.AI_POSTPROCESS)
+                                historyTiming?.begin(AsrHistoryTimingStage.POSTPROCESS)
+                            }
+                        }
                     )
                     aiUsed = (res.usedAi && res.ok)
                     aiPostMs = if (res.attempted) res.llmMs else 0L
@@ -655,6 +679,7 @@ internal class ExternalSpeechSession(
                     typewriter?.cancel()
                 }
                 if (canceled) return@launch
+                transitionPostprocessToDelivery()
                 // 记录使用统计与识别历史（来源标记为 external；尊重开关）
                 try {
                     val audioMs = lastAudioMsForStats
@@ -717,6 +742,7 @@ internal class ExternalSpeechSession(
                                     charCount = chars
                                 )
                             )
+                            historySuccessStored = true
                             AsrHistoryAudioStore.pruneAsync(
                                 context,
                                 store.listAll(),
@@ -737,6 +763,7 @@ internal class ExternalSpeechSession(
                 ) {
                     Log.w(TAG, "remove session on final failed", t)
                 }
+                completeSuccessfulHistoryTiming()
             }
         } else {
             if (canceled) return
@@ -758,6 +785,7 @@ internal class ExternalSpeechSession(
                     )
                 )
             } catch (_: Throwable) { }
+            transitionPostprocessToDelivery()
             // 记录使用统计与识别历史（来源标记为 external；尊重开关）
             try {
                 val audioMs = lastAudioMsForStats
@@ -811,6 +839,7 @@ internal class ExternalSpeechSession(
                                 charCount = chars
                             )
                         )
+                        historySuccessStored = true
                         AsrHistoryAudioStore.pruneAsync(
                             context,
                             store.listAll(),
@@ -830,6 +859,7 @@ internal class ExternalSpeechSession(
             ) {
                 Log.w(TAG, "remove session on final failed", t)
             }
+            completeSuccessfulHistoryTiming()
         }
     }
 
@@ -881,6 +911,7 @@ internal class ExternalSpeechSession(
 
     override fun onStopped() {
         if (canceled || terminalGate.isFinished) return
+        transitionAudioInputToRecognition()
         // 计算一次会话录音时长
         if (sessionStartUptimeMs > 0L) {
             try {
@@ -929,6 +960,8 @@ internal class ExternalSpeechSession(
         audioAlreadySaved: Boolean = false
     ): Boolean {
         snapshotAudioDurationIfPossible()
+        val timingTrace = historyTiming?.complete(completed = false)
+        historyTiming = null
         return AsrHistoryFailureRecorder.archive(
             context = context,
             prefs = prefs,
@@ -937,14 +970,45 @@ internal class ExternalSpeechSession(
             source = "external",
             vendorId = resolveFinalVendorForRecord().id,
             audioMs = lastAudioMsForStats,
-            totalElapsedMs = peekTotalElapsedMsForStats(),
+            totalElapsedMs = timingTrace?.totalElapsedMs ?: peekTotalElapsedMsForStats(),
             procMs = lastRequestDurationMs ?: 0L,
             rawText = rawText,
             status = status,
             failStage = failStage,
             failReasonCode = failReasonCode,
+            timingTrace = timingTrace,
             audioAlreadySaved = audioAlreadySaved
         )
+    }
+
+    private fun transitionAudioInputToRecognition() {
+        historyTiming?.apply {
+            end(AsrHistoryTimingStage.AUDIO_INPUT)
+            begin(AsrHistoryTimingStage.RECOGNITION)
+        }
+    }
+
+    private fun transitionPostprocessToDelivery() {
+        historyTiming?.apply {
+            end(AsrHistoryTimingStage.POSTPROCESS)
+            begin(AsrHistoryTimingStage.TEXT_DELIVERY)
+        }
+    }
+
+    private fun completeSuccessfulHistoryTiming() {
+        val timing = historyTiming ?: return
+        timing.end(AsrHistoryTimingStage.TEXT_DELIVERY)
+        val trace = timing.complete()
+        historyTiming = null
+        if (!historySuccessStored) return
+        try {
+            AsrHistoryStore(context).updateById(historyRecordId) { record ->
+                record.copy(totalElapsedMs = trace.totalElapsedMs, timingTrace = trace)
+            }
+            com.brycewg.asrkb.store.AsrHistoryTimingDiagnostics.logSaved("external", trace)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to finalize external history timing", t)
+        }
     }
 
     private fun currentHistoryFailStage(): AsrHistoryStore.AsrHistoryFailStage {

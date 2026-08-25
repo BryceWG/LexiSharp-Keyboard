@@ -38,7 +38,8 @@ internal class PostprocessPipeline(
         text: String,
         isCancelled: () -> Boolean,
         onFinalReady: () -> Unit,
-        onPostprocFailed: () -> Unit
+        onPostprocFailed: () -> Unit,
+        aiTimingObserver: AsrFinalFilters.AiPostprocessTimingObserver? = null
     ): Result? {
         val rawText = try {
             if (AsrFinalFilters.shouldTrimTrailingPunctAndEmoji(prefs, text)) {
@@ -103,7 +104,8 @@ internal class PostprocessPipeline(
                 prefs,
                 text,
                 llmPostProcessor,
-                onStreamingUpdate = onStreamingUpdate
+                onStreamingUpdate = onStreamingUpdate,
+                aiTimingObserver = aiTimingObserver
             )
         } catch (t: Throwable) {
             Log.e(logTag, "applyWithAi failed", t)

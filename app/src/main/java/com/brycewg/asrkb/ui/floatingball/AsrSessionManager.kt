@@ -22,6 +22,9 @@ import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.AsrHistoryFailureRecorder
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
+import com.brycewg.asrkb.store.AsrHistoryTimingRecorder
+import com.brycewg.asrkb.store.AsrHistoryTimingStage
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
@@ -125,6 +128,8 @@ class AsrSessionManager(
     private var activeHistoryRecordId: String? = null
     private var completedHistoryRecordId: String? = null
     private var completedHistoryRawText: String? = null
+    private var activeHistoryTiming: AsrHistoryTimingRecorder? = null
+    private var completedHistoryTiming: AsrHistoryTimingRecorder? = null
 
     private val recordingAudioFocusController = RecordingAudioFocusController(context) { loss ->
         onRecordingAudioFocusLost(loss)
@@ -272,6 +277,9 @@ class AsrSessionManager(
             prefs,
             activeHistoryRecordId.orEmpty()
         )
+        activeHistoryTiming = AsrHistoryTimingRecorder(AsrHistoryTimingOrigin.ORIGINAL).also {
+            it.begin(AsrHistoryTimingStage.AUDIO_INPUT)
+        }
         try {
             sessionPrimaryVendor = prefs.asrVendor
         } catch (t: Throwable) {
@@ -371,6 +379,7 @@ class AsrSessionManager(
     fun stopRecording() {
         Log.d(TAG, "stopRecording called")
         snapshotAudioDurationIfPossible()
+        transitionAudioInputToRecognition()
         asrEngine?.stop()
         ContinuousCaptureCoordinator.endSession(activeSessionToken)
         releaseRecordingResources("stop_recording")
@@ -430,6 +439,7 @@ class AsrSessionManager(
             lastAiPostMs = 0L
             lastAiPostStatus = AsrHistoryStore.AiPostStatus.NONE
             lastLlmVendorId = null
+            transitionPostprocessToDelivery()
             val success = insertTextToFocus(commitText)
             hasCommittedResult = true
             listener.onResultCommitted(commitText, success)
@@ -491,6 +501,20 @@ class AsrSessionManager(
     fun popLastHistoryRawText(): String? =
         completedHistoryRawText.also { completedHistoryRawText = null }
 
+    internal fun transitionPostprocessToDelivery() {
+        completedHistoryTiming?.apply {
+            end(AsrHistoryTimingStage.POSTPROCESS)
+            begin(AsrHistoryTimingStage.TEXT_DELIVERY)
+        }
+    }
+
+    internal fun completeLastHistoryTiming(): com.brycewg.asrkb.store.AsrHistoryTimingTrace? {
+        val timing = completedHistoryTiming ?: return null
+        timing.end(AsrHistoryTimingStage.TEXT_DELIVERY)
+        completedHistoryTiming = null
+        return timing.complete()
+    }
+
     private fun discardInFlightHistoryCapture() {
         val leftoverId = activeHistoryRecordId
         val capture = historyAudioCapture
@@ -514,8 +538,10 @@ class AsrSessionManager(
         snapshotAudioDurationIfPossible()
         val leftoverId = completedHistoryRecordId
         val leftoverRaw = completedHistoryRawText
+        val leftoverTiming = completedHistoryTiming
         completedHistoryRecordId = null
         completedHistoryRawText = null
+        completedHistoryTiming = null
         val activeId = activeHistoryRecordId
         val capture = historyAudioCapture
         historyAudioCapture = null
@@ -527,6 +553,7 @@ class AsrSessionManager(
                 failReasonCode = failReasonCode,
                 capture = null,
                 recordId = leftoverId,
+                timingTrace = leftoverTiming?.complete(completed = false),
                 audioAlreadySaved = true,
                 rawText = leftoverRaw ?: lastPartialForPreview
             )
@@ -550,9 +577,12 @@ class AsrSessionManager(
         capture: AsrHistoryAudioCapture? = historyAudioCapture,
         recordId: String? = activeHistoryRecordId,
         audioAlreadySaved: Boolean = false,
-        rawText: String? = lastPartialForPreview
+        rawText: String? = lastPartialForPreview,
+        timingTrace: com.brycewg.asrkb.store.AsrHistoryTimingTrace? = null
     ): Boolean {
         snapshotAudioDurationIfPossible()
+        val resolvedTimingTrace = timingTrace ?: activeHistoryTiming?.complete(completed = false)
+        if (timingTrace == null) activeHistoryTiming = null
         return AsrHistoryFailureRecorder.archive(
             context = context,
             prefs = prefs,
@@ -561,12 +591,13 @@ class AsrSessionManager(
             source = "floating",
             vendorId = peekLastFinalVendorForStats().id,
             audioMs = lastAudioMsForStats,
-            totalElapsedMs = peekTotalElapsedMsForStats(),
+            totalElapsedMs = resolvedTimingTrace?.totalElapsedMs ?: peekTotalElapsedMsForStats(),
             procMs = lastRequestDurationMs ?: 0L,
             rawText = rawText,
             status = status,
             failStage = failStage,
             failReasonCode = failReasonCode,
+            timingTrace = resolvedTimingTrace,
             audioAlreadySaved = audioAlreadySaved
         )
     }
@@ -611,6 +642,13 @@ class AsrSessionManager(
         val elapsed = if (now >= start) (now - start).coerceAtLeast(0L) else 0L
         sessionStartTotalUptimeMs = if (asrEngine?.isRunning == true) now else 0L
         return elapsed
+    }
+
+    private fun transitionAudioInputToRecognition() {
+        activeHistoryTiming?.apply {
+            end(AsrHistoryTimingStage.AUDIO_INPUT)
+            begin(AsrHistoryTimingStage.RECOGNITION)
+        }
     }
 
     /** 最近一次 AI 后处理耗时（毫秒）；未尝试时为 0 */
@@ -664,9 +702,12 @@ class AsrSessionManager(
             Log.d(TAG, "Ignoring onFinal from stale session: $sessionToken")
             return
         }
+        transitionAudioInputToRecognition()
+        activeHistoryTiming?.end(AsrHistoryTimingStage.RECOGNITION)
         if (text.isNotBlank()) {
             completedHistoryRecordId = activeHistoryRecordId
             completedHistoryRawText = text
+            completedHistoryTiming = activeHistoryTiming
             historyAudioCapture?.complete()
         } else {
             archiveHistoryFailure(
@@ -678,6 +719,7 @@ class AsrSessionManager(
         }
         historyAudioCapture = null
         activeHistoryRecordId = null
+        activeHistoryTiming = null
         (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = null
         val shouldUseAiPostProcessing = prefs.postProcessEnabled && prefs.hasLlmKeys()
         if (shouldUseAiPostProcessing) {
@@ -689,6 +731,8 @@ class AsrSessionManager(
         }
         serviceScope.launch {
             if (!isSessionActive(sessionToken)) return@launch
+
+            completedHistoryTiming?.begin(AsrHistoryTimingStage.POSTPROCESS)
             try {
                 processingTimeoutJob?.cancel()
             } catch (e: Throwable) {
@@ -796,7 +840,18 @@ class AsrSessionManager(
                         prefs,
                         text,
                         postproc,
-                        onStreamingUpdate = onStreamingUpdate
+                        onStreamingUpdate = onStreamingUpdate,
+                        aiTimingObserver = object : com.brycewg.asrkb.util.AsrFinalFilters.AiPostprocessTimingObserver {
+                            override fun onAiPostprocessStarted() {
+                                completedHistoryTiming?.end(AsrHistoryTimingStage.POSTPROCESS)
+                                completedHistoryTiming?.begin(AsrHistoryTimingStage.AI_POSTPROCESS)
+                            }
+
+                            override fun onAiPostprocessFinished() {
+                                completedHistoryTiming?.end(AsrHistoryTimingStage.AI_POSTPROCESS)
+                                completedHistoryTiming?.begin(AsrHistoryTimingStage.POSTPROCESS)
+                            }
+                        }
                     )
                 } catch (t: Throwable) {
                     Log.e(TAG, "applyWithAi failed", t)
@@ -897,6 +952,7 @@ class AsrSessionManager(
             if (finalText.isNotEmpty()) {
                 val usedBackupEngine =
                     (asrEngine as? BackupAwareAsrEngine)?.wasLastResultFromBackup() == true
+                transitionPostprocessToDelivery()
                 val success = insertTextToFocus(finalText)
                 if (!engineStillRunning) {
                     clearActiveSessionToken(sessionToken)
@@ -913,8 +969,10 @@ class AsrSessionManager(
                 Log.w(TAG, "Final text is empty")
                 val queuedId = completedHistoryRecordId
                 val queuedRaw = completedHistoryRawText
+                val queuedTiming = completedHistoryTiming
                 completedHistoryRecordId = null
                 completedHistoryRawText = null
+                completedHistoryTiming = null
                 if (!queuedId.isNullOrEmpty()) {
                     archiveHistoryFailure(
                         status = AsrHistoryStore.AsrHistoryStatus.FAILED,
@@ -922,6 +980,7 @@ class AsrSessionManager(
                         failReasonCode = AsrFailReasonCodes.EMPTY_RESULT,
                         capture = null,
                         recordId = queuedId,
+                        timingTrace = queuedTiming?.complete(completed = false),
                         audioAlreadySaved = true,
                         rawText = queuedRaw ?: lastPartialForPreview
                     )
@@ -946,6 +1005,7 @@ class AsrSessionManager(
             return
         }
         ContinuousCaptureCoordinator.endSession(sessionToken)
+        transitionAudioInputToRecognition()
         serviceScope.launch {
             if (!isSessionActive(sessionToken)) return@launch
             listener.onSessionStateChanged(FloatingBallState.Processing)
@@ -1221,13 +1281,28 @@ class AsrSessionManager(
             return
         }
 
+        transitionAudioInputToRecognition()
+        activeHistoryTiming?.end(AsrHistoryTimingStage.RECOGNITION)
+        activeHistoryTiming?.begin(AsrHistoryTimingStage.POSTPROCESS)
+
         val textOut = if (prefs.postProcessEnabled && prefs.hasLlmKeys()) {
             try {
                 val res = com.brycewg.asrkb.util.AsrFinalFilters.applyWithAi(
                     context,
                     prefs,
                     candidate,
-                    postproc
+                    postproc,
+                    aiTimingObserver = object : com.brycewg.asrkb.util.AsrFinalFilters.AiPostprocessTimingObserver {
+                        override fun onAiPostprocessStarted() {
+                            activeHistoryTiming?.end(AsrHistoryTimingStage.POSTPROCESS)
+                            activeHistoryTiming?.begin(AsrHistoryTimingStage.AI_POSTPROCESS)
+                        }
+
+                        override fun onAiPostprocessFinished() {
+                            activeHistoryTiming?.end(AsrHistoryTimingStage.AI_POSTPROCESS)
+                            activeHistoryTiming?.begin(AsrHistoryTimingStage.POSTPROCESS)
+                        }
+                    }
                 )
                 if (!isSessionActive(sessionToken)) return
                 val aiUsed = (res.usedAi && res.ok)
@@ -1266,10 +1341,13 @@ class AsrSessionManager(
         if (completedHistoryRecordId == null && textOut.isNotBlank()) {
             completedHistoryRecordId = activeHistoryRecordId
             completedHistoryRawText = candidate
+            completedHistoryTiming = activeHistoryTiming
             historyAudioCapture?.complete()
             historyAudioCapture = null
             activeHistoryRecordId = null
+            activeHistoryTiming = null
         }
+        transitionPostprocessToDelivery()
         val success = insertTextToFocus(textOut)
         Log.d(TAG, "Fallback inserted=$success text='$textOut'")
         clearActiveSessionToken(sessionToken)

@@ -27,6 +27,7 @@ internal object AsrHistoryFailureRecorder {
         status: AsrHistoryStore.AsrHistoryStatus,
         failStage: AsrHistoryStore.AsrHistoryFailStage,
         failReasonCode: String,
+        timingTrace: AsrHistoryTimingTrace? = null,
         audioAlreadySaved: Boolean = false
     ): Boolean {
         if (recordId.isNullOrEmpty()) {
@@ -66,14 +67,15 @@ internal object AsrHistoryFailureRecorder {
                     rawText = rawText?.takeIf { it.isNotBlank() },
                     vendorId = vendorId,
                     audioMs = audioMs,
-                    totalElapsedMs = totalElapsedMs,
+                    totalElapsedMs = timingTrace?.totalElapsedMs ?: totalElapsedMs,
                     procMs = procMs,
                     source = source,
                     aiProcessed = false,
                     charCount = 0,
                     status = status,
                     failStage = failStage,
-                    failReasonCode = failReasonCode
+                    failReasonCode = failReasonCode,
+                    timingTrace = timingTrace
                 )
             )
             AsrHistoryAudioStore.pruneAsync(
@@ -93,6 +95,7 @@ internal object AsrHistoryFailureRecorder {
                     )
                 )
             } catch (_: Throwable) { }
+            timingTrace?.let { trace -> AsrHistoryTimingDiagnostics.logIncomplete(source, trace) }
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to archive unsuccessful ASR history", e)

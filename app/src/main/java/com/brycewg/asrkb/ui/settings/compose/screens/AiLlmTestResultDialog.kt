@@ -7,39 +7,26 @@
 
 package com.brycewg.asrkb.ui.settings.compose.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text as MaterialText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.LayoutDirection
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsAlertDialog
@@ -48,6 +35,9 @@ import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogBu
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogExitEffect
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDialogActionRow
+import com.brycewg.asrkb.ui.settings.compose.components.TimingBarInterval
+import com.brycewg.asrkb.ui.settings.compose.components.TimingIntervalBar
+import com.brycewg.asrkb.ui.settings.compose.components.TimingLegendRow
 import com.brycewg.asrkb.ui.settings.compose.components.animateSettingsDialogExitAlpha
 import com.brycewg.asrkb.ui.settings.compose.components.rememberSettingsDialogExitController
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
@@ -171,14 +161,26 @@ private fun AiLlmTestResultContent(
                 state.firstVisibleMs.toInt(),
                 state.outputMs.toInt()
             )
-            LlmTimingBar(
-                segments = segments,
+            TimingIntervalBar(
+                totalElapsedMs = segments.sumOf { it.durationMs.coerceAtLeast(0L) },
+                intervals = llmTimingIntervals(segments),
                 contentDescription = barDescription,
                 trackColor = llmTimingTrackColor(uiMode)
             )
             Spacer(modifier = Modifier.height(SettingsLayoutMetrics.FeatureExplainerSectionSpacing))
             segments.forEach { segment ->
-                LlmTimingLegendRow(segment = segment, uiMode = uiMode)
+                TimingLegendRow(
+                    label = segment.label,
+                    value = stringResource(
+                        R.string.llm_test_timing_ms,
+                        segment.durationMs.coerceAtLeast(0L).toInt()
+                    ),
+                    color = segment.color,
+                    uiMode = uiMode,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = SettingsLayoutMetrics.ProDialogTinySpacing)
+                )
             }
         } else {
             if (!state.connectionReused) {
@@ -260,6 +262,20 @@ private fun llmSseTimingSegments(
     )
 }
 
+private fun llmTimingIntervals(segments: List<LlmTimingSegment>): List<TimingBarInterval> {
+    var startOffsetMs = 0L
+    return segments.map { segment ->
+        val endOffsetMs = startOffsetMs + segment.durationMs.coerceAtLeast(0L)
+        TimingBarInterval(
+            startOffsetMs = startOffsetMs,
+            endOffsetMs = endOffsetMs,
+            color = segment.color
+        ).also {
+            startOffsetMs = endOffsetMs
+        }
+    }
+}
+
 @Composable
 private fun LlmTimingMetricRow(
     label: String,
@@ -282,71 +298,6 @@ private fun LlmTimingMetricRow(
                 R.string.llm_test_timing_ms,
                 durationMs.coerceAtLeast(0L).toInt()
             ),
-            uiMode = uiMode,
-            secondary = true,
-            monospace = true
-        )
-    }
-}
-
-@Composable
-private fun LlmTimingBar(
-    segments: List<LlmTimingSegment>,
-    contentDescription: String,
-    trackColor: Color
-) {
-    val shape = RoundedCornerShape(SettingsLayoutMetrics.TimingBarCorner)
-    val visibleSegments = segments.filter { it.durationMs > 0L }
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(SettingsLayoutMetrics.TimingBarHeight)
-                .clip(shape)
-                .background(trackColor)
-                .semantics { this.contentDescription = contentDescription }
-        ) {
-            if (visibleSegments.isEmpty()) {
-                Box(modifier = Modifier.fillMaxWidth().fillMaxHeight())
-            } else {
-                visibleSegments.forEach { segment ->
-                    Box(
-                        modifier = Modifier
-                            .weight(segment.durationMs.toFloat())
-                            .fillMaxHeight()
-                            .background(segment.color)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LlmTimingLegendRow(
-    segment: LlmTimingSegment,
-    uiMode: BibiUiMode
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = SettingsLayoutMetrics.ProDialogTinySpacing),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SettingsLayoutMetrics.FeatureExplainerLabelSpacing)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(SettingsLayoutMetrics.TimingLegendSwatchSize)
-                .clip(CircleShape)
-                .background(segment.color)
-        )
-        LlmTimingBodyText(
-            text = segment.label,
-            uiMode = uiMode,
-            modifier = Modifier.weight(1f)
-        )
-        LlmTimingBodyText(
-            text = stringResource(R.string.llm_test_timing_ms, segment.durationMs.toInt()),
             uiMode = uiMode,
             secondary = true,
             monospace = true

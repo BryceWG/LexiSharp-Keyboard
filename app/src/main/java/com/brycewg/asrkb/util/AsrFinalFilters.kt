@@ -12,6 +12,12 @@ import kotlinx.coroutines.CancellationException
 object AsrFinalFilters {
     private const val TAG = "AsrFinalFilters"
 
+    /** Observes the actual LLM request without participating in result processing. */
+    interface AiPostprocessTimingObserver {
+        fun onAiPostprocessStarted()
+        fun onAiPostprocessFinished()
+    }
+
     fun shouldTrimTrailingPunctAndEmoji(prefs: Prefs, text: String): Boolean {
         return shouldTrimTrailingPunctAndEmoji(
             enabled = prefs.trimFinalTrailingPunct,
@@ -71,7 +77,8 @@ object AsrFinalFilters {
         postProcessor: LlmPostProcessor = LlmPostProcessor(),
         promptOverride: String? = null,
         forceAi: Boolean = false,
-        onStreamingUpdate: ((String) -> Unit)? = null
+        onStreamingUpdate: ((String) -> Unit)? = null,
+        aiTimingObserver: AiPostprocessTimingObserver? = null
     ): LlmPostProcessor.LlmProcessResult {
         if (input.isBlank()) {
             return LlmPostProcessor.LlmProcessResult(
@@ -158,6 +165,7 @@ object AsrFinalFilters {
         if (!skipForShort && (forceAi || prefs.postProcessEnabled) && prefs.hasLlmKeys()) {
             aiAttempted = true
             val t0 = System.nanoTime()
+            notifyAiTimingStarted(aiTimingObserver)
             try {
                 val res = postProcessor.processWithStatus(
                     base,
@@ -186,6 +194,8 @@ object AsrFinalFilters {
                 processed = base
                 err = t.message
                 aiMs = ((System.nanoTime() - t0) / 1_000_000L).coerceAtLeast(0L)
+            } finally {
+                notifyAiTimingFinished(aiTimingObserver)
             }
         }
 
@@ -220,5 +230,21 @@ object AsrFinalFilters {
             llmMs = if (aiAttempted) aiMs.coerceAtLeast(0L) else 0,
             llmVendorId = llmVendorId
         )
+    }
+
+    private fun notifyAiTimingStarted(observer: AiPostprocessTimingObserver?) {
+        try {
+            observer?.onAiPostprocessStarted()
+        } catch (t: Throwable) {
+            Log.w(TAG, "AI timing observer start failed", t)
+        }
+    }
+
+    private fun notifyAiTimingFinished(observer: AiPostprocessTimingObserver?) {
+        try {
+            observer?.onAiPostprocessFinished()
+        } catch (t: Throwable) {
+            Log.w(TAG, "AI timing observer finish failed", t)
+        }
     }
 }

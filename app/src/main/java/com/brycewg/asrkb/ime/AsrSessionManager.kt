@@ -16,6 +16,9 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.AsrHistoryFailureRecorder
 import com.brycewg.asrkb.store.AsrHistoryStore
+import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
+import com.brycewg.asrkb.store.AsrHistoryTimingRecorder
+import com.brycewg.asrkb.store.AsrHistoryTimingStage
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
@@ -134,11 +137,19 @@ class AsrSessionManager(
     private var lastAudioMsForStats: Long = 0L
     private var historyAudioCapture: AsrHistoryAudioCapture? = null
     private var activeHistoryRecordId: String? = null
-    private val completedHistoryRecordIds = java.util.ArrayDeque<String>()
+    private val completedHistoryRecords = java.util.ArrayDeque<HistoryCommitContext>()
+    private val inFlightHistoryRecords = linkedMapOf<String, HistoryCommitContext>()
+    private var activeHistoryTiming: AsrHistoryTimingRecorder? = null
     private var lastPartialText: String? = null
 
     // 统计/历史：端到端耗时起点（从开始录音到最终提交完成）
     private var sessionStartTotalUptimeMs: Long = 0L
+
+    /** Keeps a final result's timing bound to its audio history record across async post-processing. */
+    internal data class HistoryCommitContext(
+        val recordId: String,
+        val timing: AsrHistoryTimingRecorder
+    )
 
     private fun nextSessionSeq(): Long {
         sessionSeq += 1L
@@ -450,6 +461,9 @@ class AsrSessionManager(
             prefs,
             activeHistoryRecordId.orEmpty()
         )
+        activeHistoryTiming = AsrHistoryTimingRecorder(AsrHistoryTimingOrigin.ORIGINAL).also {
+            it.begin(AsrHistoryTimingStage.AUDIO_INPUT)
+        }
         try {
             val eng = ensureEngineMatchesMode(activeSeq)
             if (eng == null) {
@@ -516,6 +530,7 @@ class AsrSessionManager(
     fun stopRecording() {
         val activeSeq = sessionSeq
         snapshotAudioDurationIfPossible()
+        transitionAudioInputToRecognition()
         markLocalModelProcessingStartIfNeeded(activeSeq)
         asrEngine?.stop()
         ContinuousCaptureCoordinator.endSession(activeSeq)
@@ -570,18 +585,21 @@ class AsrSessionManager(
         clearActiveSession()
     }
 
-    fun archiveQueuedHistoryFailure(
+    internal fun archiveQueuedHistoryFailure(
         status: AsrHistoryStore.AsrHistoryStatus,
         failStage: AsrHistoryStore.AsrHistoryFailStage,
-        failReasonCode: String
+        failReasonCode: String,
+        context: HistoryCommitContext? = null
     ): Boolean {
-        val queuedId = completedHistoryRecordIds.pollFirst() ?: return false
+        val target = context ?: completedHistoryRecords.pollFirst() ?: return false
+        inFlightHistoryRecords.remove(target.recordId)
         return archiveHistoryFailure(
             status = status,
             failStage = failStage,
             failReasonCode = failReasonCode,
             capture = null,
-            recordId = queuedId,
+            recordId = target.recordId,
+            timingTrace = target.timing.complete(completed = false),
             audioAlreadySaved = true
         )
     }
@@ -607,21 +625,26 @@ class AsrSessionManager(
         failReasonCode: String
     ) {
         snapshotAudioDurationIfPossible()
-        val leftoverIds = ArrayList<String>(completedHistoryRecordIds.size)
-        while (completedHistoryRecordIds.isNotEmpty()) {
-            leftoverIds.add(completedHistoryRecordIds.removeFirst())
+        val leftoverContexts = ArrayList<HistoryCommitContext>(
+            completedHistoryRecords.size + inFlightHistoryRecords.size
+        )
+        while (completedHistoryRecords.isNotEmpty()) {
+            leftoverContexts += completedHistoryRecords.removeFirst()
         }
+        leftoverContexts += inFlightHistoryRecords.values
+        inFlightHistoryRecords.clear()
         val activeId = activeHistoryRecordId
         val capture = historyAudioCapture
         historyAudioCapture = null
         activeHistoryRecordId = null
-        leftoverIds.forEach { id ->
+        leftoverContexts.forEach { context ->
             archiveHistoryFailure(
                 status = status,
                 failStage = failStage,
                 failReasonCode = failReasonCode,
                 capture = null,
-                recordId = id,
+                recordId = context.recordId,
+                timingTrace = context.timing.complete(completed = false),
                 audioAlreadySaved = true
             )
         }
@@ -643,9 +666,12 @@ class AsrSessionManager(
         capture: AsrHistoryAudioCapture? = historyAudioCapture,
         recordId: String? = activeHistoryRecordId,
         audioAlreadySaved: Boolean = false,
-        rawText: String? = lastPartialText
+        rawText: String? = lastPartialText,
+        timingTrace: com.brycewg.asrkb.store.AsrHistoryTimingTrace? = null
     ): Boolean {
         snapshotAudioDurationIfPossible()
+        val resolvedTimingTrace = timingTrace ?: activeHistoryTiming?.complete(completed = false)
+        if (timingTrace == null) activeHistoryTiming = null
         return AsrHistoryFailureRecorder.archive(
             context = context,
             prefs = prefs,
@@ -654,12 +680,13 @@ class AsrSessionManager(
             source = "ime",
             vendorId = peekLastFinalVendorForStats().id,
             audioMs = lastAudioMsForStats,
-            totalElapsedMs = peekTotalElapsedMsForStats(),
+            totalElapsedMs = resolvedTimingTrace?.totalElapsedMs ?: peekTotalElapsedMsForStats(),
             procMs = lastRequestDurationMs ?: 0L,
             rawText = rawText,
             status = status,
             failStage = failStage,
             failReasonCode = failReasonCode,
+            timingTrace = resolvedTimingTrace,
             audioAlreadySaved = audioAlreadySaved
         )
     }
@@ -693,8 +720,31 @@ class AsrSessionManager(
         return v
     }
 
-    fun popLastHistoryRecordId(): String =
-        completedHistoryRecordIds.pollFirst() ?: UUID.randomUUID().toString()
+    internal fun acquireNextHistoryCommitContext(): HistoryCommitContext? {
+        val context = completedHistoryRecords.pollFirst() ?: return null
+        inFlightHistoryRecords[context.recordId] = context
+        return context
+    }
+
+    internal fun consumeHistoryCommitContext(context: HistoryCommitContext?): String {
+        if (context == null) return completedHistoryRecords.pollFirst()?.recordId ?: UUID.randomUUID().toString()
+        inFlightHistoryRecords.remove(context.recordId)
+        return context.recordId
+    }
+
+    /** Takes the oldest post-processing result when cancellation commits its raw fallback. */
+    internal fun takeInFlightHistoryCommitContext(): HistoryCommitContext? {
+        val entry = inFlightHistoryRecords.entries.firstOrNull() ?: return null
+        inFlightHistoryRecords.remove(entry.key)
+        return entry.value
+    }
+
+    private fun transitionAudioInputToRecognition() {
+        activeHistoryTiming?.apply {
+            end(AsrHistoryTimingStage.AUDIO_INPUT)
+            begin(AsrHistoryTimingStage.RECOGNITION)
+        }
+    }
 
     /**
      * 读取并清空最近一次会话的端到端总耗时（毫秒）。
@@ -804,6 +854,8 @@ class AsrSessionManager(
             return
         }
         Log.d(TAG, "onFinal: text='$text', state=$currentState")
+        transitionAudioInputToRecognition()
+        activeHistoryTiming?.end(AsrHistoryTimingStage.RECOGNITION)
         lastFinalVendorForStats = when (val e = asrEngine) {
             is BackupAwareAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
             else -> sessionPrimaryVendor
@@ -825,7 +877,11 @@ class AsrSessionManager(
             requestMs = lastRequestDurationMs
         )
         if (text.isNotBlank()) {
-            activeHistoryRecordId?.let { completedHistoryRecordIds.addLast(it) }
+            val historyRecordId = activeHistoryRecordId
+            val historyTiming = activeHistoryTiming
+            if (historyRecordId != null && historyTiming != null) {
+                completedHistoryRecords.addLast(HistoryCommitContext(historyRecordId, historyTiming))
+            }
             historyAudioCapture?.complete()
         } else {
             archiveHistoryFailure(
@@ -837,6 +893,7 @@ class AsrSessionManager(
         }
         historyAudioCapture = null
         activeHistoryRecordId = null
+        activeHistoryTiming = null
         try {
             DebugLogManager.log(
                 category = "asr",
@@ -857,6 +914,9 @@ class AsrSessionManager(
                 prefs,
                 activeHistoryRecordId.orEmpty()
             )
+            activeHistoryTiming = AsrHistoryTimingRecorder(AsrHistoryTimingOrigin.ORIGINAL).also {
+                it.begin(AsrHistoryTimingStage.AUDIO_INPUT)
+            }
             (asrEngine as? AudioFrameSinkOwner)?.audioFrameSink = historyAudioCapture
         }
         listener?.onAsrFinal(text, currentState)
@@ -938,6 +998,7 @@ class AsrSessionManager(
         }
         Log.d(TAG, "onStopped: state=$currentState")
         ContinuousCaptureCoordinator.endSession(seq)
+        transitionAudioInputToRecognition()
         markLocalModelProcessingStartIfNeeded(seq)
         // 计算本次会话录音时长
         if (sessionStartUptimeMs > 0L) {
