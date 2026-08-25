@@ -5,7 +5,6 @@
  */
 package com.brycewg.asrkb.asr
 
-import android.os.SystemClock
 import android.util.Log
 import com.brycewg.asrkb.BuildConfig
 import com.brycewg.asrkb.R
@@ -13,7 +12,6 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import java.io.IOException
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
@@ -26,6 +24,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import okio.Buffer
 import okio.BufferedSource
 import org.json.JSONArray
 import org.json.JSONObject
@@ -35,6 +35,11 @@ import org.json.JSONObject
  * 使用与 Chat Completions 兼容的 API，并在存在简单字段时回退使用。
  */
 class LlmPostProcessor(private val client: OkHttpClient? = null) {
+    enum class LlmResponseMode {
+        SSE,
+        NON_SSE
+    }
+
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
 
     @Volatile
@@ -44,18 +49,23 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     private var cancelRequested: Boolean = false
 
     /**
-     * LLM 测试结果
+     * LLM 测试结果。responseHeadersMs 覆盖最终 attempt 发起到响应头到达；
+     * firstVisibleMs/outputMs 仅用于 SSE，responseBodyMs 仅用于非 SSE。
      */
     data class LlmTestResult(
         val ok: Boolean,
         val httpCode: Int? = null,
         val message: String? = null,
         val contentPreview: String? = null,
-        val connectMs: Long = 0,
-        val firstTokenMs: Long = 0,
+        val responseMode: LlmResponseMode? = null,
+        val totalMs: Long = 0,
+        val connectionMs: Long = 0,
+        val responseHeadersMs: Long = 0,
+        val firstVisibleMs: Long = 0,
         val outputMs: Long = 0,
+        val responseBodyMs: Long = 0,
         val connectionReused: Boolean = false,
-        val handshakeMs: Long = 0
+        val fallbackUsed: Boolean = false
     )
 
     /**
@@ -76,41 +86,39 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val httpCode: Int? = null,
         val text: String? = null,
         val error: String? = null,
-        val connectMs: Long = 0,
-        val firstTokenMs: Long = 0,
+        val responseMode: LlmResponseMode? = null,
+        val totalMs: Long = 0,
+        val connectionMs: Long = 0,
+        val responseHeadersMs: Long = 0,
+        val firstVisibleMs: Long = 0,
         val outputMs: Long = 0,
+        val responseBodyMs: Long = 0,
         val connectionReused: Boolean = false,
-        val handshakeMs: Long = 0
+        val fallbackUsed: Boolean = false
     )
 
     private data class StreamParseResult(
         val text: String,
-        val firstVisibleAtElapsed: Long
+        val firstVisibleAtElapsed: Long,
+        val protocolCompleted: Boolean
     )
 
     /**
-     * 单次 HTTP 调用的连接事件。connectStart 未触发即视为复用了连接池里的连接。
+     * 单次 HTTP 调用的连接事件。connectStart 未触发即视为复用了连接池里的连接；
+     * 新建连接耗时从 DNS（若有）或 connectStart 起算，到 connectEnd 为止。
      */
     private class LlmHttpEventTiming : EventListener() {
         var connectionReused: Boolean = true
             private set
-        var handshakeMs: Long = 0
+        var connectionMs: Long = 0
             private set
 
-        private var tDns = 0L
-        private var tConnect = 0L
-        private var dnsMs = 0L
+        private var connectionStartedAtElapsed = 0L
 
         override fun dnsStart(call: Call, domainName: String) {
-            tDns = SystemClock.elapsedRealtime()
-        }
-
-        override fun dnsEnd(
-            call: Call,
-            domainName: String,
-            inetAddressList: List<InetAddress>
-        ) {
-            dnsMs = (SystemClock.elapsedRealtime() - tDns).coerceAtLeast(0L)
+            if (connectionStartedAtElapsed == 0L) {
+                connectionStartedAtElapsed = elapsedRealtimeMs()
+            }
         }
 
         override fun connectStart(
@@ -119,7 +127,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             proxy: Proxy
         ) {
             connectionReused = false
-            tConnect = SystemClock.elapsedRealtime()
+            if (connectionStartedAtElapsed == 0L) {
+                connectionStartedAtElapsed = elapsedRealtimeMs()
+            }
         }
 
         override fun connectEnd(
@@ -128,7 +138,10 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             proxy: Proxy,
             protocol: Protocol?
         ) {
-            handshakeMs = dnsMs + (SystemClock.elapsedRealtime() - tConnect).coerceAtLeast(0L)
+            if (connectionStartedAtElapsed != 0L) {
+                connectionMs =
+                    (elapsedRealtimeMs() - connectionStartedAtElapsed).coerceAtLeast(0L)
+            }
         }
 
         override fun connectFailed(
@@ -139,9 +152,6 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             ioe: IOException
         ) {
             connectionReused = false
-            if (tConnect != 0L) {
-                handshakeMs = dnsMs + (SystemClock.elapsedRealtime() - tConnect).coerceAtLeast(0L)
-            }
         }
     }
 
@@ -180,13 +190,16 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     companion object {
         private const val TAG = "LlmPostProcessor"
 
+        private fun elapsedRealtimeMs(): Long =
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime())
+
         /** 连接超时（秒） */
         private const val CONNECT_TIMEOUT_SECONDS = 30L
 
         /** 首 token 超时（秒）- streaming 模式下等待首个数据块的最大时间 */
         private const val FIRST_TOKEN_TIMEOUT_SECONDS = 60L
 
-        /** 流结束后排空剩余 SSE，便于 HTTP/1.1 把连接放回池 */
+        /** 协议完成后异步排空剩余 SSE，便于 HTTP/1.1 把连接放回池 */
         private const val STREAM_DRAIN_TIMEOUT_MS = 300L
 
         private val sharedHttpClient: OkHttpClient by lazy {
@@ -624,7 +637,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
      * 从 SSE 流中解析并拼接所有文本内容
      *
      * @param source 响应的 BufferedSource
-     * @return 拼接后的完整文本
+     * @return 拼接文本、首个可见文本时间与协议完成状态
      */
     private fun parseStreamingResponse(
         source: BufferedSource,
@@ -644,7 +657,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         fun noteFirstVisibleContentIfNeeded() {
             if (firstVisibleAtElapsed != 0L) return
             if (filterThinkTagsForStreaming(contentBuilder.toString()).isEmpty()) return
-            firstVisibleAtElapsed = SystemClock.elapsedRealtime()
+            firstVisibleAtElapsed = elapsedRealtimeMs()
         }
 
         fun emitStreamingUpdateIfNeeded() {
@@ -707,12 +720,12 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             }
         }
 
-        while (!source.exhausted() && !shouldStop) {
+        while (!shouldStop && !source.exhausted()) {
             val line = try {
                 source.readUtf8Line() ?: break
             } catch (e: IOException) {
                 Log.w(TAG, "Read line failed", e)
-                break
+                throw e
             }
 
             if (line.isEmpty()) {
@@ -731,34 +744,72 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             flushEvent()
         }
 
-        drainSseQuietly(source)
-
         return StreamParseResult(
             text = contentBuilder.toString(),
-            firstVisibleAtElapsed = firstVisibleAtElapsed
+            firstVisibleAtElapsed = firstVisibleAtElapsed,
+            protocolCompleted = shouldStop
         )
     }
 
-    private fun drainSseQuietly(source: BufferedSource) {
+    private fun recycleSseBodyAsync(
+        http: OkHttpClient,
+        response: Response,
+        source: BufferedSource
+    ): Boolean = try {
+        http.dispatcher.executorService.execute {
+            val startedAt = elapsedRealtimeMs()
+            val recycled = drainSseQuietly(source)
+            try {
+                response.close()
+            } catch (closeErr: Throwable) {
+                Log.w(TAG, "Close drained SSE response failed", closeErr)
+            }
+            DebugLogManager.logBase(
+                category = "asr",
+                event = "llm_sse_body_recycled",
+                data = mapOf(
+                    "durationMs" to
+                        (elapsedRealtimeMs() - startedAt).coerceAtLeast(0L),
+                    "recycled" to recycled
+                )
+            )
+        }
+        true
+    } catch (t: Throwable) {
+        Log.w(TAG, "Schedule SSE body recycling failed", t)
+        false
+    }
+
+    private fun drainSseQuietly(source: BufferedSource): Boolean {
         val timeout = source.timeout()
+        val originalTimeoutNanos = timeout.timeoutNanos()
+        val hadDeadline = timeout.hasDeadline()
+        val originalDeadline = if (hadDeadline) timeout.deadlineNanoTime() else 0L
+        var recycled = false
         try {
             timeout.timeout(STREAM_DRAIN_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            timeout.deadlineNanoTime(
+            val drainDeadline =
                 System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(STREAM_DRAIN_TIMEOUT_MS)
+            timeout.deadlineNanoTime(
+                if (hadDeadline) minOf(originalDeadline, drainDeadline) else drainDeadline
             )
-            while (!source.exhausted()) {
-                source.skip(8192)
+            val discard = Buffer()
+            while (source.read(discard, 8192L) != -1L) {
+                discard.clear()
             }
+            recycled = true
         } catch (t: Throwable) {
             Log.w(TAG, "Drain remaining SSE failed", t)
         } finally {
             try {
                 timeout.clearDeadline()
-                timeout.timeout(0, TimeUnit.MILLISECONDS)
+                if (hadDeadline) timeout.deadlineNanoTime(originalDeadline)
+                timeout.timeout(originalTimeoutNanos, TimeUnit.NANOSECONDS)
             } catch (clearErr: Throwable) {
                 Log.w(TAG, "Clear SSE drain timeout failed", clearErr)
             }
         }
+        return recycled
     }
 
     private fun extractDeltaContent(delta: JSONObject): String? {
@@ -832,13 +883,19 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         messages: JSONArray,
         onStreamingUpdate: ((String) -> Unit)? = null
     ): RawCallResult {
+        val logicalStartedAt = elapsedRealtimeMs()
         val streamingResult = performChatInternal(
             config,
             messages,
             streaming = true,
             onStreamingUpdate = onStreamingUpdate
         )
-        if (streamingResult.ok) return streamingResult
+        if (streamingResult.ok) {
+            return streamingResult.copy(
+                totalMs =
+                    (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
+            )
+        }
 
         // 若服务端拒绝或不支持流式，尝试回退到非流模式
         val shouldRetryWithoutStream =
@@ -846,16 +903,29 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 (streamingResult.error?.contains("stream", ignoreCase = true) == true) ||
                 (streamingResult.error?.contains("sse", ignoreCase = true) == true)
 
-        if (!shouldRetryWithoutStream) return streamingResult
+        if (!shouldRetryWithoutStream) {
+            return streamingResult.copy(
+                totalMs =
+                    (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
+            )
+        }
 
         Log.w(
             TAG,
             "Streaming call failed (code=${streamingResult.httpCode}): ${streamingResult.error ?: ""}. Retrying without stream."
         )
         val fallback = performChatInternal(config, messages, streaming = false)
-        if (fallback.ok) return fallback
+        val logicalTotalMs =
+            (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
+        if (fallback.ok) {
+            return fallback.copy(totalMs = logicalTotalMs, fallbackUsed = true)
+        }
 
-        return fallback.copy(error = fallback.error ?: streamingResult.error)
+        return fallback.copy(
+            error = fallback.error ?: streamingResult.error,
+            totalMs = logicalTotalMs,
+            fallbackUsed = true
+        )
     }
 
     private fun performChatInternal(
@@ -875,7 +945,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val http = getHttpClient().newBuilder().eventListener(timing).build()
         val call = http.newCall(req)
         activeCall = call
-        val t0 = SystemClock.elapsedRealtime()
+        val t0 = elapsedRealtimeMs()
         val resp = try {
             call.execute()
         } catch (t: Throwable) {
@@ -885,8 +955,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             Log.e(TAG, "HTTP request failed", t)
             return RawCallResult(false, error = t.message ?: "Network error")
         }
-        val tHeaders = SystemClock.elapsedRealtime()
-        val connectMs = (tHeaders - t0).coerceAtLeast(0L)
+        val tHeaders = elapsedRealtimeMs()
+        val responseHeadersMs = (tHeaders - t0).coerceAtLeast(0L)
 
         if (!resp.isSuccessful) {
             val code = resp.code
@@ -903,8 +973,11 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             return RawCallResult(false, httpCode = code, error = err?.take(256) ?: "HTTP $code")
         }
 
-        var firstTokenMs = 0L
+        var responseMode = LlmResponseMode.NON_SSE
+        var firstVisibleMs = 0L
         var outputMs = 0L
+        var responseBodyMs = 0L
+        var responseRecyclingScheduled = false
         val text = try {
             val body = resp.body
 
@@ -914,22 +987,29 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 streaming && contentType.contains("text/event-stream", ignoreCase = true)
 
             val parsed = if (isEventStream) {
+                responseMode = LlmResponseMode.SSE
+                val source = body.source()
                 val stream = parseStreamingResponse(
-                    body.source(),
+                    source,
                     onStreamingUpdate = onStreamingUpdate
                 )
-                val doneAt = SystemClock.elapsedRealtime()
+                val protocolDoneAt = elapsedRealtimeMs()
                 val firstAt = stream.firstVisibleAtElapsed
                 if (firstAt > 0L) {
-                    firstTokenMs = (firstAt - tHeaders).coerceAtLeast(0L)
-                    outputMs = (doneAt - firstAt).coerceAtLeast(0L)
+                    firstVisibleMs = (firstAt - tHeaders).coerceAtLeast(0L)
+                    outputMs = (protocolDoneAt - firstAt).coerceAtLeast(0L)
                 } else {
-                    firstTokenMs = (doneAt - tHeaders).coerceAtLeast(0L)
+                    firstVisibleMs = (protocolDoneAt - tHeaders).coerceAtLeast(0L)
+                }
+                if (stream.protocolCompleted && !cancelRequested) {
+                    responseRecyclingScheduled = recycleSseBodyAsync(http, resp, source)
                 }
                 stream.text
             } else {
+                val bodyStartedAt = elapsedRealtimeMs()
                 val respText = body.string()
-                firstTokenMs = (SystemClock.elapsedRealtime() - tHeaders).coerceAtLeast(0L)
+                responseBodyMs =
+                    (elapsedRealtimeMs() - bodyStartedAt).coerceAtLeast(0L)
                 extractTextFromResponse(respText, fallback = "")
             }
 
@@ -946,10 +1026,12 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             )
             return RawCallResult(false, error = t.message ?: "Parse error")
         } finally {
-            try {
-                resp.close()
-            } catch (closeErr: Throwable) {
-                Log.w(TAG, "Close response failed", closeErr)
+            if (!responseRecyclingScheduled) {
+                try {
+                    resp.close()
+                } catch (closeErr: Throwable) {
+                    Log.w(TAG, "Close response failed", closeErr)
+                }
             }
             if (activeCall === call) {
                 activeCall = null
@@ -959,11 +1041,14 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         return RawCallResult(
             ok = true,
             text = text,
-            connectMs = connectMs,
-            firstTokenMs = firstTokenMs,
+            responseMode = responseMode,
+            connectionMs = timing.connectionMs,
+            responseHeadersMs = responseHeadersMs,
+            firstVisibleMs = firstVisibleMs,
             outputMs = outputMs,
+            responseBodyMs = responseBodyMs,
             connectionReused = timing.connectionReused,
-            handshakeMs = timing.handshakeMs
+            fallbackUsed = false
         )
     }
 
@@ -1043,11 +1128,15 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             return@withContext LlmTestResult(
                 ok = true,
                 contentPreview = result.text?.take(120),
-                connectMs = result.connectMs,
-                firstTokenMs = result.firstTokenMs,
+                responseMode = result.responseMode,
+                totalMs = result.totalMs,
+                connectionMs = result.connectionMs,
+                responseHeadersMs = result.responseHeadersMs,
+                firstVisibleMs = result.firstVisibleMs,
                 outputMs = result.outputMs,
+                responseBodyMs = result.responseBodyMs,
                 connectionReused = result.connectionReused,
-                handshakeMs = result.handshakeMs
+                fallbackUsed = result.fallbackUsed
             )
         } else {
             return@withContext LlmTestResult(

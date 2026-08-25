@@ -213,12 +213,17 @@ fun AiSettingsScreen(
             onProgressChange = { progressDialog = it },
             onSuccess = { result ->
                 llmTestResultDialog = AiLlmTestResultDialogState(
-                    connectMs = result.connectMs,
-                    firstTokenMs = result.firstTokenMs,
+                    responseMode =
+                        result.responseMode ?: LlmPostProcessor.LlmResponseMode.NON_SSE,
+                    totalMs = result.totalMs,
+                    connectionMs = result.connectionMs,
+                    responseHeadersMs = result.responseHeadersMs,
+                    firstVisibleMs = result.firstVisibleMs,
                     outputMs = result.outputMs,
+                    responseBodyMs = result.responseBodyMs,
                     preview = result.contentPreview,
                     connectionReused = result.connectionReused,
-                    handshakeMs = result.handshakeMs
+                    fallbackUsed = result.fallbackUsed
                 )
             },
             onFailed = { message ->

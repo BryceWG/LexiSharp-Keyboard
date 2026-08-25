@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.LlmPostProcessor
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsAlertDialog
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogAction
 import com.brycewg.asrkb.ui.settings.compose.components.MaterialSettingsDialogButtonRow
@@ -56,12 +57,16 @@ import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal data class AiLlmTestResultDialogState(
-    val connectMs: Long,
-    val firstTokenMs: Long,
+    val responseMode: LlmPostProcessor.LlmResponseMode,
+    val totalMs: Long,
+    val connectionMs: Long,
+    val responseHeadersMs: Long,
+    val firstVisibleMs: Long,
     val outputMs: Long,
+    val responseBodyMs: Long,
     val preview: String?,
     val connectionReused: Boolean = false,
-    val handshakeMs: Long = 0
+    val fallbackUsed: Boolean = false
 )
 
 private data class LlmTimingSegment(
@@ -152,32 +157,51 @@ private fun AiLlmTestResultContent(
     uiMode: BibiUiMode,
     modifier: Modifier = Modifier
 ) {
-    val segments = llmTimingSegments(state)
-    val totalMs = state.connectMs + state.firstTokenMs + state.outputMs
-    val barDescription = stringResource(
-        R.string.llm_test_timing_bar_description,
-        state.connectMs.toInt(),
-        state.firstTokenMs.toInt(),
-        state.outputMs.toInt()
-    )
     Column(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(max = SettingsLayoutMetrics.DialogContentMaxHeight)
             .verticalScroll(rememberScrollState())
     ) {
-        LlmTimingBar(
-            segments = segments,
-            contentDescription = barDescription,
-            trackColor = llmTimingTrackColor(uiMode)
-        )
-        Spacer(modifier = Modifier.height(SettingsLayoutMetrics.FeatureExplainerSectionSpacing))
-        segments.forEach { segment ->
-            LlmTimingLegendRow(segment = segment, uiMode = uiMode)
+        if (state.responseMode == LlmPostProcessor.LlmResponseMode.SSE) {
+            val segments = llmSseTimingSegments(state)
+            val barDescription = stringResource(
+                R.string.llm_test_timing_bar_description,
+                state.responseHeadersMs.toInt(),
+                state.firstVisibleMs.toInt(),
+                state.outputMs.toInt()
+            )
+            LlmTimingBar(
+                segments = segments,
+                contentDescription = barDescription,
+                trackColor = llmTimingTrackColor(uiMode)
+            )
+            Spacer(modifier = Modifier.height(SettingsLayoutMetrics.FeatureExplainerSectionSpacing))
+            segments.forEach { segment ->
+                LlmTimingLegendRow(segment = segment, uiMode = uiMode)
+            }
+        } else {
+            if (!state.connectionReused) {
+                LlmTimingMetricRow(
+                    label = stringResource(R.string.llm_test_timing_connect),
+                    durationMs = state.connectionMs,
+                    uiMode = uiMode
+                )
+            }
+            LlmTimingMetricRow(
+                label = stringResource(R.string.llm_test_timing_response_headers),
+                durationMs = state.responseHeadersMs,
+                uiMode = uiMode
+            )
+            LlmTimingMetricRow(
+                label = stringResource(R.string.llm_test_timing_response_body),
+                durationMs = state.responseBodyMs,
+                uiMode = uiMode
+            )
         }
         Spacer(modifier = Modifier.height(SettingsLayoutMetrics.FeatureExplainerLabelSpacing))
         LlmTimingBodyText(
-            text = stringResource(R.string.llm_test_timing_total, totalMs.toInt()),
+            text = stringResource(R.string.llm_test_timing_total, state.totalMs.toInt()),
             uiMode = uiMode,
             secondary = true,
             strong = true
@@ -187,11 +211,19 @@ private fun AiLlmTestResultContent(
             text = if (state.connectionReused) {
                 stringResource(R.string.llm_test_timing_reused)
             } else {
-                stringResource(R.string.llm_test_timing_new, state.handshakeMs.toInt())
+                stringResource(R.string.llm_test_timing_new, state.connectionMs.toInt())
             },
             uiMode = uiMode,
             secondary = true
         )
+        if (state.fallbackUsed) {
+            Spacer(modifier = Modifier.height(SettingsLayoutMetrics.FeatureExplainerLabelSpacing))
+            LlmTimingBodyText(
+                text = stringResource(R.string.llm_test_timing_fallback_used),
+                uiMode = uiMode,
+                secondary = true
+            )
+        }
         val preview = state.preview?.trim().orEmpty()
         if (preview.isNotEmpty()) {
             Spacer(modifier = Modifier.height(SettingsLayoutMetrics.FeatureExplainerSectionSpacing))
@@ -205,19 +237,19 @@ private fun AiLlmTestResultContent(
 }
 
 @Composable
-private fun llmTimingSegments(
+private fun llmSseTimingSegments(
     state: AiLlmTestResultDialogState
 ): List<LlmTimingSegment> {
     val colors = llmTimingColors()
     return listOf(
         LlmTimingSegment(
-            label = stringResource(R.string.llm_test_timing_connect),
-            durationMs = state.connectMs.coerceAtLeast(0L),
-            color = colors.connect
+            label = stringResource(R.string.llm_test_timing_response_headers),
+            durationMs = state.responseHeadersMs.coerceAtLeast(0L),
+            color = colors.responseHeaders
         ),
         LlmTimingSegment(
             label = stringResource(R.string.llm_test_timing_first_token),
-            durationMs = state.firstTokenMs.coerceAtLeast(0L),
+            durationMs = state.firstVisibleMs.coerceAtLeast(0L),
             color = colors.firstToken
         ),
         LlmTimingSegment(
@@ -226,6 +258,35 @@ private fun llmTimingSegments(
             color = colors.output
         )
     )
+}
+
+@Composable
+private fun LlmTimingMetricRow(
+    label: String,
+    durationMs: Long,
+    uiMode: BibiUiMode
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = SettingsLayoutMetrics.ProDialogTinySpacing),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        LlmTimingBodyText(
+            text = label,
+            uiMode = uiMode,
+            modifier = Modifier.weight(1f)
+        )
+        LlmTimingBodyText(
+            text = stringResource(
+                R.string.llm_test_timing_ms,
+                durationMs.coerceAtLeast(0L).toInt()
+            ),
+            uiMode = uiMode,
+            secondary = true,
+            monospace = true
+        )
+    }
 }
 
 @Composable
@@ -334,14 +395,14 @@ private fun LlmTimingBodyText(
 }
 
 private data class LlmTimingColors(
-    val connect: Color,
+    val responseHeaders: Color,
     val firstToken: Color,
     val output: Color
 )
 
 @Composable
 private fun llmTimingColors(): LlmTimingColors = LlmTimingColors(
-    connect = colorResource(R.color.llm_timing_blue),
+    responseHeaders = colorResource(R.color.llm_timing_blue),
     firstToken = colorResource(R.color.llm_timing_yellow),
     output = colorResource(R.color.llm_timing_green)
 )
