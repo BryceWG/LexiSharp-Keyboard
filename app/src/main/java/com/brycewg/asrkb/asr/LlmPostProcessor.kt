@@ -971,6 +971,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         onStreamingUpdate: ((String) -> Unit)? = null,
         timeoutBudget: LlmPostprocessTimeouts.Budget? = null
     ): RawCallResult {
+        if (cancelRequested) {
+            return RawCallResult(false, error = "Request canceled")
+        }
         val req = try {
             buildRequest(config, messages, streaming = streaming)
         } catch (t: Throwable) {
@@ -982,6 +985,13 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val http = getHttpClient().newBuilder().eventListener(timing).build()
         val call = http.newCall(req)
         activeCall = call
+        if (cancelRequested) {
+            call.cancel()
+            if (activeCall === call) {
+                activeCall = null
+            }
+            return RawCallResult(false, error = "Request canceled")
+        }
         val t0 = elapsedRealtimeMs()
         val startedAtNs = System.nanoTime()
         val firstTokenDeadlineNs = timeoutBudget?.let {

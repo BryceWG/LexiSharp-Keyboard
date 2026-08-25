@@ -3,6 +3,7 @@ package com.brycewg.asrkb.asr
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.brycewg.asrkb.store.Prefs
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -118,6 +119,8 @@ class LlmPostProcessorTest {
     fun doneEvent_returnsBeforeSlowTrailingBodyIsDrained() = runBlocking {
         val protocolBody = sseEvent("hi") + doneEvent()
         val trailingBody = "x".repeat(4_096)
+        val protocolWritten = CountDownLatch(1)
+        val releaseTrailingBody = CountDownLatch(1)
         val slowServer = mockwebserver3.MockWebServer()
         slowServer.start()
         try {
@@ -131,7 +134,8 @@ class LlmPostProcessorTest {
                         override fun writeTo(sink: BufferedSink) {
                             sink.writeUtf8(protocolBody)
                             sink.flush()
-                            Thread.sleep(2_000L)
+                            protocolWritten.countDown()
+                            check(releaseTrailingBody.await(10, TimeUnit.SECONDS))
                             sink.writeUtf8(trailingBody)
                         }
                     })
@@ -139,14 +143,17 @@ class LlmPostProcessorTest {
             )
             prefs.llmEndpoint = slowServer.url("/v1").toString().trimEnd('/')
 
-            val startedAt = System.nanoTime()
-            val result = processor.testConnectivity(prefs)
-            val elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt)
+            val resultDeferred = async(Dispatchers.IO) { processor.testConnectivity(prefs) }
+            val didWriteProtocol = withContext(Dispatchers.IO) {
+                protocolWritten.await(5, TimeUnit.SECONDS)
+            }
+            assertTrue("server did not write the protocol body", didWriteProtocol)
+            val result = withTimeout(5_000L) { resultDeferred.await() }
 
             assertTrue(result.ok)
-            assertTrue("result waited for trailing body: ${elapsedMs}ms", elapsedMs < 1_000L)
-            assertTrue("drain leaked into total: ${result.totalMs}ms", result.totalMs < 1_000L)
+            assertEquals(1L, releaseTrailingBody.count)
         } finally {
+            releaseTrailingBody.countDown()
             slowServer.close()
         }
     }
