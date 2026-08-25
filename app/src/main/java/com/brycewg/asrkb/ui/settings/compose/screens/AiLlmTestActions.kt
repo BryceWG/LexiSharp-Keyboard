@@ -32,7 +32,7 @@ internal fun launchAiLlmTest(
     isActiveSession: (Long) -> Boolean,
     onProcessorChange: (LlmPostProcessor?) -> Unit,
     onProgressChange: (SettingsProgressDialogState?) -> Unit,
-    onSuccess: (String) -> Unit,
+    onSuccess: (LlmPostProcessor.LlmTestResult) -> Unit,
     onFailed: (String) -> Unit,
     onClear: (Long, SettingsProgressDialogState) -> Unit
 ): Job {
@@ -53,12 +53,7 @@ internal fun launchAiLlmTest(
             }
             if (!isActive || !isActiveSession(sessionId)) return@launch
             if (result.ok) {
-                onSuccess(
-                    context.getString(
-                        R.string.llm_test_success_preview,
-                        result.contentPreview ?: ""
-                    )
-                )
+                onSuccess(result)
             } else {
                 onFailed(
                     context.getString(

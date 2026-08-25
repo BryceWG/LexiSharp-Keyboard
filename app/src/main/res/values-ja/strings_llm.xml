@@ -26,6 +26,17 @@
     <string name="llm_test_running">LLM呼び出しをテスト中…</string>
     <string name="llm_test_success_title">テスト成功</string>
     <string name="llm_test_success_preview">レスポンスプレビュー：%1$s</string>
+    <string name="llm_test_timing_connect">接続確立</string>
+    <string name="llm_test_timing_response_headers">レスポンスヘッダー</string>
+    <string name="llm_test_timing_first_token">最初の表示テキスト</string>
+    <string name="llm_test_timing_output">出力</string>
+    <string name="llm_test_timing_response_body">レスポンス本文</string>
+    <string name="llm_test_timing_ms">%1$d ms</string>
+    <string name="llm_test_timing_total">合計 %1$d ms</string>
+    <string name="llm_test_timing_reused">接続を再利用（新規接続なし）</string>
+    <string name="llm_test_timing_new">新規接続、確立に %1$d ms</string>
+    <string name="llm_test_timing_bar_description">レスポンスヘッダー %1$d ms、最初の表示テキスト %2$d ms、出力 %3$d ms</string>
+    <string name="llm_test_timing_fallback_used">ストリーミングが利用できなかったため、非ストリーミングにフォールバックしました。</string>
     <string name="llm_test_failed_title">テスト失敗</string>
     <string name="llm_test_failed_reason">理由：%1$s</string>
     <string name="llm_test_failed_generic">呼び出し失敗</string>

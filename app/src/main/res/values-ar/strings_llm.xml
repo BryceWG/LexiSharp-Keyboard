@@ -25,6 +25,17 @@
     <string name="llm_test_running">جارٍ اختبار استدعاء LLM…</string>
     <string name="llm_test_success_title">نجح الاختبار</string>
     <string name="llm_test_success_preview">معاينة الاستجابة: %1$s</string>
+    <string name="llm_test_timing_connect">إنشاء الاتصال</string>
+    <string name="llm_test_timing_response_headers">ترويسات الاستجابة</string>
+    <string name="llm_test_timing_first_token">أول نص ظاهر</string>
+    <string name="llm_test_timing_output">الإخراج</string>
+    <string name="llm_test_timing_response_body">نص الاستجابة</string>
+    <string name="llm_test_timing_ms">%1$d ms</string>
+    <string name="llm_test_timing_total">الإجمالي %1$d ms</string>
+    <string name="llm_test_timing_reused">أُعيد استخدام الاتصال (دون إنشاء اتصال جديد)</string>
+    <string name="llm_test_timing_new">اتصال جديد، استغرق إنشاؤه %1$d ms</string>
+    <string name="llm_test_timing_bar_description">ترويسات الاستجابة %1$d ms، أول نص ظاهر %2$d ms، الإخراج %3$d ms</string>
+    <string name="llm_test_timing_fallback_used">تعذر استخدام البث، لذا استُخدمت الاستجابة غير المتدفقة.</string>
     <string name="llm_test_failed_title">فشل الاختبار</string>
     <string name="llm_test_failed_reason">السبب: %1$s</string>
     <string name="llm_test_failed_generic">فشل الاستدعاء</string>
