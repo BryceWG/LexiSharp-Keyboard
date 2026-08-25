@@ -1181,7 +1181,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     }
 
     /**
-     * 测试 LLM 调用是否可用：发送最简单 Prompt，看是否有返回内容。
+     * 测试 LLM 调用是否可用：发送贴近后处理场景的简易润色 Prompt（中英两段），看是否有返回内容。
+     * 输出约 60 token 且受原文长度约束，能同时反映连接/首包延迟与生成速度；
      * 不改变任何业务状态，仅用于连通性自检/配置校验。
      */
     suspend fun testConnectivity(prefs: Prefs): LlmTestResult = withContext(Dispatchers.IO) {
@@ -1200,7 +1201,17 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             put(
                 JSONObject().apply {
                     put("role", "user")
-                    put("content", "say `hi`")
+                    put(
+                        "content",
+                        "Rewrite each dictated text below as clean written text. " +
+                            "Keep the meaning and roughly the same length, output only the two rewritten texts " +
+                            "labeled [EN] and [ZH]: " +
+                            "[EN] \"um yesterday like me and my friend we went to the park " +
+                            "and uh the weather was really nice so we played some football " +
+                            "and then we had ice cream\"; " +
+                            "[ZH] \"就是昨天吧，我和我朋友然后去了那个公园，嗯天气特别好，" +
+                            "我们就踢了会儿足球，然后还吃了个冰淇淋\""
+                    )
                 }
             )
         }
