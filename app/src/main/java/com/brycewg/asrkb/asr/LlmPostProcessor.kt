@@ -13,12 +13,17 @@ import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import java.io.IOException
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Call
+import okhttp3.EventListener
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.BufferedSource
@@ -48,7 +53,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val contentPreview: String? = null,
         val connectMs: Long = 0,
         val firstTokenMs: Long = 0,
-        val outputMs: Long = 0
+        val outputMs: Long = 0,
+        val connectionReused: Boolean = false,
+        val handshakeMs: Long = 0
     )
 
     /**
@@ -71,13 +78,72 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val error: String? = null,
         val connectMs: Long = 0,
         val firstTokenMs: Long = 0,
-        val outputMs: Long = 0
+        val outputMs: Long = 0,
+        val connectionReused: Boolean = false,
+        val handshakeMs: Long = 0
     )
 
     private data class StreamParseResult(
         val text: String,
         val firstVisibleAtElapsed: Long
     )
+
+    /**
+     * 单次 HTTP 调用的连接事件。connectStart 未触发即视为复用了连接池里的连接。
+     */
+    private class LlmHttpEventTiming : EventListener() {
+        var connectionReused: Boolean = true
+            private set
+        var handshakeMs: Long = 0
+            private set
+
+        private var tDns = 0L
+        private var tConnect = 0L
+        private var dnsMs = 0L
+
+        override fun dnsStart(call: Call, domainName: String) {
+            tDns = SystemClock.elapsedRealtime()
+        }
+
+        override fun dnsEnd(
+            call: Call,
+            domainName: String,
+            inetAddressList: List<InetAddress>
+        ) {
+            dnsMs = (SystemClock.elapsedRealtime() - tDns).coerceAtLeast(0L)
+        }
+
+        override fun connectStart(
+            call: Call,
+            inetSocketAddress: InetSocketAddress,
+            proxy: Proxy
+        ) {
+            connectionReused = false
+            tConnect = SystemClock.elapsedRealtime()
+        }
+
+        override fun connectEnd(
+            call: Call,
+            inetSocketAddress: InetSocketAddress,
+            proxy: Proxy,
+            protocol: Protocol?
+        ) {
+            handshakeMs = dnsMs + (SystemClock.elapsedRealtime() - tConnect).coerceAtLeast(0L)
+        }
+
+        override fun connectFailed(
+            call: Call,
+            inetSocketAddress: InetSocketAddress,
+            proxy: Proxy,
+            protocol: Protocol?,
+            ioe: IOException
+        ) {
+            connectionReused = false
+            if (tConnect != 0L) {
+                handshakeMs = dnsMs + (SystemClock.elapsedRealtime() - tConnect).coerceAtLeast(0L)
+            }
+        }
+    }
 
     /**
      * 标准化的上层处理结果，用于向调用方传递是否成功以及返回文本。
@@ -119,6 +185,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
 
         /** 首 token 超时（秒）- streaming 模式下等待首个数据块的最大时间 */
         private const val FIRST_TOKEN_TIMEOUT_SECONDS = 60L
+
+        /** 流结束后排空剩余 SSE，便于 HTTP/1.1 把连接放回池 */
+        private const val STREAM_DRAIN_TIMEOUT_MS = 300L
 
         private val sharedHttpClient: OkHttpClient by lazy {
             OkHttpClient.Builder()
@@ -662,10 +731,34 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             flushEvent()
         }
 
+        drainSseQuietly(source)
+
         return StreamParseResult(
             text = contentBuilder.toString(),
             firstVisibleAtElapsed = firstVisibleAtElapsed
         )
+    }
+
+    private fun drainSseQuietly(source: BufferedSource) {
+        val timeout = source.timeout()
+        try {
+            timeout.timeout(STREAM_DRAIN_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            timeout.deadlineNanoTime(
+                System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(STREAM_DRAIN_TIMEOUT_MS)
+            )
+            while (!source.exhausted()) {
+                source.skip(8192)
+            }
+        } catch (t: Throwable) {
+            Log.w(TAG, "Drain remaining SSE failed", t)
+        } finally {
+            try {
+                timeout.clearDeadline()
+                timeout.timeout(0, TimeUnit.MILLISECONDS)
+            } catch (clearErr: Throwable) {
+                Log.w(TAG, "Clear SSE drain timeout failed", clearErr)
+            }
+        }
     }
 
     private fun extractDeltaContent(delta: JSONObject): String? {
@@ -778,7 +871,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             return RawCallResult(false, error = "Build request failed: ${t.message}")
         }
 
-        val http = getHttpClient()
+        val timing = LlmHttpEventTiming()
+        val http = getHttpClient().newBuilder().eventListener(timing).build()
         val call = http.newCall(req)
         activeCall = call
         val t0 = SystemClock.elapsedRealtime()
@@ -867,7 +961,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             text = text,
             connectMs = connectMs,
             firstTokenMs = firstTokenMs,
-            outputMs = outputMs
+            outputMs = outputMs,
+            connectionReused = timing.connectionReused,
+            handshakeMs = timing.handshakeMs
         )
     }
 
@@ -949,7 +1045,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 contentPreview = result.text?.take(120),
                 connectMs = result.connectMs,
                 firstTokenMs = result.firstTokenMs,
-                outputMs = result.outputMs
+                outputMs = result.outputMs,
+                connectionReused = result.connectionReused,
+                handshakeMs = result.handshakeMs
             )
         } else {
             return@withContext LlmTestResult(

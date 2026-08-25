@@ -30,6 +30,8 @@
     <string name="llm_test_timing_output">Output</string>
     <string name="llm_test_timing_ms">%1$d ms</string>
     <string name="llm_test_timing_total">Total %1$d ms</string>
+    <string name="llm_test_timing_reused">Connection reused (no handshake)</string>
+    <string name="llm_test_timing_new">New connection, handshake %1$d ms</string>
     <string name="llm_test_timing_bar_description">Connect %1$d ms, first token %2$d ms, output %3$d ms</string>
     <string name="llm_test_failed_title">Test Failed</string>
     <string name="llm_test_failed_reason">Reason: %1$s</string>

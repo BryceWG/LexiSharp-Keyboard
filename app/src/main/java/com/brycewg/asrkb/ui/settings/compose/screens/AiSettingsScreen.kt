@@ -216,7 +216,9 @@ fun AiSettingsScreen(
                     connectMs = result.connectMs,
                     firstTokenMs = result.firstTokenMs,
                     outputMs = result.outputMs,
-                    preview = result.contentPreview
+                    preview = result.contentPreview,
+                    connectionReused = result.connectionReused,
+                    handshakeMs = result.handshakeMs
                 )
             },
             onFailed = { message ->

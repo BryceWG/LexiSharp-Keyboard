@@ -31,6 +31,8 @@
     <string name="llm_test_timing_output">出力</string>
     <string name="llm_test_timing_ms">%1$d ms</string>
     <string name="llm_test_timing_total">合計 %1$d ms</string>
+    <string name="llm_test_timing_reused">接続を再利用（ハンドシェイクなし）</string>
+    <string name="llm_test_timing_new">新規接続、ハンドシェイク %1$d ms</string>
     <string name="llm_test_timing_bar_description">接続 %1$d ms、最初のトークン %2$d ms、出力 %3$d ms</string>
     <string name="llm_test_failed_title">テスト失敗</string>
     <string name="llm_test_failed_reason">理由：%1$s</string>

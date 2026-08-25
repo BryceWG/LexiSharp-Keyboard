@@ -59,7 +59,9 @@ internal data class AiLlmTestResultDialogState(
     val connectMs: Long,
     val firstTokenMs: Long,
     val outputMs: Long,
-    val preview: String?
+    val preview: String?,
+    val connectionReused: Boolean = false,
+    val handshakeMs: Long = 0
 )
 
 private data class LlmTimingSegment(
@@ -179,6 +181,16 @@ private fun AiLlmTestResultContent(
             uiMode = uiMode,
             secondary = true,
             strong = true
+        )
+        Spacer(modifier = Modifier.height(SettingsLayoutMetrics.FeatureExplainerLabelSpacing))
+        LlmTimingBodyText(
+            text = if (state.connectionReused) {
+                stringResource(R.string.llm_test_timing_reused)
+            } else {
+                stringResource(R.string.llm_test_timing_new, state.handshakeMs.toInt())
+            },
+            uiMode = uiMode,
+            secondary = true
         )
         val preview = state.preview?.trim().orEmpty()
         if (preview.isNotEmpty()) {

@@ -30,6 +30,8 @@
     <string name="llm_test_timing_output">输出</string>
     <string name="llm_test_timing_ms">%1$d ms</string>
     <string name="llm_test_timing_total">合计 %1$d ms</string>
+    <string name="llm_test_timing_reused">连接已复用（未重新握手）</string>
+    <string name="llm_test_timing_new">新建连接，握手 %1$d ms</string>
     <string name="llm_test_timing_bar_description">建连 %1$d ms，首 token %2$d ms，输出 %3$d ms</string>
     <string name="llm_test_failed_title">测试失败</string>
     <string name="llm_test_failed_reason">原因：%1$s</string>
