@@ -224,11 +224,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         }
 
         private val sharedModelsHttpClient: OkHttpClient by lazy {
-            OkHttpClient.Builder()
-                .addInterceptor(ApiLogInterceptor())
-                .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            sharedHttpClient.newBuilder()
                 .readTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .writeTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .build()
         }
 
