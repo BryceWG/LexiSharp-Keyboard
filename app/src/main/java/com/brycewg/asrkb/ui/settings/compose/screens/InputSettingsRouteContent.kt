@@ -506,6 +506,7 @@ internal fun InputMainUiSettingsSection(
                             LocaleListCompat.forLanguageTags(tag)
                         }
                         AppCompatDelegate.setApplicationLocales(locales)
+                        refreshFloatingNotificationLanguages(context, prefs)
                     }
                     onRefreshState()
                 }

@@ -14,12 +14,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.ime.layout.KeyboardLayoutStore
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.ui.floating.FloatingAsrService
+import com.brycewg.asrkb.ui.floating.FloatingKeepAliveService
 import kotlin.math.roundToInt
 
 internal data class ImeOption(val id: String, val label: String)
@@ -104,6 +107,25 @@ internal fun Context.sendImeRefreshBroadcast() {
             setPackage(packageName)
         }
     )
+}
+
+internal fun refreshFloatingNotificationLanguages(context: Context, prefs: Prefs) {
+    if (prefs.floatingKeepAliveEnabled) {
+        try {
+            FloatingKeepAliveService.start(context)
+        } catch (t: Throwable) {
+            Log.w("InputSettings", "Failed to refresh keep-alive notification language", t)
+        }
+    }
+    try {
+        context.sendBroadcast(
+            Intent(FloatingAsrService.ACTION_REFRESH_NOTIFICATION_LANGUAGE).apply {
+                setPackage(context.packageName)
+            }
+        )
+    } catch (t: Throwable) {
+        Log.w("InputSettings", "Failed to refresh recording notification language", t)
+    }
 }
 
 internal fun applyExcludeFromRecents(context: Context, enabled: Boolean) {

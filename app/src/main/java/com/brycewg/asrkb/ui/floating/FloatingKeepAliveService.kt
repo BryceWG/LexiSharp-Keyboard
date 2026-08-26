@@ -11,6 +11,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -171,6 +172,11 @@ class FloatingKeepAliveService : Service() {
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (keepAliveStarted) updateNotification()
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onTimeout(startId: Int, fgsType: Int) {
@@ -237,7 +243,11 @@ class FloatingKeepAliveService : Service() {
         startNotificationRefreshLoop()
     }
 
+    private fun localizedContext(): Context = LocaleHelper.wrap(this)
+
     private fun buildKeepAliveNotification(): android.app.Notification {
+        val localized = localizedContext()
+        ensureChannel(localized)
         val openIntent = KeepAliveNotificationClick.openSettingsIntent(this)
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -246,10 +256,13 @@ class FloatingKeepAliveService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val statusText = buildKeepAliveStatusText()
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val statusText = buildKeepAliveStatusText(localized)
+        return NotificationCompat.Builder(localized, CHANNEL_ID)
             .setContentTitle(
-                getString(R.string.notif_floating_keep_alive_title, getString(R.string.app_name))
+                localized.getString(
+                    R.string.notif_floating_keep_alive_title,
+                    localized.getString(R.string.app_name)
+                )
             )
             .setContentText(statusText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(statusText))
@@ -261,13 +274,13 @@ class FloatingKeepAliveService : Service() {
             .build()
     }
 
-    private fun ensureChannel() {
+    private fun ensureChannel(localized: Context = localizedContext()) {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            getString(R.string.notif_channel_floating_keep_alive),
+            localized.getString(R.string.notif_channel_floating_keep_alive),
             NotificationManager.IMPORTANCE_LOW
         )
-        channel.description = getString(R.string.notif_channel_floating_keep_alive_desc)
+        channel.description = localized.getString(R.string.notif_channel_floating_keep_alive_desc)
         try {
             notificationManager.createNotificationChannel(channel)
         } catch (e: Throwable) {
@@ -322,31 +335,31 @@ class FloatingKeepAliveService : Service() {
         }
     }
 
-    private fun buildKeepAliveStatusText(): String {
+    private fun buildKeepAliveStatusText(localized: Context): String {
         val prefs = try {
             Prefs(this)
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to read prefs for keep-alive notification", t)
-            return getString(
+            return localized.getString(
                 R.string.notif_floating_keep_alive_desc,
                 0L,
-                getString(R.string.vendor_volc),
-                getString(R.string.notif_floating_keep_alive_postproc_disabled)
+                localized.getString(R.string.vendor_volc),
+                localized.getString(R.string.notif_floating_keep_alive_postproc_disabled)
             )
         }
         val todayChars = getTodayRecognizedChars(prefs)
         val vendorName = try {
-            AsrVendorUi.name(this, prefs.asrVendor)
+            AsrVendorUi.name(localized, prefs.asrVendor)
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to resolve keep-alive vendor name", t)
             prefs.asrVendor.id
         }
         val postProcessStatus = if (prefs.postProcessEnabled && prefs.hasLlmKeys()) {
-            getString(R.string.notif_floating_keep_alive_postproc_enabled)
+            localized.getString(R.string.notif_floating_keep_alive_postproc_enabled)
         } else {
-            getString(R.string.notif_floating_keep_alive_postproc_disabled)
+            localized.getString(R.string.notif_floating_keep_alive_postproc_disabled)
         }
-        return getString(
+        return localized.getString(
             R.string.notif_floating_keep_alive_desc,
             todayChars,
             vendorName,

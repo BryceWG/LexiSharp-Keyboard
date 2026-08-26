@@ -61,6 +61,8 @@ class FloatingAsrService : Service() {
         const val ACTION_HIDE = "com.brycewg.asrkb.action.FLOATING_ASR_HIDE"
         const val ACTION_RESET_POSITION = "com.brycewg.asrkb.action.FLOATING_ASR_RESET_POS"
         const val ACTION_REFRESH_UI = "com.brycewg.asrkb.action.FLOATING_ASR_REFRESH_UI"
+        const val ACTION_REFRESH_NOTIFICATION_LANGUAGE =
+            "com.brycewg.asrkb.action.FLOATING_ASR_REFRESH_NOTIFICATION_LANGUAGE"
         const val ACTION_VOLUME_KEY_START = "com.brycewg.asrkb.action.VOLUME_KEY_RECORDING_START"
         const val ACTION_VOLUME_KEY_STOP = "com.brycewg.asrkb.action.VOLUME_KEY_RECORDING_STOP"
         const val ACTION_VOLUME_KEY_TOGGLE = "com.brycewg.asrkb.action.VOLUME_KEY_RECORDING_TOGGLE"
@@ -97,6 +99,7 @@ class FloatingAsrService : Service() {
                 FloatingImeHints.ACTION_HINT_IME_HIDDEN -> {
                     handleAccessibilityImeVisibilityHint(false, "hint_hidden")
                 }
+                ACTION_REFRESH_NOTIFICATION_LANGUAGE -> refreshRecordingNotification()
             }
         }
     }
@@ -164,6 +167,7 @@ class FloatingAsrService : Service() {
             val filter = android.content.IntentFilter().apply {
                 addAction(FloatingImeHints.ACTION_HINT_IME_VISIBLE)
                 addAction(FloatingImeHints.ACTION_HINT_IME_HIDDEN)
+                addAction(ACTION_REFRESH_NOTIFICATION_LANGUAGE)
             }
             ContextCompat.registerReceiver(
                 /* context = */
@@ -197,6 +201,7 @@ class FloatingAsrService : Service() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        refreshRecordingNotification()
         if (!::viewManager.isInitialized) return
         try {
             viewManager.remapPositionForCurrentDisplay(
@@ -330,7 +335,20 @@ class FloatingAsrService : Service() {
         }
     }
 
+    private fun localizedContext(): Context = LocaleHelper.wrap(this)
+
+    private fun refreshRecordingNotification() {
+        if (!recordingForegroundActive || !::notificationManager.isInitialized) return
+        try {
+            notificationManager.notify(RECORDING_NOTIFICATION_ID, buildRecordingNotification())
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to refresh recording notification language", e)
+        }
+    }
+
     private fun buildRecordingNotification(): Notification {
+        val localized = localizedContext()
+        ensureRecordingChannel(localized)
         val openIntent = KeepAliveNotificationClick.openSettingsIntent(this)
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -339,10 +357,13 @@ class FloatingAsrService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val text = getString(R.string.notif_floating_recording_desc)
-        return NotificationCompat.Builder(this, RECORDING_CHANNEL_ID)
+        val text = localized.getString(R.string.notif_floating_recording_desc)
+        return NotificationCompat.Builder(localized, RECORDING_CHANNEL_ID)
             .setContentTitle(
-                getString(R.string.notif_floating_recording_title, getString(R.string.app_name))
+                localized.getString(
+                    R.string.notif_floating_recording_title,
+                    localized.getString(R.string.app_name)
+                )
             )
             .setContentText(text)
             .setSmallIcon(R.drawable.microphone)
@@ -353,13 +374,13 @@ class FloatingAsrService : Service() {
             .build()
     }
 
-    private fun ensureRecordingChannel() {
+    private fun ensureRecordingChannel(localized: Context = localizedContext()) {
         val channel = NotificationChannel(
             RECORDING_CHANNEL_ID,
-            getString(R.string.notif_channel_floating_recording),
+            localized.getString(R.string.notif_channel_floating_recording),
             NotificationManager.IMPORTANCE_LOW
         )
-        channel.description = getString(R.string.notif_channel_floating_recording_desc)
+        channel.description = localized.getString(R.string.notif_channel_floating_recording_desc)
         try {
             notificationManager.createNotificationChannel(channel)
         } catch (e: Throwable) {
