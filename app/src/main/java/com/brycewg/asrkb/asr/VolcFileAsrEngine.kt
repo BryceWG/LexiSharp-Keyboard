@@ -45,7 +45,7 @@ class VolcFileAsrEngine(
     override val uploadAudioEncodingSpec: UploadAudioEncodingSpec?
         get() = oggOpusUploadAudioEncodingSpecIfSupported()
 
-    private val http: OkHttpClient = httpClient ?: OkHttpClient.Builder()
+    private val http: OkHttpClient = httpClient ?: AsrHttpClientProvider.newBuilder()
         .addInterceptor(ApiLogInterceptor())
         .callTimeout(60, TimeUnit.SECONDS)
         .build()

@@ -48,7 +48,7 @@ class MiMoFileAsrEngine(
 
     override val maxRecordDurationMillis: Int = 20 * 60 * 1000
 
-    private val http: OkHttpClient = httpClient ?: OkHttpClient.Builder()
+    private val http: OkHttpClient = httpClient ?: AsrHttpClientProvider.newBuilder()
         .addInterceptor(ApiLogInterceptor())
         .callTimeout(90, TimeUnit.SECONDS)
         .build()

@@ -43,7 +43,7 @@ class DashscopeFileAsrEngine(
     // DashScope：官方限制 3 分钟
     override val maxRecordDurationMillis: Int = 3 * 60 * 1000
 
-    private val http: OkHttpClient = httpClient ?: OkHttpClient.Builder()
+    private val http: OkHttpClient = httpClient ?: AsrHttpClientProvider.newBuilder()
         .addInterceptor(ApiLogInterceptor())
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(120, TimeUnit.SECONDS)

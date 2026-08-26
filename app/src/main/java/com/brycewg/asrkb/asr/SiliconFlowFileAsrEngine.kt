@@ -49,7 +49,7 @@ class SiliconFlowFileAsrEngine(
     override val uploadAudioEncodingSpec: UploadAudioEncodingSpec?
         get() = oggOpusUploadAudioEncodingSpecIfSupported()
 
-    private val http: OkHttpClient = httpClient ?: OkHttpClient.Builder()
+    private val http: OkHttpClient = httpClient ?: AsrHttpClientProvider.newBuilder()
         .addInterceptor(ApiLogInterceptor())
         // 普通转写可能较慢：放宽连接/读/写与总超时，避免长音频或排队导致的 SocketTimeout
         .connectTimeout(15, TimeUnit.SECONDS)

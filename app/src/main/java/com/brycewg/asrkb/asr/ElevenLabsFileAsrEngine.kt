@@ -36,7 +36,7 @@ class ElevenLabsFileAsrEngine(
     // ElevenLabs：未明确限制，本地限制为 20 分钟
     override val maxRecordDurationMillis: Int = 20 * 60 * 1000
 
-    private val http: OkHttpClient = httpClient ?: OkHttpClient.Builder()
+    private val http: OkHttpClient = httpClient ?: AsrHttpClientProvider.newBuilder()
         .addInterceptor(ApiLogInterceptor())
         .callTimeout(60, TimeUnit.SECONDS)
         .build()

@@ -39,7 +39,7 @@ class SonioxFileAsrEngine(
     // Soniox：未明确限制，本地限制为 1 小时
     override val maxRecordDurationMillis: Int = 60 * 60 * 1000
 
-    private val http: OkHttpClient = httpClient ?: OkHttpClient.Builder()
+    private val http: OkHttpClient = httpClient ?: AsrHttpClientProvider.newBuilder()
         .addInterceptor(ApiLogInterceptor())
         .callTimeout(120, TimeUnit.SECONDS)
         .build()

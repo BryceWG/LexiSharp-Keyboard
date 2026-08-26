@@ -44,7 +44,7 @@ class StepAudioFileAsrEngine(
     override val uploadAudioEncodingSpec: UploadAudioEncodingSpec?
         get() = oggOpusUploadAudioEncodingSpecIfSupported()
 
-    private val http: OkHttpClient = httpClient ?: OkHttpClient.Builder()
+    private val http: OkHttpClient = httpClient ?: AsrHttpClientProvider.newBuilder()
         .addInterceptor(ApiLogInterceptor())
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(120, TimeUnit.SECONDS)

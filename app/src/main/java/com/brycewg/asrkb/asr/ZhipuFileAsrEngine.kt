@@ -37,7 +37,7 @@ class ZhipuFileAsrEngine(
     // 智谱 GLM ASR：按官方文档，音频时长限制暂按 20 分钟
     override val maxRecordDurationMillis: Int = 20 * 60 * 1000
 
-    private val http: OkHttpClient = httpClient ?: OkHttpClient.Builder()
+    private val http: OkHttpClient = httpClient ?: AsrHttpClientProvider.newBuilder()
         .addInterceptor(ApiLogInterceptor())
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(120, TimeUnit.SECONDS)

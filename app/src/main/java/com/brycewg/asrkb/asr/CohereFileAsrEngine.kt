@@ -42,7 +42,7 @@ internal class CohereFileAsrEngine(
     override val uploadAudioEncodingSpec: UploadAudioEncodingSpec?
         get() = cohereUploadAudioEncodingSpecIfSupported()
 
-    private val http: OkHttpClient = httpClient ?: OkHttpClient.Builder()
+    private val http: OkHttpClient = httpClient ?: AsrHttpClientProvider.newBuilder()
         .addInterceptor(ApiLogInterceptor())
         .callTimeout(60, TimeUnit.SECONDS)
         .build()
