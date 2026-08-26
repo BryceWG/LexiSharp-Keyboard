@@ -627,6 +627,16 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_LLM_ACTIVE_ID, "") ?: ""
         set(value) = sp.edit { putString(KEY_LLM_ACTIVE_ID, value) }
 
+    var llmRequestModesJson: String
+        get() = sp.getString(KEY_LLM_REQUEST_MODES, "") ?: ""
+        set(value) = sp.edit { putString(KEY_LLM_REQUEST_MODES, value) }
+
+    fun getLlmRequestMode(capabilityKey: String): LlmRequestMode? =
+        PrefsLlmRequestModeStore.get(this, json, capabilityKey)
+
+    fun setLlmRequestMode(capabilityKey: String, mode: LlmRequestMode) =
+        PrefsLlmRequestModeStore.set(this, json, capabilityKey, mode)
+
     // 数字/符号小键盘：中文标点模式（true=中文形态，false=英文/ASCII 形态）
     var numpadCnPunctEnabled: Boolean
         get() = sp.getBoolean(KEY_NUMPAD_CN_PUNCT, true)
@@ -646,6 +656,16 @@ class Prefs(context: Context) {
         val reasoningParamsOnJson: String = "",
         val reasoningParamsOffJson: String = ""
     )
+
+    @Serializable
+    enum class LlmRequestMode(val id: String) {
+        STREAMING("streaming"),
+        NON_STREAMING("non_streaming");
+
+        companion object {
+            fun fromId(id: String): LlmRequestMode? = entries.firstOrNull { it.id == id }
+        }
+    }
 
     @Serializable
     data class OpenAiAsrProvider(

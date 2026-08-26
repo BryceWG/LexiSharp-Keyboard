@@ -118,6 +118,7 @@ internal object PrefsBackup {
         // 多 LLM 配置
         o.put(KEY_LLM_PROVIDERS, llmProvidersJson)
         o.put(KEY_LLM_ACTIVE_ID, activeLlmId)
+        o.put(KEY_LLM_REQUEST_MODES, llmRequestModesJson)
         // 兼容旧字段
         o.put(KEY_LLM_PROMPT, llmPrompt)
         o.put(KEY_LLM_PROMPT_PRESETS, promptPresetsJson)
@@ -432,6 +433,7 @@ internal object PrefsBackup {
             // 多 LLM 配置（优先于旧字段，仅当存在时覆盖）
             optString(KEY_LLM_PROVIDERS)?.let { llmProvidersJson = it }
             optString(KEY_LLM_ACTIVE_ID)?.let { activeLlmId = it }
+            optString(KEY_LLM_REQUEST_MODES)?.let { llmRequestModesJson = it }
             // 兼容：先读新预设；若“未提供”或“提供但为空字符串”，则回退旧单一 Prompt
             val importedPresets = optString(KEY_LLM_PROMPT_PRESETS)
             if (importedPresets != null) {

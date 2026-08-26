@@ -17,6 +17,9 @@ import java.net.InetSocketAddress
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.EventListener
@@ -104,6 +107,11 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val protocolCompleted: Boolean
     )
 
+    private data class RequestModeProbeResult(
+        val mode: Prefs.LlmRequestMode? = null,
+        val failure: RawCallResult? = null
+    )
+
     /**
      * 单次 HTTP 调用的连接事件。connectStart 未触发即视为复用了连接池里的连接；
      * 新建连接耗时从 DNS（若有）或 connectStart 起算，到 connectEnd 为止。
@@ -187,7 +195,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val supportsReasoningControl: Boolean,
         val useCustomReasoningParams: Boolean,
         val reasoningParamsOnJson: String,
-        val reasoningParamsOffJson: String
+        val reasoningParamsOffJson: String,
+        val requestModeCapabilityKey: String
     )
 
     companion object {
@@ -201,6 +210,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
 
         /** 协议完成后异步排空剩余 SSE，便于 HTTP/1.1 把连接放回池 */
         private const val STREAM_DRAIN_TIMEOUT_MS = 300L
+
+        /** 同进程内只允许一个未知供应商执行首次请求模式探测。 */
+        private val requestModeProbeMutex = Mutex()
 
         private val sharedHttpClient: OkHttpClient by lazy {
             OkHttpClient.Builder()
@@ -232,7 +244,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         enableReasoning: Boolean,
         useCustomReasoningParams: Boolean,
         reasoningParamsOnJson: String,
-        reasoningParamsOffJson: String
+        reasoningParamsOffJson: String,
+        capabilityIdentity: String
     ): LlmRequestConfig {
         val supportsReasoning = vendor.supportsReasoningControl(model)
         return LlmRequestConfig(
@@ -245,7 +258,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             supportsReasoningControl = supportsReasoning,
             useCustomReasoningParams = useCustomReasoningParams,
             reasoningParamsOnJson = reasoningParamsOnJson,
-            reasoningParamsOffJson = reasoningParamsOffJson
+            reasoningParamsOffJson = reasoningParamsOffJson,
+            requestModeCapabilityKey =
+                "$capabilityIdentity|${endpoint.trim().trimEnd('/')}"
         )
     }
 
@@ -270,13 +285,19 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 reasoningParamsOnJson =
                 effective?.reasoningParamsOnJson ?: Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_ON_JSON,
                 reasoningParamsOffJson =
-                effective?.reasoningParamsOffJson ?: Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_OFF_JSON
+                effective?.reasoningParamsOffJson ?: Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_OFF_JSON,
+                capabilityIdentity = vendor.id
             )
         }
 
         // 使用统一的 getEffectiveLlmConfig
         val config = prefs.getEffectiveLlmConfig()
         if (config != null) {
+            val customProviderId = if (config.vendor == LlmVendor.CUSTOM) {
+                prefs.getActiveLlmProvider()?.id ?: prefs.activeLlmId.ifBlank { "default" }
+            } else {
+                null
+            }
             return buildRequestConfig(
                 apiKey = config.apiKey,
                 endpoint = config.endpoint,
@@ -286,7 +307,8 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 enableReasoning = config.enableReasoning,
                 useCustomReasoningParams = config.useCustomReasoningParams,
                 reasoningParamsOnJson = config.reasoningParamsOnJson,
-                reasoningParamsOffJson = config.reasoningParamsOffJson
+                reasoningParamsOffJson = config.reasoningParamsOffJson,
+                capabilityIdentity = customProviderId?.let { "custom:$it" } ?: config.vendor.id
             )
         }
 
@@ -309,7 +331,12 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             enableReasoning = prefs.getLlmVendorReasoningEnabled(vendor),
             useCustomReasoningParams = false,
             reasoningParamsOnJson = Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_ON_JSON,
-            reasoningParamsOffJson = Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_OFF_JSON
+            reasoningParamsOffJson = Prefs.DEFAULT_CUSTOM_REASONING_PARAMS_OFF_JSON,
+            capabilityIdentity = if (vendor == LlmVendor.CUSTOM) {
+                "custom:${active?.id ?: prefs.activeLlmId.ifBlank { "default" }}"
+            } else {
+                vendor.id
+            }
         )
     }
 
@@ -530,6 +557,10 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             .addHeader("Content-Type", "application/json")
             .post(body)
 
+        if (streaming) {
+            builder.addHeader("Accept", "text/event-stream, application/json")
+        }
+
         if (config.apiKey.isNotBlank()) {
             builder.addHeader("Authorization", "Bearer ${config.apiKey}")
         }
@@ -611,6 +642,27 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     } catch (t: Throwable) {
         Log.e(TAG, "Failed to extract text from response", t)
         fallback
+    }
+
+    /**
+     * 无损查看响应开头，正文特征优先于可能被代理改错的 Content-Type。
+     */
+    private fun detectStreamingResponseMode(
+        source: BufferedSource
+    ): LlmResponseMode {
+        val peek = source.peek()
+        while (true) {
+            if (peek.exhausted()) return LlmResponseMode.NON_SSE
+            val codePoint = peek.readUtf8CodePoint()
+            if (codePoint == 0xFEFF || Character.isWhitespace(codePoint)) {
+                continue
+            }
+            return if (codePoint == '{'.code || codePoint == '['.code) {
+                LlmResponseMode.NON_SSE
+            } else {
+                LlmResponseMode.SSE
+            }
+        }
     }
 
     /**
@@ -898,16 +950,27 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
 
     /**
      * 复用的底层 Chat 调用：构建请求、执行并解析文本。
-     * 使用 streaming 模式，支持长时间等待和持续接收。
+     * 按已探测的供应商能力选择请求模式，流式响应支持持续接收。
      * 需确保在非主线程调用。
      */
     private fun performChat(
+        prefs: Prefs,
         config: LlmRequestConfig,
         messages: JSONArray,
+        requestMode: Prefs.LlmRequestMode,
         onStreamingUpdate: ((String) -> Unit)? = null,
         timeoutBudget: LlmPostprocessTimeouts.Budget? = null
     ): RawCallResult {
         val logicalStartedAt = elapsedRealtimeMs()
+        if (requestMode == Prefs.LlmRequestMode.NON_STREAMING) {
+            return performChatInternal(
+                config,
+                messages,
+                streaming = false,
+                timeoutBudget = timeoutBudget
+            ).copy(totalMs = (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L))
+        }
+
         val streamingResult = performChatInternal(
             config,
             messages,
@@ -916,6 +979,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             timeoutBudget = timeoutBudget
         )
         if (streamingResult.ok) {
+            if (streamingResult.responseMode == LlmResponseMode.NON_SSE) {
+                saveRequestMode(prefs, config, Prefs.LlmRequestMode.NON_STREAMING)
+            }
             return streamingResult.copy(
                 totalMs =
                     (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
@@ -929,12 +995,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         }
 
         // 若服务端拒绝或不支持流式，尝试回退到非流模式
-        val shouldRetryWithoutStream =
-            streamingResult.httpCode in listOf(400, 404, 405, 415, 422) ||
-                (streamingResult.error?.contains("stream", ignoreCase = true) == true) ||
-                (streamingResult.error?.contains("sse", ignoreCase = true) == true)
-
-        if (!shouldRetryWithoutStream) {
+        if (!shouldRetryWithoutStream(streamingResult)) {
             return streamingResult.copy(
                 totalMs =
                     (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
@@ -954,6 +1015,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val logicalTotalMs =
             (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
         if (fallback.ok) {
+            saveRequestMode(prefs, config, Prefs.LlmRequestMode.NON_STREAMING)
             return fallback.copy(totalMs = logicalTotalMs, fallbackUsed = true)
         }
 
@@ -962,6 +1024,107 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             totalMs = logicalTotalMs,
             fallbackUsed = true
         )
+    }
+
+    private suspend fun ensureRequestMode(
+        prefs: Prefs,
+        config: LlmRequestConfig,
+        timeoutBudget: LlmPostprocessTimeouts.Budget?
+    ): RequestModeProbeResult {
+        prefs.getLlmRequestMode(config.requestModeCapabilityKey)?.let {
+            return RequestModeProbeResult(mode = it)
+        }
+
+        return requestModeProbeMutex.withLock {
+            prefs.getLlmRequestMode(config.requestModeCapabilityKey)?.let {
+                return@withLock RequestModeProbeResult(mode = it)
+            }
+            DebugLogManager.logBase(
+                category = "asr",
+                event = "llm_request_mode_probe_started",
+                data = mapOf("vendor" to config.vendor.id)
+            )
+            val probeMessages = JSONArray().put(
+                JSONObject()
+                    .put("role", "user")
+                    .put("content", "Reply with OK only.")
+            )
+            val probeConfig = config.copy(enableReasoning = false)
+            val streamingProbe = performChatInternal(
+                probeConfig,
+                probeMessages,
+                streaming = true,
+                timeoutBudget = timeoutBudget
+            )
+            if (streamingProbe.ok) {
+                val mode = if (streamingProbe.responseMode == LlmResponseMode.SSE) {
+                    Prefs.LlmRequestMode.STREAMING
+                } else {
+                    Prefs.LlmRequestMode.NON_STREAMING
+                }
+                saveRequestMode(prefs, config, mode)
+                return@withLock RequestModeProbeResult(mode = mode)
+            }
+            if (!shouldRetryWithoutStream(streamingProbe)) {
+                logRequestModeProbeFailed(config, "streaming", streamingProbe)
+                return@withLock RequestModeProbeResult(failure = streamingProbe)
+            }
+
+            val nonStreamingProbe = performChatInternal(
+                probeConfig,
+                probeMessages,
+                streaming = false,
+                timeoutBudget = timeoutBudget
+            )
+            if (!nonStreamingProbe.ok) {
+                logRequestModeProbeFailed(config, "non_streaming", nonStreamingProbe)
+                return@withLock RequestModeProbeResult(failure = nonStreamingProbe)
+            }
+            saveRequestMode(prefs, config, Prefs.LlmRequestMode.NON_STREAMING)
+            RequestModeProbeResult(mode = Prefs.LlmRequestMode.NON_STREAMING)
+        }
+    }
+
+    private fun saveRequestMode(
+        prefs: Prefs,
+        config: LlmRequestConfig,
+        mode: Prefs.LlmRequestMode
+    ) {
+        prefs.setLlmRequestMode(config.requestModeCapabilityKey, mode)
+        DebugLogManager.logBase(
+            category = "asr",
+            event = "llm_request_mode_saved",
+            data = mapOf(
+                "vendor" to config.vendor.id,
+                "mode" to mode.id
+            )
+        )
+    }
+
+    private fun logRequestModeProbeFailed(
+        config: LlmRequestConfig,
+        stage: String,
+        result: RawCallResult
+    ) {
+        DebugLogManager.logWarning(
+            category = "asr",
+            event = "llm_request_mode_probe_failed",
+            data = mapOf(
+                "vendor" to config.vendor.id,
+                "stage" to stage,
+                "httpCode" to result.httpCode
+            )
+        )
+    }
+
+    private fun shouldRetryWithoutStream(result: RawCallResult): Boolean {
+        if (result.httpCode in listOf(400, 404, 405, 406, 415, 422)) return true
+        val error = result.error?.lowercase().orEmpty()
+        return error.contains("streaming is not supported") ||
+            error.contains("stream is not supported") ||
+            error.contains("unsupported stream") ||
+            error.contains("sse is not supported") ||
+            error.contains("unsupported sse")
     }
 
     private fun performChatInternal(
@@ -1044,19 +1207,43 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val text = try {
             val body = resp.body
 
+            val bodyReadStartedAt = elapsedRealtimeMs()
+            val source = body.source()
             val contentType =
                 resp.header("Content-Type") ?: body.contentType()?.toString().orEmpty()
-            val isEventStream =
-                streaming && contentType.contains("text/event-stream", ignoreCase = true)
+            val declaredSse = contentType.contains("text/event-stream", ignoreCase = true)
+            val responseModeDetected = if (streaming && declaredSse) {
+                LlmResponseMode.SSE
+            } else if (streaming) {
+                if (timeoutBudget != null && firstTokenDeadlineNs != null) {
+                    applyAbsoluteDeadline(source.timeout(), firstTokenDeadlineNs)
+                }
+                try {
+                    detectStreamingResponseMode(source)
+                } catch (t: Throwable) {
+                    if (timeoutBudget != null && isTimeoutThrowable(t)) {
+                        throw LlmPostprocessTimeoutException("first_token")
+                    }
+                    throw t
+                }
+            } else {
+                LlmResponseMode.NON_SSE
+            }
+            val isEventStream = responseModeDetected == LlmResponseMode.SSE
+            if (streaming) {
+                DebugLogManager.logBase(
+                    category = "asr",
+                    event = "llm_response_mode_detected",
+                    data = mapOf(
+                        "mode" to responseModeDetected.name.lowercase(),
+                        "declaredSse" to
+                            declaredSse
+                    )
+                )
+            }
 
             val parsed = if (isEventStream) {
-                if (timeoutBudget != null && firstTokenDeadlineNs != null &&
-                    System.nanoTime() >= firstTokenDeadlineNs
-                ) {
-                    throw LlmPostprocessTimeoutException("first_token")
-                }
                 responseMode = LlmResponseMode.SSE
-                val source = body.source()
                 val stream = parseStreamingResponse(
                     source,
                     timeoutBudget = timeoutBudget,
@@ -1079,12 +1266,11 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 if (timeoutBudget != null) {
                     val combinedDeadlineNs = startedAtNs +
                         TimeUnit.MILLISECONDS.toNanos(timeoutBudget.combinedMs)
-                    applyAbsoluteDeadline(body.source().timeout(), combinedDeadlineNs)
+                    applyAbsoluteDeadline(source.timeout(), combinedDeadlineNs)
                 }
-                val bodyStartedAt = elapsedRealtimeMs()
                 val respText = body.string()
                 responseBodyMs =
-                    (elapsedRealtimeMs() - bodyStartedAt).coerceAtLeast(0L)
+                    (elapsedRealtimeMs() - bodyReadStartedAt).coerceAtLeast(0L)
                 extractTextFromResponse(respText, fallback = "")
             }
 
@@ -1155,22 +1341,33 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
      * 带一次自动重试的调用。
      */
     private suspend fun performChatWithRetry(
+        prefs: Prefs,
         config: LlmRequestConfig,
         messages: JSONArray,
         maxRetry: Int = 1,
         onStreamingUpdate: ((String) -> Unit)? = null,
         timeoutBudget: LlmPostprocessTimeouts.Budget? = null
     ): RawCallResult {
+        val probe = ensureRequestMode(prefs, config, timeoutBudget)
+        if (probe.mode == null) {
+            return probe.failure ?: RawCallResult(false, error = "Request mode probe failed")
+        }
         var attempt = 0
+        var retryModeOverride: Prefs.LlmRequestMode? = null
         var last: RawCallResult
         while (true) {
             if (cancelRequested) {
                 return RawCallResult(false, error = "Request canceled")
             }
             attempt++
+            val requestMode = retryModeOverride
+                ?: prefs.getLlmRequestMode(config.requestModeCapabilityKey)
+                ?: probe.mode
             last = performChat(
+                prefs,
                 config,
                 messages,
+                requestMode = requestMode,
                 onStreamingUpdate = onStreamingUpdate,
                 timeoutBudget = timeoutBudget
             )
@@ -1178,12 +1375,17 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             if (cancelRequested) return last.copy(error = last.error ?: "Request canceled")
             if (isNonRetryableFailure(last)) return last
             if (attempt > maxRetry) return last
+            if (last.fallbackUsed) {
+                retryModeOverride = Prefs.LlmRequestMode.NON_STREAMING
+            }
             Log.w(
                 TAG,
                 "performChat failed (attempt=$attempt), will retry once: ${last.httpCode ?: ""} ${last.error ?: ""}"
             )
             try {
                 kotlinx.coroutines.delay(350)
+            } catch (t: CancellationException) {
+                throw t
             } catch (t: Throwable) {
                 Log.w(TAG, "Retry delay interrupted", t)
             }
@@ -1193,7 +1395,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     /**
      * 测试 LLM 调用是否可用：发送贴近后处理场景的简易润色 Prompt（中英两段），看是否有返回内容。
      * 输出约 60 token 且受原文长度约束，能同时反映连接/首包延迟与生成速度；
-     * 不改变任何业务状态，仅用于连通性自检/配置校验。
+     * 首次测试会先独立探测并保存供应商请求模式，探测耗时不计入正式测速结果。
      */
     suspend fun testConnectivity(prefs: Prefs): LlmTestResult = withContext(Dispatchers.IO) {
         // 基础必填校验（endpoint / model）
@@ -1229,7 +1431,23 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         val timeoutBudget = LlmPostprocessTimeouts.connectivityBudget(
             reasoningEnabled = active.enableReasoning
         )
-        val result = performChat(active, messages, timeoutBudget = timeoutBudget)
+        val probe = ensureRequestMode(prefs, active, timeoutBudget)
+        val requestMode = probe.mode
+        if (requestMode == null) {
+            val failure = probe.failure
+            return@withContext LlmTestResult(
+                false,
+                httpCode = failure?.httpCode,
+                message = failure?.error ?: "Request mode probe failed"
+            )
+        }
+        val result = performChat(
+            prefs,
+            active,
+            messages,
+            requestMode = requestMode,
+            timeoutBudget = timeoutBudget
+        )
         if (result.ok) {
             return@withContext LlmTestResult(
                 ok = true,
@@ -1382,6 +1600,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             inputCharCount = input.length
         )
         val result = performChatWithRetry(
+            prefs,
             config,
             messages,
             onStreamingUpdate = onStreamingUpdate,
@@ -1474,7 +1693,12 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             reasoningEnabled = config.enableReasoning,
             inputCharCount = original.length
         )
-        val result = performChatWithRetry(config, messages, timeoutBudget = timeoutBudget)
+        val result = performChatWithRetry(
+            prefs,
+            config,
+            messages,
+            timeoutBudget = timeoutBudget
+        )
         val dt = TimeUnit.NANOSECONDS
             .toMillis((System.nanoTime() - t0).coerceAtLeast(0L))
             .coerceAtLeast(0L)

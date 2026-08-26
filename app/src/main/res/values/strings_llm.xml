@@ -25,6 +25,8 @@
     <string name="llm_test_running">Testing LLM call…</string>
     <string name="llm_test_success_title">Test Succeeded</string>
     <string name="llm_test_success_preview">Response preview: %1$s</string>
+    <string name="llm_test_streaming_supported">Streaming output: supported</string>
+    <string name="llm_test_streaming_unsupported">Streaming output: not supported</string>
     <string name="llm_test_timing_connect">Connection setup</string>
     <string name="llm_test_timing_response_headers">Response headers</string>
     <string name="llm_test_timing_first_token">First visible text</string>

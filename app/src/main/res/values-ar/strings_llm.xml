@@ -25,6 +25,8 @@
     <string name="llm_test_running">جارٍ اختبار استدعاء LLM…</string>
     <string name="llm_test_success_title">نجح الاختبار</string>
     <string name="llm_test_success_preview">معاينة الاستجابة: %1$s</string>
+    <string name="llm_test_streaming_supported">الإخراج المتدفق: مدعوم</string>
+    <string name="llm_test_streaming_unsupported">الإخراج المتدفق: غير مدعوم</string>
     <string name="llm_test_timing_connect">إنشاء الاتصال</string>
     <string name="llm_test_timing_response_headers">ترويسات الاستجابة</string>
     <string name="llm_test_timing_first_token">أول نص ظاهر</string>

@@ -26,6 +26,8 @@
     <string name="llm_test_running">LLM呼び出しをテスト中…</string>
     <string name="llm_test_success_title">テスト成功</string>
     <string name="llm_test_success_preview">レスポンスプレビュー：%1$s</string>
+    <string name="llm_test_streaming_supported">ストリーミング出力：対応</string>
+    <string name="llm_test_streaming_unsupported">ストリーミング出力：非対応</string>
     <string name="llm_test_timing_connect">接続確立</string>
     <string name="llm_test_timing_response_headers">レスポンスヘッダー</string>
     <string name="llm_test_timing_first_token">最初の表示テキスト</string>

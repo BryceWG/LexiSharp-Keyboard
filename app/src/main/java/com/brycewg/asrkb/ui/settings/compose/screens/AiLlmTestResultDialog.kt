@@ -235,6 +235,18 @@ private fun AiLlmTestResultContent(
                 secondary = true
             )
         }
+        Spacer(modifier = Modifier.height(SettingsLayoutMetrics.FeatureExplainerLabelSpacing))
+        LlmTimingBodyText(
+            text = stringResource(
+                if (state.responseMode == LlmPostProcessor.LlmResponseMode.SSE) {
+                    R.string.llm_test_streaming_supported
+                } else {
+                    R.string.llm_test_streaming_unsupported
+                }
+            ),
+            uiMode = uiMode,
+            secondary = true
+        )
     }
 }
 

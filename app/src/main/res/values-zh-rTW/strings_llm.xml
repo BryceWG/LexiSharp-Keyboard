@@ -25,6 +25,8 @@
     <string name="llm_test_running">正在測試 LLM 呼叫…</string>
     <string name="llm_test_success_title">測試成功</string>
     <string name="llm_test_success_preview">回應片段：%1$s</string>
+    <string name="llm_test_streaming_supported">串流輸出：支援</string>
+    <string name="llm_test_streaming_unsupported">串流輸出：不支援</string>
     <string name="llm_test_timing_connect">連線建立</string>
     <string name="llm_test_timing_response_headers">回應標頭</string>
     <string name="llm_test_timing_first_token">首個可見文字</string>

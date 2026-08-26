@@ -25,6 +25,8 @@
     <string name="llm_test_running">正在测试 LLM 调用…</string>
     <string name="llm_test_success_title">测试成功</string>
     <string name="llm_test_success_preview">返回片段：%1$s</string>
+    <string name="llm_test_streaming_supported">流式输出：支持</string>
+    <string name="llm_test_streaming_unsupported">流式输出：不支持</string>
     <string name="llm_test_timing_connect">连接建立</string>
     <string name="llm_test_timing_response_headers">响应头</string>
     <string name="llm_test_timing_first_token">首个可见文本</string>
