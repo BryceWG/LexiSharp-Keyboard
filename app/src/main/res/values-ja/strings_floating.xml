@@ -88,8 +88,8 @@
     <string name="label_radial_switch_asr">ASRプロバイダーを切り替え</string>
     <string name="label_radial_switch_ime">入力メソッドを切り替え</string>
     <string name="label_radial_move">フローティングボールを移動</string>
-    <string name="label_radial_postproc">AI後処理を切り替え</string>
-    <string name="label_radial_switch_prompt">AI後処理プロンプトを切り替え</string>
+    <string name="label_radial_postproc">AI校正を切り替え</string>
+    <string name="label_radial_switch_prompt">AI校正プロンプトを切り替え</string>
     <string name="label_radial_clipboard_upload">クリップボードをアップロード</string>
     <string name="label_radial_clipboard_pull">クリップボードをプル</string>
     <string name="label_radial_toggle_silence_autostop">無音時自動停止を切り替え</string>
@@ -103,7 +103,7 @@
     <string name="notif_channel_floating_keep_alive">バックグラウンド保活</string>
     <string name="notif_channel_floating_keep_alive_desc">常駐通知でバックグラウンド動作を維持します。</string>
     <string name="notif_floating_keep_alive_title">%1$s 実行中</string>
-    <string name="notif_floating_keep_alive_desc">今日%1$d文字・%2$s・後処理%3$s</string>
+    <string name="notif_floating_keep_alive_desc">今日%1$d文字・%2$s・校正%3$s</string>
     <string name="notif_floating_keep_alive_postproc_enabled">有効</string>
     <string name="notif_floating_keep_alive_postproc_disabled">無効</string>
     <string name="notif_channel_floating_recording">フローティング録音</string>

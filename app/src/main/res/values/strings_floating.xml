@@ -87,8 +87,8 @@
     <string name="label_radial_switch_asr">Switch ASR provider</string>
     <string name="label_radial_switch_ime">Switch input method</string>
     <string name="label_radial_move">Move floating ball</string>
-    <string name="label_radial_postproc">Toggle AI post-processing</string>
-    <string name="label_radial_switch_prompt">Switch AI post-processing prompt</string>
+    <string name="label_radial_postproc">Toggle AI polish</string>
+    <string name="label_radial_switch_prompt">Switch AI polish prompt</string>
     <string name="label_radial_clipboard_upload">Upload Clipboard</string>
     <string name="label_radial_clipboard_pull">Pull Clipboard</string>
     <string name="label_radial_toggle_silence_autostop">Toggle auto-stop on silence</string>
@@ -102,7 +102,7 @@
     <string name="notif_channel_floating_keep_alive">Background keep-alive</string>
     <string name="notif_channel_floating_keep_alive_desc">Keeps the app running with a persistent notification.</string>
     <string name="notif_floating_keep_alive_title">%1$s running</string>
-    <string name="notif_floating_keep_alive_desc">Today %1$d chars · %2$s · Post-processing %3$s</string>
+    <string name="notif_floating_keep_alive_desc">Today %1$d chars · %2$s · Polish %3$s</string>
     <string name="notif_floating_keep_alive_postproc_enabled">enabled</string>
     <string name="notif_floating_keep_alive_postproc_disabled">disabled</string>
     <string name="notif_channel_floating_recording">Floating recording</string>

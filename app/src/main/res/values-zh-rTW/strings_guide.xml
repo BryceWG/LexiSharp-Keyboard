@@ -10,7 +10,7 @@
     <!-- Enhanced Quick Guide -->
     <string name="guide_subtitle">讓語音輸入更簡單高效</string>
     <string name="guide_main_keyboard_title">主鍵盤佈局</string>
-    <string name="guide_main_keyboard_desc">主鍵盤介面，包含麥克風、後處理開關、編輯面板入口等功能</string>
+    <string name="guide_main_keyboard_desc">主鍵盤介面，包含麥克風、潤飾開關、編輯面板入口等功能</string>
     <string name="guide_edit_panel_title">編輯面板</string>
     <string name="guide_edit_panel_desc">強大的文字編輯功能，支援游標移動、文字選擇、複製貼上、AI 處理等</string>
     <string name="guide_numpad_title">數字符號鍵盤</string>
@@ -18,12 +18,12 @@
     <string name="guide_core_features_title">核心功能</string>
     <string name="guide_long_press_title">長按錄音</string>
     <string name="guide_long_press_desc">長按麥克風按鈕開始錄音，放開自動轉錄</string>
-    <string name="guide_ai_processing_title">AI 智慧後處理</string>
+    <string name="guide_ai_processing_title">AI 智慧潤飾</string>
     <string name="guide_ai_processing_desc">支援多種預設模板，讓識別結果更準確</string>
     <string name="guide_floating_title">懸浮球功能</string>
     <string name="guide_floating_desc">快速切換輸入法或進行懸浮球語音識別</string>
     <string name="guide_detailed_features_title">詳細功能說明</string>
-    <string name="guide_detailed_features_content">【主鍵盤功能】\n• 麥克風按鈕（中央）：長按錄音，放開後進行語音轉錄\n• 編輯面板入口（左上角）：點擊進入編輯面板\n• 啟用後處理：開啟/關閉 AI 後處理功能\n• 收起鍵盤：隱藏鍵盤介面\n• 倒退鍵：上滑或左滑刪除所有內容，下滑撤回最近改動\n• 設定鍵：開啟應用程式設定介面\n• 切換輸入法：快速切換到其他輸入法\n• 換行鍵：發送換行\n• 自定義標點鍵：下方四個可自定義的標點符號按鍵\n\n【編輯面板功能】\n• 麥克風按鈕（中央）：長按錄音輸入語音指令，LLM 會根據指令修改內容（AI 編輯功能）\n• 返回主鍵盤：退出編輯面板\n• 套用預設 Prompt：選擇 AI 處理模板並處理目前文字\n• 游標移動：左移/右移游標，支援長按連續移動\n• 移至開頭/結尾：快速移動游標到文字首尾\n• 選擇模式：開啟後游標移動會選中文字\n• 全選：選中所有文字\n• 複製/貼上：文字複製貼上功能\n• 倒退：刪除字元，支援手勢（同主鍵盤）\n• 數字符號鍵盤：切換到數字符號輸入面板\n\n【數字符號鍵盤】\n• 數字行：0-9 數字快速輸入\n• 標點符號：兩行常用標點符號\n• 中英文切換：切換中文/英文標點符號\n• 空格/換行/倒退：基礎輸入功能\n• 返回編輯面板：退出數字鍵盤</string>
+    <string name="guide_detailed_features_content">【主鍵盤功能】\n• 麥克風按鈕（中央）：長按錄音，放開後進行語音轉錄\n• 編輯面板入口（左上角）：點擊進入編輯面板\n• 啟用潤飾：開啟/關閉 AI 潤飾功能\n• 收起鍵盤：隱藏鍵盤介面\n• 倒退鍵：上滑或左滑刪除所有內容，下滑撤回最近改動\n• 設定鍵：開啟應用程式設定介面\n• 切換輸入法：快速切換到其他輸入法\n• 換行鍵：發送換行\n• 自定義標點鍵：下方四個可自定義的標點符號按鍵\n\n【編輯面板功能】\n• 麥克風按鈕（中央）：長按錄音輸入語音指令，LLM 會根據指令修改內容（AI 編輯功能）\n• 返回主鍵盤：退出編輯面板\n• 套用預設 Prompt：選擇 AI 處理模板並處理目前文字\n• 游標移動：左移/右移游標，支援長按連續移動\n• 移至開頭/結尾：快速移動游標到文字首尾\n• 選擇模式：開啟後游標移動會選中文字\n• 全選：選中所有文字\n• 複製/貼上：文字複製貼上功能\n• 倒退：刪除字元，支援手勢（同主鍵盤）\n• 數字符號鍵盤：切換到數字符號輸入面板\n\n【數字符號鍵盤】\n• 數字行：0-9 數字快速輸入\n• 標點符號：兩行常用標點符號\n• 中英文切換：切換中文/英文標點符號\n• 空格/換行/倒退：基礎輸入功能\n• 返回編輯面板：退出數字鍵盤</string>
     <string name="guide_first_time_title">首次使用</string>
     <string name="guide_mic_icon_desc">麥克風圖示</string>
     <string name="guide_ai_icon_desc">AI 處理圖示</string>

@@ -7,10 +7,10 @@
     <string name="cd_enter">إدخال</string>
     <string name="cd_backspace">حذف</string>
     <string name="cd_switch_ime">تبديل طريقة الإدخال</string>
-    <string name="cd_postproc_toggle">معالجة لاحقة بالذكاء الاصطناعي</string>
+    <string name="cd_postproc_toggle">تلميع بالذكاء الاصطناعي</string>
     <string name="cd_ai_edit">تحرير بالذكاء الاصطناعي</string>
     <string name="cd_hide">إخفاء لوحة المفاتيح</string>
-    <string name="cd_prompt_picker">تبديل موجّه المعالجة اللاحقة</string>
+    <string name="cd_prompt_picker">تبديل موجّه التلميع</string>
     <string name="cd_vendor_picker">تبديل مزود ASR</string>
     <string name="cd_floating_keyboard_drag">تحريك لوحة المفاتيح العائمة</string>
     <string name="cd_floating_keyboard_resize">تغيير حجم لوحة المفاتيح العائمة</string>

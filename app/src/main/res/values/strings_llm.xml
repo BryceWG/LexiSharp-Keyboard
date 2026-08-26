@@ -8,7 +8,7 @@
     <string name="label_llm_temperature">Temperature</string>
     <string name="label_llm_prompt">Post-processing prompt (output only the processed text)</string>
     <string name="label_llm_prompt_title">Prompt Preset Title</string>
-    <string name="label_llm_prompt_presets">Choose Prompt Preset</string>
+    <string name="label_llm_prompt_presets">Polish Prompt Preset</string>
     <string name="btn_add_preset">Add Preset</string>
     <string name="btn_delete_preset">Delete Preset</string>
     <string name="label_llm_choose_profile">Select Custom Vendor</string>
@@ -76,9 +76,9 @@
     <string name="action_reset_to_default">Reset to default</string>
 
     <!-- Section titles -->
-    <string name="section_post_process_scope">Post-processing Mode</string>
+    <string name="section_post_process_scope">Polish Mode</string>
     <string name="section_ai_edit">AI Edit</string>
-    <string name="section_post_process_model">Post-processing Model</string>
+    <string name="section_post_process_model">AI Model</string>
 
     <string name="label_ai_post_process_enabled">Enable AI post-processing</string>
 

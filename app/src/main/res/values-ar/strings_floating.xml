@@ -87,8 +87,8 @@
     <string name="label_radial_switch_asr">تبديل مزود ASR</string>
     <string name="label_radial_switch_ime">تبديل طريقة الإدخال</string>
     <string name="label_radial_move">تحريك الكرة العائمة</string>
-    <string name="label_radial_postproc">تبديل معالجة الذكاء الاصطناعي</string>
-    <string name="label_radial_switch_prompt">تبديل موجّه معالجة الذكاء الاصطناعي</string>
+    <string name="label_radial_postproc">تبديل التلميع بالذكاء الاصطناعي</string>
+    <string name="label_radial_switch_prompt">تبديل موجّه التلميع بالذكاء الاصطناعي</string>
     <string name="label_radial_clipboard_upload">رفع الحافظة</string>
     <string name="label_radial_clipboard_pull">سحب الحافظة</string>
     <string name="label_radial_toggle_silence_autostop">تبديل الإيقاف التلقائي عند الصمت</string>
@@ -102,7 +102,7 @@
     <string name="notif_channel_floating_keep_alive">إبقاء التطبيق في الخلفية</string>
     <string name="notif_channel_floating_keep_alive_desc">يُبقي التطبيق يعمل بإشعار مستمر.</string>
     <string name="notif_floating_keep_alive_title">%1$s يعمل</string>
-    <string name="notif_floating_keep_alive_desc">اليوم %1$d حرف · %2$s · المعالجة اللاحقة %3$s</string>
+    <string name="notif_floating_keep_alive_desc">اليوم %1$d حرف · %2$s · التلميع %3$s</string>
     <string name="notif_floating_keep_alive_postproc_enabled">مفعّلة</string>
     <string name="notif_floating_keep_alive_postproc_disabled">معطّلة</string>
     <string name="notif_channel_floating_recording">تسجيل عائم</string>

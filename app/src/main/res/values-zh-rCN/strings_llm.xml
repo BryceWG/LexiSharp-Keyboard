@@ -8,7 +8,7 @@
     <string name="label_llm_temperature">温度</string>
     <string name="label_llm_prompt">后处理 Prompt 内容（仅输出处理后的文本）</string>
     <string name="label_llm_prompt_title">Prompt 预设标题</string>
-    <string name="label_llm_prompt_presets">选择 Prompt 预设</string>
+    <string name="label_llm_prompt_presets">润色 Prompt 预设</string>
     <string name="btn_add_preset">新增预设</string>
     <string name="btn_delete_preset">删除预设</string>
     <string name="label_llm_choose_profile">选择自定义供应商</string>
@@ -77,9 +77,9 @@
     <string name="action_reset_to_default">恢复默认</string>
 
     <!-- 章节标题 - Section titles -->
-    <string name="section_post_process_scope">后处理模式</string>
+    <string name="section_post_process_scope">润色模式</string>
     <string name="section_ai_edit">AI 编辑</string>
-    <string name="section_post_process_model">后处理模型</string>
+    <string name="section_post_process_model">AI 模型</string>
 
     <string name="label_ai_post_process_enabled">启用 AI 后处理</string>
 

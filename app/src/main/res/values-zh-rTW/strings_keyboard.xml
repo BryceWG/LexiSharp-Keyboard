@@ -7,10 +7,10 @@
     <string name="cd_enter">換行</string>
     <string name="cd_backspace">倒退鍵</string>
     <string name="cd_switch_ime">切換輸入法</string>
-    <string name="cd_postproc_toggle">AI 後處理</string>
+    <string name="cd_postproc_toggle">AI 潤飾</string>
     <string name="cd_ai_edit">AI 編輯</string>
     <string name="cd_hide">隱藏鍵盤</string>
-    <string name="cd_prompt_picker">切換後處理提示詞</string>
+    <string name="cd_prompt_picker">切換潤飾提示詞</string>
     <string name="cd_vendor_picker">切換 ASR 供應商</string>
     <string name="cd_floating_keyboard_drag">移動懸浮鍵盤</string>
     <string name="cd_floating_keyboard_resize">調整懸浮鍵盤大小</string>

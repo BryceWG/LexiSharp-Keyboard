@@ -9,7 +9,7 @@
     <string name="label_llm_temperature">温度</string>
     <string name="label_llm_prompt">後処理プロンプト（処理されたテキストのみ出力）</string>
     <string name="label_llm_prompt_title">プロンプトプリセットタイトル</string>
-    <string name="label_llm_prompt_presets">プロンプトプリセットを選択</string>
+    <string name="label_llm_prompt_presets">校正プロンプトプリセット</string>
     <string name="btn_add_preset">プリセットとして追加</string>
     <string name="btn_delete_preset">プリセットを削除</string>
     <string name="label_llm_choose_profile">カスタムベンダーを選択</string>
@@ -77,9 +77,9 @@
     <string name="action_reset_to_default">デフォルトに戻す</string>
 
     <!-- セクションタイトル - Section titles -->
-    <string name="section_post_process_scope">後処理モード</string>
+    <string name="section_post_process_scope">校正モード</string>
     <string name="section_ai_edit">AI編集</string>
-    <string name="section_post_process_model">後処理LLM</string>
+    <string name="section_post_process_model">AIモデル</string>
 
     <string name="label_ai_post_process_enabled">AI後処理を有効にする</string>
 

@@ -7,10 +7,10 @@
     <string name="cd_enter">Enter</string>
     <string name="cd_backspace">Backspace</string>
     <string name="cd_switch_ime">Switch input method</string>
-    <string name="cd_postproc_toggle">AI Post-process</string>
+    <string name="cd_postproc_toggle">AI Polish</string>
     <string name="cd_ai_edit">AI Edit</string>
     <string name="cd_hide">Hide keyboard</string>
-    <string name="cd_prompt_picker">Switch post-processing prompt</string>
+    <string name="cd_prompt_picker">Switch polish prompt</string>
     <string name="cd_vendor_picker">Switch ASR provider</string>
     <string name="cd_floating_keyboard_drag">Move floating keyboard</string>
     <string name="cd_floating_keyboard_resize">Resize floating keyboard</string>

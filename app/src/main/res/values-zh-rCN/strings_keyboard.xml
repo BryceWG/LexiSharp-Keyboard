@@ -7,10 +7,10 @@
     <string name="cd_enter">回车</string>
     <string name="cd_backspace">退格</string>
     <string name="cd_switch_ime">切换输入法</string>
-    <string name="cd_postproc_toggle">AI后处理</string>
+    <string name="cd_postproc_toggle">AI润色</string>
     <string name="cd_ai_edit">AI编辑</string>
     <string name="cd_hide">收起键盘</string>
-    <string name="cd_prompt_picker">切换后处理 Prompt</string>
+    <string name="cd_prompt_picker">切换润色 Prompt</string>
     <string name="cd_vendor_picker">切换 ASR 供应商</string>
     <string name="cd_floating_keyboard_drag">移动悬浮键盘</string>
     <string name="cd_floating_keyboard_resize">调整悬浮键盘大小</string>

@@ -11,7 +11,7 @@
     <!-- Enhanced Quick Guide -->
     <string name="guide_subtitle">音声入力をよりシンプルで効率的に</string>
     <string name="guide_main_keyboard_title">メインキーボードレイアウト</string>
-    <string name="guide_main_keyboard_desc">マイク、後処理トグル、編集パネルエントリなどを持つメインキーボードインターフェース</string>
+    <string name="guide_main_keyboard_desc">マイク、校正トグル、編集パネルエントリなどを持つメインキーボードインターフェース</string>
     <string name="guide_edit_panel_title">編集パネル</string>
     <string name="guide_edit_panel_desc">カーソル移動、テキスト選択、コピー/貼り付け、AI処理など、強力なテキスト編集機能</string>
     <string name="guide_numpad_title">数字と記号キーボード</string>
@@ -19,12 +19,12 @@
     <string name="guide_core_features_title">コア機能</string>
     <string name="guide_long_press_title">長押しして録音</string>
     <string name="guide_long_press_desc">マイクボタンを長押しして録音を開始、リリースしてテキストに変換</string>
-    <string name="guide_ai_processing_title">AIスマート後処理</string>
+    <string name="guide_ai_processing_title">AIスマート校正</string>
     <string name="guide_ai_processing_desc">複数のプリセットテンプレートをサポートし、認識結果をより正確に</string>
     <string name="guide_floating_title">フローティングボール機能</string>
     <string name="guide_floating_desc">入力メソッドを素早く切り替えるか、フローティングボール音声認識を実行</string>
     <string name="guide_detailed_features_title">詳細な機能説明</string>
-    <string name="guide_detailed_features_content">【メインキーボード機能】\n• マイクボタン（中央）：長押しして録音、リリースして音声をテキストに変換\n• 編集パネルエントリ（左上）：タップして編集パネルに入る\n• 後処理を有効化：AI後処理のオン/オフを切り替え\n• キーボードを非表示：キーボードインターフェースを最小化\n• Backspace：上/左にスワイプしてすべて削除、下にスワイプして最後の変更を元に戻す\n• 設定：アプリ設定を開く\n• 入力メソッドを切り替え：他のキーボードに素早く切り替え\n• Enter：改行を送信\n• カスタム句読点：下部に4つのカスタマイズ可能な句読点キー\n\n【編集パネル機能】\n• マイクボタン（中央）：長押しして音声コマンドを録音、LLMがコマンドに基づいて内容を変更（AI編集機能）\n• メインに戻る：編集パネルを終了\n• プリセットプロンプトを適用：AIテンプレートを選択して現在のテキストを処理\n• カーソル移動：カーソルを左右に移動、長押しで連続移動\n• 先頭/末尾に移動：テキストの先頭/末尾に素早くジャンプ\n• 選択モード：カーソル移動中にテキストを選択するために有効化\n• すべて選択：すべてのテキストを選択\n• コピー/貼り付け：テキストコピーと貼り付け機能\n• Backspace：文字を削除、ジェスチャーをサポート（メインキーボードと同じ）\n• 数字と記号キーボード：数字/記号入力パネルに切り替え\n\n【数字と記号キーボード】\n• 数字行：数字0-9の素早い入力\n• 句読点記号：一般的な句読点の2行\n• 中/英トグル：中/英句読点を切り替え\n• スペース/Enter/Backspace：基本的な入力機能\n• 編集パネルに戻る：数字キーボードを終了</string>
+    <string name="guide_detailed_features_content">【メインキーボード機能】\n• マイクボタン（中央）：長押しして録音、リリースして音声をテキストに変換\n• 編集パネルエントリ（左上）：タップして編集パネルに入る\n• 校正を有効化：AI校正のオン/オフを切り替え\n• キーボードを非表示：キーボードインターフェースを最小化\n• Backspace：上/左にスワイプしてすべて削除、下にスワイプして最後の変更を元に戻す\n• 設定：アプリ設定を開く\n• 入力メソッドを切り替え：他のキーボードに素早く切り替え\n• Enter：改行を送信\n• カスタム句読点：下部に4つのカスタマイズ可能な句読点キー\n\n【編集パネル機能】\n• マイクボタン（中央）：長押しして音声コマンドを録音、LLMがコマンドに基づいて内容を変更（AI編集機能）\n• メインに戻る：編集パネルを終了\n• プリセットプロンプトを適用：AIテンプレートを選択して現在のテキストを処理\n• カーソル移動：カーソルを左右に移動、長押しで連続移動\n• 先頭/末尾に移動：テキストの先頭/末尾に素早くジャンプ\n• 選択モード：カーソル移動中にテキストを選択するために有効化\n• すべて選択：すべてのテキストを選択\n• コピー/貼り付け：テキストコピーと貼り付け機能\n• Backspace：文字を削除、ジェスチャーをサポート（メインキーボードと同じ）\n• 数字と記号キーボード：数字/記号入力パネルに切り替え\n\n【数字と記号キーボード】\n• 数字行：数字0-9の素早い入力\n• 句読点記号：一般的な句読点の2行\n• 中/英トグル：中/英句読点を切り替え\n• スペース/Enter/Backspace：基本的な入力機能\n• 編集パネルに戻る：数字キーボードを終了</string>
     <string name="guide_first_time_title">初回使用</string>
     <string name="guide_mic_icon_desc">マイクアイコン</string>
     <string name="guide_ai_icon_desc">AI処理アイコン</string>

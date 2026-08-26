@@ -87,8 +87,8 @@
     <string name="label_radial_switch_asr">切换 ASR 供应商</string>
     <string name="label_radial_switch_ime">切换输入法</string>
     <string name="label_radial_move">移动悬浮球</string>
-    <string name="label_radial_postproc">切换 AI 后处理</string>
-    <string name="label_radial_switch_prompt">切换 AI 后处理 Prompt</string>
+    <string name="label_radial_postproc">切换 AI 润色</string>
+    <string name="label_radial_switch_prompt">切换 AI 润色 Prompt</string>
     <string name="label_radial_clipboard_upload">上传粘贴板</string>
     <string name="label_radial_clipboard_pull">拉取粘贴板</string>
     <string name="label_radial_toggle_silence_autostop">录音判停</string>
@@ -102,7 +102,7 @@
     <string name="notif_channel_floating_keep_alive">后台保活</string>
     <string name="notif_channel_floating_keep_alive_desc">通过常驻通知保持后台运行。</string>
     <string name="notif_floating_keep_alive_title">%1$s运行中</string>
-    <string name="notif_floating_keep_alive_desc">今日识别%1$d字·%2$s·后处理%3$s</string>
+    <string name="notif_floating_keep_alive_desc">今日识别%1$d字·%2$s·润色%3$s</string>
     <string name="notif_floating_keep_alive_postproc_enabled">启用</string>
     <string name="notif_floating_keep_alive_postproc_disabled">未启用</string>
     <string name="notif_channel_floating_recording">悬浮球录音</string>

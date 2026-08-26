@@ -8,10 +8,10 @@
     <string name="cd_enter">Enter</string>
     <string name="cd_backspace">Backspace</string>
     <string name="cd_switch_ime">入力メソッドを切り替え</string>
-    <string name="cd_postproc_toggle">AI後処理</string>
+    <string name="cd_postproc_toggle">AI校正</string>
     <string name="cd_ai_edit">AI編集</string>
     <string name="cd_hide">キーボードを非表示</string>
-    <string name="cd_prompt_picker">後処理プロンプトを切り替え</string>
+    <string name="cd_prompt_picker">校正プロンプトを切り替え</string>
     <string name="cd_vendor_picker">ASRプロバイダーを切り替え</string>
     <string name="cd_floating_keyboard_drag">フローティングキーボードを移動</string>
     <string name="cd_floating_keyboard_resize">フローティングキーボードのサイズ変更</string>

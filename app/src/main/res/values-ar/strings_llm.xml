@@ -8,7 +8,7 @@
     <string name="label_llm_temperature">درجة الحرارة</string>
     <string name="label_llm_prompt">موجّه المعالجة اللاحقة (أخرج النص المعالَج فقط)</string>
     <string name="label_llm_prompt_title">عنوان موجّه مُعدّ مسبقاً</string>
-    <string name="label_llm_prompt_presets">اختر موجّهاً مُعدّاً مسبقاً</string>
+    <string name="label_llm_prompt_presets">موجّه التلميع المُعد مسبقاً</string>
     <string name="btn_add_preset">إضافة موجّه</string>
     <string name="btn_delete_preset">حذف الموجّه</string>
     <string name="label_llm_choose_profile">اختر مزوداً مخصصاً</string>
@@ -76,9 +76,9 @@
     <string name="action_reset_to_default">إعادة للافتراضي</string>
 
     <!-- Section titles -->
-    <string name="section_post_process_scope">وضع المعالجة اللاحقة</string>
+    <string name="section_post_process_scope">وضع التلميع</string>
     <string name="section_ai_edit">تحرير بالذكاء الاصطناعي</string>
-    <string name="section_post_process_model">نموذج المعالجة اللاحقة</string>
+    <string name="section_post_process_model">نموذج الذكاء الاصطناعي</string>
 
     <string name="label_ai_post_process_enabled">تفعيل معالجة لاحقة بالذكاء الاصطناعي</string>
 
