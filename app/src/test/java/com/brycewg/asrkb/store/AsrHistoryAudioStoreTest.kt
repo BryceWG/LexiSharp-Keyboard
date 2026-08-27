@@ -45,7 +45,7 @@ class AsrHistoryAudioStoreTest {
     fun pruneKeepsNewestAvailableRecords() {
         store.save("old", byteArrayOf(1, 2))
         store.save("new", byteArrayOf(3, 4))
-        store.prune(listOf(record("new", 2), record("old", 1)), 1)
+        store.prune(listOf("new", "old"), 1)
 
         assertTrue(store.hasAudio("new"))
         assertFalse(store.hasAudio("old"))
@@ -54,7 +54,7 @@ class AsrHistoryAudioStoreTest {
     @Test
     fun zeroRetentionClearsAllAudio() {
         store.save("one", byteArrayOf(1, 2))
-        store.prune(listOf(record("one", 1)), 0)
+        store.prune(listOf("one"), 0)
         assertFalse(store.hasAudio("one"))
     }
 
@@ -113,16 +113,4 @@ class AsrHistoryAudioStoreTest {
             Thread.sleep(25)
         }
     }
-
-    private fun record(id: String, timestamp: Long) = AsrHistoryStore.AsrHistoryRecord(
-        id = id,
-        timestamp = timestamp,
-        text = id,
-        rawText = id,
-        vendorId = "volc",
-        audioMs = 1,
-        source = "ime",
-        aiProcessed = false,
-        charCount = id.length
-    )
 }

@@ -1,22 +1,21 @@
 package com.brycewg.asrkb.store
 
 import android.content.Context
-import android.content.SharedPreferences
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteException
 import android.util.Log
-import java.io.InputStream
+import com.brycewg.asrkb.store.debug.DebugLogManager
 import java.util.UUID
-import kotlinx.serialization.ExperimentalSerializationApi
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.DecodeSequenceMode
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeToSequence
 
 /**
  * ASR 历史记录存储
- * - 使用 SharedPreferences(JSON) 存储，纳入现有备份导入/导出范围（Prefs KEY_ASR_HISTORY_JSON）
- * - 提供新增、查询、删除（单个/批量）
+ * - 使用 SQLite 行级读写；旧版 SharedPreferences JSON 在首次打开时迁入
+ * - 备份导入/导出仍使用 JSON 数组（Prefs KEY_ASR_HISTORY_JSON）
  */
 class AsrHistoryStore(context: Context) {
     companion object {
@@ -27,9 +26,13 @@ class AsrHistoryStore(context: Context) {
         // 防止无限增长，保留最近 N 条
         private const val MAX_RECORDS = 2000
         private val HISTORY_LOCK = Any()
+        private val migrateFailedThisProcess = AtomicBoolean(false)
+        private val dbUnavailableLogged = AtomicBoolean(false)
     }
 
-    private val sp: SharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val sp = appContext.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+    private val database = AsrHistoryDatabase.get(appContext)
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -93,38 +96,16 @@ class AsrHistoryStore(context: Context) {
             get() = status != AsrHistoryStatus.SUCCESS
     }
 
-    private fun readAllInternal(): MutableList<AsrHistoryRecord> {
-        val raw = sp.getString(KEY_ASR_HISTORY_JSON, "").orEmpty()
-        if (raw.isBlank()) return mutableListOf()
-        return try {
-            json.decodeFromString<List<AsrHistoryRecord>>(raw)
-                .sortedByDescending { it.timestamp }
-                .distinctBy { it.id }
-                .toMutableList()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse history JSON", e)
-            mutableListOf()
-        }
-    }
-
-    private fun writeAllInternal(list: List<AsrHistoryRecord>) {
-        try {
-            val text = json.encodeToString(list)
-            sp.edit().putString(KEY_ASR_HISTORY_JSON, text).apply()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to write history JSON", e)
-        }
-    }
-
     fun add(record: AsrHistoryRecord) {
-        synchronized(HISTORY_LOCK) {
-            val list = readAllInternal()
-            list.removeAll { it.id == record.id }
-            list.add(record)
-            // 按时间倒序裁剪
-            val ordered = list.sortedByDescending { it.timestamp }
-            val pruned = if (ordered.size > MAX_RECORDS) ordered.take(MAX_RECORDS) else ordered
-            writeAllInternal(pruned)
+        withWritableDb {
+            it.beginTransaction()
+            try {
+                database.insertOrReplace(it, record)
+                database.pruneToMax(it, MAX_RECORDS)
+                it.setTransactionSuccessful()
+            } finally {
+                it.endTransaction()
+            }
         }
     }
 
@@ -132,77 +113,187 @@ class AsrHistoryStore(context: Context) {
         id: String,
         transform: (AsrHistoryRecord) -> AsrHistoryRecord
     ): AsrHistoryRecord? {
-        synchronized(HISTORY_LOCK) {
-            val list = readAllInternal()
-            val index = list.indexOfFirst { it.id == id }
-            if (index < 0) return null
-            val updated = transform(list[index]).copy(id = id)
-            list[index] = updated
-            writeAllInternal(list)
-            return updated
+        return withWritableDb<AsrHistoryRecord?> {
+            val current = database.queryById(it, id) ?: return@withWritableDb null
+            val updated = transform(current).copy(id = id)
+            database.insertOrReplace(it, updated)
+            updated
         }
     }
 
-    fun listAll(): List<AsrHistoryRecord> = synchronized(HISTORY_LOCK) {
-        readAllInternal().sortedByDescending { it.timestamp }
+    fun listAll(): List<AsrHistoryRecord> = withReadableDb(emptyList()) { db ->
+        database.queryAllNewestFirst(db)
     }
 
     /**
-     * 按写入顺序流式取出最近 [limit] 条记录（含失败/取消；跳过空白成功记录）。
-     * 磁盘 JSON 由 [writeAllInternal] 按 timestamp 降序保存，因此不必先反序列化整表。
+     * 取出最近 [limit] 条记录（含失败/取消；跳过空白成功记录）。
      */
     fun listRecent(limit: Int): List<AsrHistoryRecord> {
         if (limit <= 0) return emptyList()
-        return synchronized(HISTORY_LOCK) {
-            val raw = sp.getString(KEY_ASR_HISTORY_JSON, "").orEmpty()
-            if (raw.isBlank()) return@synchronized emptyList()
-            try {
-                raw.byteInputStream().use { input ->
-                    collectRecentFromStream(input, limit)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to stream recent history, falling back to full parse", e)
-                readAllInternal()
-                    .asSequence()
-                    .filter { it.shouldIncludeInRecent() }
-                    .take(limit)
-                    .toList()
-            }
+        return withReadableDb(emptyList()) { db ->
+            database.queryRecent(db, limit)
         }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    private fun collectRecentFromStream(
-        input: InputStream,
-        limit: Int
-    ): List<AsrHistoryRecord> {
-        val seenIds = HashSet<String>(limit)
-        val out = ArrayList<AsrHistoryRecord>(limit)
-        for (record in json.decodeToSequence<AsrHistoryRecord>(input, DecodeSequenceMode.ARRAY_WRAPPED)) {
-            if (!record.shouldIncludeInRecent()) continue
-            if (!seenIds.add(record.id)) continue
-            out.add(record)
-            if (out.size >= limit) break
+    /** 全部记录 id，按时间倒序。供音频清理使用，避免整表反序列化。 */
+    fun listIdsNewestFirst(): List<String> = withReadableDb(emptyList()) { db ->
+        database.queryIdsNewestFirst(db)
+    }
+
+    internal fun listIdsNewestFirstOrNull(): List<String>? = synchronized(HISTORY_LOCK) {
+        migrateFromPrefsIfNeeded()
+        if (migrateFailedThisProcess.get()) return@synchronized null
+        val db = database.readableOrNull() ?: return@synchronized null
+        try {
+            database.queryIdsNewestFirst(db)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read ASR history ids", e)
+            logError("history_ids_read_failed", e)
+            null
         }
-        return out
     }
 
     fun deleteByIds(ids: Set<String>): Int {
         if (ids.isEmpty()) return 0
-        synchronized(HISTORY_LOCK) {
-            val list = readAllInternal()
-            val before = list.size
-            val remained = list.filterNot { ids.contains(it.id) }
-            writeAllInternal(remained)
-            return (before - remained.size).coerceAtLeast(0)
-        }
+        return withWritableDb { database.deleteByIds(it, ids) }
     }
 
     fun clearAll() {
-        synchronized(HISTORY_LOCK) { writeAllInternal(emptyList()) }
+        withWritableDb { database.deleteAll(it) }
     }
 
-    private fun AsrHistoryRecord.shouldIncludeInRecent(): Boolean {
-        return text.isNotBlank() || isUnsuccessful
+    fun exportJson(): String {
+        synchronized(HISTORY_LOCK) {
+            migrateFromPrefsIfNeeded()
+            check(!sp.contains(KEY_ASR_HISTORY_JSON)) {
+                "ASR history migration is incomplete"
+            }
+            val db = database.readableOrNull()
+                ?: throw SQLiteException("Failed to open ASR history database for export")
+            return json.encodeToString(database.queryAllNewestFirst(db))
+        }
+    }
+
+    fun replaceAllFromJson(raw: String) {
+        val records = parseLegacyJson(raw)
+            .sortedByDescending { it.timestamp }
+            .distinctBy { it.id }
+        withWritableDb { db ->
+            db.beginTransaction()
+            try {
+                database.deleteAll(db)
+                records.forEach { database.insertOrReplace(db, it) }
+                database.pruneToMax(db, MAX_RECORDS)
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+        }
+        if (!sp.edit().remove(KEY_ASR_HISTORY_JSON).commit()) {
+            throw IllegalStateException("Failed to clear legacy ASR history after restore")
+        }
+    }
+
+    private fun <T> withReadableDb(fallback: T, block: (SQLiteDatabase) -> T): T {
+        synchronized(HISTORY_LOCK) {
+            migrateFromPrefsIfNeeded()
+            if (migrateFailedThisProcess.get()) return fallback
+            val db = database.readableOrNull() ?: return unavailable(fallback)
+            return try {
+                block(db)
+            } catch (e: Exception) {
+                Log.e(TAG, "ASR history read failed", e)
+                logError("history_read_failed", e)
+                fallback
+            }
+        }
+    }
+
+    private fun <T> withWritableDb(block: (SQLiteDatabase) -> T): T {
+        synchronized(HISTORY_LOCK) {
+            migrateFromPrefsIfNeeded()
+            check(!migrateFailedThisProcess.get()) {
+                "ASR history migration failed; retry after cold start"
+            }
+            val db = database.writableOrNull()
+                ?: throw SQLiteException("Failed to open ASR history database for writing")
+            return try {
+                block(db)
+            } catch (e: Exception) {
+                Log.e(TAG, "ASR history write failed", e)
+                logError("history_write_failed", e)
+                throw e
+            }
+        }
+    }
+
+    private fun migrateFromPrefsIfNeeded() {
+        if (migrateFailedThisProcess.get()) return
+        if (!sp.contains(KEY_ASR_HISTORY_JSON)) return
+        val raw = sp.getString(KEY_ASR_HISTORY_JSON, "").orEmpty()
+        val db = database.writableOrNull()
+        if (db == null) {
+            migrateFailedThisProcess.set(true)
+            unavailable(Unit)
+            return
+        }
+        try {
+            val records = parseLegacyJson(raw)
+                .sortedByDescending { it.timestamp }
+                .distinctBy { it.id }
+            db.beginTransaction()
+            try {
+                records.forEach { database.insertOrReplace(db, it) }
+                database.pruneToMax(db, MAX_RECORDS)
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+            check(sp.edit().remove(KEY_ASR_HISTORY_JSON).commit()) {
+                "Failed to clear migrated ASR history JSON"
+            }
+            logBase(
+                "history_migrate_ok",
+                mapOf("count" to records.size)
+            )
+        } catch (e: Exception) {
+            migrateFailedThisProcess.set(true)
+            Log.e(TAG, "Failed to migrate ASR history from prefs", e)
+            logError("history_migrate_failed", e)
+        }
+    }
+
+    private fun parseLegacyJson(raw: String): List<AsrHistoryRecord> {
+        if (raw.isBlank()) return emptyList()
+        return json.decodeFromString<List<AsrHistoryRecord>>(raw)
+    }
+
+    private fun <T> unavailable(fallback: T): T {
+        if (dbUnavailableLogged.compareAndSet(false, true)) {
+            logBase("history_db_open_failed")
+        }
+        return fallback
+    }
+
+    private fun logBase(event: String, data: Map<String, Any?> = emptyMap()) {
+        try {
+            DebugLogManager.logBase(
+                context = appContext,
+                category = "asr",
+                event = event,
+                data = data
+            )
+        } catch (_: Throwable) { }
+    }
+
+    private fun logError(event: String, throwable: Throwable) {
+        try {
+            DebugLogManager.logError(
+                context = appContext,
+                category = "asr",
+                event = event,
+                throwable = throwable
+            )
+        } catch (_: Throwable) { }
     }
 }

@@ -444,47 +444,58 @@ internal class FloatingAsrInteractionController(
                 viewManager.showCompletionTick()
             }
             if (text.isNotBlank() || success) {
+                persistFloatingCommit(text)
+            }
+            if (success) {
+                schedulePostCommitPartialHide()
+            }
+        }
+    }
+
+    private fun persistFloatingCommit(text: String) {
+        try {
+            val audioMs = asrSessionManager.popLastAudioMsForStats()
+            val historyRecordId = asrSessionManager.popLastHistoryRecordId()
+            val historyRawText = asrSessionManager.popLastHistoryRawText() ?: text
+            val totalElapsedMs = asrSessionManager.popLastTotalElapsedMsForStats()
+            val procMs = asrSessionManager.getLastRequestDuration() ?: 0L
+            val chars = com.brycewg.asrkb.util.TextSanitizer.countEffectiveChars(text)
+            val ai = try {
+                asrSessionManager.wasLastAiUsed()
+            } catch (_: Throwable) {
+                false
+            }
+            val aiPostMs = try {
+                asrSessionManager.getLastAiPostMs()
+            } catch (_: Throwable) {
+                0L
+            }
+            val aiPostStatus = try {
+                asrSessionManager.getLastAiPostStatus()
+            } catch (_: Throwable) {
+                if (ai) {
+                    com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.SUCCESS
+                } else {
+                    com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
+                }
+            }
+            val llmVendorId = try {
+                asrSessionManager.getLastLlmVendorId()
+            } catch (_: Throwable) {
+                null
+            }
+            val vendorForRecord = try {
+                asrSessionManager.peekLastFinalVendorForStats()
+            } catch (t: Throwable) {
+                Log.w(tag, "Failed to get final vendor for stats", t)
+                prefs.asrVendor
+            }
+            val timingTrace = asrSessionManager.completeLastHistoryTiming()
+            val disableHistory = prefs.disableAsrHistory
+            val disableStats = prefs.disableUsageStats
+            val retention = prefs.audioHistoryRetentionCount
+            scope.launch(Dispatchers.IO) {
                 try {
-                    val audioMs = asrSessionManager.popLastAudioMsForStats()
-                    val historyRecordId = asrSessionManager.popLastHistoryRecordId()
-                    val historyRawText = asrSessionManager.popLastHistoryRawText() ?: text
-                    val totalElapsedMs = asrSessionManager.popLastTotalElapsedMsForStats()
-                    val procMs = asrSessionManager.getLastRequestDuration() ?: 0L
-                    val chars = com.brycewg.asrkb.util.TextSanitizer.countEffectiveChars(text)
-                    val ai = try {
-                        asrSessionManager.wasLastAiUsed()
-                    } catch (
-                        _: Throwable
-                    ) {
-                        false
-                    }
-                    val aiPostMs = try {
-                        asrSessionManager.getLastAiPostMs()
-                    } catch (
-                        _: Throwable
-                    ) {
-                        0L
-                    }
-                    val aiPostStatus = try {
-                        asrSessionManager.getLastAiPostStatus()
-                    } catch (_: Throwable) {
-                        if (ai) {
-                            com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.SUCCESS
-                        } else {
-                            com.brycewg.asrkb.store.AsrHistoryStore.AiPostStatus.NONE
-                        }
-                    }
-                    val llmVendorId = try {
-                        asrSessionManager.getLastLlmVendorId()
-                    } catch (_: Throwable) {
-                        null
-                    }
-                    val vendorForRecord = try {
-                        asrSessionManager.peekLastFinalVendorForStats()
-                    } catch (t: Throwable) {
-                        Log.w(tag, "Failed to get final vendor for stats", t)
-                        prefs.asrVendor
-                    }
                     AnalyticsManager.recordAsrEvent(
                         context = context,
                         vendorId = vendorForRecord.id,
@@ -494,7 +505,7 @@ internal class FloatingAsrInteractionController(
                         aiProcessed = ai,
                         charCount = chars
                     )
-                    if (!prefs.disableUsageStats) {
+                    if (!disableStats) {
                         prefs.recordUsageCommit(
                             "floating",
                             vendorForRecord,
@@ -503,59 +514,46 @@ internal class FloatingAsrInteractionController(
                             procMs
                         )
                     }
-                    if (!prefs.disableAsrHistory) {
-                        try {
-                            val store = com.brycewg.asrkb.store.AsrHistoryStore(context)
-                            store.add(
-                                com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
-                                    id = historyRecordId,
-                                    timestamp = System.currentTimeMillis(),
-                                    text = text,
-                                    rawText = historyRawText,
-                                    vendorId = vendorForRecord.id,
-                                    audioMs = audioMs,
-                                    totalElapsedMs = totalElapsedMs,
-                                    procMs = procMs,
-                                    source = "floating",
-                                    aiProcessed = ai,
-                                    aiPostMs = aiPostMs,
-                                    aiPostStatus = aiPostStatus,
-                                    llmVendorId = llmVendorId,
-                                    charCount = chars
-                                )
+                    if (!disableHistory) {
+                        val store = com.brycewg.asrkb.store.AsrHistoryStore(context)
+                        store.add(
+                            com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
+                                id = historyRecordId,
+                                timestamp = System.currentTimeMillis(),
+                                text = text,
+                                rawText = historyRawText,
+                                vendorId = vendorForRecord.id,
+                                audioMs = audioMs,
+                                totalElapsedMs = timingTrace?.totalElapsedMs ?: totalElapsedMs,
+                                procMs = procMs,
+                                source = "floating",
+                                aiProcessed = ai,
+                                aiPostMs = aiPostMs,
+                                aiPostStatus = aiPostStatus,
+                                llmVendorId = llmVendorId,
+                                charCount = chars,
+                                timingTrace = timingTrace
                             )
-                            val timingTrace = asrSessionManager.completeLastHistoryTiming()
-                            if (timingTrace != null) {
-                                store.updateById(historyRecordId) { record ->
-                                    record.copy(
-                                        totalElapsedMs = timingTrace.totalElapsedMs,
-                                        timingTrace = timingTrace
-                                    )
-                                }
-                                com.brycewg.asrkb.store.AsrHistoryTimingDiagnostics.logSaved(
-                                    "floating",
-                                    timingTrace
-                                )
-                            }
-                            com.brycewg.asrkb.store.AsrHistoryAudioStore.pruneAsync(
-                                context,
-                                store.listAll(),
-                                prefs.audioHistoryRetentionCount
+                        )
+                        timingTrace?.let { trace ->
+                            com.brycewg.asrkb.store.AsrHistoryTimingDiagnostics.logSaved(
+                                "floating",
+                                trace
                             )
-                        } catch (e: Exception) {
-                            Log.e(tag, "Failed to add ASR history (floating)", e)
                         }
+                        com.brycewg.asrkb.store.AsrHistoryAudioStore.pruneAsync(
+                            context,
+                            retention
+                        )
                     } else {
                         com.brycewg.asrkb.store.AsrHistoryAudioStore(context).delete(historyRecordId)
-                        asrSessionManager.completeLastHistoryTiming()
                     }
                 } catch (t: Throwable) {
                     Log.e(tag, "Failed to record usage stats (floating)", t)
                 }
             }
-            if (success) {
-                schedulePostCommitPartialHide()
-            }
+        } catch (t: Throwable) {
+            Log.e(tag, "Failed to snapshot floating commit stats", t)
         }
     }
 
@@ -1082,51 +1080,47 @@ internal class FloatingAsrInteractionController(
 
         val center = viewManager.getBallCenterSnapshot()
         val alpha = getMenuAlphaOrDefault()
+        val emptyText = context.getString(R.string.empty_history)
+        val title = context.getString(R.string.btn_open_asr_history)
 
-        val texts: List<String> = try {
-            com.brycewg.asrkb.store.AsrHistoryStore(context)
-                .listAll()
-                .map { it.text }
-                .filter { it.isNotBlank() }
-                .take(100)
-        } catch (e: Throwable) {
-            Log.e(tag, "Failed to load ASR history for panel", e)
-            emptyList()
-        }
-
-        menuController.showScrollableTextPanel(
-            anchorCenter = center,
-            alpha = alpha,
-            title = context.getString(R.string.btn_open_asr_history),
-            texts = if (texts.isEmpty()) {
-                listOf(
-                    context.getString(R.string.empty_history)
-                )
-            } else {
-                texts
-            },
-            onItemClick = { text ->
-                if (text ==
-                    context.getString(R.string.empty_history)
+        scope.launch(Dispatchers.IO) {
+            val texts: List<String> = try {
+                com.brycewg.asrkb.store.AsrHistoryStore(context)
+                    .listRecent(100)
+                    .map { it.text }
+                    .filter { it.isNotBlank() }
+            } catch (e: Throwable) {
+                Log.e(tag, "Failed to load ASR history for panel", e)
+                emptyList()
+            }
+            handler.post {
+                menuController.showScrollableTextPanel(
+                    anchorCenter = center,
+                    alpha = alpha,
+                    title = title,
+                    texts = if (texts.isEmpty()) listOf(emptyText) else texts,
+                    onItemClick = { text ->
+                        if (text == emptyText) {
+                            return@showScrollableTextPanel
+                        }
+                        try {
+                            val clipMgr = context.getSystemService(
+                                android.content.ClipboardManager::class.java
+                            )
+                            val clip = android.content.ClipData.newPlainText("asr_history", text)
+                            clipMgr?.setPrimaryClip(clip)
+                            showToast(context.getString(R.string.floating_asr_copied))
+                        } catch (e: Throwable) {
+                            Log.e(tag, "Failed to copy history text", e)
+                        }
+                    },
+                    initialVisibleCount = 20,
+                    loadMoreCount = 20
                 ) {
-                    return@showScrollableTextPanel
+                    touchActiveGuard = false
+                    updateVisibilityByPref("history_panel_dismiss")
                 }
-                try {
-                    val clipMgr = context.getSystemService(
-                        android.content.ClipboardManager::class.java
-                    )
-                    val clip = android.content.ClipData.newPlainText("asr_history", text)
-                    clipMgr?.setPrimaryClip(clip)
-                    showToast(context.getString(R.string.floating_asr_copied))
-                } catch (e: Throwable) {
-                    Log.e(tag, "Failed to copy history text", e)
-                }
-            },
-            initialVisibleCount = 20,
-            loadMoreCount = 20
-        ) {
-            touchActiveGuard = false
-            updateVisibilityByPref("history_panel_dismiss")
+            }
         }
     }
 

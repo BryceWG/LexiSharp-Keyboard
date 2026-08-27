@@ -57,30 +57,29 @@ internal object AsrHistoryFailureRecorder {
             AsrHistoryAudioStore(context).delete(recordId)
             return false
         }
+        val record = AsrHistoryStore.AsrHistoryRecord(
+            id = recordId,
+            timestamp = System.currentTimeMillis(),
+            text = "",
+            rawText = rawText?.takeIf { it.isNotBlank() },
+            vendorId = vendorId,
+            audioMs = audioMs,
+            totalElapsedMs = timingTrace?.totalElapsedMs ?: totalElapsedMs,
+            procMs = procMs,
+            source = source,
+            aiProcessed = false,
+            charCount = 0,
+            status = status,
+            failStage = failStage,
+            failReasonCode = failReasonCode,
+            timingTrace = timingTrace
+        )
         return try {
-            val store = AsrHistoryStore(context)
-            store.add(
-                AsrHistoryStore.AsrHistoryRecord(
-                    id = recordId,
-                    timestamp = System.currentTimeMillis(),
-                    text = "",
-                    rawText = rawText?.takeIf { it.isNotBlank() },
-                    vendorId = vendorId,
-                    audioMs = audioMs,
-                    totalElapsedMs = timingTrace?.totalElapsedMs ?: totalElapsedMs,
-                    procMs = procMs,
-                    source = source,
-                    aiProcessed = false,
-                    charCount = 0,
-                    status = status,
-                    failStage = failStage,
-                    failReasonCode = failReasonCode,
-                    timingTrace = timingTrace
-                )
-            )
+            val appContext = context.applicationContext
+            val store = AsrHistoryStore(appContext)
+            store.add(record)
             AsrHistoryAudioStore.pruneAsync(
-                context,
-                store.listAll(),
+                appContext,
                 prefs.audioHistoryRetentionCount
             )
             try {

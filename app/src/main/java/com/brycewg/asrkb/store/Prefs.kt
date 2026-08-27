@@ -50,7 +50,7 @@ class Prefs(context: Context) {
         }
     }
 
-    private val appContext = context.applicationContext
+    internal val appContext = context.applicationContext
     private val sp = appContext.getSharedPreferences("asr_prefs", Context.MODE_PRIVATE)
     init {
         PrefsInitTasks.run(appContext, sp)

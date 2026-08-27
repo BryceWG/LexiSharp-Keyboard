@@ -252,8 +252,8 @@ private suspend fun exportSettings(
 ): BackupOperationResult {
     val exported = withContext(Dispatchers.IO) {
         runCatching {
+            val jsonString = prefs.exportJsonString()
             context.contentResolver.openOutputStream(uri)?.use { os ->
-                val jsonString = prefs.exportJsonString()
                 os.write(jsonString.toByteArray(Charsets.UTF_8))
                 os.flush()
             } ?: error("Output stream is null")

@@ -154,11 +154,7 @@ internal object PrefsBackup {
             Log.w(TAG, "Failed to export usage stats", t)
         }
         // 历史记录纳入备份范围
-        try {
-            o.put(KEY_ASR_HISTORY_JSON, getPrefString(KEY_ASR_HISTORY_JSON, ""))
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to export ASR history", t)
-        }
+        o.put(KEY_ASR_HISTORY_JSON, AsrHistoryStore(appContext).exportJson())
         try {
             o.put(KEY_FIRST_USE_DATE, firstUseDate)
         } catch (t: Throwable) {
@@ -519,7 +515,7 @@ internal object PrefsBackup {
             // 使用统计（可选）
             optString(KEY_USAGE_STATS_JSON)?.let { setPrefString(KEY_USAGE_STATS_JSON, it) }
             // 历史记录纳入恢复范围
-            optString(KEY_ASR_HISTORY_JSON)?.let { setPrefString(KEY_ASR_HISTORY_JSON, it) }
+            optString(KEY_ASR_HISTORY_JSON)?.let { AsrHistoryStore(appContext).replaceAllFromJson(it) }
             optString(KEY_FIRST_USE_DATE)?.let { firstUseDate = it }
             optBool(KEY_SHOWN_ONBOARDING_GUIDE_V2_ONCE)?.let { hasShownOnboardingGuideV2Once = it }
             // FireRedASR（本地 ASR）

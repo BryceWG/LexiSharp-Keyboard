@@ -677,12 +677,22 @@ class KeyboardActionHandler(
         historyTiming?.timing?.end(com.brycewg.asrkb.store.AsrHistoryTimingStage.AI_POSTPROCESS)
         historyTiming?.timing?.end(com.brycewg.asrkb.store.AsrHistoryTimingStage.POSTPROCESS)
         historyTiming?.timing?.begin(com.brycewg.asrkb.store.AsrHistoryTimingStage.TEXT_DELIVERY)
-        commitRecorder.record(
-            text = rawText,
-            rawText = rawText,
-            aiProcessed = false,
-            historyTiming = historyTiming
-        )
+        val prepared = try {
+            commitRecorder.prepare(
+                text = rawText,
+                rawText = rawText,
+                aiProcessed = false,
+                historyTiming = historyTiming
+            )
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to prepare interrupted postprocess commit", t)
+            null
+        }
+        if (prepared != null) {
+            scope.launch {
+                commitRecorder.record(prepared)
+            }
+        }
         transitionToState(KeyboardState.Idle)
         uiListener?.onStatusMessage(context.getString(R.string.status_postprocess_interrupted_raw))
         if (reason != "input_view_hidden") {

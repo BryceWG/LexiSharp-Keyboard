@@ -19,6 +19,7 @@ import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
 import com.brycewg.asrkb.store.AsrHistoryTimingRecorder
 import com.brycewg.asrkb.store.AsrHistoryTimingStage
+import com.brycewg.asrkb.store.AsrHistoryTimingTrace
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
@@ -99,7 +100,6 @@ internal class ExternalSpeechSession(
     private var historyAudioCapture: AsrHistoryAudioCapture? = null
     private var pushPcmInput: Boolean = false
     private var historyTiming: AsrHistoryTimingRecorder? = null
-    private var historySuccessStored: Boolean = false
 
     @Volatile private var processingTimeoutJob: Job? = null
 
@@ -392,7 +392,6 @@ internal class ExternalSpeechSession(
             historyTiming = AsrHistoryTimingRecorder(AsrHistoryTimingOrigin.ORIGINAL).also {
                 it.begin(AsrHistoryTimingStage.AUDIO_INPUT)
             }
-            historySuccessStored = false
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to mark session start", t)
         }
@@ -715,30 +714,18 @@ internal class ExternalSpeechSession(
                                 audioAlreadySaved = true
                             )
                         } else {
-                            val store = com.brycewg.asrkb.store.AsrHistoryStore(context)
-                            store.add(
-                                com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
-                                    id = historyRecordId,
-                                    timestamp = System.currentTimeMillis(),
-                                    text = out,
-                                    rawText = text,
-                                    vendorId = vendorForRecord.id,
-                                    audioMs = audioMs,
-                                    totalElapsedMs = totalElapsedMs,
-                                    procMs = procMs,
-                                    source = "external",
-                                    aiProcessed = aiUsed,
-                                    aiPostMs = aiPostMs,
-                                    aiPostStatus = aiPostStatus,
-                                    llmVendorId = llmVendorId,
-                                    charCount = chars
-                                )
-                            )
-                            historySuccessStored = true
-                            AsrHistoryAudioStore.pruneAsync(
-                                context,
-                                store.listAll(),
-                                prefs.audioHistoryRetentionCount
+                            persistSuccessfulHistory(
+                                text = out,
+                                rawText = text,
+                                audioMs = audioMs,
+                                totalElapsedMs = totalElapsedMs,
+                                procMs = procMs,
+                                chars = chars,
+                                vendorId = vendorForRecord.id,
+                                aiProcessed = aiUsed,
+                                aiPostMs = aiPostMs,
+                                aiPostStatus = aiPostStatus,
+                                llmVendorId = llmVendorId
                             )
                         }
                     }
@@ -755,7 +742,6 @@ internal class ExternalSpeechSession(
                 ) {
                     Log.w(TAG, "remove session on final failed", t)
                 }
-                completeSuccessfulHistoryTiming()
             }
         } else {
             if (canceled) return
@@ -815,27 +801,15 @@ internal class ExternalSpeechSession(
                             audioAlreadySaved = true
                         )
                     } else {
-                        val store = com.brycewg.asrkb.store.AsrHistoryStore(context)
-                        store.add(
-                            com.brycewg.asrkb.store.AsrHistoryStore.AsrHistoryRecord(
-                                id = historyRecordId,
-                                timestamp = System.currentTimeMillis(),
-                                text = out,
-                                rawText = text,
-                                vendorId = vendorForRecord.id,
-                                audioMs = audioMs,
-                                totalElapsedMs = totalElapsedMs,
-                                procMs = procMs,
-                                source = "external",
-                                aiProcessed = false,
-                                charCount = chars
-                            )
-                        )
-                        historySuccessStored = true
-                        AsrHistoryAudioStore.pruneAsync(
-                            context,
-                            store.listAll(),
-                            prefs.audioHistoryRetentionCount
+                        persistSuccessfulHistory(
+                            text = out,
+                            rawText = text,
+                            audioMs = audioMs,
+                            totalElapsedMs = totalElapsedMs,
+                            procMs = procMs,
+                            chars = chars,
+                            vendorId = vendorForRecord.id,
+                            aiProcessed = false
                         )
                     }
                 }
@@ -851,7 +825,6 @@ internal class ExternalSpeechSession(
             ) {
                 Log.w(TAG, "remove session on final failed", t)
             }
-            completeSuccessfulHistoryTiming()
         }
     }
 
@@ -987,20 +960,61 @@ internal class ExternalSpeechSession(
         }
     }
 
-    private fun completeSuccessfulHistoryTiming() {
-        val timing = historyTiming ?: return
+    private fun persistSuccessfulHistory(
+        text: String,
+        rawText: String,
+        audioMs: Long,
+        totalElapsedMs: Long,
+        procMs: Long,
+        chars: Int,
+        vendorId: String,
+        aiProcessed: Boolean,
+        aiPostMs: Long = 0L,
+        aiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE,
+        llmVendorId: String? = null
+    ) {
+        val timingTrace = takeSuccessfulTimingTrace()
+        val record = AsrHistoryStore.AsrHistoryRecord(
+            id = historyRecordId,
+            timestamp = System.currentTimeMillis(),
+            text = text,
+            rawText = rawText,
+            vendorId = vendorId,
+            audioMs = audioMs,
+            totalElapsedMs = timingTrace?.totalElapsedMs ?: totalElapsedMs,
+            procMs = procMs,
+            source = "external",
+            aiProcessed = aiProcessed,
+            aiPostMs = aiPostMs,
+            aiPostStatus = aiPostStatus,
+            llmVendorId = llmVendorId,
+            charCount = chars,
+            timingTrace = timingTrace
+        )
+        val retention = prefs.audioHistoryRetentionCount
+        sessionScope.launch(Dispatchers.IO) {
+            try {
+                val store = AsrHistoryStore(context)
+                store.add(record)
+                AsrHistoryAudioStore.pruneAsync(
+                    context,
+                    retention
+                )
+                timingTrace?.let { trace ->
+                    com.brycewg.asrkb.store.AsrHistoryTimingDiagnostics.logSaved("external", trace)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to add ASR history (external)", e)
+            }
+        }
+    }
+
+    private fun takeSuccessfulTimingTrace(): AsrHistoryTimingTrace? {
+        val timing = historyTiming ?: return null
         timing.end(AsrHistoryTimingStage.TEXT_DELIVERY)
         val trace = timing.complete()
         historyTiming = null
-        if (!historySuccessStored) return
-        try {
-            AsrHistoryStore(context).updateById(historyRecordId) { record ->
-                record.copy(totalElapsedMs = trace.totalElapsedMs, timingTrace = trace)
-            }
-            com.brycewg.asrkb.store.AsrHistoryTimingDiagnostics.logSaved("external", trace)
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to finalize external history timing", t)
-        }
+        return trace
     }
 
     private fun currentHistoryFailStage(): AsrHistoryStore.AsrHistoryFailStage {

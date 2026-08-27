@@ -345,8 +345,8 @@ fun OtherSettingsScreen(
             },
             onAudioRetentionChangeFinished = {
                 coroutineScope.launch(Dispatchers.IO) {
-                    AsrHistoryAudioStore(context).prune(
-                        AsrHistoryStore(context).listAll(),
+                    AsrHistoryAudioStore.pruneAsync(
+                        context,
                         prefs.audioHistoryRetentionCount
                     )
                 }

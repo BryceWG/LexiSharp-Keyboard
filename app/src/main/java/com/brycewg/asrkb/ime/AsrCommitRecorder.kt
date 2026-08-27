@@ -197,7 +197,6 @@ internal class AsrCommitRecorder(
                 historyWritten = true
                 AsrHistoryAudioStore.pruneAsync(
                     context,
-                    store.listAll(),
                     prefs.audioHistoryRetentionCount
                 )
                 prepared.timingTrace?.let { trace ->

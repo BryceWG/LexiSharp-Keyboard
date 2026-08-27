@@ -44,22 +44,19 @@ class AsrHistoryAudioStore(context: Context) {
                         store.delete(recordId)
                         return@launch
                     }
-                    store.prune(
-                        AsrHistoryStore(appContext).listAll(),
-                        latestPrefs.audioHistoryRetentionCount
-                    )
+                    val ids = AsrHistoryStore(appContext).listIdsNewestFirstOrNull()
+                        ?: return@launch
+                    store.prune(ids, latestPrefs.audioHistoryRetentionCount)
                 }
             }
         }
 
-        fun pruneAsync(
-            context: Context,
-            recordsNewestFirst: List<AsrHistoryStore.AsrHistoryRecord>,
-            maxCount: Int
-        ) {
+        fun pruneAsync(context: Context, maxCount: Int) {
             val appContext = context.applicationContext
             ioScope.launch {
-                AsrHistoryAudioStore(appContext).prune(recordsNewestFirst, maxCount)
+                val ids = AsrHistoryStore(appContext).listIdsNewestFirstOrNull()
+                    ?: return@launch
+                AsrHistoryAudioStore(appContext).prune(ids, maxCount)
             }
         }
     }
@@ -117,19 +114,16 @@ class AsrHistoryAudioStore(context: Context) {
         deletedIds.clear()
     }
 
-    fun prune(recordsNewestFirst: List<AsrHistoryStore.AsrHistoryRecord>, maxCount: Int) {
+    fun prune(idsNewestFirst: List<String>, maxCount: Int) {
         if (maxCount <= 0) {
             clearAll()
             return
         }
-        val knownIds = recordsNewestFirst.mapTo(mutableSetOf()) { it.id }
-        val keepIds = if (maxCount <= 0) emptySet() else {
-            recordsNewestFirst.asSequence()
-                .map { it.id }
-                .filter(::hasAudio)
-                .take(maxCount.coerceIn(0, 100))
-                .toSet()
-        }
+        val knownIds = idsNewestFirst.toSet()
+        val keepIds = idsNewestFirst.asSequence()
+            .filter(::hasAudio)
+            .take(maxCount.coerceIn(0, 100))
+            .toSet()
         val now = System.currentTimeMillis()
         directory.listFiles()?.forEach { file ->
             val recordId = file.name.removeSuffix(EXTENSION)
