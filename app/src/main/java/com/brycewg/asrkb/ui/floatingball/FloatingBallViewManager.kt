@@ -727,6 +727,7 @@ class FloatingBallViewManager(
             aura.setAuraColor(theme.primary)
         }
         aura.start()
+        updateRecordingAuraLayout()
     }
 
     private fun stopRecordingAura() {
@@ -799,6 +800,7 @@ class FloatingBallViewManager(
 
     private fun updateRecordingAuraLayout() {
         val aura = recordingAuraView ?: return
+        if (aura.visibility != View.VISIBLE) return
         val params = recordingAuraLp ?: return
         val logicalSizePx = getLogicalBallSizePx()
         val targetSizePx = expandedWindowSize(logicalSizePx)
