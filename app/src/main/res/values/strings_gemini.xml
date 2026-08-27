@@ -6,6 +6,21 @@
     <string name="label_gemini_model">Recognition model</string>
     <string name="label_gemini_prompt">Transcription Prompt</string>
     <string name="label_gemini_disable_thinking">Minimal thinking</string>
+    <string name="label_gemini_asr_mode">Call mode</string>
+    <string name="gemini_asr_mode_gemini">Gemini</string>
+    <string name="gemini_asr_mode_transcribe">Transcribe</string>
+    <string name="label_gemini_transcribe_language">Recognition language</string>
+    <string name="label_gemini_transcribe_custom_language">Custom BCP-47 code</string>
+    <string name="gemini_transcribe_language_auto">Automatic</string>
+    <string name="gemini_transcribe_language_mandarin">Mandarin Chinese (cmn-Hans-CN)</string>
+    <string name="gemini_transcribe_language_cantonese">Traditional Cantonese (yue-Hant-HK)</string>
+    <string name="gemini_transcribe_language_english_us">US English (en-US)</string>
+    <string name="gemini_transcribe_language_japanese">Japanese (ja-JP)</string>
+    <string name="gemini_transcribe_language_korean">Korean (ko-KR)</string>
+    <string name="gemini_transcribe_language_custom">Custom</string>
+    <string name="label_gemini_transcribe_smart">Smart transcription</string>
+    <string name="feature_gemini_transcribe_smart_off_desc">Uses verbatim transcription and preserves fillers, repetitions, and false starts.</string>
+    <string name="feature_gemini_transcribe_smart_on_desc">Removes fillers, resolves speech corrections, and restructures formatting. This may change the verbatim content.</string>
 
     <!-- ============================================== -->
     <!-- Gemini Settings - Feature Descriptions -->

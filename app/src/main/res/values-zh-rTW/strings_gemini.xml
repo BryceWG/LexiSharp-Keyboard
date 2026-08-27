@@ -6,6 +6,21 @@
     <string name="label_gemini_model">辨識模型</string>
     <string name="label_gemini_prompt">轉錄提示詞（Prompt）</string>
     <string name="label_gemini_disable_thinking">降低思考強度</string>
+    <string name="label_gemini_asr_mode">呼叫模式</string>
+    <string name="gemini_asr_mode_gemini">Gemini</string>
+    <string name="gemini_asr_mode_transcribe">Transcribe</string>
+    <string name="label_gemini_transcribe_language">識別語言</string>
+    <string name="label_gemini_transcribe_custom_language">自訂 BCP-47 代碼</string>
+    <string name="gemini_transcribe_language_auto">自動</string>
+    <string name="gemini_transcribe_language_mandarin">簡體普通話 (cmn-Hans-CN)</string>
+    <string name="gemini_transcribe_language_cantonese">繁體粵語 (yue-Hant-HK)</string>
+    <string name="gemini_transcribe_language_english_us">美式英語 (en-US)</string>
+    <string name="gemini_transcribe_language_japanese">日語 (ja-JP)</string>
+    <string name="gemini_transcribe_language_korean">韓語 (ko-KR)</string>
+    <string name="gemini_transcribe_language_custom">自訂</string>
+    <string name="label_gemini_transcribe_smart">Smart 轉錄</string>
+    <string name="feature_gemini_transcribe_smart_off_desc">使用逐字轉錄，保留語氣詞、重複和口誤。</string>
+    <string name="feature_gemini_transcribe_smart_on_desc">移除語氣詞、修正口誤並重排格式，可能改變逐字內容。</string>
 
     <!-- ============================================== -->
     <!-- Gemini ASR - 功能說明 -->

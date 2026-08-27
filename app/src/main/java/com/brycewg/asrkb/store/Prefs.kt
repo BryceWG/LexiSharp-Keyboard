@@ -14,6 +14,7 @@ import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.GeminiAsrMode
 import com.brycewg.asrkb.asr.BackupAsrLocalResidency
 import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.asr.VolcAsrModelCatalog
@@ -1245,6 +1246,24 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_GEMINI_DISABLE_THINKING, false)
         set(value) = sp.edit { putBoolean(KEY_GEMINI_DISABLE_THINKING, value) }
 
+    internal var geminiAsrMode: GeminiAsrMode
+        get() = GeminiAsrMode.fromId(sp.getString(KEY_GEMINI_ASR_MODE, null))
+        set(value) = sp.edit { putString(KEY_GEMINI_ASR_MODE, value.id) }
+
+    var gemTranscribeApiKey: String by stringPref(KEY_GEM_TRANSCRIBE_API_KEY, "")
+    var gemTranscribeEndpoint: String by stringPref(
+        KEY_GEM_TRANSCRIBE_ENDPOINT,
+        DEFAULT_GEM_ENDPOINT
+    )
+    var gemTranscribeModel: String by stringPref(
+        KEY_GEM_TRANSCRIBE_MODEL,
+        DEFAULT_GEM_TRANSCRIBE_MODEL
+    )
+    var gemTranscribeLanguage: String by stringPref(KEY_GEM_TRANSCRIBE_LANGUAGE, "")
+    var gemTranscribeSmartEnabled: Boolean
+        get() = sp.getBoolean(KEY_GEM_TRANSCRIBE_SMART_ENABLED, false)
+        set(value) = sp.edit { putBoolean(KEY_GEM_TRANSCRIBE_SMART_ENABLED, value) }
+
     // Soniox 语音识别
     var sonioxApiKey: String by stringPref(KEY_SONIOX_API_KEY, "")
 
@@ -1699,6 +1718,15 @@ class Prefs(context: Context) {
         if (v == AsrVendor.StepAudio) {
             return stepAudioApiKey.isNotBlank() && getEffectiveStepAudioAsrEndpoint().isNotBlank()
         }
+        if (v == AsrVendor.Gemini) {
+            return when (geminiAsrMode) {
+                GeminiAsrMode.Gemini -> getGeminiApiKeys().isNotEmpty() &&
+                    gemEndpoint.trim().isNotBlank() && gemModel.trim().isNotBlank()
+                GeminiAsrMode.Transcribe -> gemTranscribeApiKey.trim().isNotBlank() &&
+                    gemTranscribeEndpoint.trim().isNotBlank() &&
+                    gemTranscribeModel.trim().isNotBlank()
+            }
+        }
         if (v == AsrVendor.Volc) {
             return if (volcUseNewAuth) {
                 volcApiKey.isNotBlank()
@@ -2152,6 +2180,7 @@ class Prefs(context: Context) {
         // Gemini 默认
         const val DEFAULT_GEM_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta"
         const val DEFAULT_GEM_MODEL = "gemini-2.5-flash"
+        const val DEFAULT_GEM_TRANSCRIBE_MODEL = "gemini-3.5-transcribe"
 
         // Zhipu GLM ASR 默认
         const val DEFAULT_ZHIPU_TEMPERATURE = 0.95f

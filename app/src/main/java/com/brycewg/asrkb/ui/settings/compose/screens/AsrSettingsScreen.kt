@@ -508,6 +508,21 @@ fun AsrSettingsScreen(
         )
     }
 
+    fun applyGeminiTranscribeSmartSwitch(target: Boolean) {
+        featureExplainerDialog = settingsFeatureExplainerDialogState(
+            context = context,
+            titleRes = R.string.label_gemini_transcribe_smart,
+            offDescRes = R.string.feature_gemini_transcribe_smart_off_desc,
+            onDescRes = R.string.feature_gemini_transcribe_smart_on_desc,
+            currentState = onlineFields.geminiTranscribeSmartEnabled,
+            preferenceKey = "gemini_transcribe_smart_explained",
+            onConfirm = {
+                onlineFields.geminiTranscribeSmartEnabled = target
+                prefs.gemTranscribeSmartEnabled = target
+            }
+        )
+    }
+
     fun applyDashSemanticPunctSwitch(target: Boolean) {
         featureExplainerDialog = settingsFeatureExplainerDialogState(
             context = context,
@@ -694,6 +709,7 @@ fun AsrSettingsScreen(
                 applyDashSemanticPunctSwitch = ::applyDashSemanticPunctSwitch,
                 applyElevenStreamingSwitch = ::applyElevenStreamingSwitch,
                 applyGeminiThinkingSwitch = ::applyGeminiThinkingSwitch,
+                applyGeminiTranscribeSmartSwitch = ::applyGeminiTranscribeSmartSwitch,
                 applyMimoDisableThinkingSwitch = ::applyMimoDisableThinkingSwitch,
                 applyOpenAiStreamingSwitch = ::applyOpenAiStreamingSwitch,
                 applyOpenAiUseCompletionsSwitch = ::applyOpenAiUseCompletionsSwitch,

@@ -6,6 +6,21 @@
     <string name="label_gemini_model">نموذج التعرّف</string>
     <string name="label_gemini_prompt">موجّه النسخ النصي</string>
     <string name="label_gemini_disable_thinking">تفكير أدنى</string>
+    <string name="label_gemini_asr_mode">وضع الاستدعاء</string>
+    <string name="gemini_asr_mode_gemini">Gemini</string>
+    <string name="gemini_asr_mode_transcribe">Transcribe</string>
+    <string name="label_gemini_transcribe_language">لغة التعرّف</string>
+    <string name="label_gemini_transcribe_custom_language">رمز BCP-47 مخصص</string>
+    <string name="gemini_transcribe_language_auto">تلقائي</string>
+    <string name="gemini_transcribe_language_mandarin">الصينية المبسطة (cmn-Hans-CN)</string>
+    <string name="gemini_transcribe_language_cantonese">الكانتونية التقليدية (yue-Hant-HK)</string>
+    <string name="gemini_transcribe_language_english_us">الإنجليزية الأمريكية (en-US)</string>
+    <string name="gemini_transcribe_language_japanese">اليابانية (ja-JP)</string>
+    <string name="gemini_transcribe_language_korean">الكورية (ko-KR)</string>
+    <string name="gemini_transcribe_language_custom">مخصص</string>
+    <string name="label_gemini_transcribe_smart">نسخ Smart</string>
+    <string name="feature_gemini_transcribe_smart_off_desc">يستخدم النسخ الحرفي ويحافظ على كلمات الحشو والتكرار وتصحيحات الكلام.</string>
+    <string name="feature_gemini_transcribe_smart_on_desc">يزيل كلمات الحشو ويصحح زلات الكلام ويعيد تنسيق النص، وقد يغير المحتوى الحرفي.</string>
 
     <!-- ============================================== -->
     <!-- Gemini Settings - Feature Descriptions -->

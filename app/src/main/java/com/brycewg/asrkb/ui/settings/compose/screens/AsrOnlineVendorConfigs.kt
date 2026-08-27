@@ -14,12 +14,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
+import com.brycewg.asrkb.asr.GeminiAsrMode
 import com.brycewg.asrkb.asr.cohereSupportedLanguageCodes
 import com.brycewg.asrkb.asr.normalizeCohereLanguageForModel
 import com.brycewg.asrkb.store.KEY_GEM_API_KEY
 import com.brycewg.asrkb.store.KEY_GEM_ENDPOINT
 import com.brycewg.asrkb.store.KEY_GEM_MODEL
 import com.brycewg.asrkb.store.KEY_GEM_PROMPT
+import com.brycewg.asrkb.store.KEY_GEM_TRANSCRIBE_API_KEY
+import com.brycewg.asrkb.store.KEY_GEM_TRANSCRIBE_ENDPOINT
+import com.brycewg.asrkb.store.KEY_GEM_TRANSCRIBE_MODEL
 import com.brycewg.asrkb.store.KEY_OPENROUTER_ASR_API_KEY
 import com.brycewg.asrkb.store.KEY_OPENROUTER_ASR_ENDPOINT
 import com.brycewg.asrkb.store.KEY_OPENROUTER_ASR_MODEL
@@ -88,6 +92,20 @@ internal fun CurrentAsrVendorConfig(
     onGeminiPromptChange: (String) -> Unit,
     geminiDisableThinking: Boolean,
     onGeminiDisableThinkingChange: (Boolean) -> Unit,
+    geminiAsrMode: GeminiAsrMode,
+    onGeminiAsrModeChange: (GeminiAsrMode) -> Unit,
+    geminiTranscribeApiKey: String,
+    onGeminiTranscribeApiKeyChange: (String) -> Unit,
+    geminiTranscribeEndpoint: String,
+    onGeminiTranscribeEndpointChange: (String) -> Unit,
+    geminiTranscribeModel: String,
+    onGeminiTranscribeModelChange: (String) -> Unit,
+    geminiTranscribeLanguage: String,
+    onGeminiTranscribeLanguageOptionSelected: (String) -> Unit,
+    onGeminiTranscribeLanguageChange: (String) -> Unit,
+    geminiTranscribeCustomLanguageVisible: Boolean,
+    geminiTranscribeSmartEnabled: Boolean,
+    onGeminiTranscribeSmartEnabledChange: (Boolean) -> Unit,
     openRouterEndpoint: String,
     onOpenRouterEndpointChange: (String) -> Unit,
     openRouterApiKey: String,
@@ -411,31 +429,66 @@ internal fun CurrentAsrVendorConfig(
 
         AsrVendor.Gemini -> {
             var itemIndex = primaryIndexOffset
-            val commonFields = geminiCommonTextFields(
-                apiKey = geminiApiKey,
-                onApiKeyChange = onGeminiApiKeyChange,
-                endpoint = geminiEndpoint,
-                onEndpointChange = onGeminiEndpointChange,
-                model = geminiModel,
-                onModelChange = onGeminiModelChange,
-                prompt = geminiPrompt,
-                onPromptChange = onGeminiPromptChange
+            val commonFields = if (geminiAsrMode == GeminiAsrMode.Gemini) {
+                geminiCommonTextFields(
+                    apiKey = geminiApiKey, onApiKeyChange = onGeminiApiKeyChange,
+                    endpoint = geminiEndpoint, onEndpointChange = onGeminiEndpointChange,
+                    model = geminiModel, onModelChange = onGeminiModelChange,
+                    prompt = geminiPrompt, onPromptChange = onGeminiPromptChange
+                )
+            } else {
+                geminiTranscribeTextFields(
+                    apiKey = geminiTranscribeApiKey, onApiKeyChange = onGeminiTranscribeApiKeyChange,
+                    endpoint = geminiTranscribeEndpoint, onEndpointChange = onGeminiTranscribeEndpointChange,
+                    model = geminiTranscribeModel, onModelChange = onGeminiTranscribeModelChange
+                )
+            }
+            val transcribeExtra = if (geminiAsrMode == GeminiAsrMode.Transcribe) 2 + if (geminiTranscribeCustomLanguageVisible) 1 else 0 else 0
+            val itemCount = primaryGroupCount ?: commonFields.size + transcribeExtra + 3
+            AsrDropdownPreference(
+                titleRes = R.string.label_gemini_asr_mode,
+                options = listOf(
+                    DropdownOption(GeminiAsrMode.Gemini.id, stringResource(R.string.gemini_asr_mode_gemini)),
+                    DropdownOption(GeminiAsrMode.Transcribe.id, stringResource(R.string.gemini_asr_mode_transcribe))
+                ),
+                selectedOptionId = geminiAsrMode.id,
+                index = itemIndex++, count = itemCount,
+                onSelectedOptionChange = { onGeminiAsrModeChange(GeminiAsrMode.fromId(it)) }
             )
-            val itemCount = primaryGroupCount ?: commonFields.size + 2
             itemIndex = CommonOnlineAsrTextFields(
                 uiMode = uiMode,
                 fields = commonFields,
                 startIndex = itemIndex,
                 count = itemCount
             )
-            AsrSwitchPreference(
-                id = "gemini_disable_thinking",
-                titleRes = R.string.label_gemini_disable_thinking,
-                checked = geminiDisableThinking,
-                index = itemIndex++,
-                count = itemCount,
-                onCheckedChange = onGeminiDisableThinkingChange
-            )
+            if (geminiAsrMode == GeminiAsrMode.Gemini) {
+                AsrSwitchPreference(
+                    id = "gemini_disable_thinking", titleRes = R.string.label_gemini_disable_thinking,
+                    checked = geminiDisableThinking, index = itemIndex++, count = itemCount,
+                    onCheckedChange = onGeminiDisableThinkingChange
+                )
+            } else {
+                val selectedLanguage = if (geminiTranscribeCustomLanguageVisible) GEMINI_TRANSCRIBE_CUSTOM_LANGUAGE_ID else geminiTranscribeLanguage
+                AsrDropdownPreference(
+                    titleRes = R.string.label_gemini_transcribe_language,
+                    options = geminiTranscribeLanguageOptions(context), selectedOptionId = selectedLanguage,
+                    index = itemIndex++, count = itemCount,
+                    onSelectedOptionChange = onGeminiTranscribeLanguageOptionSelected
+                )
+                if (geminiTranscribeCustomLanguageVisible) {
+                    AsrTextField(
+                        uiMode = uiMode, value = geminiTranscribeLanguage,
+                        onValueChange = onGeminiTranscribeLanguageChange,
+                        label = stringResource(R.string.label_gemini_transcribe_custom_language),
+                        index = itemIndex++, count = itemCount
+                    )
+                }
+                AsrSwitchPreference(
+                    id = "gemini_transcribe_smart", titleRes = R.string.label_gemini_transcribe_smart,
+                    checked = geminiTranscribeSmartEnabled, index = itemIndex++, count = itemCount,
+                    onCheckedChange = onGeminiTranscribeSmartEnabledChange
+                )
+            }
             AsrActionPreference(
                 id = "gemini_get_key_guide",
                 titleRes = R.string.btn_get_api_key_guide,
@@ -730,6 +783,26 @@ internal fun geminiCommonTextFields(
         singleLine = false,
         minLines = 2
     )
+)
+
+private fun geminiTranscribeTextFields(
+    apiKey: String, onApiKeyChange: (String) -> Unit,
+    endpoint: String, onEndpointChange: (String) -> Unit,
+    model: String, onModelChange: (String) -> Unit
+): List<OnlineAsrTextFieldSpec> = listOf(
+    OnlineAsrTextFieldSpec(KEY_GEM_TRANSCRIBE_API_KEY, VendorFieldRole.Credential, R.string.label_gemini_api_key, apiKey, onApiKeyChange, password = true),
+    OnlineAsrTextFieldSpec(KEY_GEM_TRANSCRIBE_ENDPOINT, VendorFieldRole.Endpoint, R.string.label_gemini_endpoint, endpoint, onEndpointChange, displayDefault = Prefs.DEFAULT_GEM_ENDPOINT),
+    OnlineAsrTextFieldSpec(KEY_GEM_TRANSCRIBE_MODEL, VendorFieldRole.Model, R.string.label_gemini_model, model, onModelChange, displayDefault = Prefs.DEFAULT_GEM_TRANSCRIBE_MODEL)
+)
+
+private fun geminiTranscribeLanguageOptions(context: Context): List<DropdownOption> = listOf(
+    DropdownOption("", context.getString(R.string.gemini_transcribe_language_auto)),
+    DropdownOption("cmn-Hans-CN", context.getString(R.string.gemini_transcribe_language_mandarin)),
+    DropdownOption("yue-Hant-HK", context.getString(R.string.gemini_transcribe_language_cantonese)),
+    DropdownOption("en-US", context.getString(R.string.gemini_transcribe_language_english_us)),
+    DropdownOption("ja-JP", context.getString(R.string.gemini_transcribe_language_japanese)),
+    DropdownOption("ko-KR", context.getString(R.string.gemini_transcribe_language_korean)),
+    DropdownOption(GEMINI_TRANSCRIBE_CUSTOM_LANGUAGE_ID, context.getString(R.string.gemini_transcribe_language_custom))
 )
 
 internal fun openRouterCommonTextFields(

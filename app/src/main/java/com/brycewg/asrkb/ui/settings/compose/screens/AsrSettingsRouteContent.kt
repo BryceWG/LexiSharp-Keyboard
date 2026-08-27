@@ -218,6 +218,20 @@ internal fun AsrSettingsRouteContent(
                         onGeminiPromptChange = onlineState.onGeminiPromptChange,
                         geminiDisableThinking = onlineState.geminiDisableThinking,
                         onGeminiDisableThinkingChange = onlineState.onGeminiDisableThinkingChange,
+                        geminiAsrMode = onlineState.geminiAsrMode,
+                        onGeminiAsrModeChange = onlineState.onGeminiAsrModeChange,
+                        geminiTranscribeApiKey = onlineState.geminiTranscribeApiKey,
+                        onGeminiTranscribeApiKeyChange = onlineState.onGeminiTranscribeApiKeyChange,
+                        geminiTranscribeEndpoint = onlineState.geminiTranscribeEndpoint,
+                        onGeminiTranscribeEndpointChange = onlineState.onGeminiTranscribeEndpointChange,
+                        geminiTranscribeModel = onlineState.geminiTranscribeModel,
+                        onGeminiTranscribeModelChange = onlineState.onGeminiTranscribeModelChange,
+                        geminiTranscribeLanguage = onlineState.geminiTranscribeLanguage,
+                        onGeminiTranscribeLanguageOptionSelected = onlineState.onGeminiTranscribeLanguageOptionSelected,
+                        onGeminiTranscribeLanguageChange = onlineState.onGeminiTranscribeLanguageChange,
+                        geminiTranscribeCustomLanguageVisible = onlineState.geminiTranscribeCustomLanguageVisible,
+                        geminiTranscribeSmartEnabled = onlineState.geminiTranscribeSmartEnabled,
+                        onGeminiTranscribeSmartEnabledChange = onlineState.onGeminiTranscribeSmartEnabledChange,
                         openRouterEndpoint = onlineState.openRouterEndpoint,
                         onOpenRouterEndpointChange = onlineState.onOpenRouterEndpointChange,
                         openRouterApiKey = onlineState.openRouterApiKey,
@@ -339,7 +353,6 @@ private fun currentAsrVendorPrimaryItemCount(
     AsrVendor.StepAudio,
     AsrVendor.Zhipu,
     AsrVendor.Cohere,
-    AsrVendor.Gemini,
     AsrVendor.OpenRouter,
     AsrVendor.MiMo,
     AsrVendor.OpenAI,
@@ -354,6 +367,12 @@ private fun currentAsrVendorPrimaryItemCount(
             onlineState.stepAudioEndpointPreset == Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM,
         cohereCustomModelVisible = onlineState.cohereCustomModelVisible
     )
+
+    AsrVendor.Gemini -> if (onlineState.geminiAsrMode == com.brycewg.asrkb.asr.GeminiAsrMode.Gemini) {
+        7
+    } else {
+        7 + if (onlineState.geminiTranscribeCustomLanguageVisible) 1 else 0
+    }
 
     else -> localAsrPrimaryItemCount(selectedVendor)
 }

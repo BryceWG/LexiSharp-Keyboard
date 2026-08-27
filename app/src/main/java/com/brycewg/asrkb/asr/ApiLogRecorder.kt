@@ -22,7 +22,9 @@ data class ApiLogMeta(
     val vendor: String = "",
     val model: String = "",
     val source: String = "",
-    val requestStructure: String = ""
+    val requestStructure: String = "",
+    val redactPath: Boolean = false,
+    val redactErrorBody: Boolean = false
 )
 
 class ApiLogInterceptor : Interceptor {
@@ -68,13 +70,17 @@ object ApiLogRecorder {
         vendor: String = "",
         model: String = "",
         source: String = "",
-        requestStructure: String = ""
+        requestStructure: String = "",
+        redactPath: Boolean = false,
+        redactErrorBody: Boolean = false
     ) = ApiLogMeta(
         category = category,
         vendor = vendor,
         model = model,
         source = source,
-        requestStructure = requestStructure
+        requestStructure = requestStructure,
+        redactPath = redactPath,
+        redactErrorBody = redactErrorBody
     )
 
     fun recordWebSocket(
@@ -95,7 +101,7 @@ object ApiLogRecorder {
                 protocol = "WebSocket",
                 method = "GET",
                 host = url.host,
-                path = url.encodedPath,
+                path = if (meta.redactPath) "/redacted" else url.encodedPath,
                 queryKeys = url.queryParameterNames.sorted(),
                 requestSummary = "headers=${safeHeaderNames(request)}",
                 requestStructure = meta.requestStructure,
@@ -127,7 +133,7 @@ object ApiLogRecorder {
                 protocol = "HTTP",
                 method = request.method,
                 host = url.host,
-                path = url.encodedPath,
+                path = if (meta.redactPath) "/redacted" else url.encodedPath,
                 queryKeys = url.queryParameterNames.sorted(),
                 requestSummary = buildRequestSummary(request),
                 requestStructure = meta.requestStructure.ifBlank { buildRequestStructure(request) },
@@ -136,7 +142,15 @@ object ApiLogRecorder {
                 success = response?.isSuccessful == true && throwable == null && !canceled,
                 canceled = canceled,
                 durationMs = durationMs,
-                errorSummary = if (canceled) "Canceled by user" else buildErrorSummary(response, throwable)
+                errorSummary = if (canceled) {
+                    "Canceled by user"
+                } else if (meta.redactErrorBody) {
+                    throwable?.javaClass?.simpleName.orEmpty().ifBlank {
+                        response?.let { "HTTP ${it.code}" }.orEmpty()
+                    }
+                } else {
+                    buildErrorSummary(response, throwable)
+                }
             )
         )
     }
@@ -257,6 +271,7 @@ object ApiLogRecorder {
             "xi-api-key",
             "x-api-access-key",
             "x-api-app-key",
+            "x-goog-api-key",
             "apikey"
         )
         return request.headers.names().sorted().joinToString(prefix = "[", postfix = "]") { name ->

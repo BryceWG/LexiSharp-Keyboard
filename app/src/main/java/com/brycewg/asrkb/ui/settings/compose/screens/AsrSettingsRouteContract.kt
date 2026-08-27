@@ -7,6 +7,7 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BackupAsrLocalResidency
+import com.brycewg.asrkb.asr.GeminiAsrMode
 import com.brycewg.asrkb.store.Prefs
 
 internal typealias AsrVendorPicker = (
@@ -90,6 +91,20 @@ internal data class AsrOnlineSettingsRouteState(
     val onGeminiPromptChange: (String) -> Unit,
     val geminiDisableThinking: Boolean,
     val onGeminiDisableThinkingChange: (Boolean) -> Unit,
+    val geminiAsrMode: GeminiAsrMode,
+    val onGeminiAsrModeChange: (GeminiAsrMode) -> Unit,
+    val geminiTranscribeApiKey: String,
+    val onGeminiTranscribeApiKeyChange: (String) -> Unit,
+    val geminiTranscribeEndpoint: String,
+    val onGeminiTranscribeEndpointChange: (String) -> Unit,
+    val geminiTranscribeModel: String,
+    val onGeminiTranscribeModelChange: (String) -> Unit,
+    val geminiTranscribeLanguage: String,
+    val onGeminiTranscribeLanguageOptionSelected: (String) -> Unit,
+    val onGeminiTranscribeLanguageChange: (String) -> Unit,
+    val geminiTranscribeCustomLanguageVisible: Boolean,
+    val geminiTranscribeSmartEnabled: Boolean,
+    val onGeminiTranscribeSmartEnabledChange: (Boolean) -> Unit,
     val openRouterEndpoint: String,
     val onOpenRouterEndpointChange: (String) -> Unit,
     val openRouterApiKey: String,
