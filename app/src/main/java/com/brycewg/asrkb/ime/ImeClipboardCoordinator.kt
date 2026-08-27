@@ -61,17 +61,13 @@ internal class ImeClipboardCoordinator(
         }
 
         override fun onFilePulled(type: EntryType, fileName: String, serverFileName: String) {
-            rootViewProvider()?.post {
-                if (isClipboardPanelVisible()) {
-                    refreshClipboardPanelList()
-                }
+            serviceScope.launch(Dispatchers.IO) {
                 val store = clipStoreProvider()
-                if (store != null) {
-                    val all = store.getAll()
-                    val entry = all.firstOrNull {
-                        it.type != EntryType.TEXT &&
-                            (it.serverFileName == serverFileName || it.fileName == fileName)
-                    }
+                val entry = store?.getLatestFileEntry()?.takeIf {
+                    it.serverFileName == serverFileName || it.fileName == fileName
+                }
+                rootViewProvider()?.post {
+                    if (isClipboardPanelVisible()) refreshClipboardPanelList()
                     if (entry != null) {
                         actionHandler.showClipboardFilePreview(entry)
                     }
@@ -100,48 +96,46 @@ internal class ImeClipboardCoordinator(
 
     fun downloadClipboardFile(entry: ClipboardHistoryStore.Entry) {
         serviceScope.launch(Dispatchers.IO) {
-            try {
-                val success = ClipboardSyncRuntimeService.downloadFile(entry.id)
-                rootViewProvider()?.post {
-                    if (success) {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.clip_file_download_success),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        // 刷新列表显示下载完成状态
-                        if (isClipboardPanelVisible()) {
-                            refreshClipboardPanelList()
-                        }
-                    } else {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.clip_file_download_failed),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        // 刷新列表显示失败状态
-                        if (isClipboardPanelVisible()) {
-                            refreshClipboardPanelList()
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("AsrKeyboardService", "Failed to download file", e)
-                rootViewProvider()?.post {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.clip_file_download_error, e.message ?: ""),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
+            downloadClipboardFileOnIo(entry)
         }
     }
 
     fun downloadClipboardFileById(entryId: String) {
-        val store = clipStoreProvider() ?: return
-        val entry = store.getEntryById(entryId) ?: return
-        downloadClipboardFile(entry)
+        serviceScope.launch(Dispatchers.IO) {
+            val entry = clipStoreProvider()?.getEntryById(entryId) ?: return@launch
+            downloadClipboardFileOnIo(entry)
+        }
+    }
+
+    private fun downloadClipboardFileOnIo(entry: ClipboardHistoryStore.Entry) {
+        try {
+            val success = ClipboardSyncRuntimeService.downloadFile(entry.id)
+            rootViewProvider()?.post {
+                if (success) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.clip_file_download_success),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.clip_file_download_failed),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                if (isClipboardPanelVisible()) refreshClipboardPanelList()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AsrKeyboardService", "Failed to download file", e)
+            rootViewProvider()?.post {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.clip_file_download_error, e.message ?: ""),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     fun openFile(filePath: String) {

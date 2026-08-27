@@ -2,6 +2,7 @@ package com.brycewg.asrkb.ime
 
 import android.content.Context
 import android.graphics.Rect
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
@@ -32,6 +33,10 @@ internal class ClipboardPanelController(
     private val onOpenFile: (filePath: String) -> Unit,
     private val onDownloadFile: (entry: ClipboardHistoryStore.Entry) -> Unit
 ) {
+    companion object {
+        private const val TAG = "ClipboardPanel"
+    }
+
     val store: ClipboardHistoryStore = ClipboardHistoryStore(context, prefs)
 
     var isVisible: Boolean = views.layoutClipboardPanel?.visibility == View.VISIBLE
@@ -91,7 +96,7 @@ internal class ClipboardPanelController(
     fun refreshList() {
         val generation = ++refreshGeneration
         serviceScope.launch {
-            val filtered = withContext(Dispatchers.Default) {
+            val filtered = withContext(Dispatchers.IO) {
                 var fileSeen = false
                 store.getAll().filter { entry ->
                     if (entry.type == EntryType.TEXT) {
@@ -179,34 +184,41 @@ internal class ClipboardPanelController(
             refreshList()
             return
         }
-        if (direction == ItemTouchHelper.RIGHT) {
-            val pinnedNow = store.togglePin(item.id)
-            val msg = if (pinnedNow) {
-                context.getString(R.string.clip_pinned)
-            } else {
-                context.getString(R.string.clip_unpinned)
-            }
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-        } else if (direction == ItemTouchHelper.LEFT) {
-            if (item.pinned) {
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.clip_cannot_delete_pinned),
-                    Toast.LENGTH_SHORT
-                ).show()
-                adapter?.notifyItemChanged(pos)
-            } else {
-                val deleted = store.deleteHistoryById(item.id)
-                if (deleted) {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.clip_deleted),
-                        Toast.LENGTH_SHORT
-                    ).show()
+        serviceScope.launch {
+            try {
+                if (direction == ItemTouchHelper.RIGHT) {
+                    val pinnedNow = withContext(Dispatchers.IO) { store.togglePin(item.id) }
+                    val msg = if (pinnedNow) {
+                        context.getString(R.string.clip_pinned)
+                    } else {
+                        context.getString(R.string.clip_unpinned)
+                    }
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                } else if (direction == ItemTouchHelper.LEFT) {
+                    if (item.pinned) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.clip_cannot_delete_pinned),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        adapter?.notifyItemChanged(pos)
+                    } else {
+                        val deleted = withContext(Dispatchers.IO) { store.deleteHistoryById(item.id) }
+                        if (deleted) {
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.clip_deleted),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Clipboard swipe action failed", e)
+            } finally {
+                refreshList()
             }
         }
-        refreshList()
     }
 
     private fun showDeleteMenu() {
@@ -221,13 +233,22 @@ internal class ClipboardPanelController(
             val oneHour = 60 * 60 * 1000L
             val day = 24 * oneHour
             val week = 7 * day
-            when (mi.itemId) {
-                0 -> store.deleteHistoryBefore(now - oneHour)
-                1 -> store.deleteHistoryBefore(now - day)
-                2 -> store.deleteHistoryBefore(now - week)
-                3 -> store.clearAllNonPinned()
+            serviceScope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        when (mi.itemId) {
+                            0 -> store.deleteHistoryBefore(now - oneHour)
+                            1 -> store.deleteHistoryBefore(now - day)
+                            2 -> store.deleteHistoryBefore(now - week)
+                            3 -> store.clearAllNonPinned()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Clipboard bulk delete failed", e)
+                } finally {
+                    refreshList()
+                }
             }
-            refreshList()
             true
         }
         showPopupMenuKeepingIme(popup)

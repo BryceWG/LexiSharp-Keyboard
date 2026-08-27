@@ -854,6 +854,7 @@ class SyncClipboardManager(
             }
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to clear file entries on text payload", t)
+            return HandledPullPayload(text, clipboardApplied = false)
         }
 
         if (updateClipboard) {
@@ -927,9 +928,7 @@ class SyncClipboardManager(
                 Log.e(TAG, "Failed to read last file name", e)
                 ""
             }
-            val previousEntry = clipboardStore?.getHistory()?.firstOrNull {
-                it.type != EntryType.TEXT
-            }
+            val previousEntry = clipboardStore?.getLatestFileEntry()
             val sameRemoteFile = fileName.isNotEmpty() && fileName == prevName &&
                 (serverHash.isNullOrBlank() ||
                     previousEntry?.serverHash.equals(serverHash, ignoreCase = true)) &&
@@ -1037,7 +1036,7 @@ class SyncClipboardManager(
         val serverFileName = entry.serverFileName ?: entry.fileName ?: return false
 
         // 更新状态为下载中
-        store.updateFileEntry(entryId, null, DownloadStatus.DOWNLOADING)
+        if (!store.updateFileEntry(entryId, null, DownloadStatus.DOWNLOADING)) return false
 
         val (ok, localPath) = downloadFileDirectInternal(
             serverFileName = serverFileName,
@@ -1047,12 +1046,12 @@ class SyncClipboardManager(
         )
 
         if (ok && localPath != null) {
-            store.updateFileEntry(entryId, localPath, DownloadStatus.COMPLETED)
+            if (!store.updateFileEntry(entryId, localPath, DownloadStatus.COMPLETED)) return false
             attachmentNotifier.showDownloaded(serverFileName)
             return true
         }
 
-        store.updateFileEntry(entryId, null, DownloadStatus.FAILED)
+        if (!store.updateFileEntry(entryId, null, DownloadStatus.FAILED)) return false
         attachmentNotifier.showDownloadFailed(serverFileName)
         return false
     }

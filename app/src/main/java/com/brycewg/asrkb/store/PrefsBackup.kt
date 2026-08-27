@@ -9,6 +9,7 @@ import android.util.Log
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.asr.VolcAsrModelCatalog
+import com.brycewg.asrkb.clipboard.ClipboardHistoryStore
 import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 
 /**
@@ -207,11 +208,10 @@ internal object PrefsBackup {
         o.put(KEY_WD_USERNAME, webdavUsername)
         o.put(KEY_WD_PASSWORD, webdavPassword)
         // 仅导出固定的剪贴板记录
-        try {
-            o.put(KEY_CLIP_PINNED_JSON, getPrefString(KEY_CLIP_PINNED_JSON, ""))
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to export pinned clip", t)
-        }
+        o.put(
+            KEY_CLIP_PINNED_JSON,
+            ClipboardHistoryStore(appContext, this).exportPinnedJson()
+        )
         // 隐私开关
         try {
             o.put(KEY_DISABLE_ASR_HISTORY, disableAsrHistory)
@@ -592,7 +592,9 @@ internal object PrefsBackup {
             optString(KEY_WD_USERNAME)?.let { webdavUsername = it }
             optString(KEY_WD_PASSWORD)?.let { webdavPassword = it }
             // 剪贴板固定记录（仅覆盖固定集合；非固定不导入）
-            optString(KEY_CLIP_PINNED_JSON)?.let { setPrefString(KEY_CLIP_PINNED_JSON, it) }
+            optString(KEY_CLIP_PINNED_JSON)?.let {
+                ClipboardHistoryStore(appContext, this).replacePinnedFromJson(it)
+            }
             // LLM 供应商选择（新架构）
             optString(KEY_LLM_VENDOR)?.let { llmVendor = LlmVendor.fromId(it) }
             // 内置供应商配置（遍历所有内置供应商）
