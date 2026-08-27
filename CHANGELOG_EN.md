@@ -1,5 +1,31 @@
 # Changelog
 
+## v4.4.2 (2026-08-27)
+
+### New Features
+
+- **Gemini Transcribe**: Gemini adds a Transcribe call mode
+- **History Timing Timeline**: History details show time spent on recording, recognition, polish, and text commit; the dialog adapts to available height
+
+### Improvements
+
+- **LLM Connectivity Test**: Test results show connect, first-token, and output latency, connection reuse, and whether streaming is supported
+- **Faster Recognition and Keyboard**: Async history commit, cached first-frame UI, and broader HTTP connection-pool reuse for lower recognition latency, less commit jank, and faster keyboard open
+- **AI Polish Wording**: UI now uses “polish” instead of “post-processing”
+- **Typewriter Effect**: When off, the full result is applied at once after polish finishes
+- **Qwen3-ASR 1.7B Cleanup**: Strips model markers so they are not committed as text
+- **Cancel Polish on Keyboard Hide**: Hiding the IME cancels in-flight AI polish and commits the raw transcript, so the next mic tap is not ignored
+- **Polish Timeout and Cancel**: AI polish now has a timeout cap; cancelled requests no longer fall back to non-streaming
+- **[Pro] Hotword Preload**: Builds phoneme indexes at startup to reduce first-recognition post-processing delay
+
+### Bug Fixes
+
+- **Bridge Module**: Improved communication management with the Bridge module
+- **Notification Language**: Keep-alive, floating, and similar notifications now follow the app language
+- **Floating Ball Performance**: Aura effects no longer keep refreshing when not recording
+
+---
+
 ## v4.4.1 (2026-08-20)
 
 ### New Features
