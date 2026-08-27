@@ -18,6 +18,7 @@ import android.widget.LinearLayout
 import androidx.core.view.ViewCompat
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.ime.layout.BlockDefRegistry
+import com.brycewg.asrkb.ime.layout.KeyboardLayoutBundle
 import com.brycewg.asrkb.ime.layout.KeyboardLayoutPanel
 import com.brycewg.asrkb.ime.layout.KeyboardLayoutRuntimeApplier
 import com.brycewg.asrkb.ime.layout.KeyboardLayoutStore
@@ -37,17 +38,40 @@ internal class ImeLayoutController(
     )
     private var rootView: View? = null
     private var systemNavBarBottomInset: Int = 0
+    private var hasReceivedSystemInsets: Boolean = false
     private var lastAppliedHeightScale: Float = 1.0f
     private var floatingResizeLayoutPassPosted: Boolean = false
+    private var layoutApplyPosted: Boolean = false
     private var dockedTabletAlignment: DockedTabletAlignment = DockedTabletAlignment.CENTER
+    private var cachedLayoutSource: String? = null
+    private var cachedLayoutBundle: KeyboardLayoutBundle? = null
+    private var lastLayoutSignature: LayoutSignature? = null
+    private var lastLoggedSkippedSignature: LayoutSignature? = null
+    private var layoutMeasureCache: ImeLayoutMeasureCache? = null
+    private var pendingMeasuredInputHeight: Int? = null
+    private var lastRecordedInputMeasurement: Triple<Int, Int, Int>? = null
+    private var measureCacheResolutionLogged: Boolean = false
 
     fun installKeyboardInsetsListener(rootView: View) {
         this.rootView = rootView
         systemNavBarBottomInset = 0
+        hasReceivedSystemInsets = false
+        lastLayoutSignature = null
+        lastLoggedSkippedSignature = null
+        pendingMeasuredInputHeight = null
+        lastRecordedInputMeasurement = null
+        measureCacheResolutionLogged = false
+        layoutMeasureCache = ImeLayoutMeasureCache(rootView.context)
         floatingKeyboardController.install(rootView)
         themeStyler.installKeyboardInsetsListener(rootView) { bottom ->
+            hasReceivedSystemInsets = true
+            if (systemNavBarBottomInset == bottom) return@installKeyboardInsetsListener
             systemNavBarBottomInset = bottom
-            applyKeyboardHeightScale()
+            pendingMeasuredInputHeight = null
+            lastRecordedInputMeasurement = null
+            if (applySystemBottomInset(rootView)) {
+                rootView.requestLayout()
+            }
         }
         rootView.findViewById<View>(R.id.keyboardDockButtonLeft)?.setOnClickListener {
             dockedTabletAlignment = dockedTabletAlignment.moveLeft()
@@ -64,11 +88,14 @@ internal class ImeLayoutController(
     }
 
     fun onInputViewStarted() {
+        pendingMeasuredInputHeight = null
+        measureCacheResolutionLogged = false
         floatingKeyboardController.onInputViewStarted()
     }
 
     fun onInputViewFinished() {
         floatingResizeLayoutPassPosted = false
+        layoutApplyPosted = false
         floatingKeyboardController.onInputViewFinished()
     }
 
@@ -89,6 +116,17 @@ internal class ImeLayoutController(
         }
     }
 
+    fun scheduleKeyboardLayoutApply() {
+        val root = rootView ?: viewRefsProvider()?.rootView ?: return
+        if (layoutApplyPosted) return
+        layoutApplyPosted = true
+        root.postOnAnimation {
+            layoutApplyPosted = false
+            if (rootView !== root) return@postOnAnimation
+            applyKeyboardHeightScaleAndRequestLayout()
+        }
+    }
+
     fun applyKeyboardHeightScale(): Boolean {
         val root = rootView ?: viewRefsProvider()?.rootView ?: return false
         val refs = viewRefsProvider()
@@ -106,6 +144,22 @@ internal class ImeLayoutController(
             return dp(root, v)
         }
         layoutChanged = floatingKeyboardController.applyFrame(root) || layoutChanged
+
+        val signature = layoutSignature(root, scale)
+        if (lastLayoutSignature == signature) {
+            if (lastLoggedSkippedSignature != signature) {
+                lastLoggedSkippedSignature = signature
+                DebugLogManager.log(
+                    category = "ime",
+                    event = "ime_layout_apply_skip",
+                    data = mapOf("reason" to "unchanged")
+                )
+            }
+            return layoutChanged
+        }
+        lastLayoutSignature = signature
+        lastLoggedSkippedSignature = null
+        lastRecordedInputMeasurement = null
 
         // 麦克风现在由容器居中；缩放变化时清掉旧版本可能留下的位移。
         if (kotlin.math.abs(lastAppliedHeightScale - scale) > 1e-3f) {
@@ -136,6 +190,7 @@ internal class ImeLayoutController(
             val rw = ViewCompat.getRootWindowInsets(root)
             if (rw != null) {
                 systemNavBarBottomInset = ImeInsetsResolver.resolveBottomInset(rw, root.resources)
+                hasReceivedSystemInsets = true
             }
         }
 
@@ -160,19 +215,12 @@ internal class ImeLayoutController(
                 dp(prefs.keyboardBottomPaddingDp.toFloat())
             }
             // 对齐 Trime/fcitx 的分层：键盘内容不消费系统 inset，底部系统区域由独立 spacer 承接。
-            val outerSystemBottomMargin = if (floatingKeyboardController.isActive) {
-                0
-            } else {
-                systemNavBarBottomInset.coerceAtLeast(0)
-            }
-            val systemBottomSpace = root.findViewById<View>(R.id.keyboardSystemBottomSpace)
             val pb = basePb + extraPadding
             if (fl.paddingTop != pt || fl.paddingBottom != pb) {
                 fl.setPaddingRelative(ps, pt, pe, pb)
                 layoutChanged = true
             }
-            layoutChanged = updatePanelBottomMargin(fl, outerSystemBottomMargin) || layoutChanged
-            layoutChanged = updateSystemBottomSpace(systemBottomSpace, outerSystemBottomMargin) || layoutChanged
+            layoutChanged = applySystemBottomInset(root) || layoutChanged
         }
         layoutChanged = applyDockedTabletContentWidth(root, fl, scale) || layoutChanged
 
@@ -226,7 +274,7 @@ internal class ImeLayoutController(
             updateLayoutSize(v2, height = dp(40f * scale))
         }
 
-        if (KeyboardLayoutRuntimeApplier.applyAll(root, KeyboardLayoutStore.load(prefs), scale)) {
+        if (KeyboardLayoutRuntimeApplier.applyAll(root, currentLayoutBundle(), scale)) {
             layoutChanged = true
         }
 
@@ -352,6 +400,66 @@ internal class ImeLayoutController(
         return changed
     }
 
+    private fun applySystemBottomInset(root: View): Boolean {
+        val panel = root.findViewById<View>(R.id.keyboardFloatingPanel) ?: root
+        val bottomInset = if (floatingKeyboardController.isActive) {
+            0
+        } else {
+            systemNavBarBottomInset.coerceAtLeast(0)
+        }
+        return updatePanelBottomMargin(panel, bottomInset) or
+            updateSystemBottomSpace(root.findViewById(R.id.keyboardSystemBottomSpace), bottomInset)
+    }
+
+    private fun currentLayoutBundle(): KeyboardLayoutBundle {
+        val source = currentLayoutSource()
+        cachedLayoutBundle?.takeIf { cachedLayoutSource == source }?.let { return it }
+        return KeyboardLayoutStore.load(prefs).also { bundle ->
+            cachedLayoutSource = source
+            cachedLayoutBundle = bundle
+            DebugLogManager.log(
+                category = "ime",
+                event = "ime_layout_bundle_cache_miss",
+                data = mapOf("sourceLength" to source.length)
+            )
+        }
+    }
+
+    private fun layoutSignature(root: View, scale: Float): LayoutSignature {
+        val config = root.resources.configuration
+        val panel = root.findViewById<View>(R.id.keyboardFloatingPanel)
+        val content = root.findViewById<View>(R.id.keyboardContentPanel)
+        return LayoutSignature(
+            rootWidth = root.width,
+            panelWidth = panel?.width ?: 0,
+            panelLayoutWidth = panel?.layoutParams?.width ?: 0,
+            contentWidth = content?.width ?: 0,
+            screenWidthDp = config.screenWidthDp,
+            screenHeightDp = config.screenHeightDp,
+            orientation = config.orientation,
+            densityDpi = root.resources.displayMetrics.densityDpi,
+            fontScale = config.fontScale,
+            scale = scale,
+            bottomPaddingDp = prefs.keyboardBottomPaddingDp,
+            layoutSource = currentLayoutSource(),
+            floatingEnabled = prefs.imeTabletFloatingKeyboardEnabled,
+            floatingActive = floatingKeyboardController.isActive,
+            dockedAlignment = dockedTabletAlignment,
+            mainVisible = root.findViewById<View>(R.id.layoutMainKeyboard)?.visibility == View.VISIBLE,
+            aiVisible = root.findViewById<View>(R.id.layoutAiEditPanel)?.visibility == View.VISIBLE,
+            recordingVisible = root.findViewById<View>(R.id.rowRecordingGestures)?.visibility == View.VISIBLE,
+            numpadVisible = root.findViewById<View>(R.id.layoutNumpadPanel)?.visibility == View.VISIBLE
+        )
+    }
+
+    private fun currentLayoutSource(): String = buildString {
+        append(prefs.customKeyboardLayoutsJson)
+        append('|').append(prefs.extBtn1.id)
+        append('|').append(prefs.extBtn2.id)
+        append('|').append(prefs.extBtn3.id)
+        append('|').append(prefs.extBtn4.id)
+    }
+
     private fun updateDockedTabletButtons(
         root: View,
         constrained: Boolean,
@@ -437,7 +545,7 @@ internal class ImeLayoutController(
         scale: Float,
         availableWidth: Int
     ): Int {
-        val bundle = KeyboardLayoutStore.load(prefs)
+        val bundle = currentLayoutBundle()
         val maxRowsColsRatio = listOf(bundle.main, bundle.aiEdit, bundle.recording)
             .maxOf { layout -> layout.gridSize.rows.toFloat() / layout.gridSize.cols.toFloat() }
             .coerceAtLeast(0.1f)
@@ -644,17 +752,58 @@ internal class ImeLayoutController(
             return
         }
 
-        var inputH = input.height
+        val laidOutInputHeight = input.height
+        var inputH = laidOutInputHeight
         if (inputH <= 0) {
-            // 视图尚未 layout 时，使用一次 measure 获取 wrap_content 目标高度
-            try {
-                val wSpec = View.MeasureSpec.makeMeasureSpec(decorW, View.MeasureSpec.EXACTLY)
-                val hSpec = View.MeasureSpec.makeMeasureSpec(decorH, View.MeasureSpec.AT_MOST)
-                input.measure(wSpec, hSpec)
-                inputH = input.measuredHeight
-            } catch (t: Throwable) {
-                android.util.Log.w("AsrKeyboardService", "fixImeInsets measure failed", t)
-                return
+            inputH = pendingMeasuredInputHeight ?: if (hasReceivedSystemInsets) {
+                layoutMeasureCache?.read(
+                    root = input,
+                    prefs = prefs,
+                    decorWidth = decorW,
+                    decorHeight = decorH,
+                    bottomInset = systemNavBarBottomInset
+                )
+            } else {
+                null
+            } ?: 0
+            val cacheHit = inputH > 0
+            if (!measureCacheResolutionLogged) {
+                measureCacheResolutionLogged = true
+                DebugLogManager.log(
+                    category = "ime",
+                    event = if (cacheHit) "ime_measure_cache_hit" else "ime_measure_cache_miss",
+                    data = mapOf(
+                        "decorW" to decorW,
+                        "decorH" to decorH,
+                        "insetsReady" to hasReceivedSystemInsets
+                    )
+                )
+            }
+            if (!cacheHit) {
+                try {
+                    val wSpec = View.MeasureSpec.makeMeasureSpec(decorW, View.MeasureSpec.EXACTLY)
+                    val hSpec = View.MeasureSpec.makeMeasureSpec(decorH, View.MeasureSpec.AT_MOST)
+                    input.measure(wSpec, hSpec)
+                    inputH = input.measuredHeight
+                    pendingMeasuredInputHeight = inputH.takeIf { it > 0 }
+                } catch (t: Throwable) {
+                    android.util.Log.w("AsrKeyboardService", "fixImeInsets measure failed", t)
+                    return
+                }
+            }
+        } else {
+            pendingMeasuredInputHeight = null
+            val measurement = Triple(decorW, decorH, inputH)
+            if (hasReceivedSystemInsets && lastRecordedInputMeasurement != measurement) {
+                lastRecordedInputMeasurement = measurement
+                layoutMeasureCache?.record(
+                    root = input,
+                    prefs = prefs,
+                    decorWidth = decorW,
+                    decorHeight = decorH,
+                    bottomInset = systemNavBarBottomInset,
+                    measuredHeight = inputH
+                )
             }
         }
         if (inputH <= 0) return
@@ -677,7 +826,7 @@ internal class ImeLayoutController(
                 )
             }
         }
-        val top = if (locationTop in 0 until decorH) {
+        val top = if (laidOutInputHeight > 0 && locationTop in 0 until decorH) {
             minOf(locationTop, topByHeight)
         } else {
             topByHeight
@@ -716,4 +865,26 @@ internal class ImeLayoutController(
             )
         )
     }
+
+    private data class LayoutSignature(
+        val rootWidth: Int,
+        val panelWidth: Int,
+        val panelLayoutWidth: Int,
+        val contentWidth: Int,
+        val screenWidthDp: Int,
+        val screenHeightDp: Int,
+        val orientation: Int,
+        val densityDpi: Int,
+        val fontScale: Float,
+        val scale: Float,
+        val bottomPaddingDp: Int,
+        val layoutSource: String,
+        val floatingEnabled: Boolean,
+        val floatingActive: Boolean,
+        val dockedAlignment: DockedTabletAlignment,
+        val mainVisible: Boolean,
+        val aiVisible: Boolean,
+        val recordingVisible: Boolean,
+        val numpadVisible: Boolean
+    )
 }
