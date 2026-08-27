@@ -1603,6 +1603,23 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             onStreamingUpdate = onStreamingUpdate,
             timeoutBudget = timeoutBudget
         )
+        try {
+            DebugLogManager.log(
+                category = "asr",
+                event = "llm_call_complete",
+                data = mapOf(
+                    "ok" to result.ok,
+                    "mode" to result.responseMode?.name?.lowercase(),
+                    "totalMs" to result.totalMs,
+                    "connectionMs" to result.connectionMs,
+                    "headersMs" to result.responseHeadersMs,
+                    "firstVisibleMs" to result.firstVisibleMs,
+                    "outputMs" to result.outputMs,
+                    "bodyMs" to result.responseBodyMs,
+                    "fallback" to result.fallbackUsed
+                )
+            )
+        } catch (_: Throwable) { }
         val dt = TimeUnit.NANOSECONDS
             .toMillis((System.nanoTime() - t0).coerceAtLeast(0L))
             .coerceAtLeast(0L)

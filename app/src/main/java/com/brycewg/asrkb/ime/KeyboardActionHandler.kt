@@ -112,6 +112,7 @@ class KeyboardActionHandler(
 
     private val dictationUseCase = DictationUseCase(
         context = context,
+        scope = scope,
         prefs = prefs,
         asrManager = asrManager,
         inputHelper = inputHelper,

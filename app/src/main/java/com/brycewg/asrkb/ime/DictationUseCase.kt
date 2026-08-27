@@ -11,9 +11,12 @@ import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 internal class DictationUseCase(
     private val context: Context,
+    private val scope: CoroutineScope,
     private val prefs: Prefs,
     private val asrManager: AsrSessionManager,
     private val inputHelper: InputConnectionHelper,
@@ -118,8 +121,16 @@ internal class DictationUseCase(
             return
         }
 
-        inputHelper.setComposingText(ic, finalOut)
-        inputHelper.finishComposingText(ic)
+        val finishStartedAt = elapsedRealtimeMs()
+        val finishOk = inputHelper.finishComposingText(ic)
+        logSolidifyTiming(
+            "finish_composing",
+            mapOf(
+                "durationMs" to (elapsedRealtimeMs() - finishStartedAt).coerceAtLeast(0L),
+                "ok" to finishOk,
+                "aiUsed" to aiUsed
+            )
+        )
 
         var autoEnterSent = false
         if (finalOut.isNotEmpty() && consumeAutoEnterOnce()) {
@@ -142,7 +153,30 @@ internal class DictationUseCase(
             )
         }
 
-        commitRecorder.record(
+        uiListenerProvider()?.onVibrate()
+        notifyInputSolidifiedIfReady(finalOut)
+
+        if (asrManager.isRunning()) {
+            transitionToState(KeyboardState.Listening(lockedBySwipe = state.lockedBySwipe))
+        } else if (postprocFailed) {
+            // 回到 Idle 后再次设置错误提示，避免被 Idle 文案覆盖
+            transitionToIdle(false)
+            uiListenerProvider()?.onStatusMessage(
+                context.getString(R.string.status_llm_failed_used_raw)
+            )
+        } else if (!autoEnterSent && finalOut != rawText) {
+            transitionToIdle(true)
+            onPostprocessUndoAvailable()
+        } else {
+            val usedBackupResult =
+                (asrManager.getEngine() as? BackupAwareAsrEngine)
+                    ?.wasLastResultFromBackup() == true
+            transitionToState(KeyboardState.Processing)
+            scheduleProcessingTimeout(null)
+            transitionToIdleWithTiming(usedBackupResult)
+        }
+        logSolidifyTiming("ui_state_ready", mapOf("aiUsed" to aiUsed, "mode" to "postprocess"))
+        recordCommitAsync(
             text = finalOut,
             rawText = text,
             aiProcessed = aiUsed,
@@ -151,35 +185,6 @@ internal class DictationUseCase(
             llmVendorId = postprocessResult.llmVendorId,
             historyTiming = historyTiming
         )
-
-        uiListenerProvider()?.onVibrate()
-        notifyInputSolidifiedIfReady(finalOut)
-
-        if (asrManager.isRunning()) {
-            transitionToState(KeyboardState.Listening(lockedBySwipe = state.lockedBySwipe))
-            return
-        }
-
-        if (postprocFailed) {
-            // 回到 Idle 后再次设置错误提示，避免被 Idle 文案覆盖
-            transitionToIdle(false)
-            uiListenerProvider()?.onStatusMessage(
-                context.getString(R.string.status_llm_failed_used_raw)
-            )
-            return
-        }
-
-        val usedBackupResult =
-            (asrManager.getEngine() as? BackupAwareAsrEngine)
-                ?.wasLastResultFromBackup() == true
-        if (!autoEnterSent && finalOut.isNotEmpty() && finalOut != rawText) {
-            transitionToIdle(true)
-            onPostprocessUndoAvailable()
-            return
-        }
-        transitionToState(KeyboardState.Processing)
-        scheduleProcessingTimeout(null)
-        transitionToIdleWithTiming(usedBackupResult)
     }
 
     private fun handleWithoutPostprocess(
@@ -260,27 +265,26 @@ internal class DictationUseCase(
             }
         }
 
-        commitRecorder.record(
-            text = finalToCommit,
-            rawText = text,
-            aiProcessed = false,
-            historyTiming = historyTiming
-        )
-
         uiListenerProvider()?.onVibrate()
         notifyInputSolidifiedIfReady(finalToCommit)
 
         if (asrManager.isRunning()) {
             transitionToState(KeyboardState.Listening(lockedBySwipe = state.lockedBySwipe))
-            return
+        } else {
+            val usedBackupResult =
+                (asrManager.getEngine() as? BackupAwareAsrEngine)
+                    ?.wasLastResultFromBackup() == true
+            transitionToState(KeyboardState.Processing)
+            scheduleProcessingTimeout(null)
+            transitionToIdleWithTiming(usedBackupResult)
         }
-
-        val usedBackupResult =
-            (asrManager.getEngine() as? BackupAwareAsrEngine)
-                ?.wasLastResultFromBackup() == true
-        transitionToState(KeyboardState.Processing)
-        scheduleProcessingTimeout(null)
-        transitionToIdleWithTiming(usedBackupResult)
+        logSolidifyTiming("ui_state_ready", mapOf("aiUsed" to false, "mode" to "simple"))
+        recordCommitAsync(
+            text = finalToCommit,
+            rawText = text,
+            aiProcessed = false,
+            historyTiming = historyTiming
+        )
     }
 
     private fun archiveEmptyFilteredResult(historyTiming: AsrSessionManager.HistoryCommitContext? = null) {
@@ -307,6 +311,58 @@ internal class DictationUseCase(
         }
         uiListenerProvider()?.onDictationInputSolidified()
     }
+
+    private fun recordCommitAsync(
+        text: String,
+        rawText: String,
+        aiProcessed: Boolean,
+        aiPostMs: Long = 0L,
+        aiPostStatus: AsrHistoryStore.AiPostStatus = AsrHistoryStore.AiPostStatus.NONE,
+        llmVendorId: String? = null,
+        historyTiming: AsrSessionManager.HistoryCommitContext?
+    ) {
+        val prepared = try {
+            commitRecorder.prepare(
+                text = text,
+                rawText = rawText,
+                aiProcessed = aiProcessed,
+                aiPostMs = aiPostMs,
+                aiPostStatus = aiPostStatus,
+                llmVendorId = llmVendorId,
+                historyTiming = historyTiming
+            )
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to prepare background ASR commit", t)
+            try {
+                DebugLogManager.logError(
+                    category = "ime",
+                    event = "commit_snapshot_failed",
+                    throwable = t
+                )
+            } catch (_: Throwable) { }
+            return
+        }
+        logSolidifyTiming(
+            "background_record_queued",
+            mapOf("aiUsed" to aiProcessed, "recordId" to prepared.recordId.take(8))
+        )
+        scope.launch {
+            commitRecorder.record(prepared)
+        }
+    }
+
+    private fun logSolidifyTiming(event: String, data: Map<String, Any?>) {
+        try {
+            DebugLogManager.log(category = "ime", event = "solidify_timing_$event", data = data)
+        } catch (_: Throwable) { }
+    }
+
+    private fun elapsedRealtimeMs(): Long =
+        try {
+            android.os.SystemClock.elapsedRealtime()
+        } catch (_: Throwable) {
+            0L
+        }
 
     private fun logCommitPath(
         mode: String,

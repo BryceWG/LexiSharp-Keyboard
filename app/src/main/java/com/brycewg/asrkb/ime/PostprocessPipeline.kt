@@ -12,7 +12,6 @@ import com.brycewg.asrkb.util.AsrFinalFilters
 import com.brycewg.asrkb.util.TextSanitizer
 import com.brycewg.asrkb.util.TypewriterTextAnimator
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 
 internal class PostprocessPipeline(
     private val context: Context,
@@ -114,6 +113,7 @@ internal class PostprocessPipeline(
                 llmMs = 0L
             )
         }
+        logTiming("ai_result_ready", timingData(aiUsed = res.usedAi && res.ok))
 
         if (isCancelled()) {
             committed = true
@@ -154,24 +154,6 @@ internal class PostprocessPipeline(
 
         onFinalReady()
 
-        if (typewriter != null && aiUsed && finalText.isNotEmpty()) {
-            // 最终结果到达后：不再“秒出”，改为让打字机以最快速度追到最终文本
-            logTypewriterSubmit(typewriter, finalText, rush = true)
-            typewriter.submit(finalText, rush = true)
-            val finalLen = finalText.length
-            val t0 = try {
-                android.os.SystemClock.uptimeMillis()
-            } catch (_: Throwable) {
-                0L
-            }
-            while (!isCancelled() &&
-                (t0 <= 0L || (android.os.SystemClock.uptimeMillis() - t0) < 2_000L) &&
-                typewriter.currentText().length != finalLen
-            ) {
-                delay(20)
-            }
-        }
-
         if (isCancelled()) {
             committed = true
             typewriter?.cancel()
@@ -181,7 +163,6 @@ internal class PostprocessPipeline(
         committed = true
         val twLen = typewriter?.currentText()?.length ?: -1
         typewriter?.cancel()
-        val timedOut = typewriter != null && aiUsed && finalText.isNotEmpty() && twLen != finalText.length
         val snapshot = if (DebugLogManager.isRecording()) {
             StreamingPreviewDiag.editorSnapshot(ic)
         } else {
@@ -193,11 +174,23 @@ internal class PostprocessPipeline(
                 "fp" to StreamingPreviewDiag.fingerprint(finalText),
                 "aiUsed" to aiUsed,
                 "twLen" to twLen,
-                "timedOut" to timedOut,
+                "finalizedImmediately" to (typewriter != null && aiUsed),
                 "streamed" to StreamingPreviewDiag.fingerprint(lastStreamingText)
             )
         )
-        inputHelper.setComposingText(ic, finalText)
+        val writeStartedAt = elapsedRealtimeMs()
+        val writeOk = inputHelper.setComposingText(ic, finalText)
+        logTiming(
+            "final_composing_written",
+            timingData(
+                aiUsed = aiUsed,
+                extra = mapOf(
+                    "writeMs" to (elapsedRealtimeMs() - writeStartedAt).coerceAtLeast(0L),
+                    "ok" to writeOk,
+                    "len" to finalText.length
+                )
+            )
+        )
 
         return Result(
             finalText = finalText,
@@ -239,4 +232,20 @@ internal class PostprocessPipeline(
             DebugLogManager.logBase(category = "ime", event = event, data = data)
         } catch (_: Throwable) { }
     }
+
+    private fun logTiming(event: String, data: Map<String, Any?> = emptyMap()) {
+        logDiag("postprocess_timing_$event", data)
+    }
+
+    private fun timingData(
+        aiUsed: Boolean,
+        extra: Map<String, Any?> = emptyMap()
+    ): Map<String, Any?> = mapOf("aiUsed" to aiUsed) + extra
+
+    private fun elapsedRealtimeMs(): Long =
+        try {
+            android.os.SystemClock.elapsedRealtime()
+        } catch (_: Throwable) {
+            0L
+        }
 }
