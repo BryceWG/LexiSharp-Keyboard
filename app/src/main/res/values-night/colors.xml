@@ -45,11 +45,4 @@
     <color name="llm_timing_blue">#5BA7FF</color>
     <color name="llm_timing_green">#5ED17A</color>
     <color name="llm_timing_yellow">#F6D15B</color>
-
-    <!-- 识别历史阶段时间轴固定色（与动态主题无关） -->
-    <color name="history_timing_audio_input">#4DD0C8</color>
-    <color name="history_timing_recognition">#5BA7FF</color>
-    <color name="history_timing_postprocess">#F6D15B</color>
-    <color name="history_timing_ai_postprocess">#FF8BB1</color>
-    <color name="history_timing_text_delivery">#57D2E1</color>
 </resources>

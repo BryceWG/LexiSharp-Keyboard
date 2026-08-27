@@ -47,9 +47,9 @@
     <color name="llm_timing_yellow">#C79100</color>
 
     <!-- 识别历史阶段时间轴固定色（与动态主题无关） -->
-    <color name="history_timing_audio_input">#00897B</color>
-    <color name="history_timing_recognition">#1565C0</color>
-    <color name="history_timing_postprocess">#C77900</color>
-    <color name="history_timing_ai_postprocess">#C6285B</color>
-    <color name="history_timing_text_delivery">#007E8A</color>
+    <color name="history_timing_audio_input">#4DD0C8</color>
+    <color name="history_timing_recognition">#5BA7FF</color>
+    <color name="history_timing_postprocess">#F6D15B</color>
+    <color name="history_timing_ai_postprocess">#FF8BB1</color>
+    <color name="history_timing_text_delivery">#57D2E1</color>
 </resources>
