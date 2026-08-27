@@ -14,7 +14,9 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -65,7 +67,9 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.R
@@ -733,78 +737,7 @@ private fun HistoryDetailsDialog(
         exit.dismiss(onDismiss)
     }
 
-    val content: @Composable () -> Unit = {
-        SelectionContainer {
-            // 外层不滚动：长文只在 HistoryResultSection 正文区域内滚动。
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                if (record.isUnsuccessful) {
-                    HistoryText(
-                        text = AsrHistoryFailDisplay.format(LocalContext.current, record),
-                        uiMode = uiMode,
-                        emphasized = true,
-                        error = true
-                    )
-                }
-                HistoryTimingTraceSection(record = record, uiMode = uiMode)
-                HistoryResultSection(
-                    title = stringResource(R.string.history_raw_text),
-                    value = record.rawText ?: stringResource(R.string.history_raw_unavailable),
-                    canCopy = !record.rawText.isNullOrBlank(),
-                    uiMode = uiMode,
-                    onCopy = { record.rawText?.let(onCopy) }
-                )
-                HistoryResultSection(
-                    title = stringResource(R.string.history_final_text),
-                    value = record.text.ifBlank {
-                        if (record.isUnsuccessful) {
-                            stringResource(R.string.history_final_unavailable)
-                        } else {
-                            record.text
-                        }
-                    },
-                    canCopy = record.text.isNotBlank(),
-                    uiMode = uiMode,
-                    onCopy = { onCopy(record.text) }
-                )
-                if (!hasAudio) {
-                    HistoryText(
-                        text = stringResource(R.string.history_audio_unavailable),
-                        uiMode = uiMode,
-                        compact = true,
-                        secondary = true
-                    )
-                }
-                if (!llmAvailable) {
-                    HistoryText(
-                        text = stringResource(R.string.history_llm_unavailable),
-                        uiMode = uiMode,
-                        compact = true,
-                        secondary = true
-                    )
-                }
-                if (working) {
-                    HistoryText(
-                        text = stringResource(R.string.history_rerun_working),
-                        uiMode = uiMode,
-                        secondary = true
-                    )
-                }
-                error?.let {
-                    HistoryText(
-                        text = AsrHistoryRerunErrorMessages.format(
-                            LocalContext.current,
-                            it
-                        ),
-                        uiMode = uiMode,
-                        secondary = true
-                    )
-                }
-            }
-        }
-    }
+    val title = stringResource(R.string.history_details_title)
     val actions = listOf(
         SettingsDialogAction(
             text = stringResource(R.string.btn_rerecognize),
@@ -826,10 +759,24 @@ private fun HistoryDetailsDialog(
             )
             MaterialSettingsDialogExitEffect(show = exit.show, onFinished = ::finishDismiss)
             MaterialSettingsAlertDialog(
-                title = stringResource(R.string.history_details_title),
+                title = title,
                 onDismissRequest = ::dismissDialog,
                 modifier = Modifier.graphicsLayer(alpha = alpha),
-                text = content,
+                text = {
+                    HistoryDetailsAdaptiveBody { bounded ->
+                        HistoryDetailsSections(
+                            record = record,
+                            uiMode = uiMode,
+                            hasAudio = hasAudio,
+                            llmAvailable = llmAvailable,
+                            working = working,
+                            error = error,
+                            onCopy = onCopy,
+                            modifier = if (bounded) Modifier.weight(1f, fill = false) else Modifier,
+                            constrainResultSections = bounded
+                        )
+                    }
+                },
                 buttons = {
                     MaterialSettingsDialogButtonRow(
                         actions.map {
@@ -845,15 +792,139 @@ private fun HistoryDetailsDialog(
             )
         }
 
+        // OverlayDialog 的 title 与 content 同列且不分配 remaining height。
+        // 标题改在自适应列内绘制，才能把剩余高度留给正文并钉住底部按钮。
         BibiUiMode.Miuix -> OverlayDialog(
             show = exit.show,
-            title = stringResource(R.string.history_details_title),
             onDismissRequest = ::dismissDialog,
             onDismissFinished = ::finishDismiss
         ) {
-            content()
-            Spacer(modifier = Modifier.height(12.dp))
-            SettingsDialogActionRow(uiMode = uiMode, actions = actions)
+            HistoryDetailsAdaptiveBody { bounded ->
+                MiuixText(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    text = title,
+                    fontSize = MiuixTheme.textStyles.title4.fontSize,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    color = MiuixTheme.colorScheme.onBackground
+                )
+                HistoryDetailsSections(
+                    record = record,
+                    uiMode = uiMode,
+                    hasAudio = hasAudio,
+                    llmAvailable = llmAvailable,
+                    working = working,
+                    error = error,
+                    onCopy = onCopy,
+                    modifier = if (bounded) Modifier.weight(1f, fill = false) else Modifier,
+                    constrainResultSections = bounded
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                SettingsDialogActionRow(uiMode = uiMode, actions = actions)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryDetailsAdaptiveBody(
+    content: @Composable ColumnScope.(bounded: Boolean) -> Unit
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val bounded = maxHeight < Dp.Infinity
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (bounded) Modifier.heightIn(max = maxHeight) else Modifier)
+        ) {
+            content(bounded)
+        }
+    }
+}
+
+@Composable
+private fun HistoryDetailsSections(
+    record: AsrHistoryStore.AsrHistoryRecord,
+    uiMode: BibiUiMode,
+    hasAudio: Boolean,
+    llmAvailable: Boolean,
+    working: Boolean,
+    error: String?,
+    onCopy: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    constrainResultSections: Boolean = false
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        if (record.isUnsuccessful) {
+            HistoryText(
+                text = AsrHistoryFailDisplay.format(LocalContext.current, record),
+                uiMode = uiMode,
+                emphasized = true,
+                error = true
+            )
+        }
+        HistoryTimingTraceSection(record = record, uiMode = uiMode)
+        HistoryResultSection(
+            title = stringResource(R.string.history_raw_text),
+            value = record.rawText ?: stringResource(R.string.history_raw_unavailable),
+            canCopy = !record.rawText.isNullOrBlank(),
+            uiMode = uiMode,
+            onCopy = { record.rawText?.let(onCopy) },
+            modifier = if (constrainResultSections) Modifier.weight(1f, fill = false) else Modifier,
+            fillBody = constrainResultSections
+        )
+        HistoryResultSection(
+            title = stringResource(R.string.history_final_text),
+            value = record.text.ifBlank {
+                if (record.isUnsuccessful) {
+                    stringResource(R.string.history_final_unavailable)
+                } else {
+                    record.text
+                }
+            },
+            canCopy = record.text.isNotBlank(),
+            uiMode = uiMode,
+            onCopy = { onCopy(record.text) },
+            modifier = if (constrainResultSections) Modifier.weight(1f, fill = false) else Modifier,
+            fillBody = constrainResultSections
+        )
+        if (!hasAudio) {
+            HistoryText(
+                text = stringResource(R.string.history_audio_unavailable),
+                uiMode = uiMode,
+                compact = true,
+                secondary = true
+            )
+        }
+        if (!llmAvailable) {
+            HistoryText(
+                text = stringResource(R.string.history_llm_unavailable),
+                uiMode = uiMode,
+                compact = true,
+                secondary = true
+            )
+        }
+        if (working) {
+            HistoryText(
+                text = stringResource(R.string.history_rerun_working),
+                uiMode = uiMode,
+                secondary = true
+            )
+        }
+        error?.let {
+            HistoryText(
+                text = AsrHistoryRerunErrorMessages.format(
+                    LocalContext.current,
+                    it
+                ),
+                uiMode = uiMode,
+                secondary = true
+            )
         }
     }
 }
@@ -1035,17 +1106,20 @@ private data class HistoryTimingStageStyle(
     val durationMs: Long = 0L
 )
 
-private val HistoryDetailBodyMaxHeight = 200.dp
-
 @Composable
 private fun HistoryResultSection(
     title: String,
     value: String,
     canCopy: Boolean,
     uiMode: BibiUiMode,
-    onCopy: () -> Unit
+    onCopy: () -> Unit,
+    modifier: Modifier = Modifier,
+    fillBody: Boolean = false
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1062,15 +1136,24 @@ private fun HistoryResultSection(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = HistoryDetailBodyMaxHeight)
-                .verticalScroll(rememberScrollState())
+                .then(
+                    if (fillBody) {
+                        Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState())
+                    } else {
+                        Modifier
+                    }
+                )
         ) {
-            HistoryText(
-                text = value,
-                uiMode = uiMode,
-                maxLines = Int.MAX_VALUE,
-                overflow = TextOverflow.Clip
-            )
+            SelectionContainer {
+                HistoryText(
+                    text = value,
+                    uiMode = uiMode,
+                    maxLines = Int.MAX_VALUE,
+                    overflow = TextOverflow.Clip
+                )
+            }
         }
     }
 }
