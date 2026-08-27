@@ -11,9 +11,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.brycewg.asrkb.asr.normalizeCohereLanguageForModel
+import com.brycewg.asrkb.asr.GeminiAsrMode
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsViewModel
 import java.util.UUID
+
+internal const val GEMINI_TRANSCRIBE_CUSTOM_LANGUAGE_ID = "__custom__"
+
+private val GEMINI_TRANSCRIBE_PRESET_LANGUAGES = setOf("", "cmn-Hans-CN", "yue-Hant-HK", "en-US", "ja-JP", "ko-KR")
+
+internal fun isCustomGeminiTranscribeLanguage(value: String): Boolean =
+    value.isNotBlank() && value !in GEMINI_TRANSCRIBE_PRESET_LANGUAGES
 
 internal class AsrOnlineSettingsFields(
     private val prefs: Prefs
@@ -54,6 +62,15 @@ internal class AsrOnlineSettingsFields(
     var geminiModel by mutableStateOf(prefs.gemModel)
     var geminiPrompt by mutableStateOf(prefs.gemPrompt)
     var geminiDisableThinking by mutableStateOf(prefs.geminiDisableThinking)
+    var geminiAsrMode by mutableStateOf(prefs.geminiAsrMode)
+    var geminiTranscribeApiKey by mutableStateOf(prefs.gemTranscribeApiKey)
+    var geminiTranscribeEndpoint by mutableStateOf(prefs.gemTranscribeEndpoint)
+    var geminiTranscribeModel by mutableStateOf(prefs.gemTranscribeModel)
+    var geminiTranscribeLanguage by mutableStateOf(prefs.gemTranscribeLanguage)
+    var geminiTranscribeCustomLanguageVisible by mutableStateOf(
+        isCustomGeminiTranscribeLanguage(prefs.gemTranscribeLanguage)
+    )
+    var geminiTranscribeSmartEnabled by mutableStateOf(prefs.gemTranscribeSmartEnabled)
     var openRouterEndpoint by mutableStateOf(
         prefs.openRouterAsrEndpoint.ifBlank { Prefs.DEFAULT_OPENROUTER_ASR_ENDPOINT }
     )
@@ -122,6 +139,13 @@ internal class AsrOnlineSettingsFields(
         geminiModel = prefs.gemModel
         geminiPrompt = prefs.gemPrompt
         geminiDisableThinking = prefs.geminiDisableThinking
+        geminiAsrMode = prefs.geminiAsrMode
+        geminiTranscribeApiKey = prefs.gemTranscribeApiKey
+        geminiTranscribeEndpoint = prefs.gemTranscribeEndpoint
+        geminiTranscribeModel = prefs.gemTranscribeModel
+        geminiTranscribeLanguage = prefs.gemTranscribeLanguage
+        geminiTranscribeCustomLanguageVisible = isCustomGeminiTranscribeLanguage(geminiTranscribeLanguage)
+        geminiTranscribeSmartEnabled = prefs.gemTranscribeSmartEnabled
         openRouterEndpoint = prefs.openRouterAsrEndpoint.ifBlank {
             Prefs.DEFAULT_OPENROUTER_ASR_ENDPOINT
         }
@@ -187,6 +211,7 @@ internal class AsrOnlineSettingsFields(
         applyDashSemanticPunctSwitch: (Boolean) -> Unit,
         applyElevenStreamingSwitch: (Boolean) -> Unit,
         applyGeminiThinkingSwitch: (Boolean) -> Unit,
+        applyGeminiTranscribeSmartSwitch: (Boolean) -> Unit,
         applyMimoDisableThinkingSwitch: (Boolean) -> Unit,
         applyOpenAiStreamingSwitch: (Boolean) -> Unit,
         applyOpenAiUseCompletionsSwitch: (Boolean) -> Unit,
@@ -350,6 +375,47 @@ internal class AsrOnlineSettingsFields(
         onGeminiDisableThinkingChange = { checked ->
             applyGeminiThinkingSwitch(checked)
         },
+        geminiAsrMode = geminiAsrMode,
+        onGeminiAsrModeChange = { mode ->
+            geminiAsrMode = mode
+            prefs.geminiAsrMode = mode
+        },
+        geminiTranscribeApiKey = geminiTranscribeApiKey,
+        onGeminiTranscribeApiKeyChange = { value ->
+            geminiTranscribeApiKey = value
+            prefs.gemTranscribeApiKey = value
+        },
+        geminiTranscribeEndpoint = geminiTranscribeEndpoint,
+        onGeminiTranscribeEndpointChange = { value ->
+            geminiTranscribeEndpoint = value
+            prefs.gemTranscribeEndpoint = value
+        },
+        geminiTranscribeModel = geminiTranscribeModel,
+        onGeminiTranscribeModelChange = { value ->
+            geminiTranscribeModel = value
+            prefs.gemTranscribeModel = value
+        },
+        geminiTranscribeLanguage = geminiTranscribeLanguage,
+        onGeminiTranscribeLanguageOptionSelected = { value ->
+            if (value == GEMINI_TRANSCRIBE_CUSTOM_LANGUAGE_ID) {
+                geminiTranscribeCustomLanguageVisible = true
+                if (!isCustomGeminiTranscribeLanguage(geminiTranscribeLanguage)) {
+                    geminiTranscribeLanguage = ""
+                    prefs.gemTranscribeLanguage = ""
+                }
+            } else {
+                geminiTranscribeCustomLanguageVisible = false
+                geminiTranscribeLanguage = value
+                prefs.gemTranscribeLanguage = value
+            }
+        },
+        onGeminiTranscribeLanguageChange = { value ->
+            geminiTranscribeLanguage = value
+            prefs.gemTranscribeLanguage = value
+        },
+        geminiTranscribeCustomLanguageVisible = geminiTranscribeCustomLanguageVisible,
+        geminiTranscribeSmartEnabled = geminiTranscribeSmartEnabled,
+        onGeminiTranscribeSmartEnabledChange = applyGeminiTranscribeSmartSwitch,
         openRouterEndpoint = openRouterEndpoint,
         onOpenRouterEndpointChange = { value ->
             openRouterEndpoint = value

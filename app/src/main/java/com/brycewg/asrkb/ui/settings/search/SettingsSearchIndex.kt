@@ -194,6 +194,25 @@ object SettingsSearchIndex {
             "volc",
             forceAsrVendorId = AsrVendor.Volc.id
         )
+        item(
+            R.string.label_gemini_asr_mode,
+            R.string.label_asr_vendor,
+            "Gemini",
+            "Transcribe",
+            forceAsrVendorId = AsrVendor.Gemini.id
+        )
+        item(
+            R.string.label_gemini_transcribe_language,
+            R.string.label_asr_vendor,
+            "BCP-47",
+            forceAsrVendorId = AsrVendor.Gemini.id
+        )
+        item(
+            R.string.label_gemini_transcribe_smart,
+            R.string.label_asr_vendor,
+            "verbatim",
+            forceAsrVendorId = AsrVendor.Gemini.id
+        )
         item(R.string.label_backup_asr_vendor, R.string.label_backup_asr_engine)
         item(R.string.label_backup_asr_timeout_sensitivity, R.string.label_backup_asr_engine)
         item(R.string.label_backup_asr_local_residency, R.string.label_backup_asr_engine)

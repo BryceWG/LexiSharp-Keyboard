@@ -78,7 +78,13 @@ internal object PrefsAsrVendorFields {
             VendorField.endpoint(KEY_GEM_ENDPOINT, required = true, default = Prefs.DEFAULT_GEM_ENDPOINT),
             VendorField.credential(KEY_GEM_API_KEY),
             VendorField.model(KEY_GEM_MODEL, required = true, default = Prefs.DEFAULT_GEM_MODEL),
-            VendorField.boolean(KEY_GEMINI_DISABLE_THINKING, default = false)
+            VendorField.boolean(KEY_GEMINI_DISABLE_THINKING, default = false),
+            VendorField(KEY_GEMINI_ASR_MODE, default = "gemini"),
+            VendorField.credential(KEY_GEM_TRANSCRIBE_API_KEY, required = false),
+            VendorField.endpoint(KEY_GEM_TRANSCRIBE_ENDPOINT, default = Prefs.DEFAULT_GEM_ENDPOINT),
+            VendorField.model(KEY_GEM_TRANSCRIBE_MODEL, default = Prefs.DEFAULT_GEM_TRANSCRIBE_MODEL),
+            VendorField.language(KEY_GEM_TRANSCRIBE_LANGUAGE),
+            VendorField.boolean(KEY_GEM_TRANSCRIBE_SMART_ENABLED, default = false)
         ),
         AsrVendor.MiMo to listOf(
             VendorField(KEY_MIMO_ASR_API_KEYS_JSON, default = ""),
