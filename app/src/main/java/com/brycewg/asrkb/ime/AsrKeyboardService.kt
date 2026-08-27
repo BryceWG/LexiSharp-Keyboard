@@ -258,6 +258,7 @@ class AsrKeyboardService :
 
         // 应用偏好设置
         layoutController?.applyKeyboardHeightScale()
+        layoutController?.scheduleKeyboardLayoutApply()
         mainKeyboardBinder?.applyPunctuationLabels()
         extensionButtonsController?.applyConfig()
 
@@ -299,23 +300,17 @@ class AsrKeyboardService :
         if (layoutChanged) {
             v.requestLayout()
         }
-        // 第二次异步重算，确保尺寸变化与父容器测量完成后 padding/overlay 位置也被同步
-        v.post {
-            if (layoutController?.applyKeyboardHeightScale() == true) {
-                v.requestLayout()
-            }
-        }
+        layoutController?.scheduleKeyboardLayoutApply()
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         imeViewVisible = true
         layoutController?.onInputViewStarted()
-        refreshCurrentInputViewTheme(recreateVisibleInputView = false)
-        // 每次键盘视图启动时应用一次高度/底部间距等缩放
         if (layoutController?.applyKeyboardHeightScale() == true) {
             rootView?.requestLayout()
         }
+        layoutController?.scheduleKeyboardLayoutApply()
         // 冷启动首帧偶现 system insets 迟到/不稳定：主动触发一次重新分发，降低高度异常概率
         rootView?.let {
             androidx.core.view.ViewCompat.requestApplyInsets(it)
@@ -707,9 +702,6 @@ class AsrKeyboardService :
                 if (rootView !== view) return@postDelayed
                 if (layoutController?.hasResolvedBottomInset() == true) return@postDelayed
                 androidx.core.view.ViewCompat.requestApplyInsets(view)
-                if (layoutController?.applyKeyboardHeightScale() == true) {
-                    view.requestLayout()
-                }
             }, delayMs)
         }
     }

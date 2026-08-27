@@ -32,8 +32,6 @@ import com.brycewg.asrkb.ime.layout.BlockDef
 import com.brycewg.asrkb.ime.layout.BlockDefRegistry
 import com.brycewg.asrkb.ime.layout.ButtonViewKind
 import com.brycewg.asrkb.ime.layout.KeyboardLayoutPanel
-import com.brycewg.asrkb.ime.layout.KeyboardLayoutRuntimeApplier
-import com.brycewg.asrkb.ime.layout.KeyboardLayoutStore
 import com.brycewg.asrkb.ime.layout.KeyboardLayoutViewTags
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.BibiViewThemes
@@ -55,8 +53,8 @@ internal object ImeKeyboardViewFactory {
         }
 
         val contentPanel = createKeyboardContentPanel(context).apply {
-            addView(createMainKeyboard(context, prefs))
-            addView(createAiEditPanel(context, prefs))
+            addView(createMainKeyboard(context))
+            addView(createAiEditPanel(context))
             addView(createNumpadPanel(context))
             addView(createClipboardPanel(context))
             addView(createAsrHistoryPanel(context))
@@ -193,7 +191,7 @@ internal object ImeKeyboardViewFactory {
         panel.clipToOutline = floating
     }
 
-    private fun createMainKeyboard(context: Context, prefs: Prefs): View {
+    private fun createMainKeyboard(context: Context): View {
         val container = FrameLayout(context).apply {
             id = R.id.layoutMainKeyboard
             layoutParams = FrameLayout.LayoutParams(
@@ -214,9 +212,6 @@ internal object ImeKeyboardViewFactory {
         addMainKeyboardButtons(context, canvas)
         container.addView(canvas)
         container.addView(createRecordingGestureLayer(context))
-        container.post {
-            KeyboardLayoutRuntimeApplier.applyAll(container.rootView, KeyboardLayoutStore.load(prefs), 1f)
-        }
         return container
     }
 
@@ -441,7 +436,7 @@ internal object ImeKeyboardViewFactory {
         return header
     }
 
-    private fun createAiEditPanel(context: Context, prefs: Prefs): View {
+    private fun createAiEditPanel(context: Context): View {
         val panel = FrameLayout(context).apply {
             id = R.id.layoutAiEditPanel
             visibility = View.GONE
@@ -455,9 +450,6 @@ internal object ImeKeyboardViewFactory {
 
         BlockDefRegistry.default.defsFor(KeyboardLayoutPanel.AiEdit)
             .forEach { panel.addFrameChild(createLayoutBlockButton(context, KeyboardLayoutPanel.AiEdit, it)) }
-        panel.post {
-            KeyboardLayoutRuntimeApplier.applyAll(panel.rootView, KeyboardLayoutStore.load(prefs), 1f)
-        }
         return panel
     }
 

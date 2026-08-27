@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude
+        domain="sharedpref"
+        path="ime_layout_measure_cache.xml" />
+</full-backup-content>
