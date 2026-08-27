@@ -121,8 +121,10 @@ class SyncClipboardManager(
     private var attachmentRecoveryJob: Job? = null
     private var observing = false
 
-    // 记录最近一次从服务端拉取的文本哈希，用于减少本地剪贴板读取次数
+    // 最近一次已应用的远端 Profile.hash。必须与 lastPulledWasText 一起判断，
+    // 否则文件 → 同一段文本时会跳过历史里的文件条目清理。
     @Volatile private var lastPulledServerHash: String? = null
+    @Volatile private var lastPulledWasText: Boolean = false
 
     /** 凭证/服务器配置世代；变化时立即作废旧接收路径。 */
     @Volatile private var credentialsEpoch: Long = 0L
@@ -161,6 +163,7 @@ class SyncClipboardManager(
         observerRenewJob?.cancel()
         observerRenewJob = null
         lastPulledServerHash = null
+        lastPulledWasText = false
         pollingEnabled = false
     }
 
@@ -718,6 +721,10 @@ class SyncClipboardManager(
         val payloadType = resolvePayloadType(payload)
         return when (payloadType.lowercase()) {
             "text" -> {
+                val remoteHash = resolvePayloadHash(payload)
+                if (lastPulledWasText && sameRemoteHash(remoteHash, lastPulledServerHash)) {
+                    return HandledPullPayload(resolvePayloadText(payload).orEmpty())
+                }
                 val textDataName = if (payload.hasData == true) {
                     payload.dataName?.takeIf { it.isNotEmpty() }
                         ?: payload.legacyFile?.takeIf { it.isNotEmpty() }
@@ -735,7 +742,7 @@ class SyncClipboardManager(
                     return null
                 }
                 if (!canApplyPullResponse(updateClipboard, requestEpoch)) return null
-                handleTextPayload(nonBlankText, updateClipboard, requestEpoch)
+                handleTextPayload(nonBlankText, updateClipboard, requestEpoch, remoteHash)
             }
             "image", "file" -> {
                 val fileName = resolvePayloadFileName(payload)?.takeIf { it.isNotBlank() }
@@ -751,7 +758,7 @@ class SyncClipboardManager(
                 handleFilePayload(
                     normalizedType,
                     fileName,
-                    payload.hash ?: payload.legacyHash,
+                    resolvePayloadHash(payload),
                     payload.size ?: payload.legacySize,
                     updateClipboard,
                     requestEpoch,
@@ -785,6 +792,12 @@ class SyncClipboardManager(
      */
     private fun resolvePayloadText(payload: PullClipboardPayload): String? = payload.text?.takeIf { it.isNotEmpty() }
         ?: payload.legacyClipboard?.takeIf { it.isNotEmpty() }
+
+    private fun resolvePayloadHash(payload: PullClipboardPayload): String? =
+        payload.hash?.takeIf { it.isNotBlank() } ?: payload.legacyHash?.takeIf { it.isNotBlank() }
+
+    private fun sameRemoteHash(left: String?, right: String?): Boolean =
+        !left.isNullOrBlank() && !right.isNullOrBlank() && left.equals(right, ignoreCase = true)
 
     /**
      * 统一解析 payload 文件名，优先新字段，兼容旧字段。
@@ -827,33 +840,23 @@ class SyncClipboardManager(
     private fun handleTextPayload(
         text: String,
         updateClipboard: Boolean,
-        requestEpoch: Long
+        requestEpoch: Long,
+        remoteHash: String?
     ): HandledPullPayload {
         if (!canApplyPullResponse(updateClipboard, requestEpoch)) {
             return HandledPullPayload(text, clipboardApplied = false)
         }
-        // 远端内容变为文本时，清除历史中的文件条目与最近文件名记录
+
         try {
             clipboardStore?.clearFileEntries()
-            prefs.syncClipboardLastFileName = ""
+            if (prefs.syncClipboardLastFileName.isNotEmpty()) {
+                prefs.syncClipboardLastFileName = ""
+            }
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to clear file entries on text payload", t)
         }
 
-        // 计算服务端文本哈希并与上次拉取缓存对比，未变化则避免读取系统剪贴板
-        val newServerHash = try {
-            sha256Hex(text)
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to compute hash for pulled text", e)
-            null
-        }
-        val prevServerHash = lastPulledServerHash
-
         if (updateClipboard) {
-            if (newServerHash != null && newServerHash == prevServerHash) {
-                // 服务端内容未变化：跳过本地剪贴板读取以降低读取频率
-                return HandledPullPayload(text)
-            }
             val cur = readClipboardText()
             if (text.isNotEmpty() && text != cur) {
                 if (!canApplyPullResponse(updateClipboard, requestEpoch)) {
@@ -879,7 +882,8 @@ class SyncClipboardManager(
                 }
             }
         }
-        lastPulledServerHash = newServerHash
+        lastPulledServerHash = remoteHash
+        lastPulledWasText = true
         return HandledPullPayload(text)
     }
 
@@ -900,6 +904,7 @@ class SyncClipboardManager(
         if (!canApplyPullResponse(updateClipboard, requestEpoch)) {
             return HandledPullPayload(fileName, clipboardApplied = false)
         }
+        lastPulledWasText = false
         val attachmentKind = if (type.equals("image", ignoreCase = true)) {
             ClipboardAttachmentKind.IMAGE
         } else {

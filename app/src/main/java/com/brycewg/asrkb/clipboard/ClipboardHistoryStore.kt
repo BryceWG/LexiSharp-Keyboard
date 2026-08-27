@@ -123,9 +123,10 @@ class ClipboardHistoryStore(private val context: Context, private val prefs: Pre
      * 清除所有非固定文件 / 图片条目，仅保留文本条目。
      * 用于保证「最新文件唯一」的历史记录语义。
      */
-    fun clearFileEntries() = withStoreLock {
+    fun clearFileEntries(): Unit = withStoreLock {
         try {
-            val history = getHistory().toMutableList()
+            val history = getHistory()
+            if (history.none { it.type != EntryType.TEXT }) return
             val filtered = history.filter { it.type == EntryType.TEXT }
             sp.edit().putString(KEY_CLIP_HISTORY_JSON, json.encodeToString(filtered)).apply()
         } catch (t: Throwable) {
