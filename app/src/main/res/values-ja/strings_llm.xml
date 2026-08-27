@@ -65,7 +65,7 @@
 
     <!-- 後処理タイプライター効果 -->
     <string name="label_postproc_typewriter_enabled">後処理のタイプライター効果</string>
-    <string name="feature_postproc_typewriter_off_desc">後処理のストリーミング結果をそのまま表示します（大きな塊で一気に表示されることがあります）。</string>
+    <string name="feature_postproc_typewriter_off_desc">後処理の完了を待ってから、結果全体を一度に反映します。</string>
     <string name="feature_postproc_typewriter_on_desc">後処理のストリーミング結果を高速なタイプライター効果で滑らかに表示します。</string>
 
     <!-- AI編集で最後のASR結果をデフォルト使用 -->

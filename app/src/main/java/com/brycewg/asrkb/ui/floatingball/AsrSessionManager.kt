@@ -807,31 +807,28 @@ class AsrSessionManager(
                     null
                 }
                 var lastStreamingText: String? = null
-                val onStreamingUpdate: (String) -> Unit = onStreamingUpdate@{ streamed ->
-                    if (postprocCommitted || !isSessionActive(sessionToken)) return@onStreamingUpdate
-                    if (streamed.isEmpty() ||
-                        streamed == lastStreamingText
-                    ) {
-                        return@onStreamingUpdate
-                    }
-                    val prevStream = lastStreamingText
-                    lastStreamingText = streamed
-                    StreamingPreviewDiag.logVerbose(
-                        category = "float",
-                        event = "ai_stream",
-                        prev = prevStream,
-                        next = streamed,
-                        extra = mapOf(
-                            "sessionToken" to sessionToken,
-                            "tw" to (typewriter != null)
+                val onStreamingUpdate: ((String) -> Unit)? = typewriter?.let { animator ->
+                    onStreamingUpdate@{ streamed ->
+                        if (postprocCommitted || !isSessionActive(sessionToken)) return@onStreamingUpdate
+                        if (streamed.isEmpty() ||
+                            streamed == lastStreamingText
+                        ) {
+                            return@onStreamingUpdate
+                        }
+                        val prevStream = lastStreamingText
+                        lastStreamingText = streamed
+                        StreamingPreviewDiag.logVerbose(
+                            category = "float",
+                            event = "ai_stream",
+                            prev = prevStream,
+                            next = streamed,
+                            extra = mapOf(
+                                "sessionToken" to sessionToken,
+                                "tw" to true
+                            )
                         )
-                    )
-                    if (typewriter != null) {
-                        logFloatTypewriterSubmit(typewriter, streamed, rush = false)
-                        typewriter.submit(streamed)
-                    } else {
-                        rememberAiPostProcessingPreview(sessionToken, streamed)
-                        updatePreviewText(streamed)
+                        logFloatTypewriterSubmit(animator, streamed, rush = false)
+                        animator.submit(streamed)
                     }
                 }
                 val res = try {

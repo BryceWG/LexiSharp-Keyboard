@@ -64,7 +64,7 @@
 
     <!-- 後處理打字機效果 -->
     <string name="label_postproc_typewriter_enabled">後處理打字機效果</string>
-    <string name="feature_postproc_typewriter_off_desc">串流後處理結果依模型原始分塊更新，可能會大片輸出或整體秒出。</string>
+    <string name="feature_postproc_typewriter_off_desc">等待後處理完成後，一次套用完整結果。</string>
     <string name="feature_postproc_typewriter_on_desc">將串流後處理結果以快速打字機效果平滑輸出，觀感更順滑。</string>
 
     <!-- AI 編輯預設使用上次識別結果 -->

@@ -64,7 +64,7 @@
 
     <!-- Post-processing typewriter effect -->
     <string name="label_postproc_typewriter_enabled">Typewriter effect (post-processing output)</string>
-    <string name="feature_postproc_typewriter_off_desc">Show streaming post-processing output as-is (it may appear in large chunks).</string>
+    <string name="feature_postproc_typewriter_off_desc">Wait for post-processing to finish, then apply the complete result at once.</string>
     <string name="feature_postproc_typewriter_on_desc">Animate streaming post-processing output with a fast typewriter effect for smoother visuals.</string>
 
     <!-- AI edit default use last ASR -->

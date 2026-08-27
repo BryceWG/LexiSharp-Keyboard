@@ -13,7 +13,6 @@ import com.brycewg.asrkb.util.TextSanitizer
 import com.brycewg.asrkb.util.TypewriterTextAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 internal class PostprocessPipeline(
     private val context: Context,
@@ -73,28 +72,21 @@ internal class PostprocessPipeline(
         }
 
         var lastStreamingText: String? = null
-        val onStreamingUpdate: (String) -> Unit = onStreamingUpdate@{ streamed ->
-            if (isCancelled() || committed) return@onStreamingUpdate
-            if (streamed.isEmpty() || streamed == lastStreamingText) return@onStreamingUpdate
-            val prevStream = lastStreamingText
-            lastStreamingText = streamed
-            if (DebugLogManager.isRecording()) {
-                logDiag(
-                    "ai_stream",
-                    StreamingPreviewDiag.shape(prevStream, streamed) + mapOf(
-                        "tw" to (typewriter != null)
+        val onStreamingUpdate: ((String) -> Unit)? = typewriter?.let { animator ->
+            onStreamingUpdate@{ streamed ->
+                if (isCancelled() || committed) return@onStreamingUpdate
+                if (streamed.isEmpty() || streamed == lastStreamingText) return@onStreamingUpdate
+                val prevStream = lastStreamingText
+                lastStreamingText = streamed
+                if (DebugLogManager.isRecording()) {
+                    logDiag(
+                        "ai_stream",
+                        StreamingPreviewDiag.shape(prevStream, streamed) + mapOf("tw" to true)
                     )
-                )
-                StreamingPreviewDiag.maybeWarnDup("ime", "ai_stream", prevStream, streamed)
-            }
-            if (typewriter != null) {
-                logTypewriterSubmit(typewriter, streamed, rush = false)
-                typewriter.submit(streamed)
-            } else {
-                scope.launch {
-                    if (isCancelled() || committed) return@launch
-                    inputHelper.setComposingText(ic, streamed)
+                    StreamingPreviewDiag.maybeWarnDup("ime", "ai_stream", prevStream, streamed)
                 }
+                logTypewriterSubmit(animator, streamed, rush = false)
+                animator.submit(streamed)
             }
         }
 

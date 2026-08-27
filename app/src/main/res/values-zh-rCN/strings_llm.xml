@@ -65,7 +65,7 @@
 
     <!-- 后处理打字机效果 -->
     <string name="label_postproc_typewriter_enabled">后处理打字机效果</string>
-    <string name="feature_postproc_typewriter_off_desc">流式后处理结果按模型原始分块更新，可能出现大片输出或整体秒出。</string>
+    <string name="feature_postproc_typewriter_off_desc">等待后处理完成后，一次性应用完整结果。</string>
     <string name="feature_postproc_typewriter_on_desc">将流式后处理结果以快速打字机效果平滑输出，观感更顺滑。</string>
 
     <!-- AI 编辑默认使用上次识别结果 - AI Edit default scope -->

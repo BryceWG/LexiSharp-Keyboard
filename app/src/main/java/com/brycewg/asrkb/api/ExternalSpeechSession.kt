@@ -550,24 +550,24 @@ internal class ExternalSpeechSession(
                 } else {
                     null
                 }
-                val onStreamingUpdate: (String) -> Unit = onStreamingUpdate@{ streamed ->
-                    if (canceled || postprocCommitted) return@onStreamingUpdate
-                    if (streamed.isEmpty() ||
-                        streamed == lastPostprocTarget
-                    ) {
-                        return@onStreamingUpdate
-                    }
-                    val prevStream = lastPostprocTarget
-                    lastPostprocTarget = streamed
-                    StreamingPreviewDiag.logVerbose(
-                        category = "asr",
-                        event = "ai_stream",
-                        prev = prevStream,
-                        next = streamed,
-                        extra = mapOf("src" to "external", "id" to id, "tw" to (typewriter != null))
-                    )
-                    if (typewriter != null) {
-                        val current = typewriter.currentText()
+                val onStreamingUpdate: ((String) -> Unit)? = typewriter?.let { animator ->
+                    onStreamingUpdate@{ streamed ->
+                        if (canceled || postprocCommitted) return@onStreamingUpdate
+                        if (streamed.isEmpty() ||
+                            streamed == lastPostprocTarget
+                        ) {
+                            return@onStreamingUpdate
+                        }
+                        val prevStream = lastPostprocTarget
+                        lastPostprocTarget = streamed
+                        StreamingPreviewDiag.logVerbose(
+                            category = "asr",
+                            event = "ai_stream",
+                            prev = prevStream,
+                            next = streamed,
+                            extra = mapOf("src" to "external", "id" to id, "tw" to true)
+                        )
+                        val current = animator.currentText()
                         StreamingPreviewDiag.logVerbose(
                             category = "asr",
                             event = "typewriter_submit",
@@ -575,15 +575,7 @@ internal class ExternalSpeechSession(
                             next = streamed,
                             extra = mapOf("src" to "external", "rush" to false)
                         )
-                        typewriter.submit(streamed)
-                    } else {
-                        if (streamed.isEmpty() ||
-                            streamed == lastPostprocPreview
-                        ) {
-                            return@onStreamingUpdate
-                        }
-                        lastPostprocPreview = streamed
-                        safe { callbacks.onPartial(id, streamed) }
+                        animator.submit(streamed)
                     }
                 }
                 var aiUsed = false

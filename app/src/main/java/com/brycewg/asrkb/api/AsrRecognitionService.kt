@@ -419,7 +419,7 @@ class AsrRecognitionService : RecognitionService() {
                     } else {
                         null
                     }
-                    val onStreamingUpdate: ((String) -> Unit)? = if (allowPartial) {
+                    val onStreamingUpdate: ((String) -> Unit)? = typewriter?.let { animator ->
                         onStreamingUpdate@{ streamed ->
                             if (canceled || finished || postprocCommitted) return@onStreamingUpdate
                             if (streamed.isEmpty() ||
@@ -434,30 +434,18 @@ class AsrRecognitionService : RecognitionService() {
                                 event = "ai_stream",
                                 prev = prevStream,
                                 next = streamed,
-                                extra = mapOf("src" to "speech", "tw" to (typewriter != null))
+                                extra = mapOf("src" to "speech", "tw" to true)
                             )
-                            if (typewriter != null) {
-                                val current = typewriter.currentText()
-                                StreamingPreviewDiag.logVerbose(
-                                    category = "asr",
-                                    event = "typewriter_submit",
-                                    prev = current,
-                                    next = streamed,
-                                    extra = mapOf("src" to "speech", "rush" to false)
-                                )
-                                typewriter.submit(streamed)
-                            } else {
-                                if (streamed.isEmpty() ||
-                                    streamed == lastPostprocPreview
-                                ) {
-                                    return@onStreamingUpdate
-                                }
-                                lastPostprocPreview = streamed
-                                deliverPartialResults(streamed)
-                            }
+                            val current = animator.currentText()
+                            StreamingPreviewDiag.logVerbose(
+                                category = "asr",
+                                event = "typewriter_submit",
+                                prev = current,
+                                next = streamed,
+                                extra = mapOf("src" to "speech", "rush" to false)
+                            )
+                            animator.submit(streamed)
                         }
-                    } else {
-                        null
                     }
                     try {
                         val res = com.brycewg.asrkb.util.AsrFinalFilters.applyWithAi(

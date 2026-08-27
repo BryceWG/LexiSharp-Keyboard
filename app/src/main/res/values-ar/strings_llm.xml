@@ -64,7 +64,7 @@
 
     <!-- Post-processing typewriter effect -->
     <string name="label_postproc_typewriter_enabled">تأثير الآلة الكاتبة (خرج المعالجة اللاحقة)</string>
-    <string name="feature_postproc_typewriter_off_desc">عرض خرج المعالجة اللاحقة المتدفق كما هو (قد يظهر على دفعات كبيرة).</string>
+    <string name="feature_postproc_typewriter_off_desc">انتظر اكتمال المعالجة اللاحقة، ثم طبّق النتيجة الكاملة دفعة واحدة.</string>
     <string name="feature_postproc_typewriter_on_desc">تحريك خرج المعالجة اللاحقة المتدفق بتأثير آلة كاتبة سريع لواجهة أنعم.</string>
 
     <!-- AI edit default use last ASR -->
