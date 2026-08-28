@@ -729,7 +729,18 @@ class AsrKeyboardService :
         hideAsrHistoryPanel()
         aiEditPanelController?.hide()
         numpadPanelController?.show(returnToAiPanel)
+        // 面板高度与按键行高依赖主键盘的测量高度，展示时必须重新对齐一次，
+        // 否则首帧或从其他输入法切回后会沿用回退尺寸。
+        if (layoutController?.applyKeyboardHeightScale() == true) {
+            rootView?.requestLayout()
+        }
+        rootView?.post {
+            if (isNumpadPanelVisible && layoutController?.applyKeyboardHeightScale() == true) {
+                rootView?.requestLayout()
+            }
+        }
     }
+
 
     private fun hideNumpadPanel() {
         numpadPanelController?.hide()

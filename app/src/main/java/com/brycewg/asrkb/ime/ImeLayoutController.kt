@@ -47,6 +47,8 @@ internal class ImeLayoutController(
     private var cachedLayoutBundle: KeyboardLayoutBundle? = null
     private var lastLayoutSignature: LayoutSignature? = null
     private var lastLoggedSkippedSignature: LayoutSignature? = null
+    private var lastKeyboardContentHeight: Int = 0
+    private var loggedMissingContentHeight: Boolean = false
     private var layoutMeasureCache: ImeLayoutMeasureCache? = null
     private var pendingMeasuredInputHeight: Int? = null
     private var lastRecordedInputMeasurement: Triple<Int, Int, Int>? = null
@@ -281,10 +283,7 @@ internal class ImeLayoutController(
         run {
             val panel: View? = refs?.layoutNumpadPanel ?: root.findViewById(R.id.layoutNumpadPanel)
             if (panel != null) {
-                val canvasHeight = root.findViewById<View>(R.id.keyboardLayoutCanvas)?.height
-                    ?.takeIf { it > 0 }
-                    ?: refs?.layoutMainKeyboard?.height?.takeIf { it > 0 }
-                val targetPanelHeight = canvasHeight ?: dp(190f * scale)
+                val targetPanelHeight = resolveKeyboardContentHeight(root, scale)
                 val gapPx = dp(6f)
                 val rowHeightPx = ((targetPanelHeight - gapPx * 3) / 4).coerceAtLeast(dp(32f))
                 updateLayoutSize(panel, height = targetPanelHeight)
@@ -411,6 +410,31 @@ internal class ImeLayoutController(
             updateSystemBottomSpace(root.findViewById(R.id.keyboardSystemBottomSpace), bottomInset)
     }
 
+    /**
+     * 覆盖面板（数字/符号小键盘）的高度基准。
+     *
+     * 主键盘容器在输入视图首帧尚未量到高度，被面板覆盖期间也不会重新布局，
+     * 此时直接回退到固定 dp 会让按键行高与真实键盘高度脱节；故缓存最近一次有效测量值作为回退。
+     */
+    private fun resolveKeyboardContentHeight(root: View, scale: Float): Int {
+        val measured = root.findViewById<View>(R.id.keyboardLayoutCanvas)?.height?.takeIf { it > 0 }
+            ?: viewRefsProvider()?.layoutMainKeyboard?.height?.takeIf { it > 0 }
+        if (measured != null) {
+            lastKeyboardContentHeight = measured
+            return measured
+        }
+        lastKeyboardContentHeight.takeIf { it > 0 }?.let { return it }
+        if (!loggedMissingContentHeight) {
+            loggedMissingContentHeight = true
+            DebugLogManager.logBase(
+                category = "ime",
+                event = "ime_panel_height_fallback",
+                data = mapOf("scale" to scale)
+            )
+        }
+        return dp(root, 190f * scale)
+    }
+
     private fun currentLayoutBundle(): KeyboardLayoutBundle {
         val source = currentLayoutSource()
         cachedLayoutBundle?.takeIf { cachedLayoutSource == source }?.let { return it }
@@ -434,6 +458,7 @@ internal class ImeLayoutController(
             panelWidth = panel?.width ?: 0,
             panelLayoutWidth = panel?.layoutParams?.width ?: 0,
             contentWidth = content?.width ?: 0,
+            keyboardContentHeight = resolveKeyboardContentHeight(root, scale),
             screenWidthDp = config.screenWidthDp,
             screenHeightDp = config.screenHeightDp,
             orientation = config.orientation,
@@ -871,6 +896,7 @@ internal class ImeLayoutController(
         val panelWidth: Int,
         val panelLayoutWidth: Int,
         val contentWidth: Int,
+        val keyboardContentHeight: Int,
         val screenWidthDp: Int,
         val screenHeightDp: Int,
         val orientation: Int,
