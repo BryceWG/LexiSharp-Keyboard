@@ -15,6 +15,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.brycewg.asrkb.analytics.AnalyticsManager
+import com.brycewg.asrkb.asr.OfflineSpeechDenoiserManager
 import com.brycewg.asrkb.asr.VadDetector
 import com.brycewg.asrkb.store.ApiLogStore
 import com.brycewg.asrkb.store.Prefs
@@ -114,6 +115,26 @@ class App : Application() {
             Log.w("App", "Failed to preload VAD", t)
             DebugLogManager.logWarning(this, "asr", "vad_preload_failed", t)
         }
+
+        // 预加载离线降噪模型：首次降噪会同步加载 JNI 与 ONNX 会话，
+        // 若落在采集/编码协程内会挤占单帧预算并丢掉句首音频，因此提前在 IO 线程预热。
+        try {
+            val prefs = Prefs(this)
+            if (prefs.offlineDenoiseEnabled) {
+                CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                    val ready = OfflineSpeechDenoiserManager.preload(this@App, prefs)
+                    DebugLogManager.log(
+                        "asr",
+                        "denoiser_preload_done",
+                        data = mapOf("ready" to ready)
+                    )
+                }
+            }
+        } catch (t: Throwable) {
+            Log.w("App", "Failed to preload offline denoiser", t)
+            DebugLogManager.logWarning(this, "asr", "denoiser_preload_failed", t)
+        }
+
 
         // 清理已移除的 Zipformer 模型文件（仅执行一次）
         try {

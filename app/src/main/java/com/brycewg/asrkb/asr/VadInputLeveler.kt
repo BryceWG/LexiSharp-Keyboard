@@ -127,7 +127,6 @@ data class VadInputLevelerStats(
 
 data class VadInputLevelerResult(
     val leveledPcm: ByteArray,
-    val leveledSamples: FloatArray,
     val stableAmplitude: Float,
     val stats: VadInputLevelerStats
 )
@@ -257,7 +256,6 @@ class VadInputLeveler(
         )
         return VadInputLevelerResult(
             leveledPcm = leveled.pcm,
-            leveledSamples = leveled.samples,
             stableAmplitude = stableAmplitude.toFloat(),
             stats = resultStats
         )
@@ -427,7 +425,6 @@ class VadInputLeveler(
         rawMaxAbs: Int
     ): LeveledFrame {
         val out = ByteArray(sampleCount * BYTES_PER_SAMPLE)
-        val samples = FloatArray(sampleCount)
         val limiterGain = if (rawMaxAbs > 0) {
             config.limiterCeiling.toDouble() / rawMaxAbs
         } else {
@@ -450,7 +447,6 @@ class VadInputLeveler(
             val absSample = abs(scaled)
             if (absSample > maxAbs) maxAbs = absSample
             sumSquares += scaled.toDouble() * scaled.toDouble()
-            samples[i] = (scaled / PCM_FLOAT_DENOMINATOR).toFloat().coerceIn(-1.0f, 1.0f)
             writePcm16Le(out, dst, scaled)
             src += BYTES_PER_SAMPLE
             dst += BYTES_PER_SAMPLE
@@ -458,7 +454,6 @@ class VadInputLeveler(
 
         return LeveledFrame(
             pcm = out,
-            samples = samples,
             maxAbs = maxAbs,
             sumSquares = sumSquares,
             limiterActive = limiterActive
@@ -492,7 +487,6 @@ class VadInputLeveler(
         )
         return VadInputLevelerResult(
             leveledPcm = ByteArray(0),
-            leveledSamples = FloatArray(0),
             stableAmplitude = stableAmplitude.toFloat(),
             stats = stats
         )
@@ -512,7 +506,6 @@ class VadInputLeveler(
 
     private data class LeveledFrame(
         val pcm: ByteArray,
-        val samples: FloatArray,
         val maxAbs: Int,
         val sumSquares: Double,
         val limiterActive: Boolean
@@ -520,7 +513,7 @@ class VadInputLeveler(
 
     private companion object {
         const val BYTES_PER_SAMPLE = 2
-        const val PCM_FLOAT_DENOMINATOR = 32_768.0
+
 
         fun computeFrameStats16le(buf: ByteArray, offset: Int, len: Int): InternalFrameStats {
             var i = offset

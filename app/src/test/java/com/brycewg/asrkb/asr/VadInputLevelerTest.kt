@@ -273,7 +273,6 @@ class VadInputLevelerTest {
         assertEquals(first.size, second.size)
         first.zip(second).forEach { (a, b) ->
             assertArrayEquals(a.leveledPcm, b.leveledPcm)
-            assertArrayEquals(a.leveledSamples, b.leveledSamples, 0.0f)
             assertEquals(a.stableAmplitude, b.stableAmplitude, 0.0f)
             assertEquals(a.stats.leveledRms, b.stats.leveledRms, 0.0)
             assertEquals(a.stats.noiseFloorRms, b.stats.noiseFloorRms, 0.0)

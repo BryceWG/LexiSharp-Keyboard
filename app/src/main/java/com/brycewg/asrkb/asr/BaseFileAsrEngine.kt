@@ -14,10 +14,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * 基础的文件识别 ASR 引擎，封装了麦克风采集、静音判停等通用逻辑，
@@ -34,6 +36,9 @@ abstract class BaseFileAsrEngine(
 
     companion object {
         private const val TAG = "BaseFileAsrEngine"
+
+        // 编码队列的帧数上限；满队列时采集侧挂起等待，退化为背压而不是静默丢帧。
+        private const val ENCODE_QUEUE_CAPACITY = 16
     }
 
     private val running = AtomicBoolean(false)
@@ -526,54 +531,25 @@ abstract class BaseFileAsrEngine(
         var vadLevelerFinishReason = "capture_end"
 
         val maxBytes = (maxRecordDurationMillis / 1000.0 * sampleRate * bytesPerSample).toInt()
-        val currentPcm = ByteArrayOutputStream()
-        val pendingList = java.util.ArrayDeque<RecordedSegment>()
-        var encoder: UploadAudioEncodingSession? = createUploadAudioEncodingSession(
+        // 首个编码器仍在采集启动前创建，让不支持的容器格式沿用既有的向上抛出路径。
+        val initialEncoder = createUploadAudioEncodingSession(
             context = context,
             sampleRate = sampleRate,
             spec = encodingSpec
         )
-
-        fun flushPending() {
-            while (!pendingList.isEmpty()) {
-                val head = pendingList.peekFirst() ?: break
-                val ok = chan.trySend(head).isSuccess
-                if (ok) {
-                    pendingList.removeFirst()
-                } else {
-                    break
-                }
-            }
-        }
-
-        fun enqueueCurrentSegment() {
-            if (currentPcm.size() <= 0) return
-            val activeEncoder = encoder ?: error("Upload audio encoder is missing")
-            val audio = activeEncoder.finish()
-            logUploadAudioCompression(
-                compressed = true,
-                sourceBytes = audio.sourceBytes,
-                outputBytes = audio.bytes.size,
-                durationMs = audio.durationMs,
-                elapsedMs = audio.encodeElapsedMs,
-                feedElapsedMs = audio.feedElapsedMs,
-                finishElapsedMs = audio.finishElapsedMs,
-                format = audio.format
-            )
-            activeEncoder.close()
-            encoder = null
-            val segment = RecordedSegment.Encoded(audio)
-            flushPending()
-            if (!chan.trySend(segment).isSuccess) {
-                pendingList.addLast(segment)
-            }
-            currentPcm.reset()
-            encoder = createUploadAudioEncodingSession(
-                context = context,
-                sampleRate = sampleRate,
-                spec = encodingSpec
+        // 降噪与 MediaCodec 编码放到独立协程：AudioRecord 缓冲区只有约 chunkMillis 的余量，
+        // 在采集协程内同步跑这两步会挤占单帧预算并直接丢帧。
+        // 该协程挂在引擎 scope 而非采集 Job 之下，以便 stop() 取消采集后仍能冲刷并收尾最后一段。
+        val encodeChan = Channel<EncodeRequest>(capacity = ENCODE_QUEUE_CAPACITY)
+        val encodeJob = scope.launch(Dispatchers.Default) {
+            runEncodeWorker(
+                chan = chan,
+                encodeChan = encodeChan,
+                encodingSpec = encodingSpec,
+                initialEncoder = initialEncoder
             )
         }
+        var pendingEncodeBytes = 0
 
         try {
             audioManager.startCapture().collect { audioChunk ->
@@ -587,14 +563,8 @@ abstract class BaseFileAsrEngine(
                     Log.w(TAG, "Failed to calculate amplitude", t)
                 }
 
-                currentPcm.write(audioChunk)
-                val encodedInput = OfflineSpeechDenoiserManager.denoiseIfEnabled(
-                    context = context,
-                    prefs = prefs,
-                    pcm = audioChunk,
-                    sampleRate = sampleRate
-                )
-                encoder?.writePcm(encodedInput) ?: error("Upload audio encoder is missing")
+                encodeChan.send(EncodeRequest.Frame(audioChunk))
+                pendingEncodeBytes += audioChunk.size
 
                 val stopReason = when {
                     vadDetector?.shouldStop(leveled.leveledPcm, leveled.leveledPcm.size) == true ->
@@ -615,7 +585,6 @@ abstract class BaseFileAsrEngine(
                     } catch (t: Throwable) {
                         Log.e(TAG, "Failed to notify stopped", t)
                     }
-                    enqueueCurrentSegment()
                     try {
                         audioJob?.cancel()
                     } catch (t: Throwable) {
@@ -624,11 +593,10 @@ abstract class BaseFileAsrEngine(
                     return@collect
                 }
 
-                flushPending()
-
-                if (currentPcm.size() >= maxBytes) {
+                if (pendingEncodeBytes >= maxBytes) {
                     Log.d(TAG, "Encoded segment threshold reached, cutting segment")
-                    enqueueCurrentSegment()
+                    encodeChan.send(EncodeRequest.Cut)
+                    pendingEncodeBytes = 0
                 }
             }
         } catch (t: Throwable) {
@@ -637,7 +605,7 @@ abstract class BaseFileAsrEngine(
                 Log.d(TAG, "Audio capture cancelled: ${t.message}")
             } else {
                 vadLevelerFinishReason = "capture_error"
-                Log.e(TAG, "Audio capture or upload encoding failed", t)
+                Log.e(TAG, "Audio capture failed", t)
                 try {
                     listener.onError(context.getString(R.string.error_audio_error, t.message ?: ""))
                 } catch (e: Throwable) {
@@ -646,34 +614,18 @@ abstract class BaseFileAsrEngine(
             }
         } finally {
             vadInputLeveler.finishDebugSession(vadLevelerFinishReason)
-            Log.d(
-                TAG,
-                "Cleaning up encoded capture: ${pendingList.size} pending segments, " +
-                    "${currentPcm.size()} bytes in buffer"
+            Log.d(TAG, "Cleaning up encoded capture: $pendingEncodeBytes bytes awaiting encode")
+            // 关闭后 worker 会把队列里剩余帧编码完并冲刷尾段；join 必须不可取消，否则尾段丢失。
+            encodeChan.close()
+            val drainStartedAt = System.nanoTime()
+            withContext(NonCancellable) { encodeJob.join() }
+            val drainMs = (System.nanoTime() - drainStartedAt) / 1_000_000
+            // drainMs 反映编码是否跟不上采集：明显大于 chunkMillis 说明队列积压。
+            DebugLogManager.log(
+                "asr",
+                "upload_encode_drained",
+                data = mapOf("drain_ms" to drainMs, "tail_bytes" to pendingEncodeBytes)
             )
-            flushPending()
-            if (currentPcm.size() > 0) {
-                try {
-                    enqueueCurrentSegment()
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to finish encoded tail during cleanup", t)
-                    try {
-                        listener.onError(
-                            context.getString(
-                                R.string.error_recognize_failed_with_reason,
-                                t.message ?: ""
-                            )
-                        )
-                    } catch (e: Throwable) {
-                        Log.e(TAG, "Failed to notify encoded tail error", e)
-                    }
-                }
-            }
-            try {
-                encoder?.close()
-            } catch (t: Throwable) {
-                Log.e(TAG, "Failed to close upload audio encoder", t)
-            }
             try {
                 vadDetector?.release()
             } catch (t: Throwable) {
@@ -681,6 +633,112 @@ abstract class BaseFileAsrEngine(
             }
         }
     }
+
+    /**
+     * 消费采集协程投递的 PCM 帧：降噪 → 上传编码 → 切段投递。
+     *
+     * 编码器与待投递队列都由本协程独占，避免与采集协程竞争同一 [UploadAudioEncodingSession]。
+     */
+    private suspend fun runEncodeWorker(
+        chan: Channel<RecordedSegment>,
+        encodeChan: Channel<EncodeRequest>,
+        encodingSpec: UploadAudioEncodingSpec,
+        initialEncoder: UploadAudioEncodingSession
+    ) {
+        val pendingList = java.util.ArrayDeque<RecordedSegment>()
+        var encoder: UploadAudioEncodingSession = initialEncoder
+        var encodedBytes = 0
+
+        fun flushPending() {
+            while (!pendingList.isEmpty()) {
+                val head = pendingList.peekFirst() ?: break
+                if (chan.trySend(head).isSuccess) {
+                    pendingList.removeFirst()
+                } else {
+                    break
+                }
+            }
+        }
+
+        fun cutSegment(createNext: Boolean) {
+            if (encodedBytes <= 0) return
+            val audio = encoder.finish()
+            logUploadAudioCompression(
+                compressed = true,
+                sourceBytes = audio.sourceBytes,
+                outputBytes = audio.bytes.size,
+                durationMs = audio.durationMs,
+                elapsedMs = audio.encodeElapsedMs,
+                feedElapsedMs = audio.feedElapsedMs,
+                finishElapsedMs = audio.finishElapsedMs,
+                format = audio.format
+            )
+            encoder.close()
+            encodedBytes = 0
+            val segment = RecordedSegment.Encoded(audio)
+            flushPending()
+            if (!chan.trySend(segment).isSuccess) {
+                pendingList.addLast(segment)
+            }
+            if (createNext) {
+                encoder = createUploadAudioEncodingSession(
+                    context = context,
+                    sampleRate = sampleRate,
+                    spec = encodingSpec
+                )
+            }
+        }
+
+        try {
+            for (request in encodeChan) {
+                when (request) {
+                    is EncodeRequest.Frame -> {
+                        val encodedInput = OfflineSpeechDenoiserManager.denoiseIfEnabled(
+                            context = context,
+                            prefs = prefs,
+                            pcm = request.pcm,
+                            sampleRate = sampleRate
+                        )
+                        encoder.writePcm(encodedInput)
+                        encodedBytes += request.pcm.size
+                    }
+                    EncodeRequest.Cut -> cutSegment(createNext = true)
+                }
+                flushPending()
+            }
+            cutSegment(createNext = false)
+            flushPending()
+        } catch (t: Throwable) {
+            // 编码器已不可用：主动废弃队列，让采集侧的 send 立即失败并结束会话。
+            encodeChan.cancel()
+            running.set(false)
+            Log.e(TAG, "Upload audio encoding failed", t)
+            DebugLogManager.logError(context, "asr", "upload_encode_failed", t)
+            try {
+                listener.onError(context.getString(R.string.error_audio_error, t.message ?: ""))
+            } catch (e: Throwable) {
+                Log.e(TAG, "Failed to notify upload encoding error", e)
+            }
+            try {
+                audioJob?.cancel()
+            } catch (e: Throwable) {
+                Log.e(TAG, "Failed to cancel audio job after encoding failure", e)
+            }
+        } finally {
+            try {
+                encoder.close()
+            } catch (t: Throwable) {
+                Log.e(TAG, "Failed to close upload audio encoder", t)
+            }
+        }
+    }
+
+    private sealed interface EncodeRequest {
+        class Frame(val pcm: ByteArray) : EncodeRequest
+
+        object Cut : EncodeRequest
+    }
+
 
     /**
      * 将 PCM 格式音频转换为 WAV 格式

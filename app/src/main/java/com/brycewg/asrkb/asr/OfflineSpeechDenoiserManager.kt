@@ -17,6 +17,20 @@ object OfflineSpeechDenoiserManager {
     @Volatile private var loadFailed: Boolean = false
     private val runLock = Any()
 
+    /**
+     * 提前加载降噪模型。
+     *
+     * 首次 [denoiseIfEnabled] 会在调用方线程内同步完成 JNI 库加载与 ONNX 会话构造；
+     * 若该调用发生在采集/编码协程里，会直接挤占单帧处理预算并导致 AudioRecord 缓冲区溢出丢帧。
+     * 因此需要在录音开始前的空闲时机预热。重复调用由 [getOrCreate] 自身去重。
+     *
+     * @return 模型是否已就绪
+     */
+    fun preload(context: Context, prefs: Prefs): Boolean {
+        if (!prefs.offlineDenoiseEnabled) return false
+        return getOrCreate(context) != null
+    }
+
     fun denoiseIfEnabled(
         context: Context,
         prefs: Prefs,
