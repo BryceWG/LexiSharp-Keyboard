@@ -331,6 +331,7 @@ class AsrRecognitionService : RecognitionService() {
                 recordingAudioFocusController.acquire()
             }
             engine?.let { startedEngine ->
+                AsrConnectionWarmer.warmForImmediateUse(this@AsrRecognitionService, prefs)
                 preloadLocalAsrForImmediateUse(this@AsrRecognitionService, prefs)
                 startedEngine.start()
             }

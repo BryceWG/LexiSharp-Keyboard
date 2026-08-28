@@ -25,6 +25,10 @@ internal object AsrHttpClientProvider {
     private class ConnectionReuseEventListener : EventListener() {
         private var connectionStarted = false
 
+        override fun callStart(call: Call) {
+            AsrConnectionWarmer.observeRequest(call.request())
+        }
+
         override fun connectStart(
             call: Call,
             inetSocketAddress: InetSocketAddress,

@@ -399,6 +399,7 @@ internal class ExternalSpeechSession(
         engine?.let { startedEngine ->
             (startedEngine as? AudioFrameSinkOwner)?.audioFrameSink =
                 historyAudioCapture.takeUnless { pushPcmInput }
+            AsrConnectionWarmer.warmForImmediateUse(context, prefs)
             preloadLocalAsrForImmediateUse(context, prefs)
             startedEngine.start()
         }

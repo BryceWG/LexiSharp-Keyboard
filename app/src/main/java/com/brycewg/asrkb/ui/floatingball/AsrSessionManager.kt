@@ -11,6 +11,7 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 import com.brycewg.asrkb.asr.*
+import com.brycewg.asrkb.asr.AsrConnectionWarmer
 import com.brycewg.asrkb.asr.AsrTimeoutCalculator
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.imebridge.ImeBridgeClient
@@ -362,6 +363,7 @@ class AsrSessionManager(
         listener.onSessionStateChanged(FloatingBallState.Recording)
         asrEngine?.let { engine ->
             (engine as? AudioFrameSinkOwner)?.audioFrameSink = historyAudioCapture
+            AsrConnectionWarmer.warmForImmediateUse(context, prefs)
             preloadLocalAsrForImmediateUse(context, prefs)
             ContinuousCaptureCoordinator.beginSession(sessionToken)
             engine.start()
