@@ -18,9 +18,14 @@ import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import kotlin.coroutines.resume
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -62,6 +67,25 @@ class AudioCaptureManager(
 
     companion object {
         private const val TAG = "AudioCaptureManager"
+
+        /**
+         * 采集收尾（AudioRecord.stop/release 与音频路由恢复）与音频数据已无关系，
+         * 但实测要占 40ms 上下，且串行阻塞在“停录 → 发起识别”的关键路径上，
+         * 因此挪到独立作用域执行。
+         *
+         * 代价：AudioRecord 是独占资源，下一次采集必须先等上一次收尾结束，
+         * 所以连续快速录音会退化成原来的同步行为。
+         */
+        private val captureCleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+        @Volatile
+        private var pendingCaptureCleanup: Job? = null
+
+        private suspend fun awaitPendingCaptureCleanup() {
+            val pending = pendingCaptureCleanup ?: return
+            if (pending.isCompleted) return
+            pending.join()
+        }
     }
 
     /**
@@ -141,6 +165,8 @@ class AudioCaptureManager(
             }
 
     internal fun startPlatformCapture(): Flow<ByteArray> = flow {
+        // 上一次采集的收尾可能仍在后台执行；AudioRecord 独占，必须等它释放完再新建。
+        awaitPendingCaptureCleanup()
         // 采集收尾诊断：最后一次 read 的阻塞时长，与 read 返回后到真正退出循环的调度开销。
         var lastReadEndedAtMs = 0L
         var lastReadMs = 0L
@@ -456,7 +482,7 @@ class AudioCaptureManager(
                 }
             }
         } finally {
-            // 10. 清理资源
+            // 10. 清理资源：搬到独立作用域，避免 stop/release 与路由恢复阻塞识别启动。
             AsrCallLatencyProbe.log(
                 "t_capture_read_exit",
                 buildMap {
@@ -466,50 +492,53 @@ class AudioCaptureManager(
                     }
                 }
             )
-            val stopStartedAtMs = SystemClock.elapsedRealtime()
-            try {
-                activeRecorder.stop()
-                Log.d(TAG, "AudioRecord stopped")
-            } catch (t: Throwable) {
-                Log.e(TAG, "Error stopping AudioRecord", t)
-            }
-            val stoppedAtMs = SystemClock.elapsedRealtime()
-            try {
-                activeRecorder.release()
-                Log.d(TAG, "AudioRecord released")
-            } catch (t: Throwable) {
-                Log.e(TAG, "Error releasing AudioRecord", t)
-            }
-            AsrCallLatencyProbe.log(
-                "t_capture_released",
-                mapOf(
-                    "stop_ms" to (stoppedAtMs - stopStartedAtMs),
-                    "release_ms" to (SystemClock.elapsedRealtime() - stoppedAtMs)
-                )
-            )
-            try {
-                DebugLogManager.log(
-                    category = "audio",
-                    event = "acm_cleanup"
-                )
-            } catch (_: Throwable) { }
-            // 清理通信设备与 SCO / 恢复模式
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && commDeviceSet) {
-                    clearCommunicationDeviceSafely(audioManager, commListener)
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "Failed clearing communication device", t)
-            }
-            if (scoStarted && !scoWasOnBefore) {
-                stopScoCompat(audioManager)
-            }
-            val mode = previousAudioMode
-            if (audioModeChanged && mode != null) {
+            val recorderToRelease = activeRecorder
+            pendingCaptureCleanup = captureCleanupScope.launch {
+                val stopStartedAtMs = SystemClock.elapsedRealtime()
                 try {
-                    audioManager.mode = mode
+                    recorderToRelease.stop()
+                    Log.d(TAG, "AudioRecord stopped")
                 } catch (t: Throwable) {
-                    Log.w(TAG, "Failed to restore audio mode", t)
+                    Log.e(TAG, "Error stopping AudioRecord", t)
+                }
+                val stoppedAtMs = SystemClock.elapsedRealtime()
+                try {
+                    recorderToRelease.release()
+                    Log.d(TAG, "AudioRecord released")
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Error releasing AudioRecord", t)
+                }
+                AsrCallLatencyProbe.log(
+                    "t_capture_released",
+                    mapOf(
+                        "stop_ms" to (stoppedAtMs - stopStartedAtMs),
+                        "release_ms" to (SystemClock.elapsedRealtime() - stoppedAtMs)
+                    )
+                )
+                try {
+                    DebugLogManager.log(
+                        category = "audio",
+                        event = "acm_cleanup"
+                    )
+                } catch (_: Throwable) { }
+                // 清理通信设备与 SCO / 恢复模式
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && commDeviceSet) {
+                        clearCommunicationDeviceSafely(audioManager, commListener)
+                    }
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed clearing communication device", t)
+                }
+                if (scoStarted && !scoWasOnBefore) {
+                    stopScoCompat(audioManager)
+                }
+                val mode = previousAudioMode
+                if (audioModeChanged && mode != null) {
+                    try {
+                        audioManager.mode = mode
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to restore audio mode", t)
+                    }
                 }
             }
         }
