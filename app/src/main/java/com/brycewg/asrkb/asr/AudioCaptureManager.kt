@@ -17,6 +17,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
+import java.io.ByteArrayOutputStream
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -57,15 +59,6 @@ class AudioCaptureManager(
 ) {
     private val bytesPerSample = 2 // 16bit mono PCM
     private val prefs by lazy { Prefs(context) }
-    private val debugLoggingEnabled: Boolean by lazy {
-        try {
-            (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) !=
-                0
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to read debuggable flag", t)
-            false
-        }
-    }
 
     companion object {
         private const val TAG = "AudioCaptureManager"
@@ -80,6 +73,13 @@ class AudioCaptureManager(
          */
         private const val READ_SLICE_MILLIS = 40
 
+        /**
+         * 音源探测的累积时长上限。
+         *
+         * 探测只为判断音源是否近乎全零（需要回退到 MIC），一旦读到超过阈值的样本就立刻结束。
+         * 底噪是持续的，120ms 足够判定；探测到的音频会保留下来交给下游，不再丢弃。
+         */
+        private const val WARMUP_PROBE_MILLIS = 120
 
         /**
          * 采集收尾（AudioRecord.stop/release 与音频路由恢复）与音频数据已无关系，
@@ -443,17 +443,26 @@ class AudioCaptureManager(
                 throw IllegalStateException("Failed to start recording", t)
             }
 
-            // 7. 预热并获取可能替换的 recorder 和第一块数据
+            // 7. 探测音源是否近乎全零，必要时换回 MIC
             val avoidMicFallback =
                 prefs.headsetMicPriorityEnabled &&
                     (routePrepared || preferredInputDevice != null || scoStarted)
-            val warmupResult = warmupRecorder(activeRecorder, buf, bufferSize, avoidMicFallback)
-            activeRecorder = warmupResult.first
-            val firstChunk = warmupResult.second
+            val probeTargetBytes = ((sampleRate * WARMUP_PROBE_MILLIS) / 1000) * bytesPerSample
+            val warmupResult = warmupRecorder(
+                activeRecorder,
+                buf,
+                readSliceBytes,
+                probeTargetBytes,
+                bufferSize,
+                avoidMicFallback
+            )
+            activeRecorder = warmupResult.recorder
 
-            // 8. Emit 第一块数据（如果预热产生了数据）
-            if (firstChunk != null && firstChunk.isNotEmpty()) {
-                emit(firstChunk)
+            // 8. 探测期间读到的音频不丢弃，走同一套聚合逻辑，保证下游帧长仍是 chunkMillis
+            val probedBytes = warmupResult.probedBytes
+            if (probedBytes != null && probedBytes.isNotEmpty()) {
+                pendingSize =
+                    emitChunks(probedBytes, probedBytes.size, pending, chunkBytes, pendingSize)
             }
 
             // 9. 持续读取音频数据
@@ -487,26 +496,8 @@ class AudioCaptureManager(
                 // 不显式检查就要等累积满一帧才能退出。这里让停录后最多再等一次 read。
                 currentCoroutineContext().ensureActive()
 
-
-
                 if (read > 0) {
-                    if (pending == null) {
-                        // 复制有效数据并 emit
-                        val chunk = buf.copyOf(read)
-                        emit(chunk)
-                    } else {
-                        var offset = 0
-                        while (offset < read) {
-                            val take = minOf(read - offset, chunkBytes - pendingSize)
-                            System.arraycopy(buf, offset, pending, pendingSize, take)
-                            pendingSize += take
-                            offset += take
-                            if (pendingSize == chunkBytes) {
-                                emit(pending.copyOf())
-                                pendingSize = 0
-                            }
-                        }
-                    }
+                    pendingSize = emitChunks(buf, read, pending, chunkBytes, pendingSize)
                 } else if (read < 0) {
                     val error = IllegalStateException("AudioRecord read error: $read")
                     Log.e(TAG, "AudioRecord read returned error code", error)
@@ -586,19 +577,28 @@ class AudioCaptureManager(
         }
     }
 
+    /** 探测结果：可能被换掉的 recorder，以及探测期间读到的、应当交给下游的音频。 */
+    private class WarmupResult(
+        val recorder: AudioRecord,
+        val probedBytes: ByteArray?
+    )
+
     /**
-     * 预热 AudioRecord：两帧小窗探测 + 仅在确认“坏源”时回退为 MIC
+     * 探测音源是否是"坏源"（近乎全零），仅在确认时回退为 MIC。
      *
-     * - 读取第1帧：若明显存在有效信号，直接返回该帧，避免额外时延
-     * - 读取第2帧：与第1帧共同判断是否“近乎全零”
-     * - 若两帧均近乎全零：停止并释放当前源，重建为 MIC 源，再读取一帧返回
+     * - 耳机优先且路由已就绪时直接跳过：探测结果不会改变音源选择。
+     * - 否则按 read 粒度累积探测，最多 [probeTargetBytes]；一旦读到超阈值样本立刻结束。
+     * - 探测到的音频不丢弃，由调用方喂给下游，录音开头不再缺一截。
+     * - 判定为坏源时才停止并释放当前源、重建为 MIC 源；重建后的第一帧由主读循环负责。
      */
     private fun warmupRecorder(
         current: AudioRecord,
         buf: ByteArray,
+        readSliceBytes: Int,
+        probeTargetBytes: Int,
         bufferSize: Int,
         avoidMicFallback: Boolean
-    ): Pair<AudioRecord, ByteArray?> {
+    ): WarmupResult {
         if (!hasPermission()) {
             val error = SecurityException("RECORD_AUDIO permission was revoked during warmup")
             Log.e(TAG, "Permission check failed during warmup", error)
@@ -606,186 +606,175 @@ class AudioCaptureManager(
         }
 
         var recorder = current
-        if (debugLoggingEnabled) Log.d(TAG, "Warmup: probing 2 frames")
-
-        // 第1帧
-        val preRead1 = try {
-            recorder.read(buf, 0, buf.size)
-        } catch (t: Throwable) {
-            Log.e(TAG, "Error during warmup probe read #1", t)
-            -1
-        }
-        var frame1Bytes: ByteArray? = null
-        var frame1HasSignal = false
-        var frame1IsNearZero = false
-        if (preRead1 > 0) {
-            val st1 = computeFrameStats16le(buf, preRead1, 30)
-            val rms1sq = if (st1.sampleCount >
-                0
-            ) {
-                st1.sumSquares.toDouble() / st1.sampleCount
-            } else {
-                0.0
-            }
-            frame1HasSignal = st1.countAboveThreshold > 0
-            frame1IsNearZero = (st1.maxAbs < 12 && rms1sq < 16.0 && st1.countAboveThreshold == 0)
-            if (debugLoggingEnabled) {
-                val rms1 = kotlin.math.sqrt(rms1sq)
-                Log.d(
-                    TAG,
-                    "Warmup frame#1: read=$preRead1, max=${st1.maxAbs}, rms=${"%.1f".format(
-                        rms1
-                    )}, cnt>30=${st1.countAboveThreshold}, nearZero=$frame1IsNearZero"
-                )
-            }
-            if (frame1HasSignal) frame1Bytes = buf.copyOf(preRead1)
+        // 耳机优先且路由已就绪时，探测结果不会改变音源选择，整段探测没有意义，直接跳过。
+        if (avoidMicFallback) {
+            logWarmupResult("skipped", 0, 0L)
+            return WarmupResult(recorder, null)
         }
 
-        // 若第1帧已确认存在有效信号，则直接返回
-        if (frame1HasSignal && frame1Bytes != null) {
-            if (debugLoggingEnabled) {
-                Log.d(
-                    TAG,
-                    "Warmup: signal confirmed on frame#1, short-circuit"
-                )
-            }
-            return Pair(recorder, frame1Bytes)
-        }
-
-        // 第2帧
-        val preRead2 = try {
-            recorder.read(buf, 0, buf.size)
-        } catch (t: Throwable) {
-            Log.e(TAG, "Error during warmup probe read #2", t)
-            -1
-        }
-        var frame2Bytes: ByteArray? = null
-        var frame2HasSignal = false
-        var frame2IsNearZero = false
-        if (preRead2 > 0) {
-            val st2 = computeFrameStats16le(buf, preRead2, 30)
-            val rms2sq = if (st2.sampleCount >
-                0
-            ) {
-                st2.sumSquares.toDouble() / st2.sampleCount
-            } else {
-                0.0
-            }
-            frame2HasSignal = st2.countAboveThreshold > 0
-            frame2IsNearZero = (st2.maxAbs < 12 && rms2sq < 16.0 && st2.countAboveThreshold == 0)
-            if (debugLoggingEnabled) {
-                val rms2 = kotlin.math.sqrt(rms2sq)
-                Log.d(
-                    TAG,
-                    "Warmup frame#2: read=$preRead2, max=${st2.maxAbs}, rms=${"%.1f".format(
-                        rms2
-                    )}, cnt>30=${st2.countAboveThreshold}, nearZero=$frame2IsNearZero"
-                )
-            }
-            if (frame2HasSignal) frame2Bytes = buf.copyOf(preRead2)
-        }
-
-        val nearZeroBoth = frame1IsNearZero && frame2IsNearZero
-        var firstChunk: ByteArray? = when {
-            frame1HasSignal -> frame1Bytes
-            frame2HasSignal -> frame2Bytes
-            else -> null
-        }
-
-        if (nearZeroBoth) {
-            // 若用户选择了耳机优先，并且已准备了路由（或正在使用耳机），不要贸然回退到 MIC
-            if (avoidMicFallback) {
-                if (debugLoggingEnabled) {
-                    Log.i(
-                        TAG,
-                        "Warmup: near-zero on headset path, avoid MIC fallback; continue reading"
-                    )
-                }
-                return Pair(recorder, null)
-            }
-            // 两帧均近乎全零：重建为 MIC 源
-            Log.i(TAG, "Warmup: near-zero on both frames, rebuilding with MIC source")
-            try {
-                recorder.stop()
+        val probeStartedAtMs = SystemClock.elapsedRealtime()
+        val probed = ByteArrayOutputStream(probeTargetBytes)
+        var sawFrame = false
+        var hasSignal = false
+        var nearZero = true
+        while (probed.size() < probeTargetBytes) {
+            val read = try {
+                recorder.read(buf, 0, readSliceBytes)
             } catch (t: Throwable) {
-                Log.e(TAG, "Error stopping recorder during rebuild", t)
+                Log.e(TAG, "Error during warmup probe read", t)
+                break
             }
+            if (read <= 0) break
+            probed.write(buf, 0, read)
+            sawFrame = true
+            val stats = computeFrameStats16le(buf, read, 30)
+            val meanSquare = if (stats.sampleCount > 0) {
+                stats.sumSquares.toDouble() / stats.sampleCount
+            } else {
+                0.0
+            }
+            if (stats.countAboveThreshold > 0) {
+                hasSignal = true
+                nearZero = false
+                break
+            }
+            if (stats.maxAbs >= 12 || meanSquare >= 16.0) nearZero = false
+        }
+        val probeElapsedMs = SystemClock.elapsedRealtime() - probeStartedAtMs
+        val probedBytes = probed.toByteArray()
+
+        if (!sawFrame || !nearZero) {
+            logWarmupResult(
+                if (hasSignal) "signal" else "no_signal",
+                probedBytes.size,
+                probeElapsedMs
+            )
+            return WarmupResult(recorder, probedBytes.takeIf { it.isNotEmpty() })
+        }
+        // 近乎全零：探测数据来自坏音源，丢弃并重建为 MIC 源
+        Log.i(TAG, "Warmup: near-zero source, rebuilding with MIC")
+        try {
+            recorder.stop()
+        } catch (t: Throwable) {
+            Log.e(TAG, "Error stopping recorder during rebuild", t)
+        }
+        try {
+            recorder.release()
+        } catch (t: Throwable) {
+            Log.e(TAG, "Error releasing recorder during rebuild", t)
+        }
+
+        val newRecorder = try {
+            createAudioRecord(MediaRecorder.AudioSource.MIC, bufferSize)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to create new AudioRecord with MIC during warmup", t)
+            null
+        }
+
+        if (newRecorder == null || newRecorder.state != AudioRecord.STATE_INITIALIZED) {
+            val error =
+                IllegalStateException(
+                    "Failed to rebuild AudioRecord with MIC source during warmup"
+                )
+            Log.e(TAG, "AudioRecord rebuild failed", error)
+            DebugLogManager.logError(
+                context,
+                "audio",
+                "warmup_rebuild_failed",
+                error
+            )
+            throw error
+        }
+
+        recorder = newRecorder
+        try {
+            recorder.startRecording()
+            Log.d(TAG, "Warmup: MIC recorder started")
+        } catch (se: SecurityException) {
+            Log.e(TAG, "SecurityException during MIC recorder start", se)
+            DebugLogManager.logError(
+                context,
+                "audio",
+                "warmup_mic_start_security_error",
+                se
+            )
             try {
                 recorder.release()
             } catch (t: Throwable) {
-                Log.e(TAG, "Error releasing recorder during rebuild", t)
+                Log.e(TAG, "Error releasing recorder after SecurityException", t)
             }
-
-            val newRecorder = try {
-                createAudioRecord(MediaRecorder.AudioSource.MIC, bufferSize)
-            } catch (t: Throwable) {
-                Log.e(TAG, "Failed to create new AudioRecord with MIC during warmup", t)
-                null
-            }
-
-            if (newRecorder == null || newRecorder.state != AudioRecord.STATE_INITIALIZED) {
-                val error =
-                    IllegalStateException(
-                        "Failed to rebuild AudioRecord with MIC source during warmup"
-                    )
-                Log.e(TAG, "AudioRecord rebuild failed", error)
-                DebugLogManager.logError(
-                    context,
-                    "audio",
-                    "warmup_rebuild_failed",
-                    error
-                )
-                throw error
-            }
-
-            recorder = newRecorder
+            throw se
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to start MIC recorder", t)
+            DebugLogManager.logError(
+                context,
+                "audio",
+                "warmup_mic_start_failed",
+                t
+            )
             try {
-                recorder.startRecording()
-                Log.d(TAG, "Warmup: MIC recorder started")
-            } catch (se: SecurityException) {
-                Log.e(TAG, "SecurityException during MIC recorder start", se)
-                DebugLogManager.logError(
-                    context,
-                    "audio",
-                    "warmup_mic_start_security_error",
-                    se
-                )
-                try {
-                    recorder.release()
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Error releasing recorder after SecurityException", t)
-                }
-                throw se
-            } catch (t: Throwable) {
-                Log.e(TAG, "Failed to start MIC recorder", t)
-                DebugLogManager.logError(
-                    context,
-                    "audio",
-                    "warmup_mic_start_failed",
-                    t
-                )
-                try {
-                    recorder.release()
-                } catch (releaseError: Throwable) {
-                    Log.e(TAG, "Error releasing recorder after start failure", releaseError)
-                }
-                throw IllegalStateException("Failed to start MIC recorder", t)
+                recorder.release()
+            } catch (releaseError: Throwable) {
+                Log.e(TAG, "Error releasing recorder after start failure", releaseError)
             }
-
-            // 重新读取一帧
-            val pre2 = try {
-                recorder.read(buf, 0, buf.size)
-            } catch (t: Throwable) {
-                Log.e(TAG, "Error reading from rebuilt MIC recorder", t)
-                -1
-            }
-            if (pre2 > 0) {
-                firstChunk = buf.copyOf(pre2)
-                Log.d(TAG, "Warmup: MIC recorder read $pre2 bytes")
-            }
+            throw IllegalStateException("Failed to start MIC recorder", t)
         }
 
-        return Pair(recorder, firstChunk)
+        // 音源被换掉是关键状态迁移，走 base 流：用户不开详细日志也要能定位。
+        DebugLogManager.logBase(
+            category = "audio",
+            event = "acm_warmup_mic_rebuilt",
+            data = mapOf("probed_ms" to probeElapsedMs)
+        )
+        // 重建后的第一帧交给主读循环，这里不再额外读一帧。
+        return WarmupResult(recorder, null)
+    }
+
+    private fun logWarmupResult(result: String, probedBytes: Int, elapsedMs: Long) {
+        try {
+            DebugLogManager.log(
+                category = "audio",
+                event = "acm_warmup",
+                data = mapOf(
+                    "result" to result,
+                    "probed_bytes" to probedBytes,
+                    "elapsed_ms" to elapsedMs
+                )
+            )
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to log warmup result", t)
+        }
+    }
+
+    /**
+     * 把 [len] 字节喂入 [pending] 聚合缓冲，凑满 [chunkBytes] 就 emit 一帧，返回新的待聚合长度。
+     *
+     * [pending] 为 null 表示 read 粒度已等于 emit 粒度，直接透传不做聚合。
+     */
+    private suspend fun FlowCollector<ByteArray>.emitChunks(
+        src: ByteArray,
+        len: Int,
+        pending: ByteArray?,
+        chunkBytes: Int,
+        pendingSize: Int
+    ): Int {
+        if (pending == null) {
+            emit(src.copyOf(len))
+            return 0
+        }
+        var offset = 0
+        var size = pendingSize
+        while (offset < len) {
+            val take = minOf(len - offset, chunkBytes - size)
+            System.arraycopy(src, offset, pending, size, take)
+            size += take
+            offset += take
+            if (size == chunkBytes) {
+                emit(pending.copyOf())
+                size = 0
+            }
+        }
+        return size
     }
 
     // ===== 蓝牙/耳机路由辅助 =====
