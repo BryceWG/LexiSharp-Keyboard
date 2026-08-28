@@ -13,7 +13,10 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.asResponseBody
 import okio.Buffer
+import okio.ForwardingSource
+import okio.buffer
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -38,15 +41,40 @@ class ApiLogInterceptor : Interceptor {
         ) {
             return chain.proceed(request)
         }
+        val meta = request.tag(ApiLogMeta::class.java)
+        val probeAsr = meta == null || meta.category.equals("ASR", ignoreCase = true)
+        val requestBytes = requestBodyBytes(request)
+        if (probeAsr) {
+            AsrCallLatencyProbe.log(
+                "asr_http_start",
+                buildMap { requestBytes?.let { put("bytes", it) } }
+            )
+        }
         val started = System.nanoTime()
         return try {
             val response = chain.proceed(request)
+            if (probeAsr) {
+                AsrCallLatencyProbe.log(
+                    "asr_http_end",
+                    buildMap {
+                        requestBytes?.let { put("bytes", it) }
+                        put("elapsed_ms", elapsedMs(started))
+                    }
+                )
+            }
             if (response.code == 101) {
                 return response
             }
-            ApiLogRecorder.recordHttp(request, response, elapsedMs(started), null, canceled = false)
-            response
+            val probed = if (probeAsr) probeBodyRead(response, started) else response
+            ApiLogRecorder.recordHttp(request, probed, elapsedMs(started), null, canceled = false)
+            probed
         } catch (t: IOException) {
+            if (probeAsr) {
+                AsrCallLatencyProbe.log(
+                    "asr_http_end",
+                    mapOf("elapsed_ms" to elapsedMs(started))
+                )
+            }
             ApiLogRecorder.recordHttp(
                 request,
                 null,
@@ -59,6 +87,44 @@ class ApiLogInterceptor : Interceptor {
     }
 
     private fun elapsedMs(started: Long): Long = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
+
+    /**
+     * 包装 ASR 响应体：在 body 被读到 EOF 时打点。
+     *
+     * `asr_http_end` 只覆盖到响应头到达，body 是流式读取的；两者的差值即响应体下载与读取成本。
+     */
+    private fun probeBodyRead(response: Response, started: Long): Response {
+        val body = response.body ?: return response
+        val probedSource = object : ForwardingSource(body.source()) {
+            private var reported = false
+
+            override fun read(sink: Buffer, byteCount: Long): Long {
+                val read = super.read(sink, byteCount)
+                if (read == -1L && !reported) {
+                    reported = true
+                    AsrCallLatencyProbe.log(
+                        "t_http_body_read",
+                        mapOf("elapsed_ms" to elapsedMs(started))
+                    )
+                }
+                return read
+            }
+        }
+        return response.newBuilder()
+            .body(probedSource.buffer().asResponseBody(body.contentType(), body.contentLength()))
+            .build()
+    }
+
+
+    private fun requestBodyBytes(request: Request): Long? {
+        val body = request.body ?: return null
+        val length = try {
+            body.contentLength()
+        } catch (_: Throwable) {
+            return null
+        }
+        return length.takeIf { it >= 0L }
+    }
 }
 
 object ApiLogRecorder {

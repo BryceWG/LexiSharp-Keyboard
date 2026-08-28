@@ -731,7 +731,12 @@ class AsrSessionManager(
             is BackupAwareAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
             else -> sessionPrimaryVendor
         }
+        val hopStartedAt = SystemClock.elapsedRealtime()
         serviceScope.launch {
+            AsrCallLatencyProbe.log(
+                "t_final_hop",
+                mapOf("hop_ms" to (SystemClock.elapsedRealtime() - hopStartedAt).coerceAtLeast(0L))
+            )
             if (!isSessionActive(sessionToken)) return@launch
 
             completedHistoryTiming?.begin(AsrHistoryTimingStage.POSTPROCESS)

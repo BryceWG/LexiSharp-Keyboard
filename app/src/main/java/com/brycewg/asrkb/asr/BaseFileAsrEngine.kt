@@ -71,6 +71,7 @@ abstract class BaseFileAsrEngine(
     private var progressiveRetryPcm: ByteArrayOutputStream? = null
 
     @Volatile private var discardOnStop: Boolean = false
+    @Volatile private var capturePath: String = "pcm"
 
     protected open val sampleRate: Int = 16000
     protected open val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO
@@ -98,6 +99,8 @@ abstract class BaseFileAsrEngine(
         stopRequested = false
         stoppedDelivered = false
         discardOnStop = false
+        capturePath = "pcm"
+        AsrCallLatencyProbe.reset()
         if (progressiveChunkingEnabled) {
             chunkResults.start()
             progressiveRetryPcm = ByteArrayOutputStream()
@@ -121,21 +124,47 @@ abstract class BaseFileAsrEngine(
                         if (discardOnStop) {
                             continue
                         }
+                        logCallLatency(
+                            "t_segment_dequeued",
+                            mapOf("bytes" to segmentBytes(seg))
+                        )
                         when (seg) {
                             is RecordedSegment.Pcm -> {
+                                val preprocessStartedAt = SystemClock.elapsedRealtime()
                                 val processed = processPcmForRecognition(seg.pcm) ?: continue
+                                val preprocessMs =
+                                    (SystemClock.elapsedRealtime() - preprocessStartedAt).coerceAtLeast(0L)
                                 // 记录最近一次真正用于识别的片段，供“重试”功能使用
                                 lastSegmentForRetry = RecordedSegment.Pcm(processed)
+                                val denoiseStartedAt = SystemClock.elapsedRealtime()
                                 val denoised = OfflineSpeechDenoiserManager.denoiseIfEnabled(
                                     context = context,
                                     prefs = prefs,
                                     pcm = processed,
                                     sampleRate = sampleRate
                                 )
+                                val denoiseMs =
+                                    (SystemClock.elapsedRealtime() - denoiseStartedAt).coerceAtLeast(0L)
+                                logCallLatency(
+                                    "t_recognize_enter",
+                                    mapOf(
+                                        "bytes" to denoised.size,
+                                        "preprocess_ms" to preprocessMs,
+                                        "denoise_ms" to denoiseMs
+                                    )
+                                )
                                 recognizeProgressiveChunk(denoised)
                             }
                             is RecordedSegment.Encoded -> {
                                 lastSegmentForRetry = seg
+                                logCallLatency(
+                                    "t_recognize_enter",
+                                    mapOf(
+                                        "bytes" to seg.audio.bytes.size,
+                                        "finish_ms" to seg.audio.finishElapsedMs,
+                                        "encode_ms" to seg.audio.encodeElapsedMs
+                                    )
+                                )
                                 recognizeEncoded(seg.audio)
                             }
                         }
@@ -195,8 +224,10 @@ abstract class BaseFileAsrEngine(
                         null
                     }
                 if (encodingSpec == null) {
+                    capturePath = "pcm"
                     recordAndEnqueueSegments(chan)
                 } else {
+                    capturePath = "encoded"
                     recordEncodeAndEnqueueSegments(chan, encodingSpec)
                 }
             } finally {
@@ -232,6 +263,9 @@ abstract class BaseFileAsrEngine(
 
     override fun stop() {
         val wasRunning = running.getAndSet(false)
+        if (wasRunning) {
+            AsrCallLatencyProbe.markStop(reason = "user_stop", path = capturePath)
+        }
         stopRequested = true
         markProgressiveStopped()
         // 主动停止采集：取消录音协程以触发 finally 冲刷尾段并关闭通道
@@ -366,6 +400,7 @@ abstract class BaseFileAsrEngine(
 
                 // 自动停止：结束录音，推送最后一段
                 if (stopReason != null) {
+                    AsrCallLatencyProbe.markStop(reason = "auto_stop", path = capturePath)
                     vadLevelerFinishReason = stopReason
                     running.set(false)
                     Log.d(TAG, stopReason)
@@ -448,6 +483,7 @@ abstract class BaseFileAsrEngine(
             }
         } finally {
             vadInputLeveler.finishDebugSession(vadLevelerFinishReason)
+            logCallLatency("t_capture_exit")
             // 录音结束后，推送任何遗留的待发送段与缓冲
             Log.d(
                 TAG,
@@ -575,6 +611,7 @@ abstract class BaseFileAsrEngine(
                 }
 
                 if (stopReason != null) {
+                    AsrCallLatencyProbe.markStop(reason = "auto_stop", path = capturePath)
                     vadLevelerFinishReason = stopReason
                     running.set(false)
                     Log.d(TAG, stopReason)
@@ -614,6 +651,7 @@ abstract class BaseFileAsrEngine(
             }
         } finally {
             vadInputLeveler.finishDebugSession(vadLevelerFinishReason)
+            logCallLatency("t_capture_exit")
             Log.d(TAG, "Cleaning up encoded capture: $pendingEncodeBytes bytes awaiting encode")
             // 关闭后 worker 会把队列里剩余帧编码完并冲刷尾段；join 必须不可取消，否则尾段丢失。
             encodeChan.close()
@@ -621,10 +659,9 @@ abstract class BaseFileAsrEngine(
             withContext(NonCancellable) { encodeJob.join() }
             val drainMs = (System.nanoTime() - drainStartedAt) / 1_000_000
             // drainMs 反映编码是否跟不上采集：明显大于 chunkMillis 说明队列积压。
-            DebugLogManager.log(
-                "asr",
+            logCallLatency(
                 "upload_encode_drained",
-                data = mapOf("drain_ms" to drainMs, "tail_bytes" to pendingEncodeBytes)
+                mapOf("drain_ms" to drainMs, "tail_bytes" to pendingEncodeBytes)
             )
             try {
                 vadDetector?.release()
@@ -1001,6 +1038,15 @@ abstract class BaseFileAsrEngine(
             sampleRate = sampleRate,
             startedMs = progressiveStoppedAtMs.takeIf { it > 0L } ?: SystemClock.uptimeMillis()
         )
+
+    private fun segmentBytes(segment: RecordedSegment): Int = when (segment) {
+        is RecordedSegment.Pcm -> segment.pcm.size
+        is RecordedSegment.Encoded -> segment.audio.bytes.size
+    }
+
+    private fun logCallLatency(event: String, data: Map<String, Any?> = emptyMap()) {
+        AsrCallLatencyProbe.log(event, data)
+    }
 
     private sealed interface RecordedSegment {
         data class Pcm(val pcm: ByteArray) : RecordedSegment

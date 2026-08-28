@@ -1,10 +1,12 @@
 package com.brycewg.asrkb.ime
 
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import com.brycewg.asrkb.R
+import com.brycewg.asrkb.asr.AsrCallLatencyProbe
 import com.brycewg.asrkb.asr.BackupAwareAsrEngine
 import com.brycewg.asrkb.asr.AsrFailReasonCodes
 import com.brycewg.asrkb.asr.LlmPostProcessor
@@ -907,7 +909,12 @@ class KeyboardActionHandler(
     // ========== AsrSessionManager.Listener 实现 ==========
 
     override fun onAsrFinal(text: String, currentState: KeyboardState) {
+        val hopStartedAt = SystemClock.elapsedRealtime()
         scope.launch {
+            AsrCallLatencyProbe.log(
+                "t_final_hop",
+                mapOf("hop_ms" to (SystemClock.elapsedRealtime() - hopStartedAt).coerceAtLeast(0L))
+            )
             // 若强制停止，忽略迟到的 onFinal
             if (dropPendingFinal) {
                 dropPendingFinal = false

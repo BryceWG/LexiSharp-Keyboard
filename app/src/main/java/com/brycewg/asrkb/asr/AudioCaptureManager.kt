@@ -11,6 +11,7 @@ import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Build
+import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
@@ -140,6 +141,9 @@ class AudioCaptureManager(
             }
 
     internal fun startPlatformCapture(): Flow<ByteArray> = flow {
+        // 采集收尾诊断：最后一次 read 的阻塞时长，与 read 返回后到真正退出循环的调度开销。
+        var lastReadEndedAtMs = 0L
+        var lastReadMs = 0L
         try {
             DebugLogManager.log(
                 category = "audio",
@@ -407,6 +411,7 @@ class AudioCaptureManager(
 
             // 9. 持续读取音频数据
             while (true) {
+                val readStartedAtMs = SystemClock.elapsedRealtime()
                 val read = try {
                     activeRecorder.read(buf, 0, buf.size)
                 } catch (t: Throwable) {
@@ -429,6 +434,9 @@ class AudioCaptureManager(
                     } catch (_: Throwable) { }
                     throw IllegalStateException("Error reading audio data", t)
                 }
+                lastReadEndedAtMs = SystemClock.elapsedRealtime()
+                lastReadMs = lastReadEndedAtMs - readStartedAtMs
+
 
                 if (read > 0) {
                     // 复制有效数据并 emit
@@ -449,18 +457,36 @@ class AudioCaptureManager(
             }
         } finally {
             // 10. 清理资源
+            AsrCallLatencyProbe.log(
+                "t_capture_read_exit",
+                buildMap {
+                    put("last_read_ms", lastReadMs)
+                    if (lastReadEndedAtMs > 0L) {
+                        put("since_read_ms", SystemClock.elapsedRealtime() - lastReadEndedAtMs)
+                    }
+                }
+            )
+            val stopStartedAtMs = SystemClock.elapsedRealtime()
             try {
                 activeRecorder.stop()
                 Log.d(TAG, "AudioRecord stopped")
             } catch (t: Throwable) {
                 Log.e(TAG, "Error stopping AudioRecord", t)
             }
+            val stoppedAtMs = SystemClock.elapsedRealtime()
             try {
                 activeRecorder.release()
                 Log.d(TAG, "AudioRecord released")
             } catch (t: Throwable) {
                 Log.e(TAG, "Error releasing AudioRecord", t)
             }
+            AsrCallLatencyProbe.log(
+                "t_capture_released",
+                mapOf(
+                    "stop_ms" to (stoppedAtMs - stopStartedAtMs),
+                    "release_ms" to (SystemClock.elapsedRealtime() - stoppedAtMs)
+                )
+            )
             try {
                 DebugLogManager.log(
                     category = "audio",
