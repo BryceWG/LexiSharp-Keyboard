@@ -26,9 +26,6 @@ internal object AsrHistoryTimingDiagnostics {
     }
 
     private fun buildData(source: String, trace: AsrHistoryTimingTrace): Map<String, Any> {
-        val stageMs = trace.intervals.groupBy { it.stage }.mapValues { (_, intervals) ->
-            intervals.sumOf { (it.endOffsetMs - it.startOffsetMs).coerceAtLeast(0L) }
-        }
         val gapMs = (trace.totalElapsedMs - coveredMs(trace)).coerceAtLeast(0L)
         return LinkedHashMap<String, Any>().apply {
             put("source", source)
@@ -37,7 +34,7 @@ internal object AsrHistoryTimingDiagnostics {
             put("gapMs", gapMs)
             put("completed", trace.completed)
             AsrHistoryTimingStage.values().forEach { stage ->
-                put("${stage.name.lowercase()}Ms", stageMs[stage] ?: 0L)
+                put("${stage.name.lowercase()}Ms", trace.stageDurationMs(stage))
             }
         }
     }

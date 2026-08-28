@@ -112,6 +112,7 @@ class AsrSessionManager(
 
     // ASR 请求耗时记录
     private var lastRequestDurationMs: Long? = null
+    private var lastRecognitionStageMs: Long? = null
 
     // 统计/历史：本次会话主/备供应商快照（避免设置变更导致 vendorId 串台）
     private var sessionPrimaryVendor: AsrVendor = try {
@@ -247,6 +248,12 @@ class AsrSessionManager(
      * 获取最后一次请求耗时
      */
     fun getLastRequestDuration(): Long? = lastRequestDurationMs
+
+    /**
+     * 键盘状态栏展示用的识别耗时，与历史卡片/详情相同：timing trace 的 RECOGNITION 阶段。
+     */
+    fun getLastDisplayedRecognitionDuration(): Long? =
+        lastRecognitionStageMs?.takeIf { it > 0L }
 
     fun peekLastFinalVendorForStats(): AsrVendor = lastFinalVendorForStats ?: sessionPrimaryVendor
 
@@ -454,6 +461,7 @@ class AsrSessionManager(
         lastPartialText = null
         // 新会话开始时重置上次请求耗时，避免串台（流式模式不会更新此值）
         lastRequestDurationMs = null
+        lastRecognitionStageMs = null
         discardInFlightHistoryCapture()
         activeHistoryRecordId = UUID.randomUUID().toString()
         historyAudioCapture = AsrHistoryAudioCapture.create(
@@ -834,6 +842,7 @@ class AsrSessionManager(
                 }
                 sessionSeq = engineSessionSeq
                 lastRequestDurationMs = null
+                lastRecognitionStageMs = null
                 e.retryLastSegment()
                 true
             } catch (t: Throwable) {
@@ -856,6 +865,10 @@ class AsrSessionManager(
         Log.d(TAG, "onFinal: text='$text', state=$currentState")
         transitionAudioInputToRecognition()
         activeHistoryTiming?.end(AsrHistoryTimingStage.RECOGNITION)
+        lastRecognitionStageMs = activeHistoryTiming
+            ?.snapshot()
+            ?.stageDurationMs(AsrHistoryTimingStage.RECOGNITION)
+            ?.takeIf { it > 0L }
         lastFinalVendorForStats = when (val e = asrEngine) {
             is BackupAwareAsrEngine -> if (e.wasLastResultFromBackup()) e.backupVendor else e.primaryVendor
             else -> sessionPrimaryVendor

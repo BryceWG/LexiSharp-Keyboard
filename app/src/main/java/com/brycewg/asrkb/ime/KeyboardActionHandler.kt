@@ -1262,7 +1262,7 @@ class KeyboardActionHandler(
     }
 
     private fun transitionToIdleWithTiming(showBackupUsedHint: Boolean = false) {
-        val ms = asrManager.getLastRequestDuration()
+        val ms = asrManager.getLastDisplayedRecognitionDuration()
         if (ms != null) {
             // 立刻切到 Idle，确保此时再次点按可直接开始录音，同时取消任何兜底定时器，避免后续误判为“取消”
             transitionToIdle(keepMessage = true)

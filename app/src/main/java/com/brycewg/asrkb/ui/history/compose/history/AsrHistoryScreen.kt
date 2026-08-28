@@ -80,7 +80,6 @@ import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
 import com.brycewg.asrkb.store.AsrHistoryTimingStage
-import com.brycewg.asrkb.store.AsrHistoryTimingTrace
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.history.AsrHistoryFailDisplay
 import com.brycewg.asrkb.ui.history.AsrHistoryRerunErrorMessages
@@ -702,7 +701,7 @@ private fun buildMeta(
     }
     parts.add(stringResource(R.string.meta_total_seconds, record.audioMs / 1000.0))
     val recognitionMs = record.timingTrace?.let { trace ->
-        historyTimingStageDuration(trace, AsrHistoryTimingStage.RECOGNITION)
+        trace.stageDurationMs(AsrHistoryTimingStage.RECOGNITION)
     } ?: record.procMs
     if (recognitionMs > 0) {
         parts.add(stringResource(R.string.meta_proc_seconds, recognitionMs / 1000.0))
@@ -949,7 +948,7 @@ private fun HistoryTimingTraceSection(
     val stageDurations = trace.intervals
         .map { it.stage }
         .distinct()
-        .associateWith { stage -> historyTimingStageDuration(trace, stage) }
+        .associateWith { stage -> trace.stageDurationMs(stage) }
     val visibleStages = stageStyles.mapNotNull { style ->
         stageDurations[style.stage]
             ?.takeIf { it > 0L }
@@ -1069,16 +1068,6 @@ private fun historyTimingOriginLabel(origin: AsrHistoryTimingOrigin): Int = when
     AsrHistoryTimingOrigin.RERECOGNITION -> R.string.history_timing_origin_rerecognition
     AsrHistoryTimingOrigin.REPROCESS -> R.string.history_timing_origin_reprocess
 }
-
-private fun historyTimingStageDuration(
-    trace: AsrHistoryTimingTrace,
-    stage: AsrHistoryTimingStage
-): Long = trace.intervals
-    .asSequence()
-    .filter { it.stage == stage }
-    .sumOf { interval ->
-        (interval.endOffsetMs - interval.startOffsetMs).coerceAtLeast(0L)
-    }
 
 @Composable
 private fun formatHistoryTimingDuration(durationMs: Long): String {
