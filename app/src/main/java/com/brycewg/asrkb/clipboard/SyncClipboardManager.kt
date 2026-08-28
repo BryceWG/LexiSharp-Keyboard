@@ -431,12 +431,6 @@ class SyncClipboardManager(
         val url = buildUrl() ?: return false
         val auth = authHeaderB64() ?: return false
         val dataName = newAttachmentDataName(attachment.displayName)
-        val hash = try {
-            context.contentResolver.openInputStream(attachment.uri)?.use(::sha256Hex)
-        } catch (t: Throwable) {
-            Log.e(TAG, "Failed to hash clipboard attachment", t)
-            null
-        }?.let { syncClipboardAttachmentHash(dataName, it) } ?: return false
         val body = UriRequestBody(
             context = context,
             uri = attachment.uri,
@@ -464,6 +458,11 @@ class SyncClipboardManager(
             return false
         }
         if (!prefs.syncClipboardEnabled || !attachmentPolicy.allows(attachment.kind, attachment.sizeBytes)) {
+            attachmentNotifier.showUploadFailed(attachment.displayName)
+            return false
+        }
+        val hash = attachmentProfileHash(dataName, attachment, body.contentDigest)
+        if (hash == null) {
             attachmentNotifier.showUploadFailed(attachment.displayName)
             return false
         }
@@ -500,6 +499,24 @@ class SyncClipboardManager(
             attachmentNotifier.showUploadFailed(attachment.displayName)
         }
         return profilePublished
+    }
+
+    /**
+     * Profile 哈希依赖文件内容摘要；优先复用上传流顺带算出的摘要，避免把附件整读第二遍。
+     * 摘要缺失时（body 未被写出）回退到独立读取。
+     */
+    private fun attachmentProfileHash(
+        dataName: String,
+        attachment: LocalClipboardAttachment,
+        uploadedDigest: ByteArray?
+    ): String? {
+        val contentHash = uploadedDigest?.let(::sha256Hex) ?: try {
+            context.contentResolver.openInputStream(attachment.uri)?.use(::sha256Hex)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to hash clipboard attachment", t)
+            null
+        }
+        return contentHash?.let { syncClipboardAttachmentHash(dataName, it) }
     }
 
     /** 上传由系统分享入口授予的单个附件。 */
@@ -1235,11 +1252,18 @@ class SyncClipboardManager(
         private val sizeBytes: Long,
         private val onProgress: (Long) -> Unit
     ) : RequestBody() {
+        /** 上传流经过的内容摘要；OkHttp 可能重发 body，因此每次 writeTo 重新计算。 */
+        @Volatile
+        var contentDigest: ByteArray? = null
+            private set
+
         override fun contentType() = mimeType.toMediaType()
 
         override fun contentLength(): Long = sizeBytes
 
         override fun writeTo(sink: BufferedSink) {
+            contentDigest = null
+            val digest = MessageDigest.getInstance("SHA-256")
             val input = context.contentResolver.openInputStream(uri)
                 ?: throw IllegalStateException("Unable to open clipboard attachment")
             input.use {
@@ -1249,12 +1273,15 @@ class SyncClipboardManager(
                     val read = it.read(buffer)
                     if (read < 0) break
                     sink.write(buffer, 0, read)
+                    digest.update(buffer, 0, read)
                     copied += read
                     onProgress(copied)
                 }
             }
+            contentDigest = digest.digest()
         }
     }
+
 
     /**
      * 在启动时调用：若系统剪贴板文本与上次成功上传不一致，则主动上传一次。

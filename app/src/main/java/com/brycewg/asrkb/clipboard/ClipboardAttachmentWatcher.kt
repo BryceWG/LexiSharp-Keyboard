@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.util.Log
 import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.debug.DebugLogManager
 
 internal fun isSyncClipboardDownloadDirectory(treeUri: Uri): Boolean = try {
     DocumentsContract.getTreeDocumentId(treeUri)
@@ -75,13 +76,11 @@ internal class ClipboardAttachmentWatcher(
             DocumentsContract.Document.COLUMN_SIZE,
             DocumentsContract.Document.COLUMN_LAST_MODIFIED
         )
-        val firstScanForTree = seenPrefs.getString(KEY_TREE_URI, null) != root.toString()
+        val treeKey = root.toString()
+        val firstScanForTree = seenPrefs.getString(KEY_TREE_URI, null) != treeKey
         val attachments = mutableListOf<LocalClipboardAttachment>()
-        if (firstScanForTree) {
-            seenPrefs.edit().remove(KEY_LATEST_MODIFIED).remove(KEY_SEEN).apply()
-        }
         try {
-            appContext.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+            val queried = appContext.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
                 val idIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
                 val nameIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
                 val mimeIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
@@ -115,55 +114,104 @@ internal class ClipboardAttachmentWatcher(
                         lastModifiedMillis = modified
                     )
                 }
+                true
+            } ?: false
+            if (!queried) {
+                // provider 掉线或 URI 权限失效时不能落基线，否则下一轮会把既存文件当成新增上传。
+                Log.w(TAG, "Clipboard watch tree query returned no cursor")
+                logWarning("clip_attachment_scan_no_cursor", mapOf("firstScan" to firstScanForTree))
+                return
             }
             if (firstScanForTree) {
-                attachments.forEach(::markProcessed)
-            } else {
-                val newAttachments = attachments.filter(::isNew)
-                val attachment = selectLatestAttachment(newAttachments) {
-                    policy.allows(it.kind, it.sizeBytes)
-                }
-                if (attachment == null) {
-                    newAttachments.forEach(::markProcessed)
-                } else {
-                    newAttachments.asSequence()
-                        .filter { it.lastModifiedMillis <= attachment.lastModifiedMillis }
-                        .filterNot { it.signature == attachment.signature }
-                        .forEach(::markProcessed)
-                    if (upload(attachment)) {
-                        markProcessed(attachment)
-                        newAttachments.asSequence()
-                            .filter { it.lastModifiedMillis > attachment.lastModifiedMillis }
-                            .forEach(::markProcessed)
-                    }
-                }
+                // 新目录整体作为基线，历史文件不参与上传。
+                writeBaseline(treeKey, attachments)
+                logBase("clip_attachment_baseline_set", mapOf("count" to attachments.size))
+                return
             }
-            if (firstScanForTree) seenPrefs.edit().putString(KEY_TREE_URI, root.toString()).apply()
+            val baseline = readBaseline()
+            val newAttachments = attachments.filter(baseline::isNew)
+            val attachment = selectLatestAttachment(newAttachments) {
+                policy.allows(it.kind, it.sizeBytes)
+            }
+            if (attachment == null) {
+                markProcessed(newAttachments)
+                return
+            }
+            markProcessed(
+                newAttachments.filter {
+                    it.lastModifiedMillis <= attachment.lastModifiedMillis && it.signature != attachment.signature
+                }
+            )
+            if (upload(attachment)) {
+                markProcessed(
+                    newAttachments.filter { it.lastModifiedMillis > attachment.lastModifiedMillis } + attachment
+                )
+            }
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to scan clipboard watch tree", t)
+            logWarning("clip_attachment_scan_failed", mapOf("firstScan" to firstScanForTree), t)
         }
     }
 
-    private fun isNew(attachment: LocalClipboardAttachment): Boolean {
-        val latestModified = seenPrefs.getLong(KEY_LATEST_MODIFIED, Long.MIN_VALUE)
-        return attachment.lastModifiedMillis > latestModified ||
-            (attachment.lastModifiedMillis == latestModified &&
-                seenPrefs.getStringSet(KEY_SEEN, emptySet())?.contains(attachment.signature) != true)
+    /** 已处理进度：最大 lastModified 与该时间戳上的签名集合，天然限制集合容量。 */
+    private class SeenBaseline(val latestModified: Long, val signatures: Set<String>) {
+        fun isNew(attachment: LocalClipboardAttachment): Boolean =
+            attachment.lastModifiedMillis > latestModified ||
+                (attachment.lastModifiedMillis == latestModified && !signatures.contains(attachment.signature))
     }
 
-    private fun markProcessed(attachment: LocalClipboardAttachment) {
-        val signature = attachment.signature
-        val modified = attachment.lastModifiedMillis
-        val latestModified = seenPrefs.getLong(KEY_LATEST_MODIFIED, Long.MIN_VALUE)
-        if (modified > latestModified) {
+    private fun readBaseline(): SeenBaseline = SeenBaseline(
+        latestModified = seenPrefs.getLong(KEY_LATEST_MODIFIED, Long.MIN_VALUE),
+        signatures = seenPrefs.getStringSet(KEY_SEEN, emptySet()).orEmpty()
+    )
+
+    /** 新目录基线：一次提交写入进度与目录标识，避免逐文件落盘。 */
+    private fun writeBaseline(treeKey: String, attachments: List<LocalClipboardAttachment>) {
+        val editor = seenPrefs.edit()
+        val latest = attachments.maxOfOrNull { it.lastModifiedMillis }
+        if (latest == null) {
+            editor.remove(KEY_LATEST_MODIFIED).remove(KEY_SEEN)
+        } else {
+            editor.putLong(KEY_LATEST_MODIFIED, latest)
+                .putStringSet(KEY_SEEN, attachments.signaturesAt(latest))
+        }
+        editor.putString(KEY_TREE_URI, treeKey).apply()
+    }
+
+    private fun markProcessed(attachments: Collection<LocalClipboardAttachment>) {
+        if (attachments.isEmpty()) return
+        val storedLatest = seenPrefs.getLong(KEY_LATEST_MODIFIED, Long.MIN_VALUE)
+        val latest = maxOf(storedLatest, attachments.maxOf { it.lastModifiedMillis })
+        val signatures = attachments.signaturesAt(latest)
+        if (latest > storedLatest) {
+            // 时间戳前进后旧签名不再需要保留，集合因此不会无界增长。
             seenPrefs.edit()
-                .putLong(KEY_LATEST_MODIFIED, modified)
-                .putStringSet(KEY_SEEN, setOf(signature))
+                .putLong(KEY_LATEST_MODIFIED, latest)
+                .putStringSet(KEY_SEEN, signatures)
                 .apply()
-        } else if (modified == latestModified) {
-            val seen = seenPrefs.getStringSet(KEY_SEEN, emptySet()).orEmpty().toMutableSet()
-            seen += signature
-            seenPrefs.edit().putStringSet(KEY_SEEN, seen).apply()
+            return
+        }
+        val seen = seenPrefs.getStringSet(KEY_SEEN, emptySet()).orEmpty()
+        if (seen.containsAll(signatures)) return
+        seenPrefs.edit().putStringSet(KEY_SEEN, seen + signatures).apply()
+    }
+
+    private fun Collection<LocalClipboardAttachment>.signaturesAt(modifiedMillis: Long): Set<String> =
+        asSequence().filter { it.lastModifiedMillis == modifiedMillis }.map { it.signature }.toSet()
+
+    private fun logBase(event: String, data: Map<String, Any?>) {
+        try {
+            DebugLogManager.logBase(appContext, "app", event, data)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to write clipboard diagnostic event: $event", t)
+        }
+    }
+
+    private fun logWarning(event: String, data: Map<String, Any?>, throwable: Throwable? = null) {
+        try {
+            DebugLogManager.logWarning(appContext, "app", event, throwable, data)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to write clipboard diagnostic event: $event", t)
         }
     }
 
