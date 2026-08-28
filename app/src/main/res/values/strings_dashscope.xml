@@ -8,10 +8,12 @@
     <string name="label_dash_model">Recognition model</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash (non-streaming)</string>
     <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash (non-streaming)</string>
+    <string name="dash_model_qwen3_flash">Qwen3-ASR-Flash (non-streaming)</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash (non-streaming)</string>
     <string name="dash_model_qwen35_omni_plus">Qwen3.5-Omni-Plus (non-streaming)</string>
     <string name="dash_model_fun_realtime">Fun-ASR-Realtime (streaming)</string>
     <string name="dash_model_qwen_audio_realtime">Qwen-Audio-3.0-ASR-Flash-Streaming</string>
+    <string name="dash_model_qwen3_realtime">Qwen3-ASR-Flash-Realtime</string>
     <string name="label_dash_prompt">Custom prompt / context (optional)</string>
     <string name="label_dash_language">Recognition language</string>
     <string name="dash_language_max_4">Select up to 4 languages</string>

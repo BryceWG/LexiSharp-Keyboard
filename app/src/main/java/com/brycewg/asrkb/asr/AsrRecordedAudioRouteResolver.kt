@@ -348,6 +348,8 @@ internal object AsrRecordedAudioRouteResolver {
                 R.string.dash_model_fun_flash
             model.equals(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH, ignoreCase = true) ->
                 R.string.dash_model_qwen_audio_flash
+            model.equals(Prefs.DASH_MODEL_QWEN3_FLASH, ignoreCase = true) ->
+                R.string.dash_model_qwen3_flash
             model.equals(Prefs.DASH_MODEL_QWEN35_OMNI_FLASH, ignoreCase = true) ->
                 R.string.dash_model_qwen35_omni_flash
             model.equals(Prefs.DASH_MODEL_QWEN35_OMNI_PLUS, ignoreCase = true) ->
@@ -356,6 +358,8 @@ internal object AsrRecordedAudioRouteResolver {
                 R.string.dash_model_fun_realtime
             model.equals(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME, ignoreCase = true) ->
                 R.string.dash_model_qwen_audio_realtime
+            model.equals(Prefs.DASH_MODEL_QWEN3_REALTIME, ignoreCase = true) ->
+                R.string.dash_model_qwen3_realtime
             else -> null
         }
         return resId?.let { context.getString(it) } ?: model

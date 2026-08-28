@@ -23,6 +23,7 @@ import org.json.JSONObject
 /**
  * 使用阿里云百炼（DashScope）的非流式 ASR 引擎。
  * - Fun-ASR-Flash 与 Qwen-Audio 3.0 走 DashScope REST multimodal-generation + Base64 音频。
+ * - Qwen3-ASR-Flash 走同一 REST 入口，使用 asr_options / system prompt。
  * - Qwen3.5-Omni 非实时模型走 OpenAI 兼容 chat/completions + Base64 音频输入。
  */
 class DashscopeFileAsrEngine(
@@ -67,7 +68,8 @@ class DashscopeFileAsrEngine(
         val model = effectiveDashModel()
         val audio = encodePcmForUploadIfEnabled(pcm, model)
         when {
-            prefs.isDashGenerationAsrModelId(model) -> recognizeWithGenerationApi(audio, model)
+            prefs.isDashGenerationAsrModelId(model) || DashScopePrefsCompat.isQwen3FlashModel(model) ->
+                recognizeWithGenerationApi(audio, model)
             prefs.isDashOmniModelId(model) -> recognizeWithOmni(audio, model)
             else -> reportUnsupportedModel(model)
         }
@@ -76,7 +78,8 @@ class DashscopeFileAsrEngine(
     override suspend fun recognizeEncoded(audio: UploadAudioData) {
         val model = effectiveDashModel()
         when {
-            prefs.isDashGenerationAsrModelId(model) -> recognizeWithGenerationApi(audio, model)
+            prefs.isDashGenerationAsrModelId(model) || DashScopePrefsCompat.isQwen3FlashModel(model) ->
+                recognizeWithGenerationApi(audio, model)
             prefs.isDashOmniModelId(model) -> recognizeWithOmni(audio, model)
             else -> reportUnsupportedModel(model)
         }
@@ -118,18 +121,28 @@ class DashscopeFileAsrEngine(
     }
 
     /**
-     * Fun-ASR-Flash / Qwen-Audio 3.0 非流式 REST 路径。开源版不发送文本上下文增强。
+     * Fun-ASR-Flash / Qwen-Audio 3.0 / Qwen3-ASR-Flash 非流式 REST 路径。
      */
     private fun recognizeWithGenerationApi(audio: UploadAudioData, model: String) {
         try {
             val base64Audio = Base64.encodeToString(audio.bytes, Base64.NO_WRAP)
-            val body = buildDashGenerationAsrRequestBody(
-                model = model,
-                base64Audio = base64Audio,
-                audio = audio,
-                sampleRate = sampleRate,
-                languages = prefs.getDashLanguages()
-            )
+            val body = if (DashScopePrefsCompat.isQwen3FlashModel(model)) {
+                buildDashQwen3FlashRequestBody(
+                    model = model,
+                    base64Audio = base64Audio,
+                    audio = audio,
+                    prompt = prefs.dashPrompt,
+                    languages = prefs.getDashLanguages()
+                )
+            } else {
+                buildDashGenerationAsrRequestBody(
+                    model = model,
+                    base64Audio = base64Audio,
+                    audio = audio,
+                    sampleRate = sampleRate,
+                    languages = prefs.getDashLanguages()
+                )
+            }
             val request = Request.Builder()
                 .url(prefs.getDashMultimodalGenerationEndpoint())
                 .tag(
@@ -506,5 +519,44 @@ internal fun buildDashGenerationAsrRequestBody(
                 }
             }
         )
+    }.toString()
+}
+
+internal fun buildDashQwen3FlashRequestBody(
+    model: String,
+    base64Audio: String,
+    audio: UploadAudioData,
+    prompt: String,
+    languages: List<String>
+): String {
+    val messages = JSONArray()
+    val trimmedPrompt = prompt.trim()
+    if (trimmedPrompt.isNotEmpty()) {
+        messages.put(
+            JSONObject().apply {
+                put("role", "system")
+                put("content", JSONArray().put(JSONObject().put("text", trimmedPrompt)))
+            }
+        )
+    }
+    messages.put(
+        JSONObject().apply {
+            put("role", "user")
+            put(
+                "content",
+                JSONArray().put(
+                    JSONObject().put("audio", "data:${audio.mimeType};base64,$base64Audio")
+                )
+            )
+        }
+    )
+    val asrOptions = JSONObject().apply {
+        put("enable_itn", true)
+        languages.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }?.let { put("language", it) }
+    }
+    return JSONObject().apply {
+        put("model", model)
+        put("input", JSONObject().put("messages", messages))
+        put("parameters", JSONObject().put("asr_options", asrOptions))
     }.toString()
 }

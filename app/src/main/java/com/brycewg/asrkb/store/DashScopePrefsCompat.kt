@@ -6,18 +6,18 @@ import android.content.SharedPreferences
  * DashScope 偏好项的兼容/推导逻辑（从 [Prefs] / [PrefsBackup] 中拆出）。
  */
 internal object DashScopePrefsCompat {
-    private const val DASH_LEGACY_QWEN3_FILE_MODEL = "qwen3-asr-flash"
-    private const val DASH_LEGACY_QWEN3_REALTIME_MODEL = "qwen3-asr-flash-realtime"
     private const val DASH_LEGACY_QWEN3_REALTIME_VERSIONED_MODEL = "qwen3-asr-flash-realtime-2026-02-10"
     const val MAX_QWEN_AUDIO_LANGUAGE_HINTS = 4
 
     private val KNOWN_ASR_MODELS = setOf(
         Prefs.DASH_MODEL_FUN_ASR_FLASH,
         Prefs.DASH_MODEL_QWEN_AUDIO_FLASH,
+        Prefs.DASH_MODEL_QWEN3_FLASH,
         Prefs.DASH_MODEL_QWEN35_OMNI_FLASH,
         Prefs.DASH_MODEL_QWEN35_OMNI_PLUS,
         Prefs.DASH_MODEL_FUN_ASR_REALTIME,
-        Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME
+        Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME,
+        Prefs.DASH_MODEL_QWEN3_REALTIME
     )
 
     fun getDashHttpBaseUrl(dashRegion: String): String = if (dashRegion.equals("intl", ignoreCase = true)) {
@@ -41,11 +41,8 @@ internal object DashScopePrefsCompat {
         val trimmed = model.trim()
         return when {
             trimmed.isBlank() -> Prefs.DEFAULT_DASH_MODEL
-            trimmed.equals(DASH_LEGACY_QWEN3_FILE_MODEL, ignoreCase = true) ->
-                Prefs.DASH_MODEL_QWEN_AUDIO_FLASH
-            trimmed.equals(DASH_LEGACY_QWEN3_REALTIME_MODEL, ignoreCase = true) ||
-                trimmed.equals(DASH_LEGACY_QWEN3_REALTIME_VERSIONED_MODEL, ignoreCase = true) ->
-                Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME
+            trimmed.equals(DASH_LEGACY_QWEN3_REALTIME_VERSIONED_MODEL, ignoreCase = true) ->
+                Prefs.DASH_MODEL_QWEN3_REALTIME
             else -> trimmed
         }
     }
@@ -55,13 +52,19 @@ internal object DashScopePrefsCompat {
             it.equals(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH, ignoreCase = true)
     }
 
+    fun isQwen3FlashModel(model: String): Boolean = normalizeDashAsrModel(model)
+        .equals(Prefs.DASH_MODEL_QWEN3_FLASH, ignoreCase = true)
+
+    fun isQwen3RealtimeModel(model: String): Boolean = normalizeDashAsrModel(model)
+        .equals(Prefs.DASH_MODEL_QWEN3_REALTIME, ignoreCase = true)
+
     fun isRecognitionStreamingModel(model: String): Boolean = normalizeDashAsrModel(model).let {
         it.equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true) ||
             it.equals(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME, ignoreCase = true)
     }
 
     fun isStreamingModel(model: String): Boolean =
-        isRecognitionStreamingModel(model)
+        isRecognitionStreamingModel(model) || isQwen3RealtimeModel(model)
 
     fun isKnownAsrModel(model: String): Boolean {
         val normalized = normalizeDashAsrModel(model)
@@ -75,6 +78,8 @@ internal object DashScopePrefsCompat {
                 Prefs.DASH_MODEL_FUN_ASR_FLASH
             normalized.equals(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME, ignoreCase = true) ->
                 Prefs.DASH_MODEL_QWEN_AUDIO_FLASH
+            normalized.equals(Prefs.DASH_MODEL_QWEN3_REALTIME, ignoreCase = true) ->
+                Prefs.DASH_MODEL_QWEN3_FLASH
             else -> null
         }
     }

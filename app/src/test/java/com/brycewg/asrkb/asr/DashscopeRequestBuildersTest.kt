@@ -71,6 +71,26 @@ class DashscopeRequestBuildersTest {
         assertEquals(true, param.parameters["semantic_punctuation_enabled"])
     }
 
+    @Test
+    fun qwen3FlashRequestSendsAsrOptionsAndOptionalPrompt() {
+        val body = buildDashQwen3FlashRequestBody(
+            model = Prefs.DASH_MODEL_QWEN3_FLASH,
+            base64Audio = "AA==",
+            audio = wavAudio(),
+            prompt = "context",
+            languages = listOf("zh", "en")
+        )
+
+        val json = JSONObject(body)
+        val messages = json.getJSONObject("input").getJSONArray("messages")
+        assertEquals(2, messages.length())
+        assertEquals("system", messages.getJSONObject(0).getString("role"))
+        val asrOptions = json.getJSONObject("parameters").getJSONObject("asr_options")
+        assertEquals(true, asrOptions.getBoolean("enable_itn"))
+        assertEquals("zh", asrOptions.getString("language"))
+        assertFalse(asrOptions.has("language_hints"))
+    }
+
     private fun wavAudio() = UploadAudioData(
         bytes = byteArrayOf(0),
         container = UploadAudioContainer.WAV,

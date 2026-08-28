@@ -5,18 +5,22 @@ import org.junit.Test
 
 class DashScopePrefsCompatTest {
     @Test
-    fun normalizeDashAsrModelMigratesRemovedQwenRealtimeId() {
+    fun normalizeDashAsrModelKeepsQwen3FlashIds() {
         assertEquals(
-            Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME,
-            DashScopePrefsCompat.normalizeDashAsrModel("qwen3-asr-flash-realtime-2026-02-10")
+            Prefs.DASH_MODEL_QWEN3_FLASH,
+            DashScopePrefsCompat.normalizeDashAsrModel("qwen3-asr-flash")
+        )
+        assertEquals(
+            Prefs.DASH_MODEL_QWEN3_REALTIME,
+            DashScopePrefsCompat.normalizeDashAsrModel("qwen3-asr-flash-realtime")
         )
     }
 
     @Test
-    fun normalizeDashAsrModelMigratesRemovedQwenFileId() {
+    fun normalizeDashAsrModelMapsVersionedQwen3RealtimeId() {
         assertEquals(
-            Prefs.DASH_MODEL_QWEN_AUDIO_FLASH,
-            DashScopePrefsCompat.normalizeDashAsrModel("qwen3-asr-flash")
+            Prefs.DASH_MODEL_QWEN3_REALTIME,
+            DashScopePrefsCompat.normalizeDashAsrModel("qwen3-asr-flash-realtime-2026-02-10")
         )
     }
 
@@ -54,6 +58,23 @@ class DashScopePrefsCompatTest {
         )
         assertEquals(false, DashScopePrefsCompat.isPromptSupported(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH))
         assertEquals(true, DashScopePrefsCompat.isLanguageSupported(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH))
+    }
+
+    @Test
+    fun qwen3FlashModelsUseFileFallbackAndPrompt() {
+        assertEquals(true, DashScopePrefsCompat.isKnownAsrModel(Prefs.DASH_MODEL_QWEN3_FLASH))
+        assertEquals(true, DashScopePrefsCompat.isKnownAsrModel(Prefs.DASH_MODEL_QWEN3_REALTIME))
+        assertEquals(true, DashScopePrefsCompat.isStreamingModel(Prefs.DASH_MODEL_QWEN3_REALTIME))
+        assertEquals(
+            false,
+            DashScopePrefsCompat.isRecognitionStreamingModel(Prefs.DASH_MODEL_QWEN3_REALTIME)
+        )
+        assertEquals(
+            Prefs.DASH_MODEL_QWEN3_FLASH,
+            DashScopePrefsCompat.fileFallbackModel(Prefs.DASH_MODEL_QWEN3_REALTIME)
+        )
+        assertEquals(true, DashScopePrefsCompat.isPromptSupported(Prefs.DASH_MODEL_QWEN3_FLASH))
+        assertEquals(true, DashScopePrefsCompat.isLanguageSupported(Prefs.DASH_MODEL_QWEN3_FLASH))
     }
 
     @Test

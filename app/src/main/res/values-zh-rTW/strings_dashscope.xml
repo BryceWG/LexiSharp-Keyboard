@@ -8,10 +8,12 @@
     <string name="label_dash_model">辨識模型</string>
     <string name="dash_model_fun_flash">Fun-ASR-Flash（非串流）</string>
     <string name="dash_model_qwen_audio_flash">Qwen-Audio-3.0-ASR-Flash（非串流）</string>
+    <string name="dash_model_qwen3_flash">Qwen3-ASR-Flash（非串流）</string>
     <string name="dash_model_qwen35_omni_flash">Qwen3.5-Omni-Flash（非串流）</string>
     <string name="dash_model_qwen35_omni_plus">Qwen3.5-Omni-Plus（非串流）</string>
     <string name="dash_model_fun_realtime">Fun-ASR-Realtime（串流）</string>
     <string name="dash_model_qwen_audio_realtime">Qwen-Audio-3.0-ASR-Flash-Streaming（串流）</string>
+    <string name="dash_model_qwen3_realtime">Qwen3-ASR-Flash-Realtime（串流）</string>
     <string name="label_dash_prompt">自定義提示詞/識別上下文（可選）</string>
     <string name="label_dash_language">識別語言</string>
     <string name="dash_language_max_4">最多選擇 4 種語言</string>
