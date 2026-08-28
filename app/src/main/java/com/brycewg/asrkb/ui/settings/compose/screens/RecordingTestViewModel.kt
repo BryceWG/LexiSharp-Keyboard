@@ -643,7 +643,7 @@ internal class RecordingTestViewModel(
             preferences = prefs.asrEngineModePreferencesSnapshot(),
             source = AsrEngineConstructionSource.App,
             onRequestDuration = null,
-            applyVoiceFilter = true
+            applyAudioPreprocess = true
         )
     }
 

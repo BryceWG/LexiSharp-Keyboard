@@ -27,7 +27,7 @@ internal class GenericPushFileAsrAdapter(
     private val prefs: Prefs,
     private val listener: StreamingAsrEngine.Listener,
     private val recognizer: PcmBatchRecognizer,
-    private val applyVoiceFilter: Boolean = true,
+    private val applyAudioPreprocess: Boolean = true,
     private val progressiveResults: NonStreamingChunkResultCollector? = null
 ) : StreamingAsrEngine,
     ExternalPcmConsumer,
@@ -190,41 +190,42 @@ internal class GenericPushFileAsrAdapter(
     }
 
     private suspend fun recognizePcm(data: ByteArray, progressive: Boolean = false) {
-        val processed = if (applyVoiceFilter) {
-            RecordedAudioVoiceFilter.processIfEnabled(
-                context = context,
-                prefs = prefs,
-                pcm = data,
-                sampleRate = 16000,
-                chunkMillis = 200
-            )
+        // applyAudioPreprocess=false 表示上层（主备 wrapper）已对整段录音做过一次
+        // 人声过滤与降噪，这里必须跳过，否则并行主备下同一段音频会被降噪两次。
+        val denoised = if (applyAudioPreprocess) {
+            preprocessForRecognition(data) ?: return
         } else {
-            RecordedAudioVoiceFilter.Result(
-                pcm = data,
-                hasSpeech = data.isNotEmpty(),
-                droppedAsEmptyAudio = false,
-                originalDurationMs = data.size / 2 * 1_000L / 16000,
-                outputDurationMs = data.size / 2 * 1_000L / 16000
-            )
+            data
         }
-        if (processed.droppedAsEmptyAudio) {
-            (progressiveResults ?: listener).onError(
-                context.getString(R.string.error_audio_empty_skipped)
-            )
-            return
-        }
-        val denoised = OfflineSpeechDenoiserManager.denoiseIfEnabled(
-            context = context,
-            prefs = prefs,
-            pcm = processed.pcm,
-            sampleRate = 16000
-        )
         if (progressive) {
             progressiveRecognizer?.recognizeProgressiveChunk(denoised)
                 ?: recognizer.recognizeFromPcm(denoised)
         } else {
             recognizer.recognizeFromPcm(denoised)
         }
+    }
+
+    /** 返回 null 表示已按空音频交付错误，调用方应直接结束本次识别。 */
+    private fun preprocessForRecognition(data: ByteArray): ByteArray? {
+        val processed = RecordedAudioVoiceFilter.processIfEnabled(
+            context = context,
+            prefs = prefs,
+            pcm = data,
+            sampleRate = 16000,
+            chunkMillis = 200
+        )
+        if (processed.droppedAsEmptyAudio) {
+            (progressiveResults ?: listener).onError(
+                context.getString(R.string.error_audio_empty_skipped)
+            )
+            return null
+        }
+        return OfflineSpeechDenoiserManager.denoiseIfEnabled(
+            context = context,
+            prefs = prefs,
+            pcm = processed.pcm,
+            sampleRate = 16000
+        )
     }
 
     private fun releaseSentenceVad() {

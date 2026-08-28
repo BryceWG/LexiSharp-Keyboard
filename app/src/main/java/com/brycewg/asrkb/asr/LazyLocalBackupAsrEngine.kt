@@ -195,14 +195,26 @@ internal class LazyLocalBackupAsrEngine(
             audioJob = null
         }
 
-        flushPrimaryDeferredIfNeeded()
+        if (primaryConsumer is GenericPushFileAsrAdapter) {
+            // 整段前处理（人声过滤 + 降噪）较重，停录常发生在主线程，放到 IO 上执行；
+            // 必须在 primary stop() 之前投递完成，否则 adapter 会因缓冲为空报空音频。
+            scope.launch(Dispatchers.IO) {
+                flushPrimaryDeferredIfNeeded()
+                stopPrimaryEngine()
+            }
+        } else {
+            stopPrimaryEngine()
+        }
+        scheduleBackupSwitchPlan()
+        maybeFeedBackupIfReady()
+    }
+
+    private fun stopPrimaryEngine() {
         try {
             primaryEngine?.stop()
         } catch (t: Throwable) {
             Log.w(TAG, "primary stop failed", t)
         }
-        scheduleBackupSwitchPlan()
-        maybeFeedBackupIfReady()
     }
 
     override fun cancel() {
@@ -789,7 +801,7 @@ internal class LazyLocalBackupAsrEngine(
                         preferences = modePreferences,
                         source = AsrEngineConstructionSource.App,
                         onRequestDuration = onPrimaryRequestDuration,
-                        applyVoiceFilter = false,
+                        applyAudioPreprocess = false,
                         modelOverride = modelOverride
                     )
                 },
@@ -804,7 +816,7 @@ internal class LazyLocalBackupAsrEngine(
                         preferences = modePreferences,
                         source = AsrEngineConstructionSource.App,
                         onRequestDuration = null,
-                        applyVoiceFilter = false,
+                        applyAudioPreprocess = false,
                         modelOverride = modelOverride
                     )
                 },
@@ -815,13 +827,27 @@ internal class LazyLocalBackupAsrEngine(
                     AsrLocalVendorLifecycles.isReady(backupVendor)
                 },
                 processBufferedPcm = { pcm ->
-                    RecordedAudioVoiceFilter.processIfEnabled(
+                    // primary/backup adapter 均以 applyAudioPreprocess=false 构造，
+                    // 人声过滤与降噪统一在这里完成，adapter 侧不再重复。
+                    val filtered = RecordedAudioVoiceFilter.processIfEnabled(
                         context = context,
                         prefs = prefs,
                         pcm = pcm,
                         sampleRate = SAMPLE_RATE,
                         chunkMillis = CHUNK_MS
                     )
+                    if (filtered.droppedAsEmptyAudio) {
+                        filtered
+                    } else {
+                        filtered.copy(
+                            pcm = OfflineSpeechDenoiserManager.denoiseIfEnabled(
+                                context = context,
+                                prefs = prefs,
+                                pcm = filtered.pcm,
+                                sampleRate = SAMPLE_RATE
+                            )
+                        )
+                    }
                 },
                 primaryNetworkGateEvent = {
                     AsrPrimaryNetworkGate.preflightEvent(

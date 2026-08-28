@@ -15,7 +15,7 @@ internal data class AsrPushPcmEngineRequest(
     val preferences: AsrEngineModePreferences,
     val source: AsrEngineConstructionSource = AsrEngineConstructionSource.ExternalIntegration,
     val onRequestDuration: ((Long) -> Unit)? = null,
-    val applyVoiceFilter: Boolean = true,
+    val applyAudioPreprocess: Boolean = true,
     val modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
 )
 
@@ -96,7 +96,7 @@ internal class AsrPushPcmEngineFactory(
         preferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
         source: AsrEngineConstructionSource = AsrEngineConstructionSource.ExternalIntegration,
         onRequestDuration: ((Long) -> Unit)? = null,
-        applyVoiceFilter: Boolean = true,
+        applyAudioPreprocess: Boolean = true,
         modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
     ): StreamingAsrEngine = create(
         AsrPushPcmEngineRequest(
@@ -109,7 +109,7 @@ internal class AsrPushPcmEngineFactory(
             preferences = preferences,
             source = source,
             onRequestDuration = onRequestDuration,
-            applyVoiceFilter = applyVoiceFilter,
+            applyAudioPreprocess = applyAudioPreprocess,
             modelOverride = modelOverride
         )
     )
@@ -124,7 +124,7 @@ internal class AsrPushPcmEngineFactory(
         preferences: AsrEngineModePreferences = prefs.asrEngineModePreferencesSnapshot(),
         source: AsrEngineConstructionSource = AsrEngineConstructionSource.ExternalIntegration,
         onRequestDuration: ((Long) -> Unit)? = null,
-        applyVoiceFilter: Boolean = true,
+        applyAudioPreprocess: Boolean = true,
         modelOverride: AsrRequestModelOverride = AsrRequestModelOverride()
     ): StreamingAsrEngine? = createOrNull(
         AsrPushPcmEngineRequest(
@@ -137,7 +137,7 @@ internal class AsrPushPcmEngineFactory(
             preferences = preferences,
             source = source,
             onRequestDuration = onRequestDuration,
-            applyVoiceFilter = applyVoiceFilter,
+            applyAudioPreprocess = applyAudioPreprocess,
             modelOverride = modelOverride
         )
     )
@@ -340,7 +340,7 @@ internal object RealAsrPushPcmEngineConstructorTable : AsrPushPcmEngineConstruct
                 progressiveResults ?: request.listener,
                 if (progressiveResults == null) request.onRequestDuration else null
             ),
-            applyVoiceFilter = request.applyVoiceFilter,
+            applyAudioPreprocess = request.applyAudioPreprocess,
             progressiveResults = progressiveResults
         )
     }
