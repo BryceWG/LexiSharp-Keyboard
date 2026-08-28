@@ -2130,15 +2130,18 @@ class Prefs(context: Context) {
         const val DEFAULT_ENDPOINT = "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash"
         const val SF_ENDPOINT = "https://api.siliconflow.cn/v1/audio/transcriptions"
         const val SF_CHAT_COMPLETIONS_ENDPOINT = "https://api.siliconflow.cn/v1/chat/completions"
-        const val DEFAULT_SF_MODEL = "FunAudioLLM/SenseVoiceSmall"
-        const val DEFAULT_SF_OMNI_MODEL = "Qwen/Qwen3-Omni-30B-A3B-Instruct"
+        const val DEFAULT_SF_MODEL = PrefsOptionLists.SF_MODEL_SENSEVOICE
+        const val DEFAULT_SF_OMNI_MODEL = PrefsOptionLists.SF_MODEL_OMNI_INSTRUCT
 
         // SiliconFlow 免费服务模型配置
-        const val DEFAULT_SF_FREE_ASR_MODEL = "FunAudioLLM/SenseVoiceSmall" // 免费 ASR 默认模型
+        const val DEFAULT_SF_FREE_ASR_MODEL = PrefsOptionLists.SF_MODEL_SENSEVOICE // 免费 ASR 默认模型
         const val DEFAULT_SF_FREE_LLM_MODEL = "Qwen/Qwen3-8B" // 免费 LLM 默认模型
 
         // 免费 ASR 可选模型列表
         val SF_FREE_ASR_MODELS: List<String> = PrefsOptionLists.SF_FREE_ASR_MODELS
+
+        // 付费 ASR 可选模型列表（含 Omni 多模态）
+        val SF_PAID_ASR_MODELS: List<String> = PrefsOptionLists.SF_PAID_ASR_MODELS
 
         // 免费 LLM 可选模型列表
         val SF_FREE_LLM_MODELS: List<String> = PrefsOptionLists.SF_FREE_LLM_MODELS

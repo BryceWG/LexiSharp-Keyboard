@@ -1235,12 +1235,7 @@ internal fun displaySfFreeAsrModel(prefs: Prefs): String = prefs.sfFreeAsrModel.
 
 internal fun displaySfPaidModel(prefs: Prefs): String = prefs.sfModel.ifBlank { Prefs.DEFAULT_SF_MODEL }
 
-internal fun sfPaidAsrModels(): List<String> = listOf(
-    Prefs.DEFAULT_SF_OMNI_MODEL,
-    "Qwen/Qwen3-Omni-30B-A3B-Thinking",
-    "TeleAI/TeleSpeechASR",
-    Prefs.DEFAULT_SF_MODEL
-)
+internal fun sfPaidAsrModels(): List<String> = Prefs.SF_PAID_ASR_MODELS
 
 internal fun isSfOmniModel(model: String): Boolean = model.startsWith("Qwen/Qwen3-Omni-30B-A3B-")
 
