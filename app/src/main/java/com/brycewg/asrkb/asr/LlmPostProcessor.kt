@@ -1041,46 +1041,70 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 event = "llm_request_mode_probe_started",
                 data = mapOf("vendor" to config.vendor.id)
             )
-            val probeMessages = JSONArray().put(
-                JSONObject()
-                    .put("role", "user")
-                    .put("content", "Reply with OK only.")
+            val probeStartedAt = elapsedRealtimeMs()
+            val result = probeRequestMode(prefs, config, timeoutBudget)
+            DebugLogManager.logBase(
+                category = "asr",
+                event = "llm_request_mode_probe_done",
+                data = mapOf(
+                    "vendor" to config.vendor.id,
+                    "mode" to result.mode?.id,
+                    "elapsed_ms" to (elapsedRealtimeMs() - probeStartedAt).coerceAtLeast(0L)
+                )
             )
-            val probeConfig = config.copy(enableReasoning = false)
-            val streamingProbe = performChatInternal(
-                probeConfig,
-                probeMessages,
-                streaming = true,
-                timeoutBudget = timeoutBudget
-            )
-            if (streamingProbe.ok) {
-                val mode = if (streamingProbe.responseMode == LlmResponseMode.SSE) {
-                    Prefs.LlmRequestMode.STREAMING
-                } else {
-                    Prefs.LlmRequestMode.NON_STREAMING
-                }
-                saveRequestMode(prefs, config, mode)
-                return@withLock RequestModeProbeResult(mode = mode)
-            }
-            if (!shouldRetryWithoutStream(streamingProbe)) {
-                logRequestModeProbeFailed(config, "streaming", streamingProbe)
-                return@withLock RequestModeProbeResult(failure = streamingProbe)
-            }
-
-            val nonStreamingProbe = performChatInternal(
-                probeConfig,
-                probeMessages,
-                streaming = false,
-                timeoutBudget = timeoutBudget
-            )
-            if (!nonStreamingProbe.ok) {
-                logRequestModeProbeFailed(config, "non_streaming", nonStreamingProbe)
-                return@withLock RequestModeProbeResult(failure = nonStreamingProbe)
-            }
-            saveRequestMode(prefs, config, Prefs.LlmRequestMode.NON_STREAMING)
-            RequestModeProbeResult(mode = Prefs.LlmRequestMode.NON_STREAMING)
+            result
         }
     }
+
+    /**
+     * 首次探测供应商支持的请求模式。探测本身是一次完整的 LLM 往返，
+     * 调用方需保证它在锁内串行执行，并把耗时单独打点。
+     */
+    private suspend fun probeRequestMode(
+        prefs: Prefs,
+        config: LlmRequestConfig,
+        timeoutBudget: LlmPostprocessTimeouts.Budget?
+    ): RequestModeProbeResult {
+        val probeMessages = JSONArray().put(
+            JSONObject()
+                .put("role", "user")
+                .put("content", "Reply with OK only.")
+        )
+        val probeConfig = config.copy(enableReasoning = false)
+        val streamingProbe = performChatInternal(
+            probeConfig,
+            probeMessages,
+            streaming = true,
+            timeoutBudget = timeoutBudget
+        )
+        if (streamingProbe.ok) {
+            val mode = if (streamingProbe.responseMode == LlmResponseMode.SSE) {
+                Prefs.LlmRequestMode.STREAMING
+            } else {
+                Prefs.LlmRequestMode.NON_STREAMING
+            }
+            saveRequestMode(prefs, config, mode)
+            return RequestModeProbeResult(mode = mode)
+        }
+        if (!shouldRetryWithoutStream(streamingProbe)) {
+            logRequestModeProbeFailed(config, "streaming", streamingProbe)
+            return RequestModeProbeResult(failure = streamingProbe)
+        }
+
+        val nonStreamingProbe = performChatInternal(
+            probeConfig,
+            probeMessages,
+            streaming = false,
+            timeoutBudget = timeoutBudget
+        )
+        if (!nonStreamingProbe.ok) {
+            logRequestModeProbeFailed(config, "non_streaming", nonStreamingProbe)
+            return RequestModeProbeResult(failure = nonStreamingProbe)
+        }
+        saveRequestMode(prefs, config, Prefs.LlmRequestMode.NON_STREAMING)
+        return RequestModeProbeResult(mode = Prefs.LlmRequestMode.NON_STREAMING)
+    }
+
 
     private fun saveRequestMode(
         prefs: Prefs,
@@ -1390,6 +1414,25 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     }
 
     /**
+     * 录音开始时的请求模式预跑。
+     *
+     * 首次对某个 vendor+endpoint 调用 LLM 时，正式请求前会先发一次探测请求确认是否支持 SSE，
+     * 这笔完整往返原本落在「停录后等润色」的窗口里。这里把它挪到用户说话期间完成。
+     * 已探测过则直接返回 false，不产生任何网络请求。
+     */
+    internal suspend fun prewarmRequestMode(prefs: Prefs): Boolean = withContext(Dispatchers.IO) {
+        val config = getActiveConfig(prefs)
+        if (config.endpoint.isBlank()) return@withContext false
+        if (config.vendor != LlmVendor.CUSTOM && config.model.isBlank()) return@withContext false
+        if (prefs.getLlmRequestMode(config.requestModeCapabilityKey) != null) return@withContext false
+        val budget = LlmPostprocessTimeouts.budget(
+            reasoningEnabled = false,
+            inputCharCount = 0
+        )
+        ensureRequestMode(prefs, config, budget).mode != null
+    }
+
+    /**
      * 测试 LLM 调用是否可用：发送贴近后处理场景的简易润色 Prompt（中英两段），看是否有返回内容。
      * 输出约 60 token 且受原文长度约束，能同时反映连接/首包延迟与生成速度；
      * 首次测试会先独立探测并保存供应商请求模式，探测耗时不计入正式测速结果。
@@ -1603,6 +1646,9 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             onStreamingUpdate = onStreamingUpdate,
             timeoutBudget = timeoutBudget
         )
+        val dt = TimeUnit.NANOSECONDS
+            .toMillis((System.nanoTime() - t0).coerceAtLeast(0L))
+            .coerceAtLeast(0L)
         try {
             DebugLogManager.log(
                 category = "asr",
@@ -1610,7 +1656,10 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 data = mapOf(
                     "ok" to result.ok,
                     "mode" to result.responseMode?.name?.lowercase(),
+                    // wallMs 覆盖请求模式探测 + 重试等待 + 最终调用；与 totalMs 的差值即这些额外开销。
+                    "wallMs" to dt,
                     "totalMs" to result.totalMs,
+                    "reused" to result.connectionReused,
                     "connectionMs" to result.connectionMs,
                     "headersMs" to result.responseHeadersMs,
                     "firstVisibleMs" to result.firstVisibleMs,
@@ -1620,9 +1669,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
                 )
             )
         } catch (_: Throwable) { }
-        val dt = TimeUnit.NANOSECONDS
-            .toMillis((System.nanoTime() - t0).coerceAtLeast(0L))
-            .coerceAtLeast(0L)
+
         if (!result.ok) {
             if (result.httpCode != null) {
                 Log.w(TAG, "LLM process() failed: HTTP ${result.httpCode}, ${result.error}")

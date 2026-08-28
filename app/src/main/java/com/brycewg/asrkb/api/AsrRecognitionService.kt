@@ -332,6 +332,7 @@ class AsrRecognitionService : RecognitionService() {
             }
             engine?.let { startedEngine ->
                 AsrConnectionWarmer.warmForImmediateUse(this@AsrRecognitionService, prefs)
+                LlmConnectionWarmer.warmForImmediateUse(prefs)
                 preloadLocalAsrForImmediateUse(this@AsrRecognitionService, prefs)
                 startedEngine.start()
             }

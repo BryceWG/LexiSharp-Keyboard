@@ -492,6 +492,8 @@ class AsrSessionManager(
         } catch (_: Throwable) { }
         // 在线供应商在录音开始时预热连接，把 DNS/TLS 握手挪进录音阶段。
         AsrConnectionWarmer.warmForImmediateUse(context, prefs)
+        // AI 润色走独立连接池，需要单独预热；首次请求模式探测也一并挪进录音阶段。
+        LlmConnectionWarmer.warmForImmediateUse(prefs)
         // 本地模型在录音开始时后台预热，让加载耗时尽量与录音阶段重叠。
         try {
             preloadLocalAsrForImmediateUse(

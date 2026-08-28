@@ -364,6 +364,7 @@ class AsrSessionManager(
         asrEngine?.let { engine ->
             (engine as? AudioFrameSinkOwner)?.audioFrameSink = historyAudioCapture
             AsrConnectionWarmer.warmForImmediateUse(context, prefs)
+            LlmConnectionWarmer.warmForImmediateUse(prefs)
             preloadLocalAsrForImmediateUse(context, prefs)
             ContinuousCaptureCoordinator.beginSession(sessionToken)
             engine.start()

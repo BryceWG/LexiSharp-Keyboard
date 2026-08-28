@@ -400,6 +400,7 @@ internal class ExternalSpeechSession(
             (startedEngine as? AudioFrameSinkOwner)?.audioFrameSink =
                 historyAudioCapture.takeUnless { pushPcmInput }
             AsrConnectionWarmer.warmForImmediateUse(context, prefs)
+            LlmConnectionWarmer.warmForImmediateUse(prefs)
             preloadLocalAsrForImmediateUse(context, prefs)
             startedEngine.start()
         }
