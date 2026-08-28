@@ -142,14 +142,23 @@ internal fun dashScopePrimaryItemCount(
 
 internal fun dashModelOptions(context: Context): List<DashChoice> = listOf(
     DashChoice(
+        Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME,
+        context.getString(R.string.dash_model_qwen_audio_realtime)
+    ),
+    DashChoice(
         Prefs.DASH_MODEL_QWEN_AUDIO_FLASH,
         context.getString(R.string.dash_model_qwen_audio_flash)
+    ),
+    DashChoice(Prefs.DASH_MODEL_FUN_ASR_REALTIME, context.getString(R.string.dash_model_fun_realtime)),
+    DashChoice(Prefs.DASH_MODEL_FUN_ASR_FLASH, context.getString(R.string.dash_model_fun_flash)),
+    DashChoice(
+        Prefs.DASH_MODEL_QWEN3_REALTIME,
+        context.getString(R.string.dash_model_qwen3_realtime)
     ),
     DashChoice(
         Prefs.DASH_MODEL_QWEN3_FLASH,
         context.getString(R.string.dash_model_qwen3_flash)
     ),
-    DashChoice(Prefs.DASH_MODEL_FUN_ASR_FLASH, context.getString(R.string.dash_model_fun_flash)),
     DashChoice(
         Prefs.DASH_MODEL_QWEN35_OMNI_FLASH,
         context.getString(R.string.dash_model_qwen35_omni_flash)
@@ -157,15 +166,6 @@ internal fun dashModelOptions(context: Context): List<DashChoice> = listOf(
     DashChoice(
         Prefs.DASH_MODEL_QWEN35_OMNI_PLUS,
         context.getString(R.string.dash_model_qwen35_omni_plus)
-    ),
-    DashChoice(Prefs.DASH_MODEL_FUN_ASR_REALTIME, context.getString(R.string.dash_model_fun_realtime)),
-    DashChoice(
-        Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME,
-        context.getString(R.string.dash_model_qwen_audio_realtime)
-    ),
-    DashChoice(
-        Prefs.DASH_MODEL_QWEN3_REALTIME,
-        context.getString(R.string.dash_model_qwen3_realtime)
     )
 )
 
