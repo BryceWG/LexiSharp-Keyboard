@@ -218,6 +218,7 @@ class AsrEngineModeResolverTest {
             AsrVendor.OpenAI -> AsrEngineModePreferences(openAiStreamingEnabled = streaming)
             AsrVendor.DashScope -> AsrEngineModePreferences(dashScopeStreamingEnabled = streaming)
             AsrVendor.Soniox -> AsrEngineModePreferences(sonioxStreamingEnabled = streaming)
+            AsrVendor.Tencent -> AsrEngineModePreferences(tencentStreamingEnabled = streaming)
             else -> error("$vendor is not controlled by an online streaming toggle")
         }
 
@@ -238,7 +239,8 @@ class AsrEngineModeResolverTest {
             StreamingCase(AsrVendor.ElevenLabs),
             StreamingCase(AsrVendor.OpenAI),
             StreamingCase(AsrVendor.DashScope),
-            StreamingCase(AsrVendor.Soniox)
+            StreamingCase(AsrVendor.Soniox),
+            StreamingCase(AsrVendor.Tencent)
         )
 
         private val pseudoCases = listOf(

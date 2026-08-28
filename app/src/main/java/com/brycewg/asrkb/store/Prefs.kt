@@ -1692,6 +1692,18 @@ class Prefs(context: Context) {
         }
         set(value) = sp.edit { putBoolean(KEY_X_ASR_USE_ITN, value) }
 
+    // 腾讯云 ASR
+    var tencentAppId: String by stringPref(KEY_TENCENT_APP_ID, "")
+    var tencentSecretId: String by stringPref(KEY_TENCENT_SECRET_ID, "")
+    var tencentSecretKey: String by stringPref(KEY_TENCENT_SECRET_KEY, "")
+    var tencentEngineType: String by stringPref(KEY_TENCENT_ENGINE_TYPE, DEFAULT_TENCENT_ENGINE_TYPE)
+    var tencentStreamingEnabled: Boolean
+        get() = sp.getBoolean(KEY_TENCENT_STREAMING_ENABLED, false)
+        set(value) = sp.edit { putBoolean(KEY_TENCENT_STREAMING_ENABLED, value) }
+    var tencentVadEnabled: Boolean
+        get() = sp.getBoolean(KEY_TENCENT_VAD_ENABLED, false)
+        set(value) = sp.edit { putBoolean(KEY_TENCENT_VAD_ENABLED, value) }
+
     // Zipformer 模型清理标记（移除 Zipformer 支持后仅执行一次）
     var zipformerCleanupDone: Boolean
         get() = sp.getBoolean(KEY_ZIPFORMER_CLEANUP_DONE, false)
@@ -1769,6 +1781,7 @@ class Prefs(context: Context) {
     fun hasStepAudioKeys(): Boolean = hasVendorKeys(AsrVendor.StepAudio)
     fun hasZhipuKeys(): Boolean = hasVendorKeys(AsrVendor.Zhipu)
     fun hasCohereKeys(): Boolean = hasVendorKeys(AsrVendor.Cohere)
+    fun hasTencentKeys(): Boolean = hasVendorKeys(AsrVendor.Tencent)
     fun hasAsrKeys(): Boolean = hasVendorKeys(asrVendor)
     fun hasLlmKeys(): Boolean {
         // 使用新的 getEffectiveLlmConfig 检查配置有效性
@@ -2205,6 +2218,8 @@ class Prefs(context: Context) {
         const val DEFAULT_COHERE_ASR_MODEL = "cohere-transcribe-03-2026"
         const val COHERE_ARABIC_ASR_MODEL = "cohere-transcribe-arabic-07-2026"
         const val DEFAULT_COHERE_ASR_LANGUAGE = "zh"
+        // 腾讯云 ASR 默认值
+        const val DEFAULT_TENCENT_ENGINE_TYPE = "16k_zh"
         val COHERE_ASR_MODELS: List<String> = listOf(
             DEFAULT_COHERE_ASR_MODEL,
             COHERE_ARABIC_ASR_MODEL

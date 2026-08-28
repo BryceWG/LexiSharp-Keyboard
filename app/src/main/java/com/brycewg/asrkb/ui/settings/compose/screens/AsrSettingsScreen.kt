@@ -538,6 +538,36 @@ fun AsrSettingsScreen(
         )
     }
 
+    fun applyTencentStreamingSwitch(target: Boolean) {
+        featureExplainerDialog = settingsFeatureExplainerDialogState(
+            context = context,
+            titleRes = R.string.label_tencent_streaming,
+            offDescRes = R.string.feature_tencent_streaming_off_desc,
+            onDescRes = R.string.feature_tencent_streaming_on_desc,
+            currentState = onlineFields.tencentStreaming,
+            preferenceKey = "tencent_streaming_explained",
+            onConfirm = {
+                onlineFields.tencentStreaming = target
+                viewModel.updateTencentStreaming(target)
+            }
+        )
+    }
+
+    fun applyTencentVadSwitch(target: Boolean) {
+        featureExplainerDialog = settingsFeatureExplainerDialogState(
+            context = context,
+            titleRes = R.string.label_tencent_vad_enabled,
+            offDescRes = R.string.feature_tencent_vad_off_desc,
+            onDescRes = R.string.feature_tencent_vad_on_desc,
+            currentState = onlineFields.tencentVadEnabled,
+            preferenceKey = "tencent_vad_explained",
+            onConfirm = {
+                onlineFields.tencentVadEnabled = target
+                viewModel.updateTencentVadEnabled(target)
+            }
+        )
+    }
+
     fun applyVolcSwitch(
         target: Boolean,
         titleResId: Int,
@@ -717,6 +747,8 @@ fun AsrSettingsScreen(
                 applySonioxStreamingSwitch = ::applySonioxStreamingSwitch,
                 applySonioxLanguageStrictSwitch = ::applySonioxLanguageStrictSwitch,
                 applyStepAudioUseItnSwitch = ::applyStepAudioUseItnSwitch,
+                applyTencentStreamingSwitch = ::applyTencentStreamingSwitch,
+                applyTencentVadSwitch = ::applyTencentVadSwitch,
                 openAiDefaultProfileName = { index ->
                     context.getString(R.string.openai_profile_default_name, index)
                 }

@@ -103,6 +103,12 @@ internal class AsrOnlineSettingsFields(
     var sonioxEndpointSensitivityLevel by mutableStateOf(prefs.sonioxEndpointSensitivityLevel)
     var sonioxLanguages by mutableStateOf(prefs.getSonioxLanguages())
     var sonioxLanguageStrict by mutableStateOf(prefs.sonioxLanguageHintsStrict)
+    var tencentAppId by mutableStateOf(prefs.tencentAppId)
+    var tencentSecretId by mutableStateOf(prefs.tencentSecretId)
+    var tencentSecretKey by mutableStateOf(prefs.tencentSecretKey)
+    var tencentEngineType by mutableStateOf(prefs.tencentEngineType.ifBlank { Prefs.DEFAULT_TENCENT_ENGINE_TYPE })
+    var tencentStreaming by mutableStateOf(prefs.tencentStreamingEnabled)
+    var tencentVadEnabled by mutableStateOf(prefs.tencentVadEnabled)
 
     fun refreshFromPrefs() {
         volcAppKey = prefs.appKey
@@ -166,6 +172,12 @@ internal class AsrOnlineSettingsFields(
         sonioxEndpointSensitivityLevel = prefs.sonioxEndpointSensitivityLevel
         sonioxLanguages = prefs.getSonioxLanguages()
         sonioxLanguageStrict = prefs.sonioxLanguageHintsStrict
+        tencentAppId = prefs.tencentAppId
+        tencentSecretId = prefs.tencentSecretId
+        tencentSecretKey = prefs.tencentSecretKey
+        tencentEngineType = prefs.tencentEngineType.ifBlank { Prefs.DEFAULT_TENCENT_ENGINE_TYPE }
+        tencentStreaming = prefs.tencentStreamingEnabled
+        tencentVadEnabled = prefs.tencentVadEnabled
     }
 
     private fun readAndPersistNormalizedCohereLanguage(): String {
@@ -219,6 +231,8 @@ internal class AsrOnlineSettingsFields(
         applySonioxStreamingSwitch: (Boolean) -> Unit,
         applySonioxLanguageStrictSwitch: (Boolean) -> Unit,
         applyStepAudioUseItnSwitch: (Boolean) -> Unit,
+        applyTencentStreamingSwitch: (Boolean) -> Unit,
+        applyTencentVadSwitch: (Boolean) -> Unit,
         openAiDefaultProfileName: (Int) -> String
     ): AsrOnlineSettingsRouteState = AsrOnlineSettingsRouteState(
         volcAppKey = volcAppKey,
@@ -588,7 +602,35 @@ internal class AsrOnlineSettingsFields(
         sonioxLanguageStrict = sonioxLanguageStrict,
         onSonioxLanguageStrictChange = { checked ->
             applySonioxLanguageStrictSwitch(checked)
-        }
+        },
+        tencentAppId = tencentAppId,
+        onTencentAppIdChange = { value ->
+            tencentAppId = value
+            prefs.tencentAppId = value
+        },
+        tencentSecretId = tencentSecretId,
+        onTencentSecretIdChange = { value ->
+            tencentSecretId = value
+            prefs.tencentSecretId = value
+        },
+        tencentSecretKey = tencentSecretKey,
+        onTencentSecretKeyChange = { value ->
+            tencentSecretKey = value
+            prefs.tencentSecretKey = value
+        },
+        tencentEngineType = tencentEngineType,
+        onTencentEngineTypeChange = { value ->
+            tencentEngineType = value
+            prefs.tencentEngineType = value
+        },
+        tencentStreaming = tencentStreaming,
+        onTencentStreamingChange = { checked ->
+            applyTencentStreamingSwitch(checked)
+        },
+        tencentVadEnabled = tencentVadEnabled,
+        onTencentVadEnabledChange = { checked ->
+            applyTencentVadSwitch(checked)
+        },
     )
 }
 

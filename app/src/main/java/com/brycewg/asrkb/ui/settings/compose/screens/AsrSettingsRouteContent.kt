@@ -286,6 +286,18 @@ internal fun AsrSettingsRouteContent(
                         onChooseSonioxLanguages = showSonioxLanguagePicker,
                         sonioxLanguageStrict = onlineState.sonioxLanguageStrict,
                         onSonioxLanguageStrictChange = onlineState.onSonioxLanguageStrictChange,
+                        tencentAppId = onlineState.tencentAppId,
+                        onTencentAppIdChange = onlineState.onTencentAppIdChange,
+                        tencentSecretId = onlineState.tencentSecretId,
+                        onTencentSecretIdChange = onlineState.onTencentSecretIdChange,
+                        tencentSecretKey = onlineState.tencentSecretKey,
+                        onTencentSecretKeyChange = onlineState.onTencentSecretKeyChange,
+                        tencentEngineType = onlineState.tencentEngineType,
+                        onTencentEngineTypeChange = onlineState.onTencentEngineTypeChange,
+                        tencentStreaming = onlineState.tencentStreaming,
+                        onTencentStreamingChange = onlineState.onTencentStreamingChange,
+                        tencentVadEnabled = onlineState.tencentVadEnabled,
+                        onTencentVadEnabledChange = onlineState.onTencentVadEnabledChange,
                         onOpenGuide = onOpenUrl,
                         primaryIndexOffset = 1,
                         primaryGroupCount = vendorGroupCount
@@ -356,7 +368,8 @@ private fun currentAsrVendorPrimaryItemCount(
     AsrVendor.OpenRouter,
     AsrVendor.MiMo,
     AsrVendor.OpenAI,
-    AsrVendor.Soniox -> currentOnlineAsrPrimaryItemCount(
+    AsrVendor.Soniox,
+    AsrVendor.Tencent -> currentOnlineAsrPrimaryItemCount(
         selectedVendor = selectedVendor,
         openAiProviders = onlineState.openAiProviders,
         openAiUsePrompt = onlineState.openAiUsePrompt,

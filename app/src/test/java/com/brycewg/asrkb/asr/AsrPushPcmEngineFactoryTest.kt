@@ -260,6 +260,7 @@ class AsrPushPcmEngineFactoryTest {
             AsrEngineModePreferences(openAiStreamingEnabled = true),
             AsrEngineModePreferences(dashScopeStreamingEnabled = true),
             AsrEngineModePreferences(sonioxStreamingEnabled = true),
+            AsrEngineModePreferences(tencentStreamingEnabled = true),
             AsrEngineModePreferences(senseVoicePseudoStreamEnabled = true),
             AsrEngineModePreferences(fireRedPseudoStreamEnabled = true)
         )
@@ -385,6 +386,7 @@ class AsrPushPcmEngineFactoryTest {
                 AsrVendor.DashScope -> dashScopeStreamingEnabled
                 AsrVendor.Soniox -> sonioxStreamingEnabled
                 AsrVendor.XAsr -> true
+                AsrVendor.Tencent -> tencentStreamingEnabled
                 else -> false
             },
             volcStandardFileEnabled = volcStandardFileEnabled,
@@ -416,6 +418,7 @@ class AsrPushPcmEngineFactoryTest {
         AsrVendor.OpenAI -> AsrEngineModePreferences(openAiStreamingEnabled = true)
         AsrVendor.DashScope -> AsrEngineModePreferences(dashScopeStreamingEnabled = true)
         AsrVendor.Soniox -> AsrEngineModePreferences(sonioxStreamingEnabled = true)
+        AsrVendor.Tencent -> AsrEngineModePreferences(tencentStreamingEnabled = true)
         else -> error("$vendor is not controlled by a streaming preference")
     }
 

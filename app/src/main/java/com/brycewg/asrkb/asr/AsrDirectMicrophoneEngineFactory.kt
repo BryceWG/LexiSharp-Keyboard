@@ -73,7 +73,8 @@ internal enum class AsrDirectMicrophoneEngineConstructorKey(
     SonioxStream("SonioxStreamAsrEngine", AsrDirectMicrophoneEngineFamily.Stream),
     SenseVoicePseudoStream("SenseVoicePseudoStreamAsrEngine", AsrDirectMicrophoneEngineFamily.LocalPseudoStream),
     FireRedAsrPseudoStream("FireRedAsrPseudoStreamAsrEngine", AsrDirectMicrophoneEngineFamily.LocalPseudoStream),
-    XAsrStream("XAsrStreamAsrEngine", AsrDirectMicrophoneEngineFamily.Stream)
+    XAsrStream("XAsrStreamAsrEngine", AsrDirectMicrophoneEngineFamily.Stream),
+    TencentStream("TencentStreamAsrEngine", AsrDirectMicrophoneEngineFamily.Stream)
 }
 
 internal class AsrDirectMicrophoneEngineFactory(
@@ -200,6 +201,7 @@ internal class AsrDirectMicrophoneEngineFactory(
         AsrVendor.DashScope -> AsrDirectMicrophoneEngineConstructorKey.DashscopeStream
         AsrVendor.Soniox -> AsrDirectMicrophoneEngineConstructorKey.SonioxStream
         AsrVendor.XAsr -> AsrDirectMicrophoneEngineConstructorKey.XAsrStream
+        AsrVendor.Tencent -> AsrDirectMicrophoneEngineConstructorKey.TencentStream
         else -> error("$vendor has no direct stream engine")
     }
 
@@ -285,6 +287,8 @@ internal object RealAsrDirectMicrophoneEngineConstructorTable : AsrDirectMicroph
             FireRedAsrPseudoStreamAsrEngine(request.context, request.scope, request.prefs, request.listener, request.onRequestDuration)
         AsrDirectMicrophoneEngineConstructorKey.XAsrStream ->
             XAsrStreamAsrEngine(request.context, request.scope, request.prefs, request.listener)
+        AsrDirectMicrophoneEngineConstructorKey.TencentStream ->
+            TencentStreamAsrEngine(request.context, request.scope, request.prefs, request.listener)
     }
 }
 
@@ -303,6 +307,7 @@ internal fun Prefs.asrEngineModePreferencesSnapshot(): AsrEngineModePreferences 
         dashScopeStreamingEnabled = isDashStreamingModelSelected(),
         sonioxStreamingEnabled = sonioxStreamingEnabled,
         senseVoicePseudoStreamEnabled = svPseudoStreamEnabled,
-        fireRedPseudoStreamEnabled = frPseudoStreamEnabled
+        fireRedPseudoStreamEnabled = frPseudoStreamEnabled,
+        tencentStreamingEnabled = tencentStreamingEnabled
     )
 }

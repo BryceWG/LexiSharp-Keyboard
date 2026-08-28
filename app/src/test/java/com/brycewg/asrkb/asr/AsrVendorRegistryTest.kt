@@ -65,7 +65,8 @@ class AsrVendorRegistryTest {
                 AsrVendor.Qwen3Asr,
                 AsrVendor.Parakeet,
                 AsrVendor.FireRedAsr,
-                AsrVendor.XAsr
+                AsrVendor.XAsr,
+                AsrVendor.Tencent
             ),
             AsrVendorRegistry.ordered().map { it.vendor }
         )
@@ -213,6 +214,13 @@ class AsrVendorRegistryTest {
                 AsrVendorDisplayTag.Local,
                 AsrVendorDisplayTag.Streaming,
                 AsrVendorDisplayTag.Accurate
+            ),
+            AsrVendor.Tencent to metadata(
+                R.string.vendor_tencent,
+                AsrVendorDisplayTag.Online,
+                AsrVendorDisplayTag.Streaming,
+                AsrVendorDisplayTag.NonStreaming,
+                AsrVendorDisplayTag.Accurate
             )
         )
 
@@ -231,7 +239,8 @@ class AsrVendorRegistryTest {
             AsrVendor.OpenAI,
             AsrVendor.DashScope,
             AsrVendor.Soniox,
-            AsrVendor.XAsr
+            AsrVendor.XAsr,
+            AsrVendor.Tencent
         )
         val pseudoStreaming = setOf(AsrVendor.SenseVoice, AsrVendor.FireRedAsr)
         val local = setOf(
