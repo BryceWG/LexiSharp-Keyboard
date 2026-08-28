@@ -154,6 +154,9 @@ class AsrSessionManager(
 
     private fun nextSessionSeq(): Long {
         sessionSeq += 1L
+        // 会话序号会被复用（结束时归零、下次又从 1 开始），onStopped 去重闸门必须跟着新会话重置，
+        // 否则自动判停这条只靠 onStopped 驱动的链路从第二次录音起就会整段丢失。
+        stoppedSessionGate.reset()
         return sessionSeq
     }
 
@@ -1011,6 +1014,16 @@ class AsrSessionManager(
         }
         if (!stoppedSessionGate.tryDeliver(seq)) {
             Log.d(TAG, "onStopped ignored for already delivered sessionSeq=$seq")
+            try {
+                DebugLogManager.log(
+                    category = "asr",
+                    event = "stopped_dropped",
+                    data = mapOf(
+                        "sessionSeq" to seq,
+                        "reason" to "already_delivered"
+                    )
+                )
+            } catch (_: Throwable) { }
             return
         }
         Log.d(TAG, "onStopped: state=$currentState")
