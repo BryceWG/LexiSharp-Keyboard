@@ -22,6 +22,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
@@ -67,6 +69,17 @@ class AudioCaptureManager(
 
     companion object {
         private const val TAG = "AudioCaptureManager"
+
+        /**
+         * 单次 AudioRecord.read() 的目标时长。
+         *
+         * read() 是阻塞调用且不响应协程取消，停录后必须等当前这次 read 满额返回才能退出循环，
+         * 这段等待均值就是 read 粒度的一半。把 read 粒度与 emit 粒度解耦后，下游仍按
+         * chunkMillis 收帧（VAD 判停窗口、降噪块长、编码队列深度、波形回调频率都不变），
+         * 只有停录退出被加速。
+         */
+        private const val READ_SLICE_MILLIS = 40
+
 
         /**
          * 采集收尾（AudioRecord.stop/release 与音频路由恢复）与音频数据已无关系，
@@ -316,6 +329,11 @@ class AudioCaptureManager(
         val minBuffer = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
         val chunkBytes = ((sampleRate * chunkMillis) / 1000) * bytesPerSample
         val bufferSize = maxOf(minBuffer, chunkBytes)
+        // read 粒度不超过 emit 粒度；小于时循环内累积到 chunkBytes 再 emit。
+        val readSliceBytes = minOf(
+            chunkBytes,
+            ((sampleRate * READ_SLICE_MILLIS) / 1000) * bytesPerSample
+        ).coerceAtLeast(bytesPerSample)
 
         // 3. 初始化 AudioRecord（优先 VOICE_RECOGNITION）
         var recorder: AudioRecord? = try {
@@ -371,6 +389,9 @@ class AudioCaptureManager(
             }
         }
         val buf = ByteArray(chunkBytes)
+        // read 粒度小于 emit 粒度时用 pending 累积，保证下游帧长仍是 chunkMillis。
+        val pending = if (readSliceBytes < chunkBytes) ByteArray(chunkBytes) else null
+        var pendingSize = 0
 
         try {
             // 6. 启动录音
@@ -439,7 +460,7 @@ class AudioCaptureManager(
             while (true) {
                 val readStartedAtMs = SystemClock.elapsedRealtime()
                 val read = try {
-                    activeRecorder.read(buf, 0, buf.size)
+                    activeRecorder.read(buf, 0, readSliceBytes)
                 } catch (t: Throwable) {
                     Log.e(TAG, "Error reading audio data", t)
                     DebugLogManager.logError(
@@ -462,12 +483,30 @@ class AudioCaptureManager(
                 }
                 lastReadEndedAtMs = SystemClock.elapsedRealtime()
                 lastReadMs = lastReadEndedAtMs - readStartedAtMs
+                // read 阻塞且不响应取消，而 flow 只在 emit 处感知取消、emit 粒度仍是 chunkMillis，
+                // 不显式检查就要等累积满一帧才能退出。这里让停录后最多再等一次 read。
+                currentCoroutineContext().ensureActive()
+
 
 
                 if (read > 0) {
-                    // 复制有效数据并 emit
-                    val chunk = buf.copyOf(read)
-                    emit(chunk)
+                    if (pending == null) {
+                        // 复制有效数据并 emit
+                        val chunk = buf.copyOf(read)
+                        emit(chunk)
+                    } else {
+                        var offset = 0
+                        while (offset < read) {
+                            val take = minOf(read - offset, chunkBytes - pendingSize)
+                            System.arraycopy(buf, offset, pending, pendingSize, take)
+                            pendingSize += take
+                            offset += take
+                            if (pendingSize == chunkBytes) {
+                                emit(pending.copyOf())
+                                pendingSize = 0
+                            }
+                        }
+                    }
                 } else if (read < 0) {
                     val error = IllegalStateException("AudioRecord read error: $read")
                     Log.e(TAG, "AudioRecord read returned error code", error)
@@ -487,6 +526,9 @@ class AudioCaptureManager(
                 "t_capture_read_exit",
                 buildMap {
                     put("last_read_ms", lastReadMs)
+                    put("slice_ms", (readSliceBytes / bytesPerSample) * 1000 / sampleRate)
+                    // 累积未满一帧、随协程取消一起丢弃的尾部音频。
+                    put("dropped_ms", (pendingSize / bytesPerSample) * 1000 / sampleRate)
                     if (lastReadEndedAtMs > 0L) {
                         put("since_read_ms", SystemClock.elapsedRealtime() - lastReadEndedAtMs)
                     }
