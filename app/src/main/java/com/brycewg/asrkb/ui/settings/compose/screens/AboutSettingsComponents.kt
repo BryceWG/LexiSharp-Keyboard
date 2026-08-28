@@ -8,7 +8,6 @@
 package com.brycewg.asrkb.ui.settings.compose.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -19,14 +18,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -82,31 +81,36 @@ internal fun AboutAppIntro(
     description: String,
     uiMode: BibiUiMode
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(end = 20.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            AboutText(appName, uiMode, strong = true)
-            AboutText(version, uiMode)
-            AboutText(packageName, uiMode)
-            AboutText(description, uiMode)
-        }
-        Spacer(Modifier.width(12.dp))
-        Box(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
             modifier = Modifier
-                .padding(top = 2.dp)
-                .size(64.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(colorResource(R.color.ic_launcher_background_color))
+                .fillMaxWidth()
+                .padding(end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(R.drawable.ic_launcher_foreground),
-                contentDescription = appName,
-                modifier = Modifier.size(64.dp)
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                AboutText(appName, uiMode, strong = true)
+                AboutText(version, uiMode)
+                AboutText(packageName, uiMode)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            // Adaptive icon foreground 内含安全区留白；放大绘制并裁到占位，让 logo 更饱满。
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clipToBounds(),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    contentDescription = appName,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .scale(1.55f)
+                )
+            }
         }
+        AboutText(description, uiMode)
     }
 }
 
