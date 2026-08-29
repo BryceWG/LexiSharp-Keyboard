@@ -93,20 +93,20 @@ fun buildHistoryRows(
         }
     }
 
-    addSection(HistorySection.WITHIN_2H, records.filter { it.timestamp >= now - twoHoursMs })
-    addSection(
-        HistorySection.TODAY,
-        records.filter { it.timestamp in startOfToday..(now - twoHoursMs) }
-    )
-    addSection(
-        HistorySection.LAST_7D,
-        records.filter { it.timestamp in (now - weekMs)..(startOfToday - 1) }
-    )
-    addSection(
-        HistorySection.LAST_30D,
-        records.filter { it.timestamp in (now - monthMs)..(now - weekMs - 1) }
-    )
-    addSection(HistorySection.OLDER, records.filter { it.timestamp < now - monthMs })
+    // 分区互斥：跨零点后的两小时内，"近 2 小时" 的滑动窗口会覆盖到昨天，
+    // 与按自然日切分的分区重叠。同一条记录落入两个分区会让 LazyColumn 的 key 重复并抛异常。
+    val grouped = records.groupBy { record ->
+        when {
+            record.timestamp >= now - twoHoursMs -> HistorySection.WITHIN_2H
+            record.timestamp >= startOfToday -> HistorySection.TODAY
+            record.timestamp >= now - weekMs -> HistorySection.LAST_7D
+            record.timestamp >= now - monthMs -> HistorySection.LAST_30D
+            else -> HistorySection.OLDER
+        }
+    }
+    HistorySection.entries.forEach { section ->
+        addSection(section, grouped[section].orEmpty())
+    }
     return rows
 }
 
