@@ -339,7 +339,6 @@ class AsrKeyboardService :
         tryPreloadLocalModel()
 
         // 刷新 UI
-        viewRefs?.btnImeSwitcher?.visibility = View.VISIBLE
         mainKeyboardBinder?.applyPunctuationLabels()
         extensionButtonsController?.applyConfig()
         refreshPermissionUi()
