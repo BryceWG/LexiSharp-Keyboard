@@ -1,5 +1,28 @@
 # Changelog
 
+## v4.4.3 (2026-09-06)
+
+### New Features
+
+- **SiliconFlow Models**: Free recognition adds the XingChen ASR series; BYOK adds Qwen3-ASR 1.7B
+- **DashScope Qwen3 Restored**: Qwen3-ASR-Flash (non-streaming) and Qwen3-ASR-Flash-Realtime are available again
+- **[Pro] Hotwords in Polish Prompt**: Append enabled hotwords and aliases to the AI polish prompt; optionally include only phonetically related ones
+
+### Improvements
+
+- **Recognition and Polish Warmup**: Warm online ASR and polish connections when recording starts; capture release is now async, so results appear sooner and polish waits less after you stop
+- **More Reliable Capture**: Faster input-source probing during warmup; preload offline denoising
+
+### Bug Fixes
+
+- **Numpad Height**: Fix the numpad not matching the main keyboard height
+- **Clipboard Attachments**: Reduce repeat processing of watched folders
+- **History Section Crash**: After midnight, the same record no longer appears in both “Last 2 hours” and “Today”, which crashed the history list
+- **IME Key Display**: Fix keys sometimes showing incorrectly
+- **Keyboard Timing**: Fix the data source for recognition-stage duration shown during keyboard recognition
+
+---
+
 ## v4.4.2 (2026-08-27)
 
 ### New Features
