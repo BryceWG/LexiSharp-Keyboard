@@ -248,6 +248,12 @@
             <intent-filter>
                 <action android:name="org.fcitx.fcitx5.android.debug.plugin.VOICE_INPUT" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.fxliang.foxy.plugin.VOICE_INPUT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.fxliang.foxy.debug.plugin.VOICE_INPUT" />
+            </intent-filter>
         </service>
 
         <!-- Android 标准语音识别服务 (RecognitionService) -->
