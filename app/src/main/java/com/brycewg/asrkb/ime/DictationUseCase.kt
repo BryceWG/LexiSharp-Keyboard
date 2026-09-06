@@ -11,12 +11,9 @@ import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 internal class DictationUseCase(
     private val context: Context,
-    private val scope: CoroutineScope,
     private val prefs: Prefs,
     private val asrManager: AsrSessionManager,
     private val inputHelper: InputConnectionHelper,
@@ -346,9 +343,7 @@ internal class DictationUseCase(
             "background_record_queued",
             mapOf("aiUsed" to aiProcessed, "recordId" to prepared.recordId.take(8))
         )
-        scope.launch {
-            commitRecorder.record(prepared)
-        }
+        commitRecorder.recordAsync(prepared)
     }
 
     private fun logSolidifyTiming(event: String, data: Map<String, Any?>) {

@@ -12,7 +12,10 @@ import com.brycewg.asrkb.store.AsrHistoryTimingTrace
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.util.TextSanitizer
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -107,6 +110,16 @@ internal class AsrCommitRecorder(
             )
         )
         return prepared
+    }
+
+    /**
+     * 在不随调用方生命周期取消的 IO scope 上异步落库。
+     *
+     * IME 被 setInputMethod 切走后 serviceScope.cancel() 会取消尚未派发的落库协程，
+     * 导致已出队的历史记录静默丢失，因此落库必须脱离 IME 生命周期执行。
+     */
+    fun recordAsync(prepared: PreparedCommit) {
+        ioScope.launch { record(prepared) }
     }
 
     /** 使用调用方生命周期约束的协程异步持久化已冻结快照。 */
@@ -239,4 +252,8 @@ internal class AsrCommitRecorder(
         } catch (_: Throwable) {
             0L
         }
+
+    companion object {
+        private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    }
 }

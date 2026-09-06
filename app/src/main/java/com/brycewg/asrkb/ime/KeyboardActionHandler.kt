@@ -114,7 +114,6 @@ class KeyboardActionHandler(
 
     private val dictationUseCase = DictationUseCase(
         context = context,
-        scope = scope,
         prefs = prefs,
         asrManager = asrManager,
         inputHelper = inputHelper,
@@ -691,9 +690,7 @@ class KeyboardActionHandler(
             null
         }
         if (prepared != null) {
-            scope.launch {
-                commitRecorder.record(prepared)
-            }
+            commitRecorder.recordAsync(prepared)
         }
         transitionToState(KeyboardState.Idle)
         uiListener?.onStatusMessage(context.getString(R.string.status_postprocess_interrupted_raw))
