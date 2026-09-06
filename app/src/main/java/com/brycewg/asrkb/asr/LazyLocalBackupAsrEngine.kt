@@ -105,7 +105,9 @@ internal class LazyLocalBackupAsrEngine(
     private val externalVadInputLeveler = VadInputLevelerBranch(sampleRate = SAMPLE_RATE)
 
     @Volatile private var stoppedNotified: Boolean = false
+
     @Volatile private var startUptimeMs: Long = 0L
+
     @Volatile private var lastBackupStatus: String? = null
 
     private val terminalCoordinator = BackupAsrTerminalCoordinator(
@@ -124,8 +126,7 @@ internal class LazyLocalBackupAsrEngine(
     private val primaryListener = EngineListener(Source.PRIMARY)
     private val backupListener = EngineListener(Source.BACKUP)
 
-    override fun wasLastResultFromBackup(): Boolean =
-        terminalCoordinator.wasLastResultFromBackup()
+    override fun wasLastResultFromBackup(): Boolean = terminalCoordinator.wasLastResultFromBackup()
 
     override fun start() {
         if (!running.compareAndSet(false, true)) return
@@ -368,9 +369,10 @@ internal class LazyLocalBackupAsrEngine(
         } catch (t: Throwable) {
             Log.w(TAG, "buffer PCM failed ($sourceLabel)", t)
         }
-        val capReached = maxBufferedPcmBytes > 0 && synchronized(pcmLock) {
-            pcmBuffer.size() >= maxBufferedPcmBytes
-        }
+        val capReached = maxBufferedPcmBytes > 0 &&
+            synchronized(pcmLock) {
+                pcmBuffer.size() >= maxBufferedPcmBytes
+            }
 
         // Deferred/file primaries can only be flushed from the capped buffer on stop.
         if (primaryConsumer is GenericPushFileAsrAdapter) return capReached
@@ -539,8 +541,7 @@ internal class LazyLocalBackupAsrEngine(
         }
     }
 
-    private fun isPrimaryStreamingForSwitchPlan(): Boolean =
-        primaryConsumer !is GenericPushFileAsrAdapter
+    private fun isPrimaryStreamingForSwitchPlan(): Boolean = primaryConsumer !is GenericPushFileAsrAdapter
 
     private fun onPrimarySuspicious(event: AsrBackupArbitrationEvent.PrimaryError) {
         synchronized(stateLock) {
@@ -592,30 +593,28 @@ internal class LazyLocalBackupAsrEngine(
         if (shouldStop) cleanupAfterTerminal()
     }
 
-    private fun Terminal.shouldTriggerBackup(): Boolean =
-        when (this) {
-            is Terminal.Final -> false
-            is Terminal.Error ->
-                AsrPrimaryErrorClassifier.classifyMessage(message) ==
-                    AsrPrimaryErrorStrategy.ImmediateFailover
-        }
+    private fun Terminal.shouldTriggerBackup(): Boolean = when (this) {
+        is Terminal.Final -> false
+        is Terminal.Error ->
+            AsrPrimaryErrorClassifier.classifyMessage(message) ==
+                AsrPrimaryErrorStrategy.ImmediateFailover
+    }
 
-    private fun Terminal.toArbitrationEvent(source: Source): AsrBackupArbitrationEvent =
-        when (source) {
-            Source.PRIMARY -> when (this) {
-                is Terminal.Final -> AsrBackupArbitrationEvent.PrimaryFinal(text)
-                is Terminal.Error ->
-                    if (AsrErrorMessageMapper.isEmptyResult(context, message)) {
-                        AsrBackupArbitrationEvent.PrimaryFinal("")
-                    } else {
-                        AsrBackupArbitrationEvent.PrimaryError(message)
-                    }
-            }
-            Source.BACKUP -> when (this) {
-                is Terminal.Final -> AsrBackupArbitrationEvent.BackupFinal(text)
-                is Terminal.Error -> AsrBackupArbitrationEvent.BackupError(message)
-            }
+    private fun Terminal.toArbitrationEvent(source: Source): AsrBackupArbitrationEvent = when (source) {
+        Source.PRIMARY -> when (this) {
+            is Terminal.Final -> AsrBackupArbitrationEvent.PrimaryFinal(text)
+            is Terminal.Error ->
+                if (AsrErrorMessageMapper.isEmptyResult(context, message)) {
+                    AsrBackupArbitrationEvent.PrimaryFinal("")
+                } else {
+                    AsrBackupArbitrationEvent.PrimaryError(message)
+                }
         }
+        Source.BACKUP -> when (this) {
+            is Terminal.Final -> AsrBackupArbitrationEvent.BackupFinal(text)
+            is Terminal.Error -> AsrBackupArbitrationEvent.BackupError(message)
+        }
+    }
 
     private fun deliverFinalFromCoordinator(
         text: String,

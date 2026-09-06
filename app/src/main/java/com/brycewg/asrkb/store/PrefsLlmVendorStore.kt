@@ -123,10 +123,8 @@ internal object PrefsLlmVendorStore {
         return sp.getString(key, "") ?: ""
     }
 
-    fun getLlmVendorReasoningParamsOnJson(sp: SharedPreferences, vendor: LlmVendor): String {
-        return getStoredLlmVendorReasoningParamsOnJson(sp, vendor)
-            .ifBlank { defaultReasoningParamsOnJson(vendor) }
-    }
+    fun getLlmVendorReasoningParamsOnJson(sp: SharedPreferences, vendor: LlmVendor): String = getStoredLlmVendorReasoningParamsOnJson(sp, vendor)
+        .ifBlank { defaultReasoningParamsOnJson(vendor) }
 
     fun setLlmVendorReasoningParamsOnJson(sp: SharedPreferences, vendor: LlmVendor, json: String) {
         val key = "llm_vendor_${vendor.id}_reasoning_on_json"
@@ -138,10 +136,8 @@ internal object PrefsLlmVendorStore {
         return sp.getString(key, "") ?: ""
     }
 
-    fun getLlmVendorReasoningParamsOffJson(sp: SharedPreferences, vendor: LlmVendor): String {
-        return getStoredLlmVendorReasoningParamsOffJson(sp, vendor)
-            .ifBlank { defaultReasoningParamsOffJson(vendor) }
-    }
+    fun getLlmVendorReasoningParamsOffJson(sp: SharedPreferences, vendor: LlmVendor): String = getStoredLlmVendorReasoningParamsOffJson(sp, vendor)
+        .ifBlank { defaultReasoningParamsOffJson(vendor) }
 
     fun setLlmVendorReasoningParamsOffJson(sp: SharedPreferences, vendor: LlmVendor, json: String) {
         val key = "llm_vendor_${vendor.id}_reasoning_off_json"

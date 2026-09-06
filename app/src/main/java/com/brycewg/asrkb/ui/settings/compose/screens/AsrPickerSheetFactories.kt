@@ -43,7 +43,7 @@ internal fun asrStringChoiceSheetState(
     context = context,
     titleResId = titleResId,
     items = items,
-    selectedIndex = items.indexOf(selectedItem).coerceAtLeast(0),
+    selectedIndex = items.indexOf(selectedItem).coerceAtLeast(0)
 ) { selectedIdx ->
     onSelected(items.getOrElse(selectedIdx) { fallbackItem })
 }
@@ -61,7 +61,7 @@ internal fun <T> asrValueChoiceSheetState(
     context = context,
     titleResId = titleResId,
     items = options.map(labelOf),
-    selectedIndex = options.indexOfFirst { valueOf(it) == selectedValue }.coerceAtLeast(0),
+    selectedIndex = options.indexOfFirst { valueOf(it) == selectedValue }.coerceAtLeast(0)
 ) { selectedIdx ->
     onSelected(options.getOrNull(selectedIdx)?.let(valueOf) ?: fallbackValue)
 }

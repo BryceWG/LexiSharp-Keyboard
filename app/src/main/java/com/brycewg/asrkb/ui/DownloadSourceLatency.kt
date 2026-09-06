@@ -30,8 +30,7 @@ data class DownloadSourceLatencyResult(
     val latencyMs: Long = 0L
 )
 
-suspend fun measureDownloadSourceLatency(url: String): DownloadSourceLatencyResult =
-    measureDownloadSourceLatency(url, createLatencyHttpClient())
+suspend fun measureDownloadSourceLatency(url: String): DownloadSourceLatencyResult = measureDownloadSourceLatency(url, createLatencyHttpClient())
 
 /**
  * 可注入 OkHttpClient 的测速入口，供单测缩短超时或接入 MockWebServer。

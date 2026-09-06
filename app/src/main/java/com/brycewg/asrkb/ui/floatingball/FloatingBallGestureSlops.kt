@@ -36,8 +36,7 @@ internal fun resolveFloatingBallGestureSlops(
     )
 }
 
-private fun dpToPx(value: Int, density: Float): Int =
-    (value * density).roundToInt().coerceAtLeast(1)
+private fun dpToPx(value: Int, density: Float): Int = (value * density).roundToInt().coerceAtLeast(1)
 
 internal fun exceedsFloatingBallMoveSlop(dx: Int, dy: Int, slop: Int): Boolean {
     val distanceSquared = dx.toDouble() * dx + dy.toDouble() * dy

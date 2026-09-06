@@ -5,19 +5,16 @@
  */
 package com.brycewg.asrkb.store
 
-internal fun normalizeOpenAiTranscriptionsEndpoint(endpoint: String): String =
-    endpoint.ifBlank { Prefs.DEFAULT_OA_ASR_ENDPOINT }
-        .trim()
-        .trimEnd('/')
+internal fun normalizeOpenAiTranscriptionsEndpoint(endpoint: String): String = endpoint.ifBlank { Prefs.DEFAULT_OA_ASR_ENDPOINT }
+    .trim()
+    .trimEnd('/')
 
-internal fun isOpenAiOfficialTranscriptionsEndpoint(endpoint: String): Boolean =
-    normalizeOpenAiTranscriptionsEndpoint(endpoint).equals(
-        normalizeOpenAiTranscriptionsEndpoint(Prefs.DEFAULT_OA_ASR_ENDPOINT),
-        ignoreCase = true
-    )
+internal fun isOpenAiOfficialTranscriptionsEndpoint(endpoint: String): Boolean = normalizeOpenAiTranscriptionsEndpoint(endpoint).equals(
+    normalizeOpenAiTranscriptionsEndpoint(Prefs.DEFAULT_OA_ASR_ENDPOINT),
+    ignoreCase = true
+)
 
-internal fun isOpenAiCustomTranscriptionsEndpoint(endpoint: String): Boolean =
-    !isOpenAiOfficialTranscriptionsEndpoint(endpoint)
+internal fun isOpenAiCustomTranscriptionsEndpoint(endpoint: String): Boolean = !isOpenAiOfficialTranscriptionsEndpoint(endpoint)
 
 internal fun shouldCompressAudioBeforeOpenAiUpload(
     globalEnabled: Boolean,

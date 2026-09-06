@@ -11,7 +11,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.brycewg.asrkb.asr.normalizeCohereLanguageForModel
-import com.brycewg.asrkb.asr.GeminiAsrMode
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.settings.asr.AsrSettingsViewModel
 import java.util.UUID
@@ -20,8 +19,7 @@ internal const val GEMINI_TRANSCRIBE_CUSTOM_LANGUAGE_ID = "__custom__"
 
 private val GEMINI_TRANSCRIBE_PRESET_LANGUAGES = setOf("", "cmn-Hans-CN", "yue-Hant-HK", "en-US", "ja-JP", "ko-KR")
 
-internal fun isCustomGeminiTranscribeLanguage(value: String): Boolean =
-    value.isNotBlank() && value !in GEMINI_TRANSCRIBE_PRESET_LANGUAGES
+internal fun isCustomGeminiTranscribeLanguage(value: String): Boolean = value.isNotBlank() && value !in GEMINI_TRANSCRIBE_PRESET_LANGUAGES
 
 internal class AsrOnlineSettingsFields(
     private val prefs: Prefs

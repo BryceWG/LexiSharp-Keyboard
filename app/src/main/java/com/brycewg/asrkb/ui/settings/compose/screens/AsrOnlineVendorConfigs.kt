@@ -431,16 +431,23 @@ internal fun CurrentAsrVendorConfig(
             var itemIndex = primaryIndexOffset
             val commonFields = if (geminiAsrMode == GeminiAsrMode.Gemini) {
                 geminiCommonTextFields(
-                    apiKey = geminiApiKey, onApiKeyChange = onGeminiApiKeyChange,
-                    endpoint = geminiEndpoint, onEndpointChange = onGeminiEndpointChange,
-                    model = geminiModel, onModelChange = onGeminiModelChange,
-                    prompt = geminiPrompt, onPromptChange = onGeminiPromptChange
+                    apiKey = geminiApiKey,
+                    onApiKeyChange = onGeminiApiKeyChange,
+                    endpoint = geminiEndpoint,
+                    onEndpointChange = onGeminiEndpointChange,
+                    model = geminiModel,
+                    onModelChange = onGeminiModelChange,
+                    prompt = geminiPrompt,
+                    onPromptChange = onGeminiPromptChange
                 )
             } else {
                 geminiTranscribeTextFields(
-                    apiKey = geminiTranscribeApiKey, onApiKeyChange = onGeminiTranscribeApiKeyChange,
-                    endpoint = geminiTranscribeEndpoint, onEndpointChange = onGeminiTranscribeEndpointChange,
-                    model = geminiTranscribeModel, onModelChange = onGeminiTranscribeModelChange
+                    apiKey = geminiTranscribeApiKey,
+                    onApiKeyChange = onGeminiTranscribeApiKeyChange,
+                    endpoint = geminiTranscribeEndpoint,
+                    onEndpointChange = onGeminiTranscribeEndpointChange,
+                    model = geminiTranscribeModel,
+                    onModelChange = onGeminiTranscribeModelChange
                 )
             }
             val transcribeExtra = if (geminiAsrMode == GeminiAsrMode.Transcribe) 2 + if (geminiTranscribeCustomLanguageVisible) 1 else 0 else 0
@@ -452,7 +459,8 @@ internal fun CurrentAsrVendorConfig(
                     DropdownOption(GeminiAsrMode.Transcribe.id, stringResource(R.string.gemini_asr_mode_transcribe))
                 ),
                 selectedOptionId = geminiAsrMode.id,
-                index = itemIndex++, count = itemCount,
+                index = itemIndex++,
+                count = itemCount,
                 onSelectedOptionChange = { onGeminiAsrModeChange(GeminiAsrMode.fromId(it)) }
             )
             itemIndex = CommonOnlineAsrTextFields(
@@ -463,29 +471,39 @@ internal fun CurrentAsrVendorConfig(
             )
             if (geminiAsrMode == GeminiAsrMode.Gemini) {
                 AsrSwitchPreference(
-                    id = "gemini_disable_thinking", titleRes = R.string.label_gemini_disable_thinking,
-                    checked = geminiDisableThinking, index = itemIndex++, count = itemCount,
+                    id = "gemini_disable_thinking",
+                    titleRes = R.string.label_gemini_disable_thinking,
+                    checked = geminiDisableThinking,
+                    index = itemIndex++,
+                    count = itemCount,
                     onCheckedChange = onGeminiDisableThinkingChange
                 )
             } else {
                 val selectedLanguage = if (geminiTranscribeCustomLanguageVisible) GEMINI_TRANSCRIBE_CUSTOM_LANGUAGE_ID else geminiTranscribeLanguage
                 AsrDropdownPreference(
                     titleRes = R.string.label_gemini_transcribe_language,
-                    options = geminiTranscribeLanguageOptions(context), selectedOptionId = selectedLanguage,
-                    index = itemIndex++, count = itemCount,
+                    options = geminiTranscribeLanguageOptions(context),
+                    selectedOptionId = selectedLanguage,
+                    index = itemIndex++,
+                    count = itemCount,
                     onSelectedOptionChange = onGeminiTranscribeLanguageOptionSelected
                 )
                 if (geminiTranscribeCustomLanguageVisible) {
                     AsrTextField(
-                        uiMode = uiMode, value = geminiTranscribeLanguage,
+                        uiMode = uiMode,
+                        value = geminiTranscribeLanguage,
                         onValueChange = onGeminiTranscribeLanguageChange,
                         label = stringResource(R.string.label_gemini_transcribe_custom_language),
-                        index = itemIndex++, count = itemCount
+                        index = itemIndex++,
+                        count = itemCount
                     )
                 }
                 AsrSwitchPreference(
-                    id = "gemini_transcribe_smart", titleRes = R.string.label_gemini_transcribe_smart,
-                    checked = geminiTranscribeSmartEnabled, index = itemIndex++, count = itemCount,
+                    id = "gemini_transcribe_smart",
+                    titleRes = R.string.label_gemini_transcribe_smart,
+                    checked = geminiTranscribeSmartEnabled,
+                    index = itemIndex++,
+                    count = itemCount,
                     onCheckedChange = onGeminiTranscribeSmartEnabledChange
                 )
             }
@@ -786,9 +804,12 @@ internal fun geminiCommonTextFields(
 )
 
 private fun geminiTranscribeTextFields(
-    apiKey: String, onApiKeyChange: (String) -> Unit,
-    endpoint: String, onEndpointChange: (String) -> Unit,
-    model: String, onModelChange: (String) -> Unit
+    apiKey: String,
+    onApiKeyChange: (String) -> Unit,
+    endpoint: String,
+    onEndpointChange: (String) -> Unit,
+    model: String,
+    onModelChange: (String) -> Unit
 ): List<OnlineAsrTextFieldSpec> = listOf(
     OnlineAsrTextFieldSpec(KEY_GEM_TRANSCRIBE_API_KEY, VendorFieldRole.Credential, R.string.label_gemini_api_key, apiKey, onApiKeyChange, password = true),
     OnlineAsrTextFieldSpec(KEY_GEM_TRANSCRIBE_ENDPOINT, VendorFieldRole.Endpoint, R.string.label_gemini_endpoint, endpoint, onEndpointChange, displayDefault = Prefs.DEFAULT_GEM_ENDPOINT),
@@ -1136,8 +1157,7 @@ private fun mimoPrimaryItemCount(
     promptVisible: Boolean
 ): Int = 5 + (if (customEndpointVisible) 1 else 0) + (if (promptVisible) 2 else 0)
 
-private fun stepAudioPrimaryItemCount(customEndpointVisible: Boolean): Int =
-    6 + (if (customEndpointVisible) 1 else 0)
+private fun stepAudioPrimaryItemCount(customEndpointVisible: Boolean): Int = 6 + (if (customEndpointVisible) 1 else 0)
 
 private fun mimoGuideUrl(endpointPreset: String): String = if (
     endpointPreset == Prefs.MIMO_ENDPOINT_PRESET_PAYGO ||
@@ -1213,21 +1233,17 @@ internal fun cohereLanguageOptions(
     return codes.map { code -> OnlineVendorChoice(code, context.getString(labels.getValue(code))) }
 }
 
-internal fun cohereModelOptions(context: Context): List<OnlineVendorChoice> =
-    Prefs.COHERE_ASR_MODELS.map { model -> OnlineVendorChoice(model, model) } +
-        OnlineVendorChoice(
-            COHERE_CUSTOM_MODEL_OPTION_ID,
-            context.getString(R.string.option_custom_model)
-        )
+internal fun cohereModelOptions(context: Context): List<OnlineVendorChoice> = Prefs.COHERE_ASR_MODELS.map { model -> OnlineVendorChoice(model, model) } +
+    OnlineVendorChoice(
+        COHERE_CUSTOM_MODEL_OPTION_ID,
+        context.getString(R.string.option_custom_model)
+    )
 
-internal fun cohereModelSelection(model: String): String =
-    model.takeIf { it in Prefs.COHERE_ASR_MODELS } ?: COHERE_CUSTOM_MODEL_OPTION_ID
+internal fun cohereModelSelection(model: String): String = model.takeIf { it in Prefs.COHERE_ASR_MODELS } ?: COHERE_CUSTOM_MODEL_OPTION_ID
 
-internal fun isCohereCustomModel(model: String): Boolean =
-    cohereModelSelection(model) == COHERE_CUSTOM_MODEL_OPTION_ID
+internal fun isCohereCustomModel(model: String): Boolean = cohereModelSelection(model) == COHERE_CUSTOM_MODEL_OPTION_ID
 
-private fun coherePrimaryItemCount(customModelVisible: Boolean): Int =
-    4 + if (customModelVisible) 1 else 0
+private fun coherePrimaryItemCount(customModelVisible: Boolean): Int = 4 + if (customModelVisible) 1 else 0
 
 internal fun displaySfFreeAsrModel(prefs: Prefs): String = prefs.sfFreeAsrModel.ifBlank {
     Prefs.DEFAULT_SF_FREE_ASR_MODEL

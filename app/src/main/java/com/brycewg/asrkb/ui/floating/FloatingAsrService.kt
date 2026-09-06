@@ -18,15 +18,15 @@ import android.view.View
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.brycewg.asrkb.R
-import com.brycewg.asrkb.imebridge.ImeBridgeClient
-import com.brycewg.asrkb.imebridge.ImeBridgeContract
-import com.brycewg.asrkb.imebridge.ImeBridgeResult
 import com.brycewg.asrkb.LocaleHelper
+import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.asr.ContinuousCaptureCoordinator
 import com.brycewg.asrkb.asr.ContinuousCaptureOwner
+import com.brycewg.asrkb.imebridge.ImeBridgeClient
+import com.brycewg.asrkb.imebridge.ImeBridgeContract
+import com.brycewg.asrkb.imebridge.ImeBridgeResult
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.ui.floatingball.AsrSessionManager
@@ -543,8 +543,7 @@ class FloatingAsrService : Service() {
         }
     }
 
-    private fun isEffectiveImeVisible(): Boolean =
-        if (isImeBridgeEnabled()) bridgeImeVisible ?: imeVisible else imeVisible
+    private fun isEffectiveImeVisible(): Boolean = if (isImeBridgeEnabled()) bridgeImeVisible ?: imeVisible else imeVisible
 
     private fun isImeBridgeEnabled(): Boolean = try {
         prefs.floatingImeBridgeEnabled

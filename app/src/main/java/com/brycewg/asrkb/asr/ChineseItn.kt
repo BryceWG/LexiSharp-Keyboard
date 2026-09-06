@@ -62,10 +62,8 @@ object ChineseItn {
     }
 
     // 只保留固定词/成语本体，避免部分重叠的数字短语被误当成保护词。
-    private fun isWithinIdiomRange(range: IntRange, idiomRanges: List<IntRange>): Boolean {
-        return idiomRanges.any { idiomRange ->
-            idiomRange.first <= range.first && idiomRange.last >= range.last
-        }
+    private fun isWithinIdiomRange(range: IntRange, idiomRanges: List<IntRange>): Boolean = idiomRanges.any { idiomRange ->
+        idiomRange.first <= range.first && idiomRange.last >= range.last
     }
 
     private fun isCjk(ch: Char): Boolean = ch in '\u4E00'..'\u9FFF'

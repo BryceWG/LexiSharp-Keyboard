@@ -11,7 +11,6 @@ import android.util.Log
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.analytics.AnalyticsManager
 import com.brycewg.asrkb.asr.*
-import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.AsrHistoryAudioStore
 import com.brycewg.asrkb.store.AsrHistoryFailureRecorder
@@ -20,13 +19,14 @@ import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
 import com.brycewg.asrkb.store.AsrHistoryTimingRecorder
 import com.brycewg.asrkb.store.AsrHistoryTimingStage
 import com.brycewg.asrkb.store.AsrHistoryTimingTrace
+import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import com.brycewg.asrkb.util.TypewriterTextAnimator
-import java.util.concurrent.atomic.AtomicLong
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -1019,12 +1019,10 @@ internal class ExternalSpeechSession(
         return trace
     }
 
-    private fun currentHistoryFailStage(): AsrHistoryStore.AsrHistoryFailStage {
-        return if (engine?.isRunning == true) {
-            AsrHistoryStore.AsrHistoryFailStage.RECORDING
-        } else {
-            AsrHistoryStore.AsrHistoryFailStage.RECOGNITION
-        }
+    private fun currentHistoryFailStage(): AsrHistoryStore.AsrHistoryFailStage = if (engine?.isRunning == true) {
+        AsrHistoryStore.AsrHistoryFailStage.RECORDING
+    } else {
+        AsrHistoryStore.AsrHistoryFailStage.RECOGNITION
     }
 
     private fun snapshotAudioDurationIfPossible() {
@@ -1057,4 +1055,3 @@ internal class ExternalSpeechSession(
         1
     }
 }
-

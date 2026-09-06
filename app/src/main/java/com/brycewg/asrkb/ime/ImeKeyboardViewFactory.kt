@@ -9,8 +9,8 @@ import android.animation.AnimatorInflater
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.text.TextUtils
 import android.util.TypedValue
 import android.view.Gravity
@@ -76,41 +76,38 @@ internal object ImeKeyboardViewFactory {
         return root
     }
 
-    private fun createKeyboardPanel(context: Context): FrameLayout =
-        FrameLayout(context).apply {
-            id = R.id.keyboardFloatingPanel
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            )
-            clipToPadding = false
-            clipChildren = true
-            background = ContextCompat.getDrawable(context, R.drawable.bg_keyboard_container)
-            setPadding(dp(context, 12), dp(context, 8), dp(context, 12), dp(context, 8))
-        }
+    private fun createKeyboardPanel(context: Context): FrameLayout = FrameLayout(context).apply {
+        id = R.id.keyboardFloatingPanel
+        layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        )
+        clipToPadding = false
+        clipChildren = true
+        background = ContextCompat.getDrawable(context, R.drawable.bg_keyboard_container)
+        setPadding(dp(context, 12), dp(context, 8), dp(context, 12), dp(context, 8))
+    }
 
-    private fun createSystemBottomSpace(context: Context): View =
-        View(context).apply {
-            id = R.id.keyboardSystemBottomSpace
-            visibility = View.GONE
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                0
-            ).apply {
-                gravity = Gravity.BOTTOM
-            }
+    private fun createSystemBottomSpace(context: Context): View = View(context).apply {
+        id = R.id.keyboardSystemBottomSpace
+        visibility = View.GONE
+        layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            0
+        ).apply {
+            gravity = Gravity.BOTTOM
         }
+    }
 
-    private fun createKeyboardContentPanel(context: Context): FrameLayout =
-        FrameLayout(context).apply {
-            id = R.id.keyboardContentPanel
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            )
-            clipToPadding = false
-            clipChildren = false
-        }
+    private fun createKeyboardContentPanel(context: Context): FrameLayout = FrameLayout(context).apply {
+        id = R.id.keyboardContentPanel
+        layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        )
+        clipToPadding = false
+        clipChildren = false
+    }
 
     fun applyTheme(root: View, prefs: Prefs) {
         val context = root.context
@@ -476,35 +473,33 @@ internal object ImeKeyboardViewFactory {
         )
     }
 
-    private fun createResizeHandle(context: Context, handleId: Int, handleGravity: Int): View =
-        View(context).apply {
-            id = handleId
-            visibility = View.GONE
-            alpha = 0f
-            contentDescription = context.getString(R.string.cd_floating_keyboard_resize)
-            isClickable = true
-            isFocusable = true
-            setBackgroundColor(Color.TRANSPARENT)
-            layoutParams = FrameLayout.LayoutParams(dp(context, 96), dp(context, 24)).apply {
-                gravity = handleGravity
-            }
+    private fun createResizeHandle(context: Context, handleId: Int, handleGravity: Int): View = View(context).apply {
+        id = handleId
+        visibility = View.GONE
+        alpha = 0f
+        contentDescription = context.getString(R.string.cd_floating_keyboard_resize)
+        isClickable = true
+        isFocusable = true
+        setBackgroundColor(Color.TRANSPARENT)
+        layoutParams = FrameLayout.LayoutParams(dp(context, 96), dp(context, 24)).apply {
+            gravity = handleGravity
         }
+    }
 
-    private fun createDockButton(context: Context, buttonId: Int, contentDescriptionRes: Int, iconRes: Int): ImageButton =
-        ImageButton(context).apply {
-            id = buttonId
-            visibility = View.GONE
-            contentDescription = context.getString(contentDescriptionRes)
-            isClickable = true
-            isFocusable = true
-            background = selectableBorderless(context)
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            setImageResource(iconRes)
-            setPadding(dp(context, 8), dp(context, 8), dp(context, 8), dp(context, 8))
-            layoutParams = FrameLayout.LayoutParams(dp(context, 48), dp(context, 48)).apply {
-                gravity = Gravity.CENTER_VERTICAL or Gravity.START
-            }
+    private fun createDockButton(context: Context, buttonId: Int, contentDescriptionRes: Int, iconRes: Int): ImageButton = ImageButton(context).apply {
+        id = buttonId
+        visibility = View.GONE
+        contentDescription = context.getString(contentDescriptionRes)
+        isClickable = true
+        isFocusable = true
+        background = selectableBorderless(context)
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        setImageResource(iconRes)
+        setPadding(dp(context, 8), dp(context, 8), dp(context, 8), dp(context, 8))
+        layoutParams = FrameLayout.LayoutParams(dp(context, 48), dp(context, 48)).apply {
+            gravity = Gravity.CENTER_VERTICAL or Gravity.START
         }
+    }
 
     internal fun createLayoutBlockButton(
         context: Context,
@@ -985,7 +980,7 @@ internal object ImeKeyboardViewFactory {
     }
 
     private val iconKeyIds: IntArray = (
-            keyboardButtonIds(ButtonViewKind.Icon) +
+        keyboardButtonIds(ButtonViewKind.Icon) +
             keyboardButtonIds(ButtonViewKind.External) +
             listOf(
                 R.id.clip_btnBack,

@@ -80,8 +80,7 @@ internal class AsrDirectMicrophoneEngineFactory(
     private val constructors: AsrDirectMicrophoneEngineConstructorTable =
         RealAsrDirectMicrophoneEngineConstructorTable
 ) {
-    fun create(request: AsrDirectMicrophoneEngineRequest): StreamingAsrEngine =
-        constructors.create(resolvePlan(request.vendor, request.preferences, request.source), request)
+    fun create(request: AsrDirectMicrophoneEngineRequest): StreamingAsrEngine = constructors.create(resolvePlan(request.vendor, request.preferences, request.source), request)
 
     fun createOrNull(request: AsrDirectMicrophoneEngineRequest): StreamingAsrEngine? {
         if (!isRequestAvailable(request)) return null
@@ -211,29 +210,28 @@ internal class AsrDirectMicrophoneEngineFactory(
         else -> error("$vendor has no direct pseudo stream engine")
     }
 
-    private fun isRequestAvailable(request: AsrDirectMicrophoneEngineRequest): Boolean =
-        isDirectMicrophoneFactoryVendorAvailable(
-            vendor = request.vendor,
-            invocationMode = AsrEngineInvocationMode.DirectMicrophoneCapture,
-            checkers = AsrVendorAvailabilityCheckers(
-                onlineConfiguration = { checkedVendor ->
-                    isOnlineAsrVendorConfigured(
-                        checkedVendor,
-                        AsrOnlineConfigurationChecks(
-                            hasSfKeys = { request.prefs.hasSfKeys() },
-                            hasVendorKeys = { request.prefs.hasVendorKeys(it) }
-                        )
+    private fun isRequestAvailable(request: AsrDirectMicrophoneEngineRequest): Boolean = isDirectMicrophoneFactoryVendorAvailable(
+        vendor = request.vendor,
+        invocationMode = AsrEngineInvocationMode.DirectMicrophoneCapture,
+        checkers = AsrVendorAvailabilityCheckers(
+            onlineConfiguration = { checkedVendor ->
+                isOnlineAsrVendorConfigured(
+                    checkedVendor,
+                    AsrOnlineConfigurationChecks(
+                        hasSfKeys = { request.prefs.hasSfKeys() },
+                        hasVendorKeys = { request.prefs.hasVendorKeys(it) }
                     )
-                },
-                localModelReadiness = { checkedVendor ->
-                    AsrLocalVendorLifecycles.isModelReady(
-                        request.context,
-                        request.prefs,
-                        checkedVendor
-                    )
-                }
-            )
+                )
+            },
+            localModelReadiness = { checkedVendor ->
+                AsrLocalVendorLifecycles.isModelReady(
+                    request.context,
+                    request.prefs,
+                    checkedVendor
+                )
+            }
         )
+    )
 }
 
 internal fun isDirectMicrophoneFactoryVendorAvailable(

@@ -36,14 +36,12 @@ internal object LlmPostprocessTimeouts {
         )
     }
 
-    fun connectivityBudget(reasoningEnabled: Boolean): Budget {
-        return Budget(
-            firstTokenMs = CONNECTIVITY_FIRST_TOKEN_MS,
-            outputMs = CONNECTIVITY_OUTPUT_MS,
-            reasoningEnabled = reasoningEnabled,
-            charCount = 0
-        )
-    }
+    fun connectivityBudget(reasoningEnabled: Boolean): Budget = Budget(
+        firstTokenMs = CONNECTIVITY_FIRST_TOKEN_MS,
+        outputMs = CONNECTIVITY_OUTPUT_MS,
+        reasoningEnabled = reasoningEnabled,
+        charCount = 0
+    )
 
     fun outputTimeoutMs(inputCharCount: Int): Long {
         val estimatedMs = inputCharCount.coerceAtLeast(0) * 1_000L / OUTPUT_TPS

@@ -51,6 +51,7 @@ class XAsrStreamAsrEngine(
     companion object {
         private const val TAG = "XAsrStreamAsrEngine"
         private const val FRAME_MS = 200
+
         // 仅防止采集协程挂死；正常路径必须等 Flow/Channel 自然结束。
         private const val CAPTURE_DRAIN_HANG_TIMEOUT_MS = 3000L
     }
@@ -484,7 +485,6 @@ class XAsrStreamAsrEngine(
         }
         return false
     }
-
 }
 
 private class XAsrOnnxStreamSink(

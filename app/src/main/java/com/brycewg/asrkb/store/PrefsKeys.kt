@@ -140,6 +140,7 @@ internal const val KEY_VOLC_STREAMING_ENABLED = "volc_streaming_enabled"
 internal const val KEY_DASH_STREAMING_ENABLED = "dash_streaming_enabled"
 internal const val KEY_DASH_FUNASR_ENABLED = "dash_funasr_enabled"
 internal const val KEY_DASH_ASR_MODEL = "dash_asr_model"
+
 // Keep the persisted value compatible with older releases.
 internal const val KEY_DASH_SEMANTIC_PUNCT_ENABLED = "dash_funasr_semantic_punct_enabled"
 internal const val KEY_VOLC_DDC_ENABLED = "volc_ddc_enabled"
@@ -270,6 +271,7 @@ internal const val KEY_SC_SERVER_BASE = "syncclip_server_base"
 internal const val KEY_SC_USERNAME = "syncclip_username"
 internal const val KEY_SC_PASSWORD = "syncclip_password"
 internal const val KEY_SC_AUTO_PULL = "syncclip_auto_pull"
+
 /** Legacy / prototype realtime switch; retained for migration and old backup import. */
 internal const val KEY_SC_REALTIME = "syncclip_realtime"
 internal const val KEY_SC_RECEIVE_MODE = "syncclip_receive_mode"

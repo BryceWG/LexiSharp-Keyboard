@@ -87,7 +87,6 @@ class LocalOfflinePcmChunkingTest {
 
         fun bytesForMs(durationMs: Int): Int = SAMPLE_RATE * 2 * durationMs / 1_000
 
-        fun byteRange(startMs: Int, endMs: Int): IntRange =
-            bytesForMs(startMs) until bytesForMs(endMs)
+        fun byteRange(startMs: Int, endMs: Int): IntRange = bytesForMs(startMs) until bytesForMs(endMs)
     }
 }

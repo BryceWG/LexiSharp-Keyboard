@@ -364,7 +364,7 @@ private fun currentAsrVendorPrimaryItemCount(
         mimoCustomEndpointVisible = onlineState.mimoEndpointPreset == Prefs.MIMO_ENDPOINT_PRESET_CUSTOM,
         mimoPromptVisible = onlineState.mimoPromptEnabled,
         stepAudioCustomEndpointVisible =
-            onlineState.stepAudioEndpointPreset == Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM,
+        onlineState.stepAudioEndpointPreset == Prefs.STEPAUDIO_ENDPOINT_PRESET_CUSTOM,
         cohereCustomModelVisible = onlineState.cohereCustomModelVisible
     )
 

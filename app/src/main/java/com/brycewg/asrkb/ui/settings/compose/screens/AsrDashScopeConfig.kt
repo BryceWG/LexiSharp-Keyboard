@@ -225,14 +225,11 @@ internal fun normalizeDashRegion(region: String): String = if (region.equals("in
     "cn"
 }
 
-internal fun isDashSemanticPunctuationSupported(model: String): Boolean =
-    DashScopePrefsCompat.isSemanticPunctuationSupported(model)
+internal fun isDashSemanticPunctuationSupported(model: String): Boolean = DashScopePrefsCompat.isSemanticPunctuationSupported(model)
 
-internal fun isDashPromptSupported(model: String): Boolean =
-    DashScopePrefsCompat.isPromptSupported(model)
+internal fun isDashPromptSupported(model: String): Boolean = DashScopePrefsCompat.isPromptSupported(model)
 
-internal fun isDashLanguageSupported(model: String): Boolean =
-    DashScopePrefsCompat.isLanguageSupported(model)
+internal fun isDashLanguageSupported(model: String): Boolean = DashScopePrefsCompat.isLanguageSupported(model)
 
 internal const val DASH_SCOPE_ASR_GUIDE_URL: String =
     "https://bibidocs.brycewg.com/getting-started/asr-providers.html#%E9%98%BF%E9%87%8C%E4%BA%91%E7%99%BE%E7%82%BC-dashscope-qwen"

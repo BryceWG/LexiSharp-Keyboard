@@ -629,6 +629,7 @@ private fun MiuixDetailsDialog(
         )
     }
 }
+
 @Composable
 private fun DetailsContent(
     record: ApiLogStore.ApiLogRecord,

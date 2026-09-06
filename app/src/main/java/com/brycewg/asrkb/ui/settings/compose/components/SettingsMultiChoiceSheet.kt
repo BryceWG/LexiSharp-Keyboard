@@ -143,9 +143,9 @@ private fun MiuixMultiChoiceSheet(
                         selectedOrder = selectedOrder,
                         index = index,
                         checked = checked
-                )?.let { nextOrder ->
-                    hapticTap()
-                    selectedOrder = nextOrder
+                    )?.let { nextOrder ->
+                        hapticTap()
+                        selectedOrder = nextOrder
                     }
                 }
             )

@@ -246,12 +246,11 @@ internal class AsrCommitRecorder(
         } catch (_: Throwable) { }
     }
 
-    private fun elapsedRealtimeMs(): Long =
-        try {
-            android.os.SystemClock.elapsedRealtime()
-        } catch (_: Throwable) {
-            0L
-        }
+    private fun elapsedRealtimeMs(): Long = try {
+        android.os.SystemClock.elapsedRealtime()
+    } catch (_: Throwable) {
+        0L
+    }
 
     companion object {
         private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

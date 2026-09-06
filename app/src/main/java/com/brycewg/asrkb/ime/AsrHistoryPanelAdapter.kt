@@ -159,6 +159,5 @@ internal class AsrHistoryPanelAdapter(
         return item
     }
 
-    private fun dp(context: android.content.Context, value: Int): Int =
-        (value * context.resources.displayMetrics.density + 0.5f).toInt()
+    private fun dp(context: android.content.Context, value: Int): Int = (value * context.resources.displayMetrics.density + 0.5f).toInt()
 }

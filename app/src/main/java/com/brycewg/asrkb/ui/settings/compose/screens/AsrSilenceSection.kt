@@ -91,8 +91,7 @@ internal fun AsrSilenceSection(
         }
         if (autoStopMode == Prefs.RecordingAutoStopMode.MAX_DURATION) {
             val context = LocalContext.current
-            val durationRange = Prefs.RECORDING_MAX_DURATION_MIN_MS.toFloat()..
-                Prefs.RECORDING_MAX_DURATION_MAX_MS.toFloat()
+            val durationRange = Prefs.RECORDING_MAX_DURATION_MIN_MS.toFloat()..Prefs.RECORDING_MAX_DURATION_MAX_MS.toFloat()
             AsrSliderPreference(
                 titleRes = R.string.label_recording_max_duration,
                 valueLabel = { value ->

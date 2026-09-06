@@ -20,8 +20,7 @@ internal fun joinNonStreamingChunkTexts(texts: List<String>): String = buildStri
     }
 }
 
-private fun needsChunkBoundarySpace(previous: Char, next: Char): Boolean =
-    next.isAsciiLetterOrDigit() && (previous.isAsciiLetterOrDigit() || previous in ",.!?;:")
+private fun needsChunkBoundarySpace(previous: Char, next: Char): Boolean = next.isAsciiLetterOrDigit() && (previous.isAsciiLetterOrDigit() || previous in ",.!?;:")
 
 private fun Char.isAsciiLetterOrDigit(): Boolean = code < 128 && isLetterOrDigit()
 
@@ -119,11 +118,10 @@ internal class NonStreamingPcmChunker(
         return head
     }
 
-    private fun pcmBytes(sampleRate: Int, durationMs: Int): Int =
-        (sampleRate.toLong() * PCM16_BYTES_PER_SAMPLE * durationMs / 1_000L)
-            .coerceAtMost(Int.MAX_VALUE.toLong())
-            .toInt()
-            .alignPcm16()
+    private fun pcmBytes(sampleRate: Int, durationMs: Int): Int = (sampleRate.toLong() * PCM16_BYTES_PER_SAMPLE * durationMs / 1_000L)
+        .coerceAtMost(Int.MAX_VALUE.toLong())
+        .toInt()
+        .alignPcm16()
 
     private fun Int.alignPcm16(): Int = this and -PCM16_BYTES_PER_SAMPLE
 

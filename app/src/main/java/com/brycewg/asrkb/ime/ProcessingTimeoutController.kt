@@ -7,8 +7,8 @@ import com.brycewg.asrkb.asr.LOCAL_MODEL_READY_WAIT_MAX_MS
 import com.brycewg.asrkb.asr.awaitLocalAsrReady
 import com.brycewg.asrkb.asr.isLocalAsrVendor
 import com.brycewg.asrkb.store.Prefs
-import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import com.brycewg.asrkb.store.debug.DebugLogManager
+import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

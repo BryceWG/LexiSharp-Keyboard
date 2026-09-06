@@ -7,20 +7,20 @@ import java.util.Collections
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
+import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -781,39 +781,36 @@ class SyncClipboardManagerTest {
     private fun createManager(
         scope: TestScope,
         clipboardStore: ClipboardHistoryStore? = null
-    ): SyncClipboardManager =
-        SyncClipboardManager(
-            context = ApplicationProvider.getApplicationContext(),
-            prefs = prefs,
-            scope = scope,
-            listener = object : SyncClipboardManager.Listener {
-                override fun onPulledNewContent(text: String) {
-                    pulledTexts += text
-                }
+    ): SyncClipboardManager = SyncClipboardManager(
+        context = ApplicationProvider.getApplicationContext(),
+        prefs = prefs,
+        scope = scope,
+        listener = object : SyncClipboardManager.Listener {
+            override fun onPulledNewContent(text: String) {
+                pulledTexts += text
+            }
 
-                override fun onUploadSuccess() {
-                    uploadSuccesses += Unit
-                }
+            override fun onUploadSuccess() {
+                uploadSuccesses += Unit
+            }
 
-                override fun onUploadFailed(reason: String?) = Unit
+            override fun onUploadFailed(reason: String?) = Unit
 
-                override fun onFilePulled(
-                    type: EntryType,
-                    fileName: String,
-                    serverFileName: String
-                ) {
-                    pulledFiles += fileName
-                }
-            },
-            clipboardStore = clipboardStore,
-            clipboardPort = port,
-            httpClient = httpClient,
-            ioDispatcher = UnconfinedTestDispatcher(scope.testScheduler)
-        )
+            override fun onFilePulled(
+                type: EntryType,
+                fileName: String,
+                serverFileName: String
+            ) {
+                pulledFiles += fileName
+            }
+        },
+        clipboardStore = clipboardStore,
+        clipboardPort = port,
+        httpClient = httpClient,
+        ioDispatcher = UnconfinedTestDispatcher(scope.testScheduler)
+    )
 
-    private fun blockRemoteTextResponse(): Pair<CountDownLatch, CountDownLatch> {
-        return blockResponse("""{"text":"remote","type":"Text"}""")
-    }
+    private fun blockRemoteTextResponse(): Pair<CountDownLatch, CountDownLatch> = blockResponse("""{"text":"remote","type":"Text"}""")
 
     private fun blockResponse(body: String): Pair<CountDownLatch, CountDownLatch> {
         val requestStarted = CountDownLatch(1)

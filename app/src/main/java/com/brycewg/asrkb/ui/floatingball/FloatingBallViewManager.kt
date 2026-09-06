@@ -826,20 +826,16 @@ class FloatingBallViewManager(
     private fun recordingAuraWindowPosition(
         logicalSizePx: Int,
         expandedWindowSizePx: Int
-    ): Pair<Int, Int> {
-        return RecordingAuraMath.expandedWindowPositionForLogical(
-            logicalX = currentLogicalX(logicalSizePx),
-            logicalY = currentLogicalY(logicalSizePx),
-            logicalSizePx = logicalSizePx,
-            expandedWindowSizePx = expandedWindowSizePx
-        )
-    }
+    ): Pair<Int, Int> = RecordingAuraMath.expandedWindowPositionForLogical(
+        logicalX = currentLogicalX(logicalSizePx),
+        logicalY = currentLogicalY(logicalSizePx),
+        logicalSizePx = logicalSizePx,
+        expandedWindowSizePx = expandedWindowSizePx
+    )
 
-    private fun expandedWindowSize(logicalSizePx: Int): Int {
-        return (logicalSizePx * RecordingAuraMath.EXPANDED_WINDOW_SCALE + 0.5f)
-            .toInt()
-            .coerceAtLeast(logicalSizePx)
-    }
+    private fun expandedWindowSize(logicalSizePx: Int): Int = (logicalSizePx * RecordingAuraMath.EXPANDED_WINDOW_SCALE + 0.5f)
+        .toInt()
+        .coerceAtLeast(logicalSizePx)
 
     private fun getLogicalBallSizePx(): Int {
         val sizeDp = try {
@@ -863,9 +859,7 @@ class FloatingBallViewManager(
         return p.y
     }
 
-    private fun windowPositionForLogical(logicalX: Int, logicalY: Int): Pair<Int, Int> {
-        return logicalX to logicalY
-    }
+    private fun windowPositionForLogical(logicalX: Int, logicalY: Int): Pair<Int, Int> = logicalX to logicalY
 
     private fun currentRenderedLogicalSizePx(): Int {
         val params = ballContainer?.layoutParams

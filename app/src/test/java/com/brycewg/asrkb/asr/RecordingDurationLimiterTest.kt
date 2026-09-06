@@ -1,9 +1,9 @@
 // 录音最长时长限制器的 JVM 回归测试。
 package com.brycewg.asrkb.asr
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class RecordingDurationLimiterTest {

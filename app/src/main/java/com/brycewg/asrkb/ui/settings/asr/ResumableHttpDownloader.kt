@@ -335,9 +335,8 @@ internal object ResumableHttpDownloader {
         }
     }
 
-    private fun responseValidator(resp: Response): String? =
-        resp.header("ETag")?.takeUnless { it.startsWith("W/", ignoreCase = true) }
-            ?: resp.header("Last-Modified")
+    private fun responseValidator(resp: Response): String? = resp.header("ETag")?.takeUnless { it.startsWith("W/", ignoreCase = true) }
+        ?: resp.header("Last-Modified")
 
     private fun readResumeValidator(destFile: File, url: String): String? {
         val metadataFile = resumeMetadataFile(destFile).takeIf { it.isFile } ?: return null

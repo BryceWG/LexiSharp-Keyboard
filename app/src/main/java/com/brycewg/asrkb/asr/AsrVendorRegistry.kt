@@ -28,11 +28,9 @@ internal data class AsrVendorDescriptor(
     val localLifecycle: AsrLocalVendorLifecycle?
         get() = AsrLocalVendorLifecycles.lifecycleFor(vendor)
 
-    fun checkAvailability(context: Context, prefs: Prefs): AsrVendorReadiness =
-        checkAsrVendorAvailability(context, prefs, vendor)
+    fun checkAvailability(context: Context, prefs: Prefs): AsrVendorReadiness = checkAsrVendorAvailability(context, prefs, vendor)
 
-    fun checkAvailability(checkers: AsrVendorAvailabilityCheckers): AsrVendorReadiness =
-        checkAsrVendorAvailability(vendor, checkers)
+    fun checkAvailability(checkers: AsrVendorAvailabilityCheckers): AsrVendorReadiness = checkAsrVendorAvailability(vendor, checkers)
 }
 
 internal enum class AsrVendorDisplayTag {
@@ -297,11 +295,9 @@ internal object AsrVendorRegistry {
 
     fun ordered(): List<AsrVendorDescriptor> = descriptors.sortedBy { it.pickerOrder }
 
-    fun descriptorFor(vendor: AsrVendor): AsrVendorDescriptor =
-        descriptorByVendor.getValue(vendor)
+    fun descriptorFor(vendor: AsrVendor): AsrVendorDescriptor = descriptorByVendor.getValue(vendor)
 
-    fun findById(id: String?): AsrVendorDescriptor? =
-        id?.lowercase()?.let { descriptorById[it] }
+    fun findById(id: String?): AsrVendorDescriptor? = id?.lowercase()?.let { descriptorById[it] }
 
     fun vendorFromIdOrNull(id: String?): AsrVendor? = findById(id)?.vendor
 
@@ -335,21 +331,19 @@ internal object AsrVendorRegistry {
         )
     }
 
-    private fun onlineFileCapabilities(customEndpoint: Boolean = false): Set<AsrVendorCapability> =
-        buildSet {
-            add(AsrVendorCapability.FileRecognition)
-            add(AsrVendorCapability.PushPcmFileAdapter)
-            add(AsrVendorCapability.BackupCandidate)
-            if (customEndpoint) add(AsrVendorCapability.CustomEndpoint)
-        }
+    private fun onlineFileCapabilities(customEndpoint: Boolean = false): Set<AsrVendorCapability> = buildSet {
+        add(AsrVendorCapability.FileRecognition)
+        add(AsrVendorCapability.PushPcmFileAdapter)
+        add(AsrVendorCapability.BackupCandidate)
+        if (customEndpoint) add(AsrVendorCapability.CustomEndpoint)
+    }
 
     private fun onlineFileAndStreamCapabilities(
         customEndpoint: Boolean = false
-    ): Set<AsrVendorCapability> =
-        onlineFileCapabilities(customEndpoint) + setOf(
-            AsrVendorCapability.StreamingRecognition,
-            AsrVendorCapability.NativePushPcmInput
-        )
+    ): Set<AsrVendorCapability> = onlineFileCapabilities(customEndpoint) + setOf(
+        AsrVendorCapability.StreamingRecognition,
+        AsrVendorCapability.NativePushPcmInput
+    )
 
     private fun localFileCapabilities(): Set<AsrVendorCapability> = setOf(
         AsrVendorCapability.FileRecognition,
@@ -358,11 +352,10 @@ internal object AsrVendorRegistry {
         AsrVendorCapability.BackupCandidate
     )
 
-    private fun localFileAndPseudoCapabilities(): Set<AsrVendorCapability> =
-        localFileCapabilities() + setOf(
-            AsrVendorCapability.PseudoStreamingRecognition,
-            AsrVendorCapability.NativePushPcmInput
-        )
+    private fun localFileAndPseudoCapabilities(): Set<AsrVendorCapability> = localFileCapabilities() + setOf(
+        AsrVendorCapability.PseudoStreamingRecognition,
+        AsrVendorCapability.NativePushPcmInput
+    )
 
     private fun localStreamingCapabilities(): Set<AsrVendorCapability> = setOf(
         AsrVendorCapability.StreamingRecognition,

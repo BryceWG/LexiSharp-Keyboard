@@ -115,7 +115,6 @@ class ApiLogInterceptor : Interceptor {
             .build()
     }
 
-
     private fun requestBodyBytes(request: Request): Long? {
         val body = request.body ?: return null
         val length = try {

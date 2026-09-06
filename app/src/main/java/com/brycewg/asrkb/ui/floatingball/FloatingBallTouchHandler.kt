@@ -203,14 +203,19 @@ class FloatingBallTouchHandler(
             moved = true
         }
 
-        if (holdToRecordEnabled && longActionFired && movementExceeded &&
+        if (holdToRecordEnabled &&
+            longActionFired &&
+            movementExceeded &&
             !holdMovementExceededNotified
         ) {
             holdMovementExceededNotified = true
             listener.onLongPressGestureMovedBeyondSlop()
         }
 
-        if (!isDragging && directMoveEnabled && !longActionFired && !dragSelecting &&
+        if (!isDragging &&
+            directMoveEnabled &&
+            !longActionFired &&
+            !dragSelecting &&
             exceedsFloatingBallMoveSlop(dx, dy, gestureSlops.directMovePx)
         ) {
             isDragging = true

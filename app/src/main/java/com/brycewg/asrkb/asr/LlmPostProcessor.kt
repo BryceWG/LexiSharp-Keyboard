@@ -16,8 +16,8 @@ import java.io.InterruptedIOException
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -202,8 +202,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
     companion object {
         private const val TAG = "LlmPostProcessor"
 
-        private fun elapsedRealtimeMs(): Long =
-            TimeUnit.NANOSECONDS.toMillis(System.nanoTime())
+        private fun elapsedRealtimeMs(): Long = TimeUnit.NANOSECONDS.toMillis(System.nanoTime())
 
         /** 连接超时（秒） */
         private const val CONNECT_TIMEOUT_SECONDS = 30L
@@ -257,7 +256,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             reasoningParamsOnJson = reasoningParamsOnJson,
             reasoningParamsOffJson = reasoningParamsOffJson,
             requestModeCapabilityKey =
-                "$capabilityIdentity|${endpoint.trim().trimEnd('/')}"
+            "$capabilityIdentity|${endpoint.trim().trimEnd('/')}"
         )
     }
 
@@ -884,22 +883,20 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         return recycled
     }
 
-    private fun extractDeltaContent(delta: JSONObject): String? {
-        return when (val content = delta.opt("content")) {
-            is String -> content.takeIf { it.isNotEmpty() }
-            is JSONArray -> buildString {
-                for (i in 0 until content.length()) {
-                    when (val item = content.get(i)) {
-                        is String -> if (item.isNotEmpty()) append(item)
-                        is JSONObject -> {
-                            val textPart = item.optString("text")
-                            if (textPart.isNotEmpty()) append(textPart)
-                        }
+    private fun extractDeltaContent(delta: JSONObject): String? = when (val content = delta.opt("content")) {
+        is String -> content.takeIf { it.isNotEmpty() }
+        is JSONArray -> buildString {
+            for (i in 0 until content.length()) {
+                when (val item = content.get(i)) {
+                    is String -> if (item.isNotEmpty()) append(item)
+                    is JSONObject -> {
+                        val textPart = item.optString("text")
+                        if (textPart.isNotEmpty()) append(textPart)
                     }
                 }
-            }.takeIf { it.isNotEmpty() }
-            else -> null
-        }
+            }
+        }.takeIf { it.isNotEmpty() }
+        else -> null
     }
 
     /**
@@ -981,13 +978,13 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
             }
             return streamingResult.copy(
                 totalMs =
-                    (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
+                (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
             )
         }
         if (isNonRetryableFailure(streamingResult)) {
             return streamingResult.copy(
                 totalMs =
-                    (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
+                (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
             )
         }
 
@@ -995,7 +992,7 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         if (!shouldRetryWithoutStream(streamingResult)) {
             return streamingResult.copy(
                 totalMs =
-                    (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
+                (elapsedRealtimeMs() - logicalStartedAt).coerceAtLeast(0L)
             )
         }
 
@@ -1104,7 +1101,6 @@ class LlmPostProcessor(private val client: OkHttpClient? = null) {
         saveRequestMode(prefs, config, Prefs.LlmRequestMode.NON_STREAMING)
         return RequestModeProbeResult(mode = Prefs.LlmRequestMode.NON_STREAMING)
     }
-
 
     private fun saveRequestMode(
         prefs: Prefs,

@@ -6,8 +6,8 @@
 package com.brycewg.asrkb.ui.history.compose.apilog
 
 import android.content.Context
-import com.brycewg.asrkb.R
 import com.brycewg.asrkb.LocaleHelper
+import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.ApiLogStore
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -52,8 +52,7 @@ internal fun apiLogMeta(context: Context, record: ApiLogStore.ApiLogRecord): Str
     )
 }
 
-internal fun apiLogTime(context: Context, record: ApiLogStore.ApiLogRecord): String =
-    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", LocaleHelper.locale(context)).format(Date(record.timestamp))
+internal fun apiLogTime(context: Context, record: ApiLogStore.ApiLogRecord): String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", LocaleHelper.locale(context)).format(Date(record.timestamp))
 
 fun formatApiLogDetail(context: Context, record: ApiLogStore.ApiLogRecord): String {
     val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", LocaleHelper.locale(context))

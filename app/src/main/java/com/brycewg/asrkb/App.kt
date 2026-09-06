@@ -135,7 +135,6 @@ class App : Application() {
             DebugLogManager.logWarning(this, "asr", "denoiser_preload_failed", t)
         }
 
-
         // 清理已移除的 Zipformer 模型文件（仅执行一次）
         try {
             val prefs = Prefs(this)

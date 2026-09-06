@@ -474,12 +474,11 @@ class DashscopeFileAsrEngine(
     }
 }
 
-internal fun dashscopeUploadAudioEncodingSpecForModel(model: String): UploadAudioEncodingSpec =
-    if (DashScopePrefsCompat.isOmniModel(model)) {
-        UploadAudioEncodingSpec.AAC_ADTS
-    } else {
-        UploadAudioEncodingSpec.M4A_AAC_LC
-    }
+internal fun dashscopeUploadAudioEncodingSpecForModel(model: String): UploadAudioEncodingSpec = if (DashScopePrefsCompat.isOmniModel(model)) {
+    UploadAudioEncodingSpec.AAC_ADTS
+} else {
+    UploadAudioEncodingSpec.M4A_AAC_LC
+}
 
 internal fun buildDashGenerationAsrRequestBody(
     model: String,

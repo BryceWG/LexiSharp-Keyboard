@@ -18,25 +18,23 @@ internal class ClipboardAttachmentNotifier(context: Context) {
     private var uploadProgress = NO_PROGRESS
     private var downloadProgress = NO_PROGRESS
 
-    fun showUploadProgress(fileName: String, completedBytes: Long, totalBytes: Long) =
-        showProgress(
-            notificationId = NOTIFICATION_UPLOAD,
-            titleRes = R.string.sc_attachment_notification_uploading,
-            fileName = fileName,
-            completedBytes = completedBytes,
-            totalBytes = totalBytes,
-            isUpload = true
-        )
+    fun showUploadProgress(fileName: String, completedBytes: Long, totalBytes: Long) = showProgress(
+        notificationId = NOTIFICATION_UPLOAD,
+        titleRes = R.string.sc_attachment_notification_uploading,
+        fileName = fileName,
+        completedBytes = completedBytes,
+        totalBytes = totalBytes,
+        isUpload = true
+    )
 
-    fun showDownloadProgress(fileName: String, completedBytes: Long, totalBytes: Long) =
-        showProgress(
-            notificationId = NOTIFICATION_DOWNLOAD,
-            titleRes = R.string.sc_attachment_notification_downloading,
-            fileName = fileName,
-            completedBytes = completedBytes,
-            totalBytes = totalBytes,
-            isUpload = false
-        )
+    fun showDownloadProgress(fileName: String, completedBytes: Long, totalBytes: Long) = showProgress(
+        notificationId = NOTIFICATION_DOWNLOAD,
+        titleRes = R.string.sc_attachment_notification_downloading,
+        fileName = fileName,
+        completedBytes = completedBytes,
+        totalBytes = totalBytes,
+        isUpload = false
+    )
 
     fun showUploaded(fileName: String) = show(
         NOTIFICATION_UPLOAD,
@@ -125,10 +123,9 @@ internal class ClipboardAttachmentNotifier(context: Context) {
         notificationManager.cancel(notificationId)
     }
 
-    private fun canNotify(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
+    private fun canNotify(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
 
     private fun ensureChannel(localizedContext: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

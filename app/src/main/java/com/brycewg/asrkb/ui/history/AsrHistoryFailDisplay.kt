@@ -12,14 +12,10 @@ import com.brycewg.asrkb.store.AsrHistoryStore
  * 归属模块：ui/history
  */
 internal object AsrHistoryFailDisplay {
-    fun cardText(context: Context, record: AsrHistoryStore.AsrHistoryRecord): String {
-        return if (record.isUnsuccessful) format(context, record) else record.text
-    }
+    fun cardText(context: Context, record: AsrHistoryStore.AsrHistoryRecord): String = if (record.isUnsuccessful) format(context, record) else record.text
 
-    fun copyText(record: AsrHistoryStore.AsrHistoryRecord): String? {
-        return record.text.takeIf { it.isNotBlank() }
-            ?: record.rawText?.takeIf { it.isNotBlank() }
-    }
+    fun copyText(record: AsrHistoryStore.AsrHistoryRecord): String? = record.text.takeIf { it.isNotBlank() }
+        ?: record.rawText?.takeIf { it.isNotBlank() }
 
     fun format(context: Context, record: AsrHistoryStore.AsrHistoryRecord): String {
         if (!record.isUnsuccessful) return ""

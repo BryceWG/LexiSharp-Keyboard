@@ -24,8 +24,7 @@ import com.brycewg.asrkb.clipboard.EntryType
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.BibiViewThemes
 
-class ClipboardPanelAdapter(private val onItemClick: (ClipboardHistoryStore.Entry) -> Unit) :
-    ListAdapter<ClipboardHistoryStore.Entry, ClipboardPanelAdapter.VH>(DIFF) {
+class ClipboardPanelAdapter(private val onItemClick: (ClipboardHistoryStore.Entry) -> Unit) : ListAdapter<ClipboardHistoryStore.Entry, ClipboardPanelAdapter.VH>(DIFF) {
 
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<ClipboardHistoryStore.Entry>() {
@@ -125,6 +124,5 @@ class ClipboardPanelAdapter(private val onItemClick: (ClipboardHistoryStore.Entr
         return item
     }
 
-    private fun dp(context: android.content.Context, value: Int): Int =
-        (value * context.resources.displayMetrics.density + 0.5f).toInt()
+    private fun dp(context: android.content.Context, value: Int): Int = (value * context.resources.displayMetrics.density + 0.5f).toInt()
 }

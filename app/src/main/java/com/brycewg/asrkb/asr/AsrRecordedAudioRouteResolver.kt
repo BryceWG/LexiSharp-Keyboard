@@ -11,7 +11,11 @@ import com.brycewg.asrkb.store.DashScopePrefsCompat
 import com.brycewg.asrkb.store.Prefs
 
 internal enum class AsrRecordedAudioRouteKind {
-    DirectFile, MappedFallback, ReplayStream, Unsupported, Unavailable
+    DirectFile,
+    MappedFallback,
+    ReplayStream,
+    Unsupported,
+    Unavailable
 }
 
 internal data class AsrRequestModelOverride(
@@ -332,15 +336,13 @@ internal object AsrRecordedAudioRouteResolver {
         fireRedPseudoStreamEnabled = false
     )
 
-    private fun volcStreamingNoticeKey(current: VolcAsrModel): String =
-        if (current.modelV2) NOTICE_VOLC_STREAMING_V2 else NOTICE_VOLC_STREAMING_V1
+    private fun volcStreamingNoticeKey(current: VolcAsrModel): String = if (current.modelV2) NOTICE_VOLC_STREAMING_V2 else NOTICE_VOLC_STREAMING_V1
 
-    private fun dashStreamingNoticeKey(model: String): String =
-        if (model.equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true)) {
-            NOTICE_DASH_FUN_REALTIME
-        } else {
-            NOTICE_DASH_QWEN_REALTIME
-        }
+    private fun dashStreamingNoticeKey(model: String): String = if (model.equals(Prefs.DASH_MODEL_FUN_ASR_REALTIME, ignoreCase = true)) {
+        NOTICE_DASH_FUN_REALTIME
+    } else {
+        NOTICE_DASH_QWEN_REALTIME
+    }
 
     private fun dashModelLabel(context: Context, model: String): String {
         val resId = when {
@@ -365,8 +367,7 @@ internal object AsrRecordedAudioRouteResolver {
         return resId?.let { context.getString(it) } ?: model
     }
 
-    private fun vendorLabel(context: Context, vendor: AsrVendor): String =
-        context.getString(AsrVendorRegistry.descriptorFor(vendor).displayNameResId)
+    private fun vendorLabel(context: Context, vendor: AsrVendor): String = context.getString(AsrVendorRegistry.descriptorFor(vendor).displayNameResId)
 }
 
 private const val NOTICE_VOLC_STREAMING_V2 = "history_rerecognition_supported_volc_streaming_v2_v1"

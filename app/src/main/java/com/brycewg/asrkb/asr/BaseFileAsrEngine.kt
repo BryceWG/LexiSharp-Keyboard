@@ -32,7 +32,8 @@ abstract class BaseFileAsrEngine(
     listener: StreamingAsrEngine.Listener,
     onRequestDuration: ((Long) -> Unit)? = null,
     private val progressiveChunkingEnabled: Boolean = false
-) : StreamingAsrEngine, AudioFrameSinkOwner {
+) : StreamingAsrEngine,
+    AudioFrameSinkOwner {
 
     companion object {
         private const val TAG = "BaseFileAsrEngine"
@@ -58,6 +59,7 @@ abstract class BaseFileAsrEngine(
         get() = progressiveChunkDecode
 
     @Volatile private var progressiveChunkDecode = false
+
     @Volatile private var progressiveStoppedAtMs = 0L
     override var audioFrameSink: AudioFrameSink? = null
 
@@ -71,6 +73,7 @@ abstract class BaseFileAsrEngine(
     private var progressiveRetryPcm: ByteArrayOutputStream? = null
 
     @Volatile private var discardOnStop: Boolean = false
+
     @Volatile private var capturePath: String = "pcm"
 
     protected open val sampleRate: Int = 16000
@@ -345,7 +348,9 @@ abstract class BaseFileAsrEngine(
         }
         val sentenceVadDetector = if (progressiveChunkingEnabled) {
             createNonStreamingSentenceVad(context, sampleRate)
-        } else null
+        } else {
+            null
+        }
 
         // 计算分段阈值
         val maxBytes = (maxRecordDurationMillis / 1000.0 * sampleRate * bytesPerSample).toInt()
@@ -776,7 +781,6 @@ abstract class BaseFileAsrEngine(
         object Cut : EncodeRequest
     }
 
-
     /**
      * 将 PCM 格式音频转换为 WAV 格式
      *
@@ -999,13 +1003,11 @@ abstract class BaseFileAsrEngine(
         progressiveStoppedAtMs = 0L
     }
 
-    internal suspend fun finalizeProgressiveResult(text: String): String {
-        return try {
-            finalizeCombinedProgressiveText(text)
-        } catch (t: Throwable) {
-            Log.e(TAG, "Failed to finalize combined progressive result", t)
-            text
-        }
+    internal suspend fun finalizeProgressiveResult(text: String): String = try {
+        finalizeCombinedProgressiveText(text)
+    } catch (t: Throwable) {
+        Log.e(TAG, "Failed to finalize combined progressive result", t)
+        text
     }
 
     internal suspend fun finishProgressiveResults(
@@ -1029,15 +1031,14 @@ abstract class BaseFileAsrEngine(
 
     protected open suspend fun finalizeCombinedProgressiveText(text: String): String = text
 
-    private fun progressiveLog(audioBytes: Int): LocalAsrCallLogger.Session =
-        LocalAsrCallLogger.startInference(
-            prefs = prefs,
-            vendor = checkNotNull(progressiveVendor),
-            source = "file",
-            audioBytes = audioBytes,
-            sampleRate = sampleRate,
-            startedMs = progressiveStoppedAtMs.takeIf { it > 0L } ?: SystemClock.uptimeMillis()
-        )
+    private fun progressiveLog(audioBytes: Int): LocalAsrCallLogger.Session = LocalAsrCallLogger.startInference(
+        prefs = prefs,
+        vendor = checkNotNull(progressiveVendor),
+        source = "file",
+        audioBytes = audioBytes,
+        sampleRate = sampleRate,
+        startedMs = progressiveStoppedAtMs.takeIf { it > 0L } ?: SystemClock.uptimeMillis()
+    )
 
     private fun segmentBytes(segment: RecordedSegment): Int = when (segment) {
         is RecordedSegment.Pcm -> segment.pcm.size

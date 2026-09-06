@@ -54,20 +54,15 @@ internal interface ImeBridgePcmBackfill {
 internal class ImeBridgeClientPcmBackfill(
     private val bridgeClient: ImeBridgeClient
 ) : ImeBridgePcmBackfill {
-    override fun beginSession(sessionId: String): ImeBridgeResult =
-        bridgeClient.beginSession(sessionId)
+    override fun beginSession(sessionId: String): ImeBridgeResult = bridgeClient.beginSession(sessionId)
 
-    override fun setComposingText(sessionId: String, text: String): ImeBridgeResult =
-        bridgeClient.setComposingText(text, sessionId = sessionId)
+    override fun setComposingText(sessionId: String, text: String): ImeBridgeResult = bridgeClient.setComposingText(text, sessionId = sessionId)
 
-    override fun insertText(sessionId: String, text: String): ImeBridgeResult =
-        bridgeClient.insertText(text, sessionId = sessionId)
+    override fun insertText(sessionId: String, text: String): ImeBridgeResult = bridgeClient.insertText(text, sessionId = sessionId)
 
-    override fun finishComposingText(sessionId: String): ImeBridgeResult =
-        bridgeClient.finishComposingText(sessionId = sessionId)
+    override fun finishComposingText(sessionId: String): ImeBridgeResult = bridgeClient.finishComposingText(sessionId = sessionId)
 
-    override fun cancelSession(sessionId: String): ImeBridgeResult =
-        bridgeClient.cancelSession(sessionId)
+    override fun cancelSession(sessionId: String): ImeBridgeResult = bridgeClient.cancelSession(sessionId)
 }
 
 private class ExternalSpeechBridgePushPcmSessionFactory(
@@ -153,14 +148,11 @@ private class BridgePcmSessionLifecycle {
         return current == State.Recording || current == State.Finishing
     }
 
-    fun markRecording(): Boolean =
-        state.compareAndSet(State.Created, State.Recording)
+    fun markRecording(): Boolean = state.compareAndSet(State.Created, State.Recording)
 
-    fun endBeforeRecording(): Boolean =
-        state.compareAndSet(State.Created, State.Ended)
+    fun endBeforeRecording(): Boolean = state.compareAndSet(State.Created, State.Ended)
 
-    fun markFinishing(): Boolean =
-        state.compareAndSet(State.Recording, State.Finishing)
+    fun markFinishing(): Boolean = state.compareAndSet(State.Recording, State.Finishing)
 
     fun cancelIfActive(): Boolean {
         while (true) {
@@ -186,9 +178,10 @@ private class BridgePcmSessionLifecycle {
     }
 }
 
-private class ImeBridgePcmBeginFailedException(result: ImeBridgeResult) : IllegalStateException(
-    "bridge begin failed: code=${result.code} message=${result.message.take(120)}"
-)
+private class ImeBridgePcmBeginFailedException(result: ImeBridgeResult) :
+    IllegalStateException(
+        "bridge begin failed: code=${result.code} message=${result.message.take(120)}"
+    )
 
 private class ImeBridgePcmExternalCallbacks(
     private val bridgeSessionId: String,

@@ -377,9 +377,8 @@ class VadInputLeveler(
         return reference.coerceIn(config.minimumEstimatedSpeechRms, config.maximumEstimatedSpeechRms)
     }
 
-    private fun effectiveTargetSpeechRms(speechReferenceRms: Double): Double =
-        (speechReferenceRms * config.adaptiveTargetSpeechGain)
-            .coerceIn(config.minimumAdaptiveTargetSpeechRms, config.targetSpeechRms)
+    private fun effectiveTargetSpeechRms(speechReferenceRms: Double): Double = (speechReferenceRms * config.adaptiveTargetSpeechGain)
+        .coerceIn(config.minimumAdaptiveTargetSpeechRms, config.targetSpeechRms)
 
     private fun updateNoiseFloor(rawRms: Double) {
         val alpha = if (rawRms > noiseFloorRms) {
@@ -513,7 +512,6 @@ class VadInputLeveler(
 
     private companion object {
         const val BYTES_PER_SAMPLE = 2
-
 
         fun computeFrameStats16le(buf: ByteArray, offset: Int, len: Int): InternalFrameStats {
             var i = offset

@@ -12,12 +12,12 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.brycewg.asrkb.R
 import com.brycewg.asrkb.LocaleHelper
+import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrEngineConstructionSource
 import com.brycewg.asrkb.asr.AsrEngineInvocationMode
-import com.brycewg.asrkb.asr.AsrParallelEngineFactory
 import com.brycewg.asrkb.asr.AsrParallelEngineDecision
+import com.brycewg.asrkb.asr.AsrParallelEngineFactory
 import com.brycewg.asrkb.asr.AsrPushPcmEngineFactory
 import com.brycewg.asrkb.asr.AsrPushPcmEngineFamily
 import com.brycewg.asrkb.asr.AsrVendor
@@ -647,13 +647,9 @@ internal class RecordingTestViewModel(
         )
     }
 
-    private fun configuredBackupVendorOrNull(): AsrVendor? {
-        return configuredBackupPlanOrNull()?.backupVendor
-    }
+    private fun configuredBackupVendorOrNull(): AsrVendor? = configuredBackupPlanOrNull()?.backupVendor
 
-    private fun configuredBackupStrategyOrNull(): AsrParallelEngineDecision? {
-        return configuredBackupPlanOrNull()?.decision
-    }
+    private fun configuredBackupStrategyOrNull(): AsrParallelEngineDecision? = configuredBackupPlanOrNull()?.decision
 
     private fun configuredBackupPlanOrNull() = parallelEngineFactory.resolvePlan(
         context = localizedContext,
@@ -687,7 +683,6 @@ internal class RecordingTestViewModel(
         Log.w(TAG, "Failed to resolve recording test ASR mode", t)
         false
     }
-
 
     private fun releaseRecordingResources() {
         recordingAudioFocusController.release()

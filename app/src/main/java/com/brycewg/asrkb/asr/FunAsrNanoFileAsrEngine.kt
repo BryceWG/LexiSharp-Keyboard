@@ -84,13 +84,17 @@ class FunAsrNanoFileAsrEngine(
 
     override suspend fun recognize(pcm: ByteArray) {
         val t0 = System.currentTimeMillis()
-        val localLog = if (isProgressiveChunkDecode) null else LocalAsrCallLogger.startInference(
-            prefs = prefs,
-            vendor = AsrVendor.FunAsrNano,
-            source = "file",
-            audioBytes = pcm.size,
-            sampleRate = sampleRate
-        )
+        val localLog = if (isProgressiveChunkDecode) {
+            null
+        } else {
+            LocalAsrCallLogger.startInference(
+                prefs = prefs,
+                vendor = AsrVendor.FunAsrNano,
+                source = "file",
+                audioBytes = pcm.size,
+                sampleRate = sampleRate
+            )
+        }
         var loadLog: LocalAsrCallLogger.Session? = null
         var durationReported = false
         fun reportDuration() {

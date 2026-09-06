@@ -21,7 +21,7 @@ internal fun splitLocalOfflinePcm16(
         .coerceAtMost(Int.MAX_VALUE.toLong()).toInt() and -PCM16_BYTES_PER_SAMPLE
     val minChunkBytes = (
         sampleRate.toLong() * PCM16_BYTES_PER_SAMPLE * NON_STREAMING_MIN_CHUNK_MS / 1_000L
-    ).coerceAtMost(chunkBytes.toLong()).toInt() and -PCM16_BYTES_PER_SAMPLE
+        ).coerceAtMost(chunkBytes.toLong()).toInt() and -PCM16_BYTES_PER_SAMPLE
     require(chunkBytes > 0)
     if (pcm.size <= chunkBytes) return listOf(pcm)
 
@@ -44,9 +44,9 @@ internal fun splitLocalOfflinePcm16(
     }
 }
 
-internal fun localOfflinePcmNeedsChunking(pcm: ByteArray, sampleRate: Int): Boolean =
-    sampleRate > 0 && pcm.size.toLong() >
-        sampleRate.toLong() * PCM16_BYTES_PER_SAMPLE * NON_STREAMING_MAX_CHUNK_MS / 1_000L
+internal fun localOfflinePcmNeedsChunking(pcm: ByteArray, sampleRate: Int): Boolean = sampleRate > 0 &&
+    pcm.size.toLong() >
+    sampleRate.toLong() * PCM16_BYTES_PER_SAMPLE * NON_STREAMING_MAX_CHUNK_MS / 1_000L
 
 internal fun splitLocalOfflinePcm16WithVad(
     context: Context,
@@ -75,7 +75,9 @@ private fun preferredSilenceCut(
     .mapNotNull { range ->
         val start = maxOf(range.first, searchStart)
         val endExclusive = minOf(range.last + 1, hardEnd)
-        if (endExclusive <= start) null else {
+        if (endExclusive <= start) {
+            null
+        } else {
             val midpoint = ((start.toLong() + endExclusive) / 2L).toInt() and -PCM16_BYTES_PER_SAMPLE
             midpoint to (endExclusive - start)
         }

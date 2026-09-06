@@ -150,8 +150,7 @@ internal fun parseCohereTranscription(body: String): String = runCatching {
     JSONObject(body).optString("text")
 }.getOrDefault("")
 
-internal fun cohereUploadAudioEncodingSpecIfSupported(): UploadAudioEncodingSpec? =
-    oggOpusUploadAudioEncodingSpecIfSupported()
+internal fun cohereUploadAudioEncodingSpecIfSupported(): UploadAudioEncodingSpec? = oggOpusUploadAudioEncodingSpecIfSupported()
 
 internal fun extractCohereError(body: String): String {
     if (body.isBlank()) return ""

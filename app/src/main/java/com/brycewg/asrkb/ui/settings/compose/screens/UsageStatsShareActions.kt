@@ -27,6 +27,7 @@ internal object UsageStatsShareActions {
     private const val TAG = "UsageStatsShare"
     private const val MIME_TYPE = "image/jpeg"
     private const val FILE_EXTENSION = "jpg"
+
     /** 分享友好的 JPEG 质量：体积明显小于 PNG，且卡片渐变观感可接受。 */
     private const val JPEG_QUALITY = 85
 
@@ -47,31 +48,29 @@ internal object UsageStatsShareActions {
         }
     }
 
-    fun buildShareIntent(context: Context, file: File): Intent? {
-        return try {
-            val uri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                file
+    fun buildShareIntent(context: Context, file: File): Intent? = try {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        Intent(Intent.ACTION_SEND).apply {
+            type = MIME_TYPE
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(
+                Intent.EXTRA_SUBJECT,
+                context.getString(R.string.about_stats_share_chooser_title)
             )
-            Intent(Intent.ACTION_SEND).apply {
-                type = MIME_TYPE
-                putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(
-                    Intent.EXTRA_SUBJECT,
-                    context.getString(R.string.about_stats_share_chooser_title)
-                )
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                clipData = android.content.ClipData.newUri(
-                    context.contentResolver,
-                    "usage_stats",
-                    uri
-                )
-            }
-        } catch (t: Throwable) {
-            Log.e(TAG, "Failed to build usage stats share intent", t)
-            null
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = android.content.ClipData.newUri(
+                context.contentResolver,
+                "usage_stats",
+                uri
+            )
         }
+    } catch (t: Throwable) {
+        Log.e(TAG, "Failed to build usage stats share intent", t)
+        null
     }
 
     fun shareBitmap(context: Context, bitmap: Bitmap): Boolean {
@@ -93,17 +92,15 @@ internal object UsageStatsShareActions {
         }
     }
 
-    fun saveBitmapToGallery(context: Context, bitmap: Bitmap): Boolean {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                saveViaMediaStore(context, bitmap)
-            } else {
-                saveViaPublicPictures(context, bitmap)
-            }
-        } catch (t: Throwable) {
-            Log.e(TAG, "Failed to save usage stats image to gallery", t)
-            false
+    fun saveBitmapToGallery(context: Context, bitmap: Bitmap): Boolean = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            saveViaMediaStore(context, bitmap)
+        } else {
+            saveViaPublicPictures(context, bitmap)
         }
+    } catch (t: Throwable) {
+        Log.e(TAG, "Failed to save usage stats image to gallery", t)
+        false
     }
 
     private fun compressShareImage(

@@ -203,20 +203,18 @@ object AsrTimeoutCalculator {
         }
     }
 
-    private fun staticSwitchDeadlineBaseMs(sensitivityTier: Int): Long =
-        when (sensitivityTier.coerceIn(0, 2)) {
-            0 -> SWITCH_DEADLINE_BASE_RELAXED_MS
-            2 -> SWITCH_DEADLINE_BASE_SENSITIVE_MS
-            else -> SWITCH_DEADLINE_BASE_BALANCED_MS
-        }
+    private fun staticSwitchDeadlineBaseMs(sensitivityTier: Int): Long = when (sensitivityTier.coerceIn(0, 2)) {
+        0 -> SWITCH_DEADLINE_BASE_RELAXED_MS
+        2 -> SWITCH_DEADLINE_BASE_SENSITIVE_MS
+        else -> SWITCH_DEADLINE_BASE_BALANCED_MS
+    }
 
-    private fun switchDeadlineAudioLengthAdjustmentMs(audioMs: Long): Long =
-        when {
-            audioMs <= 5_000L -> 0L
-            audioMs <= 20_000L -> SWITCH_DEADLINE_AUDIO_MEDIUM_MS
-            audioMs <= 60_000L -> SWITCH_DEADLINE_AUDIO_LONG_MS
-            else -> SWITCH_DEADLINE_AUDIO_EXTRA_LONG_MS
-        }
+    private fun switchDeadlineAudioLengthAdjustmentMs(audioMs: Long): Long = when {
+        audioMs <= 5_000L -> 0L
+        audioMs <= 20_000L -> SWITCH_DEADLINE_AUDIO_MEDIUM_MS
+        audioMs <= 60_000L -> SWITCH_DEADLINE_AUDIO_LONG_MS
+        else -> SWITCH_DEADLINE_AUDIO_EXTRA_LONG_MS
+    }
 
     private fun switchDeadlinePrimaryModeAdjustmentMs(
         primaryVendor: AsrVendor,
@@ -238,12 +236,11 @@ object AsrTimeoutCalculator {
             .coerceAtLeast(LAZY_ESTIMATED_BACKUP_READY_FALLBACK_MS)
     }
 
-    private fun lazyResidencyFactor(sensitivityTier: Int): Double =
-        when (sensitivityTier.coerceIn(0, 2)) {
-            0 -> LAZY_RESIDENCY_FACTOR_RELAXED
-            2 -> LAZY_RESIDENCY_FACTOR_SENSITIVE
-            else -> LAZY_RESIDENCY_FACTOR_BALANCED
-        }
+    private fun lazyResidencyFactor(sensitivityTier: Int): Double = when (sensitivityTier.coerceIn(0, 2)) {
+        0 -> LAZY_RESIDENCY_FACTOR_RELAXED
+        2 -> LAZY_RESIDENCY_FACTOR_SENSITIVE
+        else -> LAZY_RESIDENCY_FACTOR_BALANCED
+    }
 
     private fun profileFor(vendor: AsrVendor?): TimeoutProfile = when (vendor) {
         // X-ASR 为本地流式，其余三个为设备侧整段推理，分别使用独立超时范围。

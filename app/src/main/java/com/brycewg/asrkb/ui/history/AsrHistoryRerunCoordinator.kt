@@ -78,7 +78,9 @@ internal class AsrHistoryRerunCoordinator(
         var requestMs = 0L
         val finalText = CompletableDeferred<String>()
         val listener = object : StreamingAsrEngine.Listener {
-            override fun onFinal(text: String) { finalText.complete(text) }
+            override fun onFinal(text: String) {
+                finalText.complete(text)
+            }
             override fun onError(message: String) {
                 finalText.completeExceptionally(IllegalStateException(message))
             }
@@ -282,17 +284,15 @@ internal class AsrHistoryRerunCoordinator(
         val llmVendorId: String?
     )
 
-    private fun AsrHistoryTimingRecorder.asAiTimingObserver(): AsrFinalFilters.AiPostprocessTimingObserver {
-        return object : AsrFinalFilters.AiPostprocessTimingObserver {
-            override fun onAiPostprocessStarted() {
-                end(AsrHistoryTimingStage.POSTPROCESS)
-                begin(AsrHistoryTimingStage.AI_POSTPROCESS)
-            }
+    private fun AsrHistoryTimingRecorder.asAiTimingObserver(): AsrFinalFilters.AiPostprocessTimingObserver = object : AsrFinalFilters.AiPostprocessTimingObserver {
+        override fun onAiPostprocessStarted() {
+            end(AsrHistoryTimingStage.POSTPROCESS)
+            begin(AsrHistoryTimingStage.AI_POSTPROCESS)
+        }
 
-            override fun onAiPostprocessFinished() {
-                end(AsrHistoryTimingStage.AI_POSTPROCESS)
-                begin(AsrHistoryTimingStage.POSTPROCESS)
-            }
+        override fun onAiPostprocessFinished() {
+            end(AsrHistoryTimingStage.AI_POSTPROCESS)
+            begin(AsrHistoryTimingStage.POSTPROCESS)
         }
     }
 

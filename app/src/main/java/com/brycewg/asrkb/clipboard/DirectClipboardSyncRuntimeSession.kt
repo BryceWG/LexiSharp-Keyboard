@@ -59,6 +59,7 @@ internal class DirectClipboardSyncRuntimeSession(
     }
 
     @Volatile private var manager: SyncClipboardManager? = initialManager
+
     @Volatile private var realtimeClient: SyncClipboardSignalRClient? = null
     private val receiveMutex = Mutex()
 
@@ -139,13 +140,12 @@ internal class DirectClipboardSyncRuntimeSession(
         }
     }
 
-    override fun downloadFile(entryId: String): Boolean =
-        try {
-            manager?.downloadFile(entryId) ?: false
-        } catch (t: Throwable) {
-            Log.e(TAG, "Failed to download clipboard file", t)
-            false
-        }
+    override fun downloadFile(entryId: String): Boolean = try {
+        manager?.downloadFile(entryId) ?: false
+    } catch (t: Throwable) {
+        Log.e(TAG, "Failed to download clipboard file", t)
+        false
+    }
 
     override fun pauseClipboardSideEffects() {
         try {

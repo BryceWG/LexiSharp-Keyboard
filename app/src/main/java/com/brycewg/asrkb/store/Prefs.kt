@@ -14,8 +14,8 @@ import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
-import com.brycewg.asrkb.asr.GeminiAsrMode
 import com.brycewg.asrkb.asr.BackupAsrLocalResidency
+import com.brycewg.asrkb.asr.GeminiAsrMode
 import com.brycewg.asrkb.asr.LlmVendor
 import com.brycewg.asrkb.asr.VolcAsrModelCatalog
 import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
@@ -45,8 +45,7 @@ class Prefs(context: Context) {
         MAX_DURATION("max_duration");
 
         companion object {
-            fun fromId(id: String?): RecordingAutoStopMode =
-                entries.firstOrNull { it.id == id } ?: MANUAL
+            fun fromId(id: String?): RecordingAutoStopMode = entries.firstOrNull { it.id == id } ?: MANUAL
         }
     }
 
@@ -81,15 +80,13 @@ class Prefs(context: Context) {
         sp.edit { putString(key, value.trim()) }
     }
 
-    internal fun getPrefBoolean(key: String, default: Boolean): Boolean =
-        sp.getBoolean(key, default)
+    internal fun getPrefBoolean(key: String, default: Boolean): Boolean = sp.getBoolean(key, default)
 
     internal fun setPrefBoolean(key: String, value: Boolean) {
         sp.edit { putBoolean(key, value) }
     }
 
-    internal fun getPrefInt(key: String, default: Int): Int =
-        sp.getInt(key, default)
+    internal fun getPrefInt(key: String, default: Int): Int = sp.getInt(key, default)
 
     internal fun setPrefInt(key: String, value: Int) {
         sp.edit { putInt(key, value) }
@@ -632,11 +629,9 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_LLM_REQUEST_MODES, "") ?: ""
         set(value) = sp.edit { putString(KEY_LLM_REQUEST_MODES, value) }
 
-    fun getLlmRequestMode(capabilityKey: String): LlmRequestMode? =
-        PrefsLlmRequestModeStore.get(this, json, capabilityKey)
+    fun getLlmRequestMode(capabilityKey: String): LlmRequestMode? = PrefsLlmRequestModeStore.get(this, json, capabilityKey)
 
-    fun setLlmRequestMode(capabilityKey: String, mode: LlmRequestMode) =
-        PrefsLlmRequestModeStore.set(this, json, capabilityKey, mode)
+    fun setLlmRequestMode(capabilityKey: String, mode: LlmRequestMode) = PrefsLlmRequestModeStore.set(this, json, capabilityKey, mode)
 
     // 数字/符号小键盘：中文标点模式（true=中文形态，false=英文/ASCII 形态）
     var numpadCnPunctEnabled: Boolean
@@ -923,11 +918,9 @@ class Prefs(context: Context) {
 
     fun setLlmVendorReasoningEnabled(vendor: LlmVendor, enabled: Boolean) = PrefsLlmVendorStore.setLlmVendorReasoningEnabled(sp, vendor, enabled)
 
-    fun getLlmVendorCustomReasoningParamsEnabled(vendor: LlmVendor): Boolean =
-        PrefsLlmVendorStore.getLlmVendorCustomReasoningParamsEnabled(sp, vendor)
+    fun getLlmVendorCustomReasoningParamsEnabled(vendor: LlmVendor): Boolean = PrefsLlmVendorStore.getLlmVendorCustomReasoningParamsEnabled(sp, vendor)
 
-    fun setLlmVendorCustomReasoningParamsEnabled(vendor: LlmVendor, enabled: Boolean) =
-        PrefsLlmVendorStore.setLlmVendorCustomReasoningParamsEnabled(sp, vendor, enabled)
+    fun setLlmVendorCustomReasoningParamsEnabled(vendor: LlmVendor, enabled: Boolean) = PrefsLlmVendorStore.setLlmVendorCustomReasoningParamsEnabled(sp, vendor, enabled)
 
     fun getLlmVendorModels(vendor: LlmVendor): List<String> = PrefsLlmVendorStore.getLlmVendorModels(sp, json, vendor, sfFreeLlmUsePaidKey)
 
@@ -994,14 +987,11 @@ class Prefs(context: Context) {
         dashRegion
     )
 
-    private fun isDashStreamingModelId(modelId: String): Boolean {
-        return DashScopePrefsCompat.isStreamingModel(modelId)
-    }
+    private fun isDashStreamingModelId(modelId: String): Boolean = DashScopePrefsCompat.isStreamingModel(modelId)
 
     fun isDashOmniModelId(modelId: String): Boolean = DashScopePrefsCompat.isOmniModel(modelId)
 
-    fun isDashGenerationAsrModelId(modelId: String): Boolean =
-        DashScopePrefsCompat.isGenerationAsrModel(modelId)
+    fun isDashGenerationAsrModelId(modelId: String): Boolean = DashScopePrefsCompat.isGenerationAsrModel(modelId)
 
     // DashScope：ASR 模型选择（用于替代“流式开关 + Fun-ASR 开关”的组合）
     // - fun-asr-flash-2026-06-15：非流式
@@ -1055,11 +1045,9 @@ class Prefs(context: Context) {
 
     fun isDashOmniModelSelected(): Boolean = isDashOmniModelId(dashAsrModel)
 
-    fun isDashPromptSupportedByModel(): Boolean =
-        DashScopePrefsCompat.isPromptSupported(dashAsrModel)
+    fun isDashPromptSupportedByModel(): Boolean = DashScopePrefsCompat.isPromptSupported(dashAsrModel)
 
-    fun isDashLanguageSupportedByModel(): Boolean =
-        DashScopePrefsCompat.isLanguageSupported(dashAsrModel)
+    fun isDashLanguageSupportedByModel(): Boolean = DashScopePrefsCompat.isLanguageSupported(dashAsrModel)
 
     // DashScope: streaming toggle（legacy，已由 dashAsrModel 替代）
     var dashStreamingEnabled: Boolean
@@ -1723,7 +1711,8 @@ class Prefs(context: Context) {
         if (v == AsrVendor.Gemini) {
             return when (geminiAsrMode) {
                 GeminiAsrMode.Gemini -> getGeminiApiKeys().isNotEmpty() &&
-                    gemEndpoint.trim().isNotBlank() && gemModel.trim().isNotBlank()
+                    gemEndpoint.trim().isNotBlank() &&
+                    gemModel.trim().isNotBlank()
                 GeminiAsrMode.Transcribe -> gemTranscribeApiKey.trim().isNotBlank() &&
                     gemTranscribeEndpoint.trim().isNotBlank() &&
                     gemTranscribeModel.trim().isNotBlank()
@@ -1972,8 +1961,7 @@ class Prefs(context: Context) {
     internal fun getAsrRuntimeStatsSnapshot(
         vendor: AsrVendor,
         targetAudioMs: Long
-    ): AsrRuntimeVendorSnapshot =
-        AsrRuntimeStatsStore.snapshot(this, json, vendor, targetAudioMs)
+    ): AsrRuntimeVendorSnapshot = AsrRuntimeStatsStore.snapshot(this, json, vendor, targetAudioMs)
 
     internal fun resetAsrRuntimeStats() = AsrRuntimeStatsStore.clear(this)
 
@@ -2027,8 +2015,11 @@ class Prefs(context: Context) {
             null
         }
         set(value) = sp.edit {
-            if (value == null) remove(KEY_SC_REALTIME_SUPPORTED)
-            else putBoolean(KEY_SC_REALTIME_SUPPORTED, value)
+            if (value == null) {
+                remove(KEY_SC_REALTIME_SUPPORTED)
+            } else {
+                putBoolean(KEY_SC_REALTIME_SUPPORTED, value)
+            }
         }
 
     /**
@@ -2304,8 +2295,7 @@ class Prefs(context: Context) {
     }
 
     // 上限由 IME 窗口按当前屏幕计算，避免超宽屏拖拽宽度被持久化层回缩。
-    private fun normalizeImeFloatingKeyboardWidthScale(value: Float): Float =
-        if (value.isFinite()) value.coerceAtLeast(IME_FLOATING_KEYBOARD_WIDTH_SCALE_MIN) else 1.0f
+    private fun normalizeImeFloatingKeyboardWidthScale(value: Float): Float = if (value.isFinite()) value.coerceAtLeast(IME_FLOATING_KEYBOARD_WIDTH_SCALE_MIN) else 1.0f
 
     private fun normalizeOpenAiAsrProvider(provider: OpenAiAsrProvider): OpenAiAsrProvider = provider.copy(
         name = provider.name.trim(),

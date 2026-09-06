@@ -20,8 +20,7 @@ internal class ClipboardAttachmentPolicy(private val prefs: Prefs) {
         return enabled && sizeBytes <= prefs.syncClipboardAttachmentMaxSizeMb * BYTES_PER_MB
     }
 
-    fun hasEnabledType(): Boolean =
-        prefs.syncClipboardImagesEnabled || prefs.syncClipboardFilesEnabled
+    fun hasEnabledType(): Boolean = prefs.syncClipboardImagesEnabled || prefs.syncClipboardFilesEnabled
 
     companion object {
         private const val BYTES_PER_MB = 1024L * 1024L
@@ -61,16 +60,15 @@ internal class ClipboardAttachmentOriginStore(context: android.content.Context) 
         }
     }
 
-    fun isLocal(profileHash: String?): Boolean =
-        !profileHash.isNullOrBlank() && synchronized(lock) {
+    fun isLocal(profileHash: String?): Boolean = !profileHash.isNullOrBlank() &&
+        synchronized(lock) {
             readHashes().any { it.equals(profileHash, ignoreCase = true) }
         }
 
-    private fun readHashes(): MutableList<String> =
-        prefs.getString(KEY_RECENT_PROFILE_HASHES, "").orEmpty()
-            .lineSequence()
-            .filter(String::isNotBlank)
-            .toMutableList()
+    private fun readHashes(): MutableList<String> = prefs.getString(KEY_RECENT_PROFILE_HASHES, "").orEmpty()
+        .lineSequence()
+        .filter(String::isNotBlank)
+        .toMutableList()
 
     companion object {
         private const val PREFS_NAME = "clipboard_attachment_origin"

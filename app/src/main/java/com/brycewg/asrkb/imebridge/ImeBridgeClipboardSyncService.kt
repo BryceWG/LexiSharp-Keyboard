@@ -15,7 +15,9 @@ import com.brycewg.asrkb.store.Prefs
 
 class ImeBridgeClipboardSyncService : Service() {
     private val prefs by lazy { Prefs(this) }
+
     @Volatile private var activeSessionId: String? = null
+
     @Volatile private var activeTargetPackage: String? = null
 
     override fun onCreate() {
@@ -105,8 +107,7 @@ class ImeBridgeClipboardSyncService : Service() {
     }
 
     @Synchronized
-    private fun ownsSession(sessionId: String, callerPackages: Set<String>): Boolean =
-        activeSessionId == sessionId && activeTargetPackage in callerPackages
+    private fun ownsSession(sessionId: String, callerPackages: Set<String>): Boolean = activeSessionId == sessionId && activeTargetPackage in callerPackages
 
     @Synchronized
     private fun finishActiveSession(actorDied: Boolean) {

@@ -24,7 +24,6 @@ enum class AsrVendor(val id: String) {
     MiMo("mimo");
 
     companion object {
-        fun fromId(id: String?): AsrVendor =
-            AsrVendorRegistry.vendorFromIdOrNull(id) ?: Volc
+        fun fromId(id: String?): AsrVendor = AsrVendorRegistry.vendorFromIdOrNull(id) ?: Volc
     }
 }

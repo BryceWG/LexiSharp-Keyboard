@@ -6,7 +6,6 @@ import android.content.Context
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
-import android.provider.DocumentsContract
 import androidx.test.core.app.ApplicationProvider
 import com.brycewg.asrkb.store.Prefs
 import org.junit.Assert.assertEquals

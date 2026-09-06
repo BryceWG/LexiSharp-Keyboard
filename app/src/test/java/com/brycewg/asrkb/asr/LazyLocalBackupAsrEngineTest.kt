@@ -8,12 +8,12 @@ import com.brycewg.asrkb.store.Prefs
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import org.junit.Before
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -689,7 +689,8 @@ class LazyLocalBackupAsrEngineTest {
         return field.get(this) as ByteArrayOutputStream
     }
 
-    private class RecordingListener : StreamingAsrEngine.Listener,
+    private class RecordingListener :
+        StreamingAsrEngine.Listener,
         BackupAsrStatusListener {
         val finals = mutableListOf<String>()
         val errors = mutableListOf<String>()

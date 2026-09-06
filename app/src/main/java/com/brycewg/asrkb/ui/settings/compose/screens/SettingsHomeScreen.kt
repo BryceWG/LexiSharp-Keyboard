@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
@@ -41,7 +42,6 @@ import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.WorkspacePremium
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -514,7 +514,8 @@ private data class SettingsHomeSnapshot(
                 floatingEnabled = floatingEnabled,
                 volumeKeyEnabled = volumeKeyEnabled,
                 imeBridgeEnabled = imeBridgeEnabled
-            ) && !isAccessibilityServiceEnabled(context)
+            ) &&
+                !isAccessibilityServiceEnabled(context)
             return SettingsHomeSnapshot(
                 oneClickSetupSummary = oneClickSetupSummary(context, prefs),
                 inputControlSummary = inputControlSummary(context, prefs),

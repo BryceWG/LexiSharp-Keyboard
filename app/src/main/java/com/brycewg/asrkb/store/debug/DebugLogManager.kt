@@ -183,9 +183,7 @@ object DebugLogManager {
         shareUriResolverForTest = resolver
     }
 
-    internal fun flushForTest(context: Context, timeoutMs: Long = 5_000L): Boolean {
-        return awaitPendingWrites(context, timeoutMs)
-    }
+    internal fun flushForTest(context: Context, timeoutMs: Long = 5_000L): Boolean = awaitPendingWrites(context, timeoutMs)
 
     @Synchronized
     fun start(context: Context) {

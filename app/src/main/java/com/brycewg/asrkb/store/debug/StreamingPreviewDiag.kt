@@ -127,13 +127,14 @@ internal object StreamingPreviewDiag {
 
     private fun matchesSuffixBounded(left: CharSequence, right: CharSequence): Boolean {
         val length = minOf(left.length, right.length, OVERLAP_SCAN_MAX)
-        return length > 0 && regionMatches(
-            left,
-            left.length - length,
-            right,
-            right.length - length,
-            length
-        )
+        return length > 0 &&
+            regionMatches(
+                left,
+                left.length - length,
+                right,
+                right.length - length,
+                length
+            )
     }
 
     private fun matchesSuffixToPrefixBounded(left: CharSequence, right: CharSequence): Boolean {

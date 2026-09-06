@@ -65,8 +65,7 @@ internal interface AsrLocalVendorLifecycle {
 
     fun modelStatus(context: Context, prefs: Prefs): LocalModelCheck<*>
 
-    fun isModelReady(context: Context, prefs: Prefs): Boolean =
-        modelStatus(context, prefs) is LocalModelCheck.Ready<*>
+    fun isModelReady(context: Context, prefs: Prefs): Boolean = modelStatus(context, prefs) is LocalModelCheck.Ready<*>
 }
 
 internal class AsrLocalVendorLifecycleRegistry(
@@ -97,11 +96,9 @@ internal class AsrLocalVendorLifecycleRegistry(
 
     fun isReady(vendor: AsrVendor): Boolean = lifecycleFor(vendor)?.isReady() == true
 
-    fun modelStatus(context: Context, prefs: Prefs, vendor: AsrVendor): LocalModelCheck<*>? =
-        lifecycleFor(vendor)?.modelStatus(context, prefs)
+    fun modelStatus(context: Context, prefs: Prefs, vendor: AsrVendor): LocalModelCheck<*>? = lifecycleFor(vendor)?.modelStatus(context, prefs)
 
-    fun isModelReady(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean =
-        lifecycleFor(vendor)?.isModelReady(context, prefs) == true
+    fun isModelReady(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean = lifecycleFor(vendor)?.isModelReady(context, prefs) == true
 }
 
 internal object AsrLocalVendorLifecycles {
@@ -122,8 +119,7 @@ internal object AsrLocalVendorLifecycles {
 
     fun isLocalVendor(vendor: AsrVendor): Boolean = registry.isLocalVendor(vendor)
 
-    fun preload(vendor: AsrVendor, request: AsrLocalVendorPreloadRequest): Boolean =
-        registry.preload(vendor, request)
+    fun preload(vendor: AsrVendor, request: AsrLocalVendorPreloadRequest): Boolean = registry.preload(vendor, request)
 
     fun unload(vendor: AsrVendor): Boolean = registry.unload(vendor)
 
@@ -131,11 +127,9 @@ internal object AsrLocalVendorLifecycles {
 
     fun isReady(vendor: AsrVendor): Boolean = registry.isReady(vendor)
 
-    fun modelStatus(context: Context, prefs: Prefs, vendor: AsrVendor): LocalModelCheck<*>? =
-        registry.modelStatus(context, prefs, vendor)
+    fun modelStatus(context: Context, prefs: Prefs, vendor: AsrVendor): LocalModelCheck<*>? = registry.modelStatus(context, prefs, vendor)
 
-    fun isModelReady(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean =
-        registry.isModelReady(context, prefs, vendor)
+    fun isModelReady(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean = registry.isModelReady(context, prefs, vendor)
 }
 
 private class DefaultAsrLocalVendorLifecycle(
@@ -154,8 +148,7 @@ private class DefaultAsrLocalVendorLifecycle(
 
     override fun isReady(): Boolean = readyHook()
 
-    override fun modelStatus(context: Context, prefs: Prefs): LocalModelCheck<*> =
-        modelStatusHook(context, prefs)
+    override fun modelStatus(context: Context, prefs: Prefs): LocalModelCheck<*> = modelStatusHook(context, prefs)
 }
 
 private fun senseVoiceLifecycle(): AsrLocalVendorLifecycle = DefaultAsrLocalVendorLifecycle(

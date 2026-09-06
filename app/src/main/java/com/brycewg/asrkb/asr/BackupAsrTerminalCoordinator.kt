@@ -10,6 +10,7 @@ internal class BackupAsrTerminalCoordinator(
     private val delivered = AtomicBoolean(false)
 
     @Volatile private var arbitrator: AsrBackupArbitrator? = null
+
     @Volatile private var lastFinalFromBackup: Boolean = false
 
     val terminalDelivered: Boolean

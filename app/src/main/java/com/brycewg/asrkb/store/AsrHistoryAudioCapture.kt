@@ -3,8 +3,8 @@ package com.brycewg.asrkb.store
 
 import android.content.Context
 import android.util.Log
-import java.io.ByteArrayOutputStream
 import com.brycewg.asrkb.asr.AudioFrameSink
+import java.io.ByteArrayOutputStream
 
 class AsrHistoryAudioCapture private constructor(
     context: Context,
@@ -23,7 +23,9 @@ class AsrHistoryAudioCapture private constructor(
 
     private val appContext = context.applicationContext
     private val buffer = ByteArrayOutputStream()
+
     @Volatile private var valid = enabled
+
     @Volatile private var closed = false
 
     @Synchronized

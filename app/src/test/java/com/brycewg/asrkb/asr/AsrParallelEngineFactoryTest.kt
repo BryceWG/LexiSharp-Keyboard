@@ -255,8 +255,7 @@ class AsrParallelEngineFactoryTest {
         )
     }
 
-    private fun throwingChecks(): AsrBackupAvailabilityChecks =
-        AsrBackupAvailabilityChecks { error("availability should not be required") }
+    private fun throwingChecks(): AsrBackupAvailabilityChecks = AsrBackupAvailabilityChecks { error("availability should not be required") }
 
     private class FakeStreamingAsrEngine : StreamingAsrEngine {
         override val isRunning: Boolean = false

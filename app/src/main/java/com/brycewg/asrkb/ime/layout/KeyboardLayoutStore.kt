@@ -68,8 +68,7 @@ object KeyboardLayoutStore {
 
     fun defaultLayout(prefs: Prefs, panel: KeyboardLayoutPanel): KeyboardLayout = defaultBundle(prefs).layoutFor(panel)
 
-    fun normalizeBundle(prefs: Prefs, bundle: KeyboardLayoutBundle): KeyboardLayoutBundle =
-        migrateRequiredBlocks(prefs, bundle.withMigratedDefIds().withPanelAllowedBlocks())
+    fun normalizeBundle(prefs: Prefs, bundle: KeyboardLayoutBundle): KeyboardLayoutBundle = migrateRequiredBlocks(prefs, bundle.withMigratedDefIds().withPanelAllowedBlocks())
 
     fun encodeBundle(bundle: KeyboardLayoutBundle): String {
         val root = JSONObject()

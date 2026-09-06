@@ -116,13 +116,12 @@ class SystemClipboardPortFactoryTest {
     }
 }
 
-private fun successClipboardStatus(supportsClipboard: Boolean): ImeBridgeResult =
-    ImeBridgeResult(
-        code = ImeBridgeContract.RESULT_OK,
-        message = "ready",
-        targetPackage = "com.example.third.ime",
-        hasInputConnection = true,
-        isSensitiveField = false,
-        isImeWindowVisible = true,
-        supportsClipboard = supportsClipboard
-    )
+private fun successClipboardStatus(supportsClipboard: Boolean): ImeBridgeResult = ImeBridgeResult(
+    code = ImeBridgeContract.RESULT_OK,
+    message = "ready",
+    targetPackage = "com.example.third.ime",
+    hasInputConnection = true,
+    isSensitiveField = false,
+    isImeWindowVisible = true,
+    supportsClipboard = supportsClipboard
+)

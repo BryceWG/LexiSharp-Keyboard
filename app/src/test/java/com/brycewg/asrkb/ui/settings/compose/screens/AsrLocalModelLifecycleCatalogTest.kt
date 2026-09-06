@@ -106,15 +106,13 @@ class AsrLocalModelLifecycleCatalogTest {
         assertEquals(listOf("delete", "unload:firered_asr"), events)
     }
 
-    private fun localAsrVendors(): Set<AsrVendor> =
-        AsrVendorRegistry.descriptors
-            .filter { AsrVendorCapability.LocalRecognition in it.capabilities }
-            .map { it.vendor }
-            .toSet()
+    private fun localAsrVendors(): Set<AsrVendor> = AsrVendorRegistry.descriptors
+        .filter { AsrVendorCapability.LocalRecognition in it.capabilities }
+        .map { it.vendor }
+        .toSet()
 
-    private fun onlineAsrVendors(): Set<AsrVendor> =
-        AsrVendorRegistry.descriptors
-            .filterNot { AsrVendorCapability.LocalRecognition in it.capabilities }
-            .map { it.vendor }
-            .toSet()
+    private fun onlineAsrVendors(): Set<AsrVendor> = AsrVendorRegistry.descriptors
+        .filterNot { AsrVendorCapability.LocalRecognition in it.capabilities }
+        .map { it.vendor }
+        .toSet()
 }

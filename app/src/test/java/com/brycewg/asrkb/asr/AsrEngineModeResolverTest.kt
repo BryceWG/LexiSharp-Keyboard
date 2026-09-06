@@ -211,22 +211,20 @@ class AsrEngineModeResolverTest {
         source = source
     )
 
-    private fun preferencesFor(vendor: AsrVendor, streaming: Boolean): AsrEngineModePreferences =
-        when (vendor) {
-            AsrVendor.Volc -> AsrEngineModePreferences(volcStreamingEnabled = streaming)
-            AsrVendor.ElevenLabs -> AsrEngineModePreferences(elevenStreamingEnabled = streaming)
-            AsrVendor.OpenAI -> AsrEngineModePreferences(openAiStreamingEnabled = streaming)
-            AsrVendor.DashScope -> AsrEngineModePreferences(dashScopeStreamingEnabled = streaming)
-            AsrVendor.Soniox -> AsrEngineModePreferences(sonioxStreamingEnabled = streaming)
-            else -> error("$vendor is not controlled by an online streaming toggle")
-        }
+    private fun preferencesFor(vendor: AsrVendor, streaming: Boolean): AsrEngineModePreferences = when (vendor) {
+        AsrVendor.Volc -> AsrEngineModePreferences(volcStreamingEnabled = streaming)
+        AsrVendor.ElevenLabs -> AsrEngineModePreferences(elevenStreamingEnabled = streaming)
+        AsrVendor.OpenAI -> AsrEngineModePreferences(openAiStreamingEnabled = streaming)
+        AsrVendor.DashScope -> AsrEngineModePreferences(dashScopeStreamingEnabled = streaming)
+        AsrVendor.Soniox -> AsrEngineModePreferences(sonioxStreamingEnabled = streaming)
+        else -> error("$vendor is not controlled by an online streaming toggle")
+    }
 
-    private fun pseudoPreferencesFor(vendor: AsrVendor, enabled: Boolean): AsrEngineModePreferences =
-        when (vendor) {
-            AsrVendor.SenseVoice -> AsrEngineModePreferences(senseVoicePseudoStreamEnabled = enabled)
-            AsrVendor.FireRedAsr -> AsrEngineModePreferences(fireRedPseudoStreamEnabled = enabled)
-            else -> error("$vendor is not controlled by a pseudo stream toggle")
-        }
+    private fun pseudoPreferencesFor(vendor: AsrVendor, enabled: Boolean): AsrEngineModePreferences = when (vendor) {
+        AsrVendor.SenseVoice -> AsrEngineModePreferences(senseVoicePseudoStreamEnabled = enabled)
+        AsrVendor.FireRedAsr -> AsrEngineModePreferences(fireRedPseudoStreamEnabled = enabled)
+        else -> error("$vendor is not controlled by a pseudo stream toggle")
+    }
 
     private data class StreamingCase(val vendor: AsrVendor)
 

@@ -30,10 +30,9 @@ internal data class LocalClipboardAttachment(
 internal fun selectLatestAttachment(
     attachments: List<LocalClipboardAttachment>,
     isEligible: (LocalClipboardAttachment) -> Boolean
-): LocalClipboardAttachment? =
-    attachments.filter(isEligible).maxWithOrNull(
-        compareBy<LocalClipboardAttachment> { it.lastModifiedMillis }.thenBy { it.signature }
-    )
+): LocalClipboardAttachment? = attachments.filter(isEligible).maxWithOrNull(
+    compareBy<LocalClipboardAttachment> { it.lastModifiedMillis }.thenBy { it.signature }
+)
 
 internal class ClipboardAttachmentWatcher(
     context: Context,
@@ -43,8 +42,7 @@ internal class ClipboardAttachmentWatcher(
     private val appContext = context.applicationContext
     private val seenPrefs = appContext.getSharedPreferences(SEEN_PREFS, Context.MODE_PRIVATE)
 
-    fun scanAndUpload(upload: (LocalClipboardAttachment) -> Boolean) =
-        ClipboardAttachmentTransferGate.run { scanAndUploadLocked(upload) }
+    fun scanAndUpload(upload: (LocalClipboardAttachment) -> Boolean) = ClipboardAttachmentTransferGate.run { scanAndUploadLocked(upload) }
 
     private fun scanAndUploadLocked(upload: (LocalClipboardAttachment) -> Boolean) {
         if (!policy.hasEnabledType()) return
@@ -155,9 +153,8 @@ internal class ClipboardAttachmentWatcher(
 
     /** 已处理进度：最大 lastModified 与该时间戳上的签名集合，天然限制集合容量。 */
     private class SeenBaseline(val latestModified: Long, val signatures: Set<String>) {
-        fun isNew(attachment: LocalClipboardAttachment): Boolean =
-            attachment.lastModifiedMillis > latestModified ||
-                (attachment.lastModifiedMillis == latestModified && !signatures.contains(attachment.signature))
+        fun isNew(attachment: LocalClipboardAttachment): Boolean = attachment.lastModifiedMillis > latestModified ||
+            (attachment.lastModifiedMillis == latestModified && !signatures.contains(attachment.signature))
     }
 
     private fun readBaseline(): SeenBaseline = SeenBaseline(
@@ -196,8 +193,7 @@ internal class ClipboardAttachmentWatcher(
         seenPrefs.edit().putStringSet(KEY_SEEN, seen + signatures).apply()
     }
 
-    private fun Collection<LocalClipboardAttachment>.signaturesAt(modifiedMillis: Long): Set<String> =
-        asSequence().filter { it.lastModifiedMillis == modifiedMillis }.map { it.signature }.toSet()
+    private fun Collection<LocalClipboardAttachment>.signaturesAt(modifiedMillis: Long): Set<String> = asSequence().filter { it.lastModifiedMillis == modifiedMillis }.map { it.signature }.toSet()
 
     private fun logBase(event: String, data: Map<String, Any?>) {
         try {

@@ -134,6 +134,7 @@ class ModelDownloadService : Service() {
     private val tasks = ConcurrentHashMap<DownloadKey, kotlinx.coroutines.Job>()
     private val notificationHandlers = ConcurrentHashMap<DownloadKey, NotificationHandler>()
     private val activeCalls = ConcurrentHashMap<DownloadKey, Call>()
+
     /** 用户点取消的 key：catch 里无论何种异常都不得再覆盖为「失败」 */
     private val userCancelledKeys = ConcurrentHashMap.newKeySet<DownloadKey>()
     private lateinit var nm: NotificationManager
@@ -1279,7 +1280,6 @@ class ModelDownloadService : Service() {
         Log.w(TAG, "Failed to get display name from uri: $uri", e)
         null
     }
-
 }
 
 /**

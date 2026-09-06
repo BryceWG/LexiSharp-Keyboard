@@ -45,23 +45,22 @@ class ClipboardFileManager(private val context: Context) {
         totalBytes: Long = -1,
         maxBytes: Long? = null,
         progressCallback: ((Long, Long) -> Unit)? = null
-    ): String? {
-        return try {
-            if (!isSafeFileName(fileName)) null
-            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                saveMediaFile(fileName, inputStream, totalBytes, maxBytes, progressCallback)
-            } else {
-                saveLegacyFile(fileName, inputStream, totalBytes, maxBytes, progressCallback)
-            }
-        } catch (t: Throwable) {
-            Log.e(TAG, "Failed to save clipboard file: $fileName", t)
+    ): String? = try {
+        if (!isSafeFileName(fileName)) {
             null
-        } finally {
-            try {
-                inputStream.close()
-            } catch (t: Throwable) {
-                Log.w(TAG, "Failed to close clipboard file input", t)
-            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            saveMediaFile(fileName, inputStream, totalBytes, maxBytes, progressCallback)
+        } else {
+            saveLegacyFile(fileName, inputStream, totalBytes, maxBytes, progressCallback)
+        }
+    } catch (t: Throwable) {
+        Log.e(TAG, "Failed to save clipboard file: $fileName", t)
+        null
+    } finally {
+        try {
+            inputStream.close()
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to close clipboard file input", t)
         }
     }
 
@@ -182,9 +181,11 @@ class ClipboardFileManager(private val context: Context) {
         fileName
     )
 
-    private fun isSafeFileName(fileName: String): Boolean =
-        fileName.isNotBlank() && fileName != "." && fileName != ".." &&
-            !fileName.contains('/') && !fileName.contains('\\')
+    private fun isSafeFileName(fileName: String): Boolean = fileName.isNotBlank() &&
+        fileName != "." &&
+        fileName != ".." &&
+        !fileName.contains('/') &&
+        !fileName.contains('\\')
 
     private data class MediaFile(val uri: Uri, val size: Long)
 }

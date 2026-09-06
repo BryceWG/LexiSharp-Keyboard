@@ -88,8 +88,7 @@ class ClipboardSyncRuntimeService : Service() {
             start(context, ACTION_BRIDGE_ACTOR_DIED, sessionId)
         }
 
-        fun downloadFile(entryId: String): Boolean =
-            runningInstance?.runtime?.downloadFile(entryId) ?: false
+        fun downloadFile(entryId: String): Boolean = runningInstance?.runtime?.downloadFile(entryId) ?: false
 
         fun setUiListener(listener: SyncClipboardManager.Listener?) {
             pendingUiListener = listener
@@ -181,8 +180,11 @@ class ClipboardSyncRuntimeService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         ensureRuntime()
-        if (intent?.action == ACTION_CONFIG_CHANGED) restartCapabilityProbe()
-        else ensureCapabilityProbe()
+        if (intent?.action == ACTION_CONFIG_CHANGED) {
+            restartCapabilityProbe()
+        } else {
+            ensureCapabilityProbe()
+        }
         when (intent?.action) {
             ACTION_ACTIVATE_DIRECT -> {
                 activateDirectPath()
@@ -191,7 +193,10 @@ class ClipboardSyncRuntimeService : Service() {
             ACTION_DEACTIVATE_DIRECT -> {
                 runtime?.deactivateSession()
                 if (owner == ClipboardSyncOwner.Direct &&
-                    runtime?.phase == ClipboardSyncRuntimePhase.INACTIVE) owner = null
+                    runtime?.phase == ClipboardSyncRuntimePhase.INACTIVE
+                ) {
+                    owner = null
+                }
                 maybeStopSelf()
             }
             ACTION_CONFIG_CHANGED -> {
@@ -344,7 +349,8 @@ class ClipboardSyncRuntimeService : Service() {
     }
 
     private fun ensureCapabilityProbe(delayMs: Long = 1_000L) {
-        if (capabilityProbeJob?.isActive == true || !prefs.syncClipboardEnabled ||
+        if (capabilityProbeJob?.isActive == true ||
+            !prefs.syncClipboardEnabled ||
             prefs.syncClipboardReceiveMode == ClipboardSyncReceiveMode.OFF ||
             prefs.syncClipboardRealtimeSupported != null
         ) {
@@ -366,9 +372,11 @@ class ClipboardSyncRuntimeService : Service() {
             val supported = withContext(Dispatchers.IO) {
                 SyncClipboardSignalRClient.probeServerVersion(server, username, password)
             }
-            if (supported != null && prefs.syncClipboardRealtimeSupported == null &&
+            if (supported != null &&
+                prefs.syncClipboardRealtimeSupported == null &&
                 server == prefs.syncClipboardServerBase &&
-                username == prefs.syncClipboardUsername && password == prefs.syncClipboardPassword
+                username == prefs.syncClipboardUsername &&
+                password == prefs.syncClipboardPassword
             ) {
                 prefs.syncClipboardRealtimeSupported = supported
                 prefs.syncClipboardReceiveMode = if (supported) {
@@ -386,14 +394,13 @@ class ClipboardSyncRuntimeService : Service() {
         }
     }
 
-    private fun isScreenInteractive(): Boolean =
-        try {
-            val pm = getSystemService(PowerManager::class.java)
-            pm?.isInteractive == true
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to read screen interactive state", t)
-            true
-        }
+    private fun isScreenInteractive(): Boolean = try {
+        val pm = getSystemService(PowerManager::class.java)
+        pm?.isInteractive == true
+    } catch (t: Throwable) {
+        Log.w(TAG, "Failed to read screen interactive state", t)
+        true
+    }
 
     private fun registerScreenReceiver() {
         if (screenReceiverRegistered) return

@@ -129,36 +129,34 @@ class SettingsActionController(
         }
     }
 
-    fun buildLicensesText(): String? {
-        return try {
-            buildString {
-                append(activity.readAssetFile("licenses/sherpa-onnx-LICENSE"))
-                append("\n\n")
-                append("=".repeat(80))
-                append("\n\n")
-                append(activity.readAssetFile("licenses/SyncClipboard-LICENSE"))
-                append("\n\n")
-                append("=".repeat(80))
-                append("\n\n")
-                append(activity.readAssetFile("licenses/Phosphor-LICENSE"))
-                append("\n\n")
-                append("=".repeat(80))
-                append("\n\n")
-                append(activity.readAssetFile("licenses/Miuix-LICENSE"))
-                append("\n\n")
-                append("=".repeat(80))
-                append("\n\n")
-                append(activity.readAssetFile("licenses/WaveLineView-LICENSE"))
-                append("\n\n")
-                append("=".repeat(80))
-                append("\n\n")
-                append(activity.readAssetFile("licenses/TenVAD-LICENSE"))
-            }
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to build licenses text", e)
-            showSystemMessage(R.string.toast_debug_failed)
-            null
+    fun buildLicensesText(): String? = try {
+        buildString {
+            append(activity.readAssetFile("licenses/sherpa-onnx-LICENSE"))
+            append("\n\n")
+            append("=".repeat(80))
+            append("\n\n")
+            append(activity.readAssetFile("licenses/SyncClipboard-LICENSE"))
+            append("\n\n")
+            append("=".repeat(80))
+            append("\n\n")
+            append(activity.readAssetFile("licenses/Phosphor-LICENSE"))
+            append("\n\n")
+            append("=".repeat(80))
+            append("\n\n")
+            append(activity.readAssetFile("licenses/Miuix-LICENSE"))
+            append("\n\n")
+            append("=".repeat(80))
+            append("\n\n")
+            append(activity.readAssetFile("licenses/WaveLineView-LICENSE"))
+            append("\n\n")
+            append("=".repeat(80))
+            append("\n\n")
+            append(activity.readAssetFile("licenses/TenVAD-LICENSE"))
         }
+    } catch (e: Throwable) {
+        Log.e(TAG, "Failed to build licenses text", e)
+        showSystemMessage(R.string.toast_debug_failed)
+        null
     }
 
     private fun showSystemMessage(@StringRes messageRes: Int) {

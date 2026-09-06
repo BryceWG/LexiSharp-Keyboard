@@ -98,8 +98,7 @@ class ImeBridgePcmSessionService : Service() {
         return packageManager.getPackagesForUid(uid)?.toSet().orEmpty()
     }
 
-    private fun operationRequest(sessionId: String): BridgePcmSessionOperationRequest =
-        BridgePcmSessionOperationRequest(sessionId, resolveCallingPackages())
+    private fun operationRequest(sessionId: String): BridgePcmSessionOperationRequest = BridgePcmSessionOperationRequest(sessionId, resolveCallingPackages())
 
     private fun replyResult(reply: Parcel?, result: BridgePcmOperationResult) {
         reply?.apply {

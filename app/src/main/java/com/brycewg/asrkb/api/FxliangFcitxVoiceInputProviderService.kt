@@ -23,10 +23,15 @@ class FxliangFcitxVoiceInputProviderService : Service() {
     private val lock = Any()
 
     @Volatile private var configuredBundle: Bundle? = null
+
     @Volatile private var nextSessionId = 1
+
     @Volatile private var activeSession: ExternalSpeechSession? = null
+
     @Volatile private var activeCallbacks: FcitxExternalCallbacks? = null
+
     @Volatile private var activeDeathLink: CallbackDeathLink? = null
+
     @Volatile private var receivedPcmBytes: Long = 0L
 
     override fun onBind(intent: Intent?): IBinder = binder

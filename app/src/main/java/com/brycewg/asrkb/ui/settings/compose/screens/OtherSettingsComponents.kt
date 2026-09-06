@@ -43,11 +43,11 @@ import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButtonRow
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMaterialItemSurface
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsPreference
-import com.brycewg.asrkb.ui.settings.compose.model.SettingsEntry
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSectionContainer
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsTextField
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
+import com.brycewg.asrkb.ui.settings.compose.model.SettingsEntry
 import com.brycewg.asrkb.ui.settings.other.OtherSettingsViewModel
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
 import top.yukonga.miuix.kmp.theme.MiuixTheme

@@ -92,7 +92,7 @@ internal fun aiModelChoiceSheetState(
         context = context,
         titleRes = titleRes,
         items = models,
-        selectedIndex = selectedIndex,
+        selectedIndex = selectedIndex
     ) { which ->
         if (which == models.lastIndex) {
             onCustomSelected(currentModel.takeIf { it.isNotBlank() && !presetModels.contains(it) }.orEmpty())
@@ -114,7 +114,7 @@ internal fun aiProfileChoiceSheetState(
         context = context,
         titleRes = R.string.label_llm_choose_profile,
         items = profiles.map { it.name.ifBlank { context.getString(R.string.untitled_profile) } },
-        selectedIndex = selectedIndex,
+        selectedIndex = selectedIndex
     ) { which ->
         profiles.getOrNull(which)?.let(onSelected)
     }
@@ -131,7 +131,7 @@ internal fun aiPromptPresetChoiceSheetState(
         context = context,
         titleRes = R.string.label_llm_prompt_presets,
         items = promptPresets.map { it.title.ifBlank { context.getString(R.string.untitled_preset) } },
-        selectedIndex = selectedIndex,
+        selectedIndex = selectedIndex
     ) { which ->
         promptPresets.getOrNull(which)?.let(onSelected)
     }

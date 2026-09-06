@@ -83,13 +83,17 @@ internal class FireRedAsrFileAsrEngine(
 
     override suspend fun recognize(pcm: ByteArray) {
         val t0 = System.currentTimeMillis()
-        val localLog = if (isProgressiveChunkDecode) null else LocalAsrCallLogger.startInference(
-            prefs = prefs,
-            vendor = AsrVendor.FireRedAsr,
-            source = "file",
-            audioBytes = pcm.size,
-            sampleRate = sampleRate
-        )
+        val localLog = if (isProgressiveChunkDecode) {
+            null
+        } else {
+            LocalAsrCallLogger.startInference(
+                prefs = prefs,
+                vendor = AsrVendor.FireRedAsr,
+                source = "file",
+                audioBytes = pcm.size,
+                sampleRate = sampleRate
+            )
+        }
         var loadLog: LocalAsrCallLogger.Session? = null
         var durationReported = false
         fun reportDuration() {
@@ -190,7 +194,9 @@ internal class FireRedAsrFileAsrEngine(
                 localLog?.failure(msg)
                 listener.onError(msg)
             } else {
-                val finalText = if (isProgressiveChunkDecode) sanitizedText else {
+                val finalText = if (isProgressiveChunkDecode) {
+                    sanitizedText
+                } else {
                     finalizeCombinedProgressiveText(sanitizedText)
                 }
                 reportDuration()

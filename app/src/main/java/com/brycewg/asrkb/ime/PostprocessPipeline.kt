@@ -242,10 +242,9 @@ internal class PostprocessPipeline(
         extra: Map<String, Any?> = emptyMap()
     ): Map<String, Any?> = mapOf("aiUsed" to aiUsed) + extra
 
-    private fun elapsedRealtimeMs(): Long =
-        try {
-            android.os.SystemClock.elapsedRealtime()
-        } catch (_: Throwable) {
-            0L
-        }
+    private fun elapsedRealtimeMs(): Long = try {
+        android.os.SystemClock.elapsedRealtime()
+    } catch (_: Throwable) {
+        0L
+    }
 }

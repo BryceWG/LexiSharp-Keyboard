@@ -89,16 +89,14 @@ class BackupAsrTerminalCoordinatorTest {
         fun createCoordinator(
             hasPrimary: Boolean,
             hasBackup: Boolean
-        ): BackupAsrTerminalCoordinator {
-            return BackupAsrTerminalCoordinator(
-                onFinal = { text, source -> finals += text to source },
-                onError = { message -> errors += message }
-            ).also { coordinator ->
-                coordinator.reset(
-                    hasPrimary = hasPrimary,
-                    hasBackup = hasBackup
-                )
-            }
+        ): BackupAsrTerminalCoordinator = BackupAsrTerminalCoordinator(
+            onFinal = { text, source -> finals += text to source },
+            onError = { message -> errors += message }
+        ).also { coordinator ->
+            coordinator.reset(
+                hasPrimary = hasPrimary,
+                hasBackup = hasBackup
+            )
         }
     }
 }

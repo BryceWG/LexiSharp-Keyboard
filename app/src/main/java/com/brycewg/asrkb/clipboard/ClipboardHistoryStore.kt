@@ -67,7 +67,10 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
     private val appContext = context.applicationContext
     private val sp = appContext.getSharedPreferences("asr_prefs", Context.MODE_PRIVATE)
     private val database = ClipboardHistoryDatabase.get(appContext)
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
 
     fun getAll(): List<Entry> = withReadableDb(emptyList()) {
         database.queryGroup(it, true) + database.queryGroup(it, false)
@@ -76,7 +79,9 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
     fun getHistory(): List<Entry> = withReadableDb(emptyList()) { database.queryGroup(it, false) }
     fun totalCount(): Int = withReadableDb(0, database::count)
 
-    fun clearFileEntries() { withWritableDb { database.deleteNonTextHistory(it) } }
+    fun clearFileEntries() {
+        withWritableDb { database.deleteNonTextHistory(it) }
+    }
 
     fun addFromClipboard(text: String) {
         val normalized = normalizeClipboardHistoryText(text)
@@ -85,12 +90,21 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
             db.beginTransaction()
             try {
                 if (database.queryLatestHistory(db)?.text != normalized) {
-                    database.insertOrReplace(db, Entry(UUID.randomUUID().toString(), normalized,
-                        System.currentTimeMillis(), pinned = false))
+                    database.insertOrReplace(
+                        db,
+                        Entry(
+                            UUID.randomUUID().toString(),
+                            normalized,
+                            System.currentTimeMillis(),
+                            pinned = false
+                        )
+                    )
                     database.pruneGroup(db, false, MAX_HISTORY)
                 }
                 db.setTransactionSuccessful()
-            } finally { db.endTransaction() }
+            } finally {
+                db.endTransaction()
+            }
         }
     }
 
@@ -103,7 +117,9 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
             database.pruneGroup(db, pinned, if (pinned) MAX_PINNED else MAX_HISTORY)
             db.setTransactionSuccessful()
             pinned
-        } finally { db.endTransaction() }
+        } finally {
+            db.endTransaction()
+        }
     }
 
     fun deleteHistoryBefore(cutoffEpochMs: Long): Int = withWritableDb {
@@ -120,7 +136,11 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
 
     fun pasteInto(ic: android.view.inputmethod.InputConnection?, text: String) {
         if (ic == null) return
-        try { ic.commitText(text, 1) } catch (e: Throwable) { Log.e(TAG, "commitText failed", e) }
+        try {
+            ic.commitText(text, 1)
+        } catch (e: Throwable) {
+            Log.e(TAG, "commitText failed", e)
+        }
     }
 
     fun addFileEntry(
@@ -136,24 +156,27 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
         db.beginTransaction()
         try {
             database.deleteNonTextHistory(db)
-            database.insertOrReplace(db, Entry(
-                id = UUID.randomUUID().toString(), ts = System.currentTimeMillis(), pinned = false,
-                type = type, fileName = fileName, fileSize = fileSize, serverHash = serverHash,
-                mimeType = mimeType, localFilePath = localFilePath, downloadStatus = downloadStatus,
-                serverFileName = serverFileName
-            ))
+            database.insertOrReplace(
+                db,
+                Entry(
+                    id = UUID.randomUUID().toString(), ts = System.currentTimeMillis(), pinned = false,
+                    type = type, fileName = fileName, fileSize = fileSize, serverHash = serverHash,
+                    mimeType = mimeType, localFilePath = localFilePath, downloadStatus = downloadStatus,
+                    serverFileName = serverFileName
+                )
+            )
             database.pruneGroup(db, false, MAX_HISTORY)
             db.setTransactionSuccessful()
             true
-        } finally { db.endTransaction() }
+        } finally {
+            db.endTransaction()
+        }
     }
 
-    fun updateFileEntry(id: String, localFilePath: String?, downloadStatus: DownloadStatus): Boolean =
-        withWritableDb { database.setFileState(it, id, localFilePath, downloadStatus) > 0 }
+    fun updateFileEntry(id: String, localFilePath: String?, downloadStatus: DownloadStatus): Boolean = withWritableDb { database.setFileState(it, id, localFilePath, downloadStatus) > 0 }
 
     fun getEntryById(id: String): Entry? = withReadableDb(null) { database.queryById(it, id) }
-    internal fun getLatestFileEntry(): Entry? =
-        withReadableDb(null) { database.queryLatestFileHistory(it) }
+    internal fun getLatestFileEntry(): Entry? = withReadableDb(null) { database.queryLatestFileHistory(it) }
 
     fun exportPinnedJson(): String = synchronized(STORE_LOCK) {
         migrateFromPrefsIfNeeded()
@@ -173,7 +196,9 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
                 entries.forEach { database.insertOrReplace(db, it) }
                 database.pruneGroup(db, true, MAX_PINNED)
                 db.setTransactionSuccessful()
-            } finally { db.endTransaction() }
+            } finally {
+                db.endTransaction()
+            }
         }
     }
 
@@ -181,7 +206,9 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
         migrateFromPrefsIfNeeded()
         if (migrationFailedThisProcess.get()) return@synchronized fallback
         val db = database.readableOrNull() ?: return@synchronized fallback
-        try { block(db) } catch (e: Exception) {
+        try {
+            block(db)
+        } catch (e: Exception) {
             Log.e(TAG, "Clipboard history read failed", e)
             logVerbose("clipboard_history_read_failed", mapOf("error" to e.javaClass.simpleName))
             fallback
@@ -193,7 +220,9 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
         check(!migrationFailedThisProcess.get()) { "Clipboard history migration failed; retry after cold start" }
         val db = database.writableOrNull()
             ?: throw SQLiteException("Failed to open clipboard history database for writing")
-        try { block(db) } catch (e: Exception) {
+        try {
+            block(db)
+        } catch (e: Exception) {
             Log.e(TAG, "Clipboard history write failed", e)
             logVerbose("clipboard_history_write_failed", mapOf("error" to e.javaClass.simpleName))
             throw e
@@ -206,7 +235,10 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
         val hasPinned = sp.contains(KEY_CLIP_PINNED_JSON)
         if (!hasHistory && !hasPinned) return
         val db = database.writableOrNull()
-        if (db == null) { migrationFailedThisProcess.set(true); return }
+        if (db == null) {
+            migrationFailedThisProcess.set(true)
+            return
+        }
         try {
             val pinned = parseEntries(sp.getString(KEY_CLIP_PINNED_JSON, "").orEmpty())
                 .sortedByDescending(Entry::ts).map { it.copy(pinned = true) }
@@ -221,7 +253,9 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
                 database.pruneGroup(db, true, MAX_PINNED)
                 database.pruneGroup(db, false, MAX_HISTORY)
                 db.setTransactionSuccessful()
-            } finally { db.endTransaction() }
+            } finally {
+                db.endTransaction()
+            }
             removeLegacyJsonOrThrow()
             logBase("clipboard_history_migrate_ok", mapOf("count" to pinned.size + history.size))
         } catch (e: Exception) {
@@ -231,8 +265,7 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
         }
     }
 
-    private fun parseEntries(raw: String): List<Entry> =
-        if (raw.isBlank()) emptyList() else json.decodeFromString(raw)
+    private fun parseEntries(raw: String): List<Entry> = if (raw.isBlank()) emptyList() else json.decodeFromString(raw)
 
     private fun removeLegacyJsonOrThrow() {
         check(sp.edit().remove(KEY_CLIP_HISTORY_JSON).remove(KEY_CLIP_PINNED_JSON).commit()) {
@@ -263,5 +296,4 @@ class ClipboardHistoryStore(context: Context, @Suppress("UNUSED_PARAMETER") pref
     }
 }
 
-internal fun normalizeClipboardHistoryText(text: String): String =
-    text.trim().take(ClipboardHistoryStore.MAX_STORED_TEXT_CHARS)
+internal fun normalizeClipboardHistoryText(text: String): String = text.trim().take(ClipboardHistoryStore.MAX_STORED_TEXT_CHARS)

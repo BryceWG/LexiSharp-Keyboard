@@ -31,19 +31,21 @@ class SyncClipboardSignalRClientTest {
     fun remoteProfileChanged_forwardsFirstObjectArgumentAsJson() {
         val server = MockWebServer()
         server.enqueue(MockResponse().setBody("""{"connectionToken":"token"}"""))
-        server.enqueue(MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                webSocket.send("{}\u001e")
-                webSocket.send(
-                    """{"type":1,"target":"RemoteProfileChanged","arguments":[{"text":"remote","type":"Text"}]}""" +
-                        "\u001e"
-                )
-            }
+        server.enqueue(
+            MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    webSocket.send("{}\u001e")
+                    webSocket.send(
+                        """{"type":1,"target":"RemoteProfileChanged","arguments":[{"text":"remote","type":"Text"}]}""" +
+                            "\u001e"
+                    )
+                }
 
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                webSocket.close(code, reason)
-            }
-        }))
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    webSocket.close(code, reason)
+                }
+            })
+        )
         server.start()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val client = createClient(server, scope)
@@ -73,20 +75,22 @@ class SyncClipboardSignalRClientTest {
     fun remoteProfileChanged_missingNullOrNonObjectArgument_forwardsNull() {
         val server = MockWebServer()
         server.enqueue(MockResponse().setBody("""{"connectionToken":"token"}"""))
-        server.enqueue(MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                webSocket.send("{}\u001e")
-                listOf(
-                    """{"type":1,"target":"RemoteProfileChanged"}""",
-                    """{"type":1,"target":"RemoteProfileChanged","arguments":[null]}""",
-                    """{"type":1,"target":"RemoteProfileChanged","arguments":["bad"]}"""
-                ).forEach { webSocket.send(it + "\u001e") }
-            }
+        server.enqueue(
+            MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    webSocket.send("{}\u001e")
+                    listOf(
+                        """{"type":1,"target":"RemoteProfileChanged"}""",
+                        """{"type":1,"target":"RemoteProfileChanged","arguments":[null]}""",
+                        """{"type":1,"target":"RemoteProfileChanged","arguments":["bad"]}"""
+                    ).forEach { webSocket.send(it + "\u001e") }
+                }
 
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                webSocket.close(code, reason)
-            }
-        }))
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    webSocket.close(code, reason)
+                }
+            })
+        )
         server.start()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val client = createClient(server, scope)
@@ -234,11 +238,13 @@ class SyncClipboardSignalRClientTest {
     fun normalCloseBeforeHandshake_notifiesDisconnected() {
         val server = MockWebServer()
         server.enqueue(MockResponse().setBody("""{"connectionToken":"token"}"""))
-        server.enqueue(MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                webSocket.close(1000, "closed before handshake")
-            }
-        }))
+        server.enqueue(
+            MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    webSocket.close(1000, "closed before handshake")
+                }
+            })
+        )
         server.start()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val client = createClient(server, scope)
@@ -266,16 +272,18 @@ class SyncClipboardSignalRClientTest {
         val server = MockWebServer()
         val serverObservedClose = CountDownLatch(1)
         server.enqueue(MockResponse().setBody("""{"connectionToken":"token"}"""))
-        server.enqueue(MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                webSocket.send("{}\u001e{\"type\":7}\u001e")
-            }
+        server.enqueue(
+            MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    webSocket.send("{}\u001e{\"type\":7}\u001e")
+                }
 
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                serverObservedClose.countDown()
-                webSocket.close(code, reason)
-            }
-        }))
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    serverObservedClose.countDown()
+                    webSocket.close(code, reason)
+                }
+            })
+        )
         server.start()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val client = createClient(server, scope)
@@ -295,15 +303,17 @@ class SyncClipboardSignalRClientTest {
     fun connectedListener_canWaitForStopFromAnotherThread() {
         val server = MockWebServer()
         server.enqueue(MockResponse().setBody("""{"connectionToken":"token"}"""))
-        server.enqueue(MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                webSocket.send("{}\u001e")
-            }
+        server.enqueue(
+            MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    webSocket.send("{}\u001e")
+                }
 
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                webSocket.close(code, reason)
-            }
-        }))
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    webSocket.close(code, reason)
+                }
+            })
+        )
         server.start()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val client = createClient(server, scope)

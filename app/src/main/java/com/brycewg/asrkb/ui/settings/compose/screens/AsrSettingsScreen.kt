@@ -257,7 +257,7 @@ fun AsrSettingsScreen(
     fun showBackupSensitivityPicker() {
         choiceSheet = backupSensitivityChoiceSheetState(
             context = context,
-            selectedIndex = backupSensitivity,
+            selectedIndex = backupSensitivity
         ) { selectedIdx ->
             backupSensitivity = selectedIdx.coerceIn(0, 2)
             prefs.backupAsrTimeoutSensitivity = backupSensitivity
@@ -277,7 +277,7 @@ fun AsrSettingsScreen(
     fun showSfFreeModelPicker() {
         choiceSheet = sfFreeAsrModelChoiceSheetState(
             context = context,
-            selectedModel = onlineFields.sfFreeAsrModel,
+            selectedModel = onlineFields.sfFreeAsrModel
         ) { model ->
             onlineFields.sfFreeAsrModel = model
             prefs.sfFreeAsrModel = model
@@ -287,7 +287,7 @@ fun AsrSettingsScreen(
     fun showSfPaidModelPicker() {
         choiceSheet = sfPaidAsrModelChoiceSheetState(
             context = context,
-            selectedModel = onlineFields.sfModel,
+            selectedModel = onlineFields.sfModel
         ) { model ->
             onlineFields.sfModel = model
             prefs.sfModel = model
@@ -298,7 +298,7 @@ fun AsrSettingsScreen(
     fun showDashModelPicker() {
         choiceSheet = dashModelChoiceSheetState(
             context = context,
-            selectedModel = onlineFields.dashModel,
+            selectedModel = onlineFields.dashModel
         ) { model ->
             onlineFields.dashModel = model
             prefs.dashAsrModel = model
@@ -308,7 +308,7 @@ fun AsrSettingsScreen(
     fun showVolcModelPicker() {
         choiceSheet = volcModelChoiceSheetState(
             context = context,
-            selectedModel = uiState.volcAsrModel,
+            selectedModel = uiState.volcAsrModel
         ) { modelId ->
             viewModel.updateVolcAsrModel(modelId)
         }
@@ -317,7 +317,7 @@ fun AsrSettingsScreen(
     fun showStepAudioModelPicker() {
         choiceSheet = stepAudioModelChoiceSheetState(
             context = context,
-            selectedModel = onlineFields.stepAudioModel,
+            selectedModel = onlineFields.stepAudioModel
         ) { model ->
             onlineFields.stepAudioModel = model
             prefs.stepAudioModel = model

@@ -269,18 +269,17 @@ class LlmPostProcessorTest {
                 .toString()
         )
 
-    private fun sseEvent(text: String): String =
-        "data: ${
-            JSONObject()
-                .put(
-                    "choices",
-                    org.json.JSONArray().put(
-                        JSONObject()
-                            .put("delta", JSONObject().put("content", text))
-                            .put("finish_reason", JSONObject.NULL)
-                    )
+    private fun sseEvent(text: String): String = "data: ${
+        JSONObject()
+            .put(
+                "choices",
+                org.json.JSONArray().put(
+                    JSONObject()
+                        .put("delta", JSONObject().put("content", text))
+                        .put("finish_reason", JSONObject.NULL)
                 )
-        }\n\n"
+            )
+    }\n\n"
 
     private fun doneEvent(): String = "data: [DONE]\n\n"
 }

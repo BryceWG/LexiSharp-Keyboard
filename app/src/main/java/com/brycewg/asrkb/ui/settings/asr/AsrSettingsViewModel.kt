@@ -834,45 +834,37 @@ class AsrSettingsViewModel : ViewModel() {
         }
     }
 
-    internal fun checkLocalVendorModelStatus(context: Context, vendor: AsrVendor): LocalModelCheck<*> =
-        localVendorModelStatusOrMissing(
-            vendor = vendor,
-            modelStatus = { AsrLocalVendorLifecycles.modelStatus(context, prefs, vendor) },
-            logFailure = { failedVendor, throwable ->
-                Log.w(TAG, "Failed to check local ASR model for $failedVendor", throwable)
-            }
-        )
+    internal fun checkLocalVendorModelStatus(context: Context, vendor: AsrVendor): LocalModelCheck<*> = localVendorModelStatusOrMissing(
+        vendor = vendor,
+        modelStatus = { AsrLocalVendorLifecycles.modelStatus(context, prefs, vendor) },
+        logFailure = { failedVendor, throwable ->
+            Log.w(TAG, "Failed to check local ASR model for $failedVendor", throwable)
+        }
+    )
 
-    fun checkLocalVendorModelDownloaded(context: Context, vendor: AsrVendor): Boolean =
-        checkLocalVendorModelStatus(context, vendor) is LocalModelCheck.Ready
+    fun checkLocalVendorModelDownloaded(context: Context, vendor: AsrVendor): Boolean = checkLocalVendorModelStatus(context, vendor) is LocalModelCheck.Ready
 
-    internal fun checkXAsrModelStatus(context: Context): LocalModelCheck<*> =
-        checkLocalVendorModelStatus(context, AsrVendor.XAsr)
+    internal fun checkXAsrModelStatus(context: Context): LocalModelCheck<*> = checkLocalVendorModelStatus(context, AsrVendor.XAsr)
 
     fun checkXAsrModelDownloaded(context: Context): Boolean = checkXAsrModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkSvModelStatus(context: Context): LocalModelCheck<*> =
-        checkLocalVendorModelStatus(context, AsrVendor.SenseVoice)
+    internal fun checkSvModelStatus(context: Context): LocalModelCheck<*> = checkLocalVendorModelStatus(context, AsrVendor.SenseVoice)
 
     fun checkSvModelDownloaded(context: Context): Boolean = checkSvModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkFnModelStatus(context: Context): LocalModelCheck<*> =
-        checkLocalVendorModelStatus(context, AsrVendor.FunAsrNano)
+    internal fun checkFnModelStatus(context: Context): LocalModelCheck<*> = checkLocalVendorModelStatus(context, AsrVendor.FunAsrNano)
 
     fun checkFnModelDownloaded(context: Context): Boolean = checkFnModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkQwModelStatus(context: Context): LocalModelCheck<*> =
-        checkLocalVendorModelStatus(context, AsrVendor.Qwen3Asr)
+    internal fun checkQwModelStatus(context: Context): LocalModelCheck<*> = checkLocalVendorModelStatus(context, AsrVendor.Qwen3Asr)
 
     fun checkQwModelDownloaded(context: Context): Boolean = checkQwModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkPkModelStatus(context: Context): LocalModelCheck<*> =
-        checkLocalVendorModelStatus(context, AsrVendor.Parakeet)
+    internal fun checkPkModelStatus(context: Context): LocalModelCheck<*> = checkLocalVendorModelStatus(context, AsrVendor.Parakeet)
 
     fun checkPkModelDownloaded(context: Context): Boolean = checkPkModelStatus(context) is LocalModelCheck.Ready
 
-    internal fun checkFrModelStatus(context: Context): LocalModelCheck<*> =
-        checkLocalVendorModelStatus(context, AsrVendor.FireRedAsr)
+    internal fun checkFrModelStatus(context: Context): LocalModelCheck<*> = checkLocalVendorModelStatus(context, AsrVendor.FireRedAsr)
 
     fun checkFrModelDownloaded(context: Context): Boolean = checkFrModelStatus(context) is LocalModelCheck.Ready
 

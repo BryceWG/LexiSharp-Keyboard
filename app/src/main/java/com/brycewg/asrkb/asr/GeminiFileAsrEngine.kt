@@ -153,11 +153,16 @@ class GeminiFileAsrEngine(
             )
             val request = Request.Builder()
                 .url(appendPath(apiRoot, "interactions"))
-                .tag(ApiLogMeta::class.java, ApiLogRecorder.meta(
-                    category = "ASR", vendor = "gemini", model = model,
-                    requestStructure = "json keys=model,input,generation_config; audio.data=base64 omitted",
-                    redactErrorBody = true
-                ))
+                .tag(
+                    ApiLogMeta::class.java,
+                    ApiLogRecorder.meta(
+                        category = "ASR",
+                        vendor = "gemini",
+                        model = model,
+                        requestStructure = "json keys=model,input,generation_config; audio.data=base64 omitted",
+                        redactErrorBody = true
+                    )
+                )
                 .addHeader("x-goog-api-key", apiKey)
                 .addHeader("Content-Type", "application/json; charset=utf-8")
                 .post(body.toString().toRequestBody("application/json; charset=utf-8".toMediaType()))
@@ -249,8 +254,7 @@ class GeminiFileAsrEngine(
         return attachQuery("${base.trimEnd('/')}/${path.trimStart('/')}", query)
     }
 
-    private fun attachQuery(base: String, query: String?): String =
-        if (query.isNullOrBlank()) base else "$base?$query"
+    private fun attachQuery(base: String, query: String?): String = if (query.isNullOrBlank()) base else "$base?$query"
 
     private fun String.removeRepeatedModelPrefix(): String {
         var value = trim()

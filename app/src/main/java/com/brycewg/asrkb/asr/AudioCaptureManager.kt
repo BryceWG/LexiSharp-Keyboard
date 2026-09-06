@@ -167,15 +167,14 @@ class AudioCaptureManager(
      * @throws SecurityException 如果缺少录音权限
      * @throws IllegalStateException 如果 AudioRecord 初始化失败
      */
-    fun startCapture(): Flow<ByteArray> =
-        ContinuousCaptureCoordinator.attachActiveSessionFlow(
-            sampleRate = sampleRate,
-            channelConfig = channelConfig,
-            audioFormat = audioFormat
-        )?.onEach { audioFrameSinkProvider?.invoke()?.onAudioFrame(it, sampleRate, 1) }
-            ?: startPlatformCapture().onEach {
-                audioFrameSinkProvider?.invoke()?.onAudioFrame(it, sampleRate, 1)
-            }
+    fun startCapture(): Flow<ByteArray> = ContinuousCaptureCoordinator.attachActiveSessionFlow(
+        sampleRate = sampleRate,
+        channelConfig = channelConfig,
+        audioFormat = audioFormat
+    )?.onEach { audioFrameSinkProvider?.invoke()?.onAudioFrame(it, sampleRate, 1) }
+        ?: startPlatformCapture().onEach {
+            audioFrameSinkProvider?.invoke()?.onAudioFrame(it, sampleRate, 1)
+        }
 
     internal fun startPlatformCapture(): Flow<ByteArray> = flow {
         // 上一次采集的收尾可能仍在后台执行；AudioRecord 独占，必须等它释放完再新建。

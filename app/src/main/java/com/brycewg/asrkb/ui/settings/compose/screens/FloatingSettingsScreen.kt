@@ -181,21 +181,18 @@ fun FloatingSettingsScreen(
         showFloatingMessage(R.string.toast_need_accessibility_perm)
     }
 
-    fun floatingAsrNeedsAccessibilityWhenEnabled(): Boolean =
-        !uiState.imeBridgeEnabled
+    fun floatingAsrNeedsAccessibilityWhenEnabled(): Boolean = !uiState.imeBridgeEnabled
 
-    fun floatingAsrNeedsAccessibility(): Boolean =
-        policyFloatingAsrNeedsAccessibility(
-            floatingEnabled = uiState.asrEnabled,
-            imeBridgeEnabled = uiState.imeBridgeEnabled
-        )
+    fun floatingAsrNeedsAccessibility(): Boolean = policyFloatingAsrNeedsAccessibility(
+        floatingEnabled = uiState.asrEnabled,
+        imeBridgeEnabled = uiState.imeBridgeEnabled
+    )
 
-    fun floatingInputNeedsAccessibility(): Boolean =
-        policyFloatingInputNeedsAccessibility(
-            floatingEnabled = uiState.asrEnabled,
-            volumeKeyEnabled = uiState.volumeKeyRecordingEnabled,
-            imeBridgeEnabled = uiState.imeBridgeEnabled
-        )
+    fun floatingInputNeedsAccessibility(): Boolean = policyFloatingInputNeedsAccessibility(
+        floatingEnabled = uiState.asrEnabled,
+        volumeKeyEnabled = uiState.volumeKeyRecordingEnabled,
+        imeBridgeEnabled = uiState.imeBridgeEnabled
+    )
 
     fun refreshImeBridgeStatus() {
         scope.launch {

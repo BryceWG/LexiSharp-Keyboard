@@ -13,12 +13,10 @@ object AsrVendorUi {
     fun ordered(): List<AsrVendor> = AsrVendorRegistry.ordered().map { it.vendor }
 
     /** 指定 vendor 的多语言显示名。 */
-    fun name(context: Context, v: AsrVendor): String =
-        context.getString(displayNameResId(v))
+    fun name(context: Context, v: AsrVendor): String = context.getString(displayNameResId(v))
 
     /** 指定 vendor 的标签（用于选择器展示）。 */
-    fun tags(v: AsrVendor): List<AsrVendorTag> =
-        AsrVendorRegistry.descriptorFor(v).tags.map { it.toUiTag() }
+    fun tags(v: AsrVendor): List<AsrVendorTag> = AsrVendorRegistry.descriptorFor(v).tags.map { it.toUiTag() }
 
     /** 顺序化的 (Vendor, 显示名) 列表 */
     fun pairs(context: Context): List<Pair<AsrVendor, String>> = ordered().map {
@@ -29,8 +27,7 @@ object AsrVendorUi {
     /** 顺序化的显示名列表 */
     fun names(context: Context): List<String> = ordered().map { name(context, it) }
 
-    internal fun displayNameResId(v: AsrVendor): Int =
-        AsrVendorRegistry.descriptorFor(v).displayNameResId
+    internal fun displayNameResId(v: AsrVendor): Int = AsrVendorRegistry.descriptorFor(v).displayNameResId
 
     private fun AsrVendorDisplayTag.toUiTag(): AsrVendorTag = when (this) {
         AsrVendorDisplayTag.Online -> AsrVendorTag.Online

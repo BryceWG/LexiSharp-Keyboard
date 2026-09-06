@@ -280,24 +280,23 @@ class AsrDirectMicrophoneEngineFactoryTest {
         assertSame("family for $vendor/${sourceCase.source}/$preferences", expected.family.toDirectFamily(), plan.family)
     }
 
-    private fun AsrEngineModePreferences.toBaselineSettings(vendor: AsrVendor): CurrentAsrConstructionSettings =
-        CurrentAsrConstructionSettings(
-            streamingEnabled = when (vendor) {
-                AsrVendor.Volc -> volcStreamingEnabled
-                AsrVendor.ElevenLabs -> elevenStreamingEnabled
-                AsrVendor.OpenAI -> openAiStreamingEnabled
-                AsrVendor.DashScope -> dashScopeStreamingEnabled
-                AsrVendor.Soniox -> sonioxStreamingEnabled
-                AsrVendor.XAsr -> true
-                else -> false
-            },
-            volcStandardFileEnabled = volcStandardFileEnabled,
-            pseudoStreamEnabled = when (vendor) {
-                AsrVendor.SenseVoice -> senseVoicePseudoStreamEnabled
-                AsrVendor.FireRedAsr -> fireRedPseudoStreamEnabled
-                else -> false
-            }
-        )
+    private fun AsrEngineModePreferences.toBaselineSettings(vendor: AsrVendor): CurrentAsrConstructionSettings = CurrentAsrConstructionSettings(
+        streamingEnabled = when (vendor) {
+            AsrVendor.Volc -> volcStreamingEnabled
+            AsrVendor.ElevenLabs -> elevenStreamingEnabled
+            AsrVendor.OpenAI -> openAiStreamingEnabled
+            AsrVendor.DashScope -> dashScopeStreamingEnabled
+            AsrVendor.Soniox -> sonioxStreamingEnabled
+            AsrVendor.XAsr -> true
+            else -> false
+        },
+        volcStandardFileEnabled = volcStandardFileEnabled,
+        pseudoStreamEnabled = when (vendor) {
+            AsrVendor.SenseVoice -> senseVoicePseudoStreamEnabled
+            AsrVendor.FireRedAsr -> fireRedPseudoStreamEnabled
+            else -> false
+        }
+    )
 
     private fun CurrentAsrEngineFamily.toDirectFamily(): AsrDirectMicrophoneEngineFamily = when (this) {
         CurrentAsrEngineFamily.File -> AsrDirectMicrophoneEngineFamily.File

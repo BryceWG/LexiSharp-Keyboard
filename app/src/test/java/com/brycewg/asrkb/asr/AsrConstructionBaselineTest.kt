@@ -458,8 +458,7 @@ class AsrConstructionBaselineTest {
         assertTrue("Expected '$before' before '$after'", beforeIndex < afterIndex)
     }
 
-    private fun baselineRow(vendor: AsrVendor, settingsLabel: String): BaselineRow =
-        baselineRows.single { it.vendor == vendor && it.settingsLabel == settingsLabel }
+    private fun baselineRow(vendor: AsrVendor, settingsLabel: String): BaselineRow = baselineRows.single { it.vendor == vendor && it.settingsLabel == settingsLabel }
 
     private data class BaselineRow(
         val vendor: AsrVendor,
@@ -498,8 +497,7 @@ class AsrConstructionBaselineTest {
             CurrentAsrConstructionPath.ParallelPushPcmLeg -> parallelPushPcmLeg
         }
 
-        private fun describe(path: CurrentAsrConstructionPath): CurrentAsrEngineUse =
-            CurrentAsrConstructionBaseline.describe(path, vendor, settings)
+        private fun describe(path: CurrentAsrConstructionPath): CurrentAsrEngineUse = CurrentAsrConstructionBaseline.describe(path, vendor, settings)
     }
 
     private companion object {

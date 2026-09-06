@@ -97,6 +97,5 @@ internal object AsrPrimaryErrorClassifier {
         return null
     }
 
-    private fun containsAny(lower: String, vararg hints: String): Boolean =
-        hints.any { lower.contains(it) }
+    private fun containsAny(lower: String, vararg hints: String): Boolean = hints.any { lower.contains(it) }
 }

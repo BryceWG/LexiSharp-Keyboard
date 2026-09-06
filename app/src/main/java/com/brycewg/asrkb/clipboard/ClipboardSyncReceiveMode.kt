@@ -13,14 +13,12 @@ enum class ClipboardSyncReceiveMode(val id: String) {
     REALTIME("realtime");
 
     companion object {
-        fun fromId(id: String?): ClipboardSyncReceiveMode =
-            entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: OFF
+        fun fromId(id: String?): ClipboardSyncReceiveMode = entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: OFF
 
-        fun fromLegacy(realtime: Boolean, autoPull: Boolean): ClipboardSyncReceiveMode =
-            when {
-                realtime -> REALTIME
-                autoPull -> POLLING
-                else -> OFF
-            }
+        fun fromLegacy(realtime: Boolean, autoPull: Boolean): ClipboardSyncReceiveMode = when {
+            realtime -> REALTIME
+            autoPull -> POLLING
+            else -> OFF
+        }
     }
 }

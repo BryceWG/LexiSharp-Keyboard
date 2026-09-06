@@ -39,14 +39,13 @@ data class AsrHistoryTimingTrace(
     val intervals: List<AsrHistoryTimingInterval>,
     val completed: Boolean
 ) {
-    fun stageDurationMs(stage: AsrHistoryTimingStage): Long =
-        intervals.sumOf { interval ->
-            if (interval.stage != stage) {
-                0L
-            } else {
-                (interval.endOffsetMs - interval.startOffsetMs).coerceAtLeast(0L)
-            }
+    fun stageDurationMs(stage: AsrHistoryTimingStage): Long = intervals.sumOf { interval ->
+        if (interval.stage != stage) {
+            0L
+        } else {
+            (interval.endOffsetMs - interval.startOffsetMs).coerceAtLeast(0L)
         }
+    }
 }
 
 /**

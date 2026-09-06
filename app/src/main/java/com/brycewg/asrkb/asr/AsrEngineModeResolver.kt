@@ -191,24 +191,21 @@ internal object AsrEngineModeResolver {
         else -> AsrFileEngineVariant.Default
     }
 
-    private fun Set<AsrVendorCapability>.supports(capability: AsrVendorCapability): Boolean =
-        capability in this
+    private fun Set<AsrVendorCapability>.supports(capability: AsrVendorCapability): Boolean = capability in this
 
-    private fun AsrEngineModePreferences.streamingEnabledFor(vendor: AsrVendor): Boolean =
-        when (vendor) {
-            AsrVendor.Volc -> volcStreamingEnabled
-            AsrVendor.ElevenLabs -> elevenStreamingEnabled
-            AsrVendor.OpenAI -> openAiStreamingEnabled
-            AsrVendor.DashScope -> dashScopeStreamingEnabled
-            AsrVendor.Soniox -> sonioxStreamingEnabled
-            AsrVendor.XAsr -> true
-            else -> false
-        }
+    private fun AsrEngineModePreferences.streamingEnabledFor(vendor: AsrVendor): Boolean = when (vendor) {
+        AsrVendor.Volc -> volcStreamingEnabled
+        AsrVendor.ElevenLabs -> elevenStreamingEnabled
+        AsrVendor.OpenAI -> openAiStreamingEnabled
+        AsrVendor.DashScope -> dashScopeStreamingEnabled
+        AsrVendor.Soniox -> sonioxStreamingEnabled
+        AsrVendor.XAsr -> true
+        else -> false
+    }
 
-    private fun AsrEngineModePreferences.pseudoStreamEnabledFor(vendor: AsrVendor): Boolean =
-        when (vendor) {
-            AsrVendor.SenseVoice -> senseVoicePseudoStreamEnabled
-            AsrVendor.FireRedAsr -> fireRedPseudoStreamEnabled
-            else -> false
-        }
+    private fun AsrEngineModePreferences.pseudoStreamEnabledFor(vendor: AsrVendor): Boolean = when (vendor) {
+        AsrVendor.SenseVoice -> senseVoicePseudoStreamEnabled
+        AsrVendor.FireRedAsr -> fireRedPseudoStreamEnabled
+        else -> false
+    }
 }

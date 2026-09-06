@@ -31,11 +31,9 @@ internal object AsrLocalModelCatalog {
     @StringRes
     fun missingModelErrorRes(vendor: AsrVendor): Int? = entryFor(vendor)?.missingModelErrorRes
 
-    fun modelStatus(context: Context, prefs: Prefs, vendor: AsrVendor): LocalModelCheck<*>? =
-        entryFor(vendor)?.lifecycle?.modelStatus(context, prefs)
+    fun modelStatus(context: Context, prefs: Prefs, vendor: AsrVendor): LocalModelCheck<*>? = entryFor(vendor)?.lifecycle?.modelStatus(context, prefs)
 
-    fun isModelReady(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean =
-        modelStatus(context, prefs, vendor) is LocalModelCheck.Ready
+    fun isModelReady(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean = modelStatus(context, prefs, vendor) is LocalModelCheck.Ready
 
     fun unload(vendor: AsrVendor): Boolean {
         val lifecycle = entryFor(vendor)?.lifecycle ?: return false

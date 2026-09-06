@@ -131,8 +131,7 @@ internal fun volcenginePrimaryItemCount(
     1 +
     (if (streaming) 3 else 0)
 
-internal fun volcModelLabel(context: Context, modelId: String): String =
-    context.getString(VolcAsrModelCatalog.fromIdOrDefault(modelId).displayNameRes)
+internal fun volcModelLabel(context: Context, modelId: String): String = context.getString(VolcAsrModelCatalog.fromIdOrDefault(modelId).displayNameRes)
 
 internal fun volcLanguageOptions(context: Context): List<VolcChoice> = listOf(
     VolcChoice("", context.getString(R.string.volc_lang_auto)),

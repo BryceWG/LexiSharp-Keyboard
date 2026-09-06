@@ -186,18 +186,14 @@ internal object PrefsAsrVendorFields {
     internal val backupFields: List<VendorField> =
         vendorFields.values.flatten().distinctBy { it.key }
 
-    internal fun fieldsFor(vendor: AsrVendor): List<VendorField> =
-        vendorFields[vendor].orEmpty()
+    internal fun fieldsFor(vendor: AsrVendor): List<VendorField> = vendorFields[vendor].orEmpty()
 
-    internal fun fieldsByRole(vendor: AsrVendor, role: VendorFieldRole): List<VendorField> =
-        fieldsFor(vendor).filter { it.role == role }
+    internal fun fieldsByRole(vendor: AsrVendor, role: VendorFieldRole): List<VendorField> = fieldsFor(vendor).filter { it.role == role }
 
-    internal fun requiredCredentialFields(vendor: AsrVendor): List<VendorField> =
-        fieldsByRole(vendor, VendorFieldRole.Credential)
-            .filter { it.required && it.type == VendorFieldType.String }
+    internal fun requiredCredentialFields(vendor: AsrVendor): List<VendorField> = fieldsByRole(vendor, VendorFieldRole.Credential)
+        .filter { it.required && it.type == VendorFieldType.String }
 
-    internal fun requiredStringFieldsForValidation(vendor: AsrVendor): List<VendorField> =
-        fieldsFor(vendor).filter { it.required && it.type == VendorFieldType.String }
+    internal fun requiredStringFieldsForValidation(vendor: AsrVendor): List<VendorField> = fieldsFor(vendor).filter { it.required && it.type == VendorFieldType.String }
 
     internal fun exportToJson(
         store: VendorFieldStore,
@@ -263,45 +259,40 @@ internal data class VendorField(
     private fun normalizeInt(value: Int): Int = intRange?.let { value.coerceIn(it) } ?: value
 
     companion object {
-        fun credential(key: String, required: Boolean = true, default: String = ""): VendorField =
-            VendorField(
-                key = key,
-                required = required,
-                default = default,
-                role = VendorFieldRole.Credential
-            )
+        fun credential(key: String, required: Boolean = true, default: String = ""): VendorField = VendorField(
+            key = key,
+            required = required,
+            default = default,
+            role = VendorFieldRole.Credential
+        )
 
-        fun endpoint(key: String, required: Boolean = false, default: String = ""): VendorField =
-            VendorField(
-                key = key,
-                required = required,
-                default = default,
-                role = VendorFieldRole.Endpoint
-            )
+        fun endpoint(key: String, required: Boolean = false, default: String = ""): VendorField = VendorField(
+            key = key,
+            required = required,
+            default = default,
+            role = VendorFieldRole.Endpoint
+        )
 
-        fun model(key: String, required: Boolean = false, default: String = ""): VendorField =
-            VendorField(
-                key = key,
-                required = required,
-                default = default,
-                role = VendorFieldRole.Model
-            )
+        fun model(key: String, required: Boolean = false, default: String = ""): VendorField = VendorField(
+            key = key,
+            required = required,
+            default = default,
+            role = VendorFieldRole.Model
+        )
 
-        fun language(key: String, required: Boolean = false, default: String = ""): VendorField =
-            VendorField(
-                key = key,
-                required = required,
-                default = default,
-                role = VendorFieldRole.Language
-            )
+        fun language(key: String, required: Boolean = false, default: String = ""): VendorField = VendorField(
+            key = key,
+            required = required,
+            default = default,
+            role = VendorFieldRole.Language
+        )
 
-        fun prompt(key: String, required: Boolean = false, default: String = ""): VendorField =
-            VendorField(
-                key = key,
-                required = required,
-                default = default,
-                role = VendorFieldRole.Prompt
-            )
+        fun prompt(key: String, required: Boolean = false, default: String = ""): VendorField = VendorField(
+            key = key,
+            required = required,
+            default = default,
+            role = VendorFieldRole.Prompt
+        )
 
         fun localModel(key: String, default: String = ""): VendorField = VendorField(
             key = key,
@@ -320,8 +311,7 @@ internal data class VendorField(
             booleanDefault = default
         )
 
-        fun streamingToggle(key: String, default: Boolean): VendorField =
-            boolean(key, default, role = VendorFieldRole.StreamingToggle)
+        fun streamingToggle(key: String, default: Boolean): VendorField = boolean(key, default, role = VendorFieldRole.StreamingToggle)
 
         fun int(
             key: String,
@@ -390,9 +380,7 @@ private class JSONObjectVendorFieldImportSource(
 
     override fun optString(key: String): String = input.optString(key)
 
-    override fun optBoolean(key: String, default: Boolean): Boolean =
-        if (input.has(key)) input.optBoolean(key) else default
+    override fun optBoolean(key: String, default: Boolean): Boolean = if (input.has(key)) input.optBoolean(key) else default
 
-    override fun optInt(key: String, default: Int): Int =
-        if (input.has(key)) input.optInt(key) else default
+    override fun optInt(key: String, default: Int): Int = if (input.has(key)) input.optInt(key) else default
 }

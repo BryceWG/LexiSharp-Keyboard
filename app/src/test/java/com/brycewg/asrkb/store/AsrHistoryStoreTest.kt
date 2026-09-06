@@ -2,9 +2,9 @@ package com.brycewg.asrkb.store
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -101,16 +101,15 @@ class AsrHistoryStoreTest {
         assertEquals(100, prefs.audioHistoryRetentionCount)
     }
 
-    private fun record(id: String, raw: String, final: String, timestamp: Long) =
-        AsrHistoryStore.AsrHistoryRecord(
-            id = id,
-            timestamp = timestamp,
-            text = final,
-            rawText = raw,
-            vendorId = "volc",
-            audioMs = 1,
-            source = "ime",
-            aiProcessed = false,
-            charCount = final.length
-        )
+    private fun record(id: String, raw: String, final: String, timestamp: Long) = AsrHistoryStore.AsrHistoryRecord(
+        id = id,
+        timestamp = timestamp,
+        text = final,
+        rawText = raw,
+        vendorId = "volc",
+        audioMs = 1,
+        source = "ime",
+        aiProcessed = false,
+        charCount = final.length
+    )
 }

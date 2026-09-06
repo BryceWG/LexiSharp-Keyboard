@@ -120,14 +120,13 @@ internal class AsrParallelEngineFactory(
         return constructors.create(plan, engineFactory)
     }
 
-    fun resolvePlan(request: AsrParallelEngineRequest): AsrParallelEnginePlan =
-        resolvePlan(
-            context = request.context,
-            prefs = request.prefs,
-            primaryVendor = request.primaryVendor,
-            backupVendor = request.backupVendor,
-            externalPcmInput = request.externalPcmInput
-        )
+    fun resolvePlan(request: AsrParallelEngineRequest): AsrParallelEnginePlan = resolvePlan(
+        context = request.context,
+        prefs = request.prefs,
+        primaryVendor = request.primaryVendor,
+        backupVendor = request.backupVendor,
+        externalPcmInput = request.externalPcmInput
+    )
 
     fun resolvePlan(
         context: Context,
@@ -170,12 +169,11 @@ internal class AsrParallelEngineFactory(
     )
 }
 
-private fun AsrBackupPolicyDecision.toParallelEngineDecision(): AsrParallelEngineDecision =
-    when (this) {
-        AsrBackupPolicyDecision.UsePrimaryOnly -> AsrParallelEngineDecision.UsePrimaryOnly
-        AsrBackupPolicyDecision.UseParallel -> AsrParallelEngineDecision.UseParallel
-        AsrBackupPolicyDecision.UseLazyLocalBackup -> AsrParallelEngineDecision.UseLazyLocalBackup
-    }
+private fun AsrBackupPolicyDecision.toParallelEngineDecision(): AsrParallelEngineDecision = when (this) {
+    AsrBackupPolicyDecision.UsePrimaryOnly -> AsrParallelEngineDecision.UsePrimaryOnly
+    AsrBackupPolicyDecision.UseParallel -> AsrParallelEngineDecision.UseParallel
+    AsrBackupPolicyDecision.UseLazyLocalBackup -> AsrParallelEngineDecision.UseLazyLocalBackup
+}
 
 internal fun interface AsrParallelEngineConstructorTable {
     fun create(

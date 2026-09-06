@@ -10,8 +10,8 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 
 import android.content.Context
 import android.util.Log
-import com.brycewg.asrkb.R
 import com.brycewg.asrkb.LocaleHelper
+import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.UsageStats
@@ -212,5 +212,4 @@ private fun Context.formatShareDurationMs(ms: Long): String {
     }
 }
 
-private fun formatShareInt(context: Context, v: Long): String =
-    NumberFormat.getIntegerInstance(LocaleHelper.locale(context)).format(v)
+private fun formatShareInt(context: Context, v: Long): String = NumberFormat.getIntegerInstance(LocaleHelper.locale(context)).format(v)

@@ -72,8 +72,7 @@ internal fun partitionAsrVendorsByConfigured(
     )
 }
 
-internal fun isAsrVendorConfigured(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean =
-    checkAsrVendorAvailability(context, prefs, vendor).isUsable
+internal fun isAsrVendorConfigured(context: Context, prefs: Prefs, vendor: AsrVendor): Boolean = checkAsrVendorAvailability(context, prefs, vendor).isUsable
 
 internal fun checkAsrVendorAvailability(
     context: Context,
@@ -125,8 +124,7 @@ internal fun checkAsrVendorAvailability(
     }
 }
 
-internal fun classifyAsrVendorAvailability(vendor: AsrVendor): AsrVendorAvailabilityClassification =
-    AsrVendorRegistry.descriptorFor(vendor).availabilityClassification
+internal fun classifyAsrVendorAvailability(vendor: AsrVendor): AsrVendorAvailabilityClassification = AsrVendorRegistry.descriptorFor(vendor).availabilityClassification
 
 internal fun isOnlineAsrVendorConfigured(
     vendor: AsrVendor,

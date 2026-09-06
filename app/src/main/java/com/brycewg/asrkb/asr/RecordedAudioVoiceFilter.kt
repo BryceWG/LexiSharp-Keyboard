@@ -359,8 +359,7 @@ object RecordedAudioVoiceFilter {
         return marks
     }
 
-    private fun measureEnergy(pcm: ByteArray, len: Int): RecordedVoiceFilterEnergy =
-        measureRecordedVoiceFilterEnergy(pcm, len)
+    private fun measureEnergy(pcm: ByteArray, len: Int): RecordedVoiceFilterEnergy = measureRecordedVoiceFilterEnergy(pcm, len)
 
     private fun shouldDropAsEmptyAudio(marks: List<ChunkMark>): Boolean {
         if (marks.isEmpty()) return false

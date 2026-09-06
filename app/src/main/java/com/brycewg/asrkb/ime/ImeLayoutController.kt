@@ -142,9 +142,7 @@ internal class ImeLayoutController(
             else -> 1.0f
         }
 
-        fun dp(v: Float): Int {
-            return dp(root, v)
-        }
+        fun dp(v: Float): Int = dp(root, v)
         layoutChanged = floatingKeyboardController.applyFrame(root) || layoutChanged
 
         val signature = layoutSignature(root, scale)
@@ -516,13 +514,15 @@ internal class ImeLayoutController(
                 button = leftButton,
                 sideSpace = leftSideSpace,
                 gravity = Gravity.CENTER_VERTICAL or Gravity.START
-            ) || changed
+            ) ||
+                changed
             changed = updateDockButtonFrame(
                 root = root,
                 button = rightButton,
                 sideSpace = rightSideSpace,
                 gravity = Gravity.CENTER_VERTICAL or Gravity.END
-            ) || changed
+            ) ||
+                changed
             leftButton?.bringToFront()
             rightButton?.bringToFront()
         }
@@ -674,8 +674,7 @@ internal class ImeLayoutController(
         return changed
     }
 
-    private fun dp(view: View, value: Float): Int =
-        (value * view.resources.displayMetrics.density + 0.5f).toInt()
+    private fun dp(view: View, value: Float): Int = (value * view.resources.displayMetrics.density + 0.5f).toInt()
 
     private fun View.dimensionOrLayoutParam(isWidth: Boolean): Int? {
         val lpValue = if (isWidth) layoutParams?.width else layoutParams?.height
@@ -684,8 +683,7 @@ internal class ImeLayoutController(
         return current.takeIf { it > 0 }
     }
 
-    private fun scaledMicDimension(value: Int): Int =
-        (value.coerceAtLeast(1) * MIC_SIZE_RATIO).toInt().coerceAtLeast(1)
+    private fun scaledMicDimension(value: Int): Int = (value.coerceAtLeast(1) * MIC_SIZE_RATIO).toInt().coerceAtLeast(1)
 
     private fun applyMicButtonSizing(button: ImageButton, width: Int, height: Int): Boolean {
         val finalWidth = width.coerceAtLeast(1)

@@ -48,10 +48,8 @@ internal class AsrHistoryDatabase private constructor(
         @Volatile
         private var instance: AsrHistoryDatabase? = null
 
-        fun get(context: Context): AsrHistoryDatabase {
-            return instance ?: synchronized(this) {
-                instance ?: AsrHistoryDatabase(context.applicationContext).also { instance = it }
-            }
+        fun get(context: Context): AsrHistoryDatabase = instance ?: synchronized(this) {
+            instance ?: AsrHistoryDatabase(context.applicationContext).also { instance = it }
         }
     }
 
@@ -114,51 +112,45 @@ internal class AsrHistoryDatabase private constructor(
         }
     }
 
-    fun queryAllNewestFirst(db: SQLiteDatabase): List<AsrHistoryStore.AsrHistoryRecord> {
-        return db.query(
-            TABLE,
-            null,
-            null,
-            null,
-            null,
-            null,
-            "$COL_TIMESTAMP DESC, $COL_ID DESC"
-        ).use { cursor -> readRecords(cursor) }
-    }
+    fun queryAllNewestFirst(db: SQLiteDatabase): List<AsrHistoryStore.AsrHistoryRecord> = db.query(
+        TABLE,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "$COL_TIMESTAMP DESC, $COL_ID DESC"
+    ).use { cursor -> readRecords(cursor) }
 
     fun queryRecent(
         db: SQLiteDatabase,
         limit: Int
-    ): List<AsrHistoryStore.AsrHistoryRecord> {
-        return db.query(
-            TABLE,
-            null,
-            "TRIM($COL_TEXT) != '' OR $COL_STATUS != ?",
-            arrayOf(AsrHistoryStore.AsrHistoryStatus.SUCCESS.name),
-            null,
-            null,
-            "$COL_TIMESTAMP DESC, $COL_ID DESC",
-            limit.toString()
-        ).use { cursor -> readRecords(cursor) }
-    }
+    ): List<AsrHistoryStore.AsrHistoryRecord> = db.query(
+        TABLE,
+        null,
+        "TRIM($COL_TEXT) != '' OR $COL_STATUS != ?",
+        arrayOf(AsrHistoryStore.AsrHistoryStatus.SUCCESS.name),
+        null,
+        null,
+        "$COL_TIMESTAMP DESC, $COL_ID DESC",
+        limit.toString()
+    ).use { cursor -> readRecords(cursor) }
 
-    fun queryIdsNewestFirst(db: SQLiteDatabase): List<String> {
-        return db.query(
-            TABLE,
-            arrayOf(COL_ID),
-            null,
-            null,
-            null,
-            null,
-            "$COL_TIMESTAMP DESC, $COL_ID DESC"
-        ).use { cursor ->
-            val out = ArrayList<String>(cursor.count)
-            val idIdx = cursor.getColumnIndexOrThrow(COL_ID)
-            while (cursor.moveToNext()) {
-                out.add(cursor.getString(idIdx))
-            }
-            out
+    fun queryIdsNewestFirst(db: SQLiteDatabase): List<String> = db.query(
+        TABLE,
+        arrayOf(COL_ID),
+        null,
+        null,
+        null,
+        null,
+        "$COL_TIMESTAMP DESC, $COL_ID DESC"
+    ).use { cursor ->
+        val out = ArrayList<String>(cursor.count)
+        val idIdx = cursor.getColumnIndexOrThrow(COL_ID)
+        while (cursor.moveToNext()) {
+            out.add(cursor.getString(idIdx))
         }
+        out
     }
 
     fun queryById(db: SQLiteDatabase, id: String): AsrHistoryStore.AsrHistoryRecord? {
@@ -209,36 +201,32 @@ internal class AsrHistoryDatabase private constructor(
         )
     }
 
-    private fun openOrNull(writable: Boolean): SQLiteDatabase? {
-        return try {
-            if (writable) writableDatabase else readableDatabase
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to open ASR history database", e)
-            null
-        }
+    private fun openOrNull(writable: Boolean): SQLiteDatabase? = try {
+        if (writable) writableDatabase else readableDatabase
+    } catch (e: Exception) {
+        Log.e(TAG, "Failed to open ASR history database", e)
+        null
     }
 
-    private fun toValues(record: AsrHistoryStore.AsrHistoryRecord): ContentValues {
-        return ContentValues().apply {
-            put(COL_ID, record.id)
-            put(COL_TIMESTAMP, record.timestamp)
-            put(COL_TEXT, record.text)
-            putNullable(COL_RAW_TEXT, record.rawText)
-            put(COL_VENDOR_ID, record.vendorId)
-            put(COL_AUDIO_MS, record.audioMs)
-            put(COL_TOTAL_ELAPSED_MS, record.totalElapsedMs)
-            put(COL_PROC_MS, record.procMs)
-            put(COL_SOURCE, record.source)
-            put(COL_AI_PROCESSED, if (record.aiProcessed) 1 else 0)
-            put(COL_AI_POST_MS, record.aiPostMs)
-            put(COL_AI_POST_STATUS, record.aiPostStatus.name)
-            putNullable(COL_LLM_VENDOR_ID, record.llmVendorId)
-            put(COL_CHAR_COUNT, record.charCount)
-            put(COL_STATUS, record.status.name)
-            put(COL_FAIL_STAGE, record.failStage.name)
-            putNullable(COL_FAIL_REASON_CODE, record.failReasonCode)
-            putNullable(COL_TIMING_TRACE, record.timingTrace?.let { json.encodeToString(it) })
-        }
+    private fun toValues(record: AsrHistoryStore.AsrHistoryRecord): ContentValues = ContentValues().apply {
+        put(COL_ID, record.id)
+        put(COL_TIMESTAMP, record.timestamp)
+        put(COL_TEXT, record.text)
+        putNullable(COL_RAW_TEXT, record.rawText)
+        put(COL_VENDOR_ID, record.vendorId)
+        put(COL_AUDIO_MS, record.audioMs)
+        put(COL_TOTAL_ELAPSED_MS, record.totalElapsedMs)
+        put(COL_PROC_MS, record.procMs)
+        put(COL_SOURCE, record.source)
+        put(COL_AI_PROCESSED, if (record.aiProcessed) 1 else 0)
+        put(COL_AI_POST_MS, record.aiPostMs)
+        put(COL_AI_POST_STATUS, record.aiPostStatus.name)
+        putNullable(COL_LLM_VENDOR_ID, record.llmVendorId)
+        put(COL_CHAR_COUNT, record.charCount)
+        put(COL_STATUS, record.status.name)
+        put(COL_FAIL_STAGE, record.failStage.name)
+        putNullable(COL_FAIL_REASON_CODE, record.failReasonCode)
+        putNullable(COL_TIMING_TRACE, record.timingTrace?.let { json.encodeToString(it) })
     }
 
     private fun readRecords(cursor: Cursor): List<AsrHistoryStore.AsrHistoryRecord> {
@@ -249,44 +237,42 @@ internal class AsrHistoryDatabase private constructor(
         return out
     }
 
-    private fun cursorToRecord(cursor: Cursor): AsrHistoryStore.AsrHistoryRecord {
-        return AsrHistoryStore.AsrHistoryRecord(
-            id = cursor.getString(cursor.getColumnIndexOrThrow(COL_ID)),
-            timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(COL_TIMESTAMP)),
-            text = cursor.getString(cursor.getColumnIndexOrThrow(COL_TEXT)).orEmpty(),
-            rawText = cursor.optionalString(COL_RAW_TEXT),
-            vendorId = cursor.getString(cursor.getColumnIndexOrThrow(COL_VENDOR_ID)).orEmpty(),
-            audioMs = cursor.getLong(cursor.getColumnIndexOrThrow(COL_AUDIO_MS)),
-            totalElapsedMs = cursor.getLong(cursor.getColumnIndexOrThrow(COL_TOTAL_ELAPSED_MS)),
-            procMs = cursor.getLong(cursor.getColumnIndexOrThrow(COL_PROC_MS)),
-            source = cursor.getString(cursor.getColumnIndexOrThrow(COL_SOURCE)).orEmpty(),
-            aiProcessed = cursor.getInt(cursor.getColumnIndexOrThrow(COL_AI_PROCESSED)) != 0,
-            aiPostMs = cursor.getLong(cursor.getColumnIndexOrThrow(COL_AI_POST_MS)),
-            aiPostStatus = enumValue(
-                cursor.getString(cursor.getColumnIndexOrThrow(COL_AI_POST_STATUS)),
-                AsrHistoryStore.AiPostStatus.NONE
-            ),
-            llmVendorId = cursor.optionalString(COL_LLM_VENDOR_ID),
-            charCount = cursor.getInt(cursor.getColumnIndexOrThrow(COL_CHAR_COUNT)),
-            status = enumValue(
-                cursor.getString(cursor.getColumnIndexOrThrow(COL_STATUS)),
-                AsrHistoryStore.AsrHistoryStatus.SUCCESS
-            ),
-            failStage = enumValue(
-                cursor.getString(cursor.getColumnIndexOrThrow(COL_FAIL_STAGE)),
-                AsrHistoryStore.AsrHistoryFailStage.NONE
-            ),
-            failReasonCode = cursor.optionalString(COL_FAIL_REASON_CODE),
-            timingTrace = cursor.optionalString(COL_TIMING_TRACE)?.let { raw ->
-                try {
-                    json.decodeFromString<AsrHistoryTimingTrace>(raw)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to parse timing trace", e)
-                    null
-                }
+    private fun cursorToRecord(cursor: Cursor): AsrHistoryStore.AsrHistoryRecord = AsrHistoryStore.AsrHistoryRecord(
+        id = cursor.getString(cursor.getColumnIndexOrThrow(COL_ID)),
+        timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(COL_TIMESTAMP)),
+        text = cursor.getString(cursor.getColumnIndexOrThrow(COL_TEXT)).orEmpty(),
+        rawText = cursor.optionalString(COL_RAW_TEXT),
+        vendorId = cursor.getString(cursor.getColumnIndexOrThrow(COL_VENDOR_ID)).orEmpty(),
+        audioMs = cursor.getLong(cursor.getColumnIndexOrThrow(COL_AUDIO_MS)),
+        totalElapsedMs = cursor.getLong(cursor.getColumnIndexOrThrow(COL_TOTAL_ELAPSED_MS)),
+        procMs = cursor.getLong(cursor.getColumnIndexOrThrow(COL_PROC_MS)),
+        source = cursor.getString(cursor.getColumnIndexOrThrow(COL_SOURCE)).orEmpty(),
+        aiProcessed = cursor.getInt(cursor.getColumnIndexOrThrow(COL_AI_PROCESSED)) != 0,
+        aiPostMs = cursor.getLong(cursor.getColumnIndexOrThrow(COL_AI_POST_MS)),
+        aiPostStatus = enumValue(
+            cursor.getString(cursor.getColumnIndexOrThrow(COL_AI_POST_STATUS)),
+            AsrHistoryStore.AiPostStatus.NONE
+        ),
+        llmVendorId = cursor.optionalString(COL_LLM_VENDOR_ID),
+        charCount = cursor.getInt(cursor.getColumnIndexOrThrow(COL_CHAR_COUNT)),
+        status = enumValue(
+            cursor.getString(cursor.getColumnIndexOrThrow(COL_STATUS)),
+            AsrHistoryStore.AsrHistoryStatus.SUCCESS
+        ),
+        failStage = enumValue(
+            cursor.getString(cursor.getColumnIndexOrThrow(COL_FAIL_STAGE)),
+            AsrHistoryStore.AsrHistoryFailStage.NONE
+        ),
+        failReasonCode = cursor.optionalString(COL_FAIL_REASON_CODE),
+        timingTrace = cursor.optionalString(COL_TIMING_TRACE)?.let { raw ->
+            try {
+                json.decodeFromString<AsrHistoryTimingTrace>(raw)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to parse timing trace", e)
+                null
             }
-        )
-    }
+        }
+    )
 
     private fun ContentValues.putNullable(key: String, value: String?) {
         if (value == null) putNull(key) else put(key, value)

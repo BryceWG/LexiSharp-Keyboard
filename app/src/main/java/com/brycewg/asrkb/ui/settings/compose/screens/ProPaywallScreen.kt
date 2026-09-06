@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -38,14 +38,14 @@ import androidx.compose.ui.unit.dp
 import com.brycewg.asrkb.R
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.ProPromoDialog
-import com.brycewg.asrkb.ui.settings.compose.components.DialogTonalAction
 import com.brycewg.asrkb.ui.settings.compose.components.DialogTextAction
+import com.brycewg.asrkb.ui.settings.compose.components.DialogTonalAction
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsActionButton
+import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsLazyColumn
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialog
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialogState
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsSectionContainer
-import com.brycewg.asrkb.ui.settings.compose.components.SettingsDetailScaffold
 import com.brycewg.asrkb.ui.settings.compose.core.BibiUiMode
 import com.brycewg.asrkb.ui.settings.compose.core.SettingsLayoutMetrics
 import top.yukonga.miuix.kmp.basic.Text as MiuixText
@@ -153,10 +153,14 @@ private fun ComparisonHeader(uiMode: BibiUiMode) {
 
 @Composable
 private fun ComparisonRow(row: ComparisonRowData, uiMode: BibiUiMode, header: Boolean = false) {
-    val background = if (header) when (uiMode) {
-        BibiUiMode.Material -> MaterialTheme.colorScheme.surfaceVariant
-        BibiUiMode.Miuix -> MiuixTheme.colorScheme.secondaryVariant
-    } else null
+    val background = if (header) {
+        when (uiMode) {
+            BibiUiMode.Material -> MaterialTheme.colorScheme.surfaceVariant
+            BibiUiMode.Miuix -> MiuixTheme.colorScheme.secondaryVariant
+        }
+    } else {
+        null
+    }
     Row(
         modifier = Modifier.fillMaxWidth().background(background ?: androidx.compose.ui.graphics.Color.Transparent).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically

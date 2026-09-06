@@ -87,8 +87,7 @@ class ParallelAsrEngine(
     override val primaryStreamingForSwitchPlan: Boolean
         get() = isPrimaryNativeOrLocalStreamForSwitch()
 
-    override fun wasLastResultFromBackup(): Boolean =
-        terminalCoordinator.wasLastResultFromBackup()
+    override fun wasLastResultFromBackup(): Boolean = terminalCoordinator.wasLastResultFromBackup()
 
     private val primaryListener = EngineListener(Source.PRIMARY, forwardLocalModelUi = true)
     private val backupListener = EngineListener(Source.BACKUP, forwardLocalModelUi = false)
@@ -471,7 +470,6 @@ class ParallelAsrEngine(
         if (!hasPrimaryDeferred && !hasBackupDeferred) return
         if (terminalCoordinator.terminalDelivered) return
 
-
         val pcm = synchronized(deferredPcmLock) {
             val out = deferredPcmBuffer.toByteArray()
             deferredPcmBuffer.reset()
@@ -517,7 +515,6 @@ class ParallelAsrEngine(
             }
         }
     }
-
 
     private fun notifyStoppedIfNeeded() {
         if (stoppedNotified) return
@@ -652,22 +649,21 @@ class ParallelAsrEngine(
         }
     }
 
-    private fun Terminal.toArbitrationEvent(source: Source): AsrBackupArbitrationEvent =
-        when (source) {
-            Source.PRIMARY -> when (this) {
-                is Terminal.Final -> AsrBackupArbitrationEvent.PrimaryFinal(text)
-                is Terminal.Error ->
-                    if (AsrErrorMessageMapper.isEmptyResult(context, message)) {
-                        AsrBackupArbitrationEvent.PrimaryFinal("")
-                    } else {
-                        AsrBackupArbitrationEvent.PrimaryError(message)
-                    }
-            }
-            Source.BACKUP -> when (this) {
-                is Terminal.Final -> AsrBackupArbitrationEvent.BackupFinal(text)
-                is Terminal.Error -> AsrBackupArbitrationEvent.BackupError(message)
-            }
+    private fun Terminal.toArbitrationEvent(source: Source): AsrBackupArbitrationEvent = when (source) {
+        Source.PRIMARY -> when (this) {
+            is Terminal.Final -> AsrBackupArbitrationEvent.PrimaryFinal(text)
+            is Terminal.Error ->
+                if (AsrErrorMessageMapper.isEmptyResult(context, message)) {
+                    AsrBackupArbitrationEvent.PrimaryFinal("")
+                } else {
+                    AsrBackupArbitrationEvent.PrimaryError(message)
+                }
         }
+        Source.BACKUP -> when (this) {
+            is Terminal.Final -> AsrBackupArbitrationEvent.BackupFinal(text)
+            is Terminal.Error -> AsrBackupArbitrationEvent.BackupError(message)
+        }
+    }
 
     private fun deliverFinalFromCoordinator(
         text: String,
@@ -773,12 +769,10 @@ class ParallelAsrEngine(
         )
     }
 
-    private fun hasRequiredVendorConfiguration(vendor: AsrVendor): Boolean {
-        return try {
-            isAsrVendorConfigured(context, prefs, vendor)
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to check vendor configuration for vendor=$vendor", t)
-            false
-        }
+    private fun hasRequiredVendorConfiguration(vendor: AsrVendor): Boolean = try {
+        isAsrVendorConfigured(context, prefs, vendor)
+    } catch (t: Throwable) {
+        Log.w(TAG, "Failed to check vendor configuration for vendor=$vendor", t)
+        false
     }
 }

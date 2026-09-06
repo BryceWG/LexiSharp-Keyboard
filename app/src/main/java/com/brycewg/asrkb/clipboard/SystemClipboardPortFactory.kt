@@ -48,7 +48,9 @@ object SystemClipboardPortFactory {
         }
 
         val status = if (activatedBridgeTargetPackage == null &&
-            currentIme != null && currentIme != selfPackage && bridgeEnabled
+            currentIme != null &&
+            currentIme != selfPackage &&
+            bridgeEnabled
         ) {
             try {
                 bridgeClient.queryStatus()

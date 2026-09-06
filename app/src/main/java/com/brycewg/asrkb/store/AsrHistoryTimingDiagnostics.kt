@@ -39,19 +39,17 @@ internal object AsrHistoryTimingDiagnostics {
         }
     }
 
-    private fun coveredMs(trace: AsrHistoryTimingTrace): Long {
-        return trace.intervals
-            .asSequence()
-            .map { interval ->
-                val start = interval.startOffsetMs.coerceIn(0L, trace.totalElapsedMs)
-                start to interval.endOffsetMs.coerceIn(start, trace.totalElapsedMs)
-            }
-            .sortedBy { it.first }
-            .fold(0L to 0L) { (coveredEnd, covered), (start, end) ->
-                maxOf(coveredEnd, end) to (covered + (end - maxOf(coveredEnd, start)).coerceAtLeast(0L))
-            }
-            .second
-    }
+    private fun coveredMs(trace: AsrHistoryTimingTrace): Long = trace.intervals
+        .asSequence()
+        .map { interval ->
+            val start = interval.startOffsetMs.coerceIn(0L, trace.totalElapsedMs)
+            start to interval.endOffsetMs.coerceIn(start, trace.totalElapsedMs)
+        }
+        .sortedBy { it.first }
+        .fold(0L to 0L) { (coveredEnd, covered), (start, end) ->
+            maxOf(coveredEnd, end) to (covered + (end - maxOf(coveredEnd, start)).coerceAtLeast(0L))
+        }
+        .second
 
     private const val TAG = "AsrHistoryTimingDiag"
 }

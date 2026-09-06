@@ -234,8 +234,7 @@ internal object LocalModelSpecs {
         val tokenizerConfig: LocalModelFileSpec get() = qwen3Asr06bInt8.tokenizerConfig
         val vocab: LocalModelFileSpec get() = qwen3Asr06bInt8.vocab
 
-        fun forVariant(variant: String?): Qwen3AsrVariantFileSpecs =
-            if (normalizeQwen3AsrVariant(variant) == "qwen3-1.7b-int8") qwen3Asr17bInt8 else qwen3Asr06bInt8
+        fun forVariant(variant: String?): Qwen3AsrVariantFileSpecs = if (normalizeQwen3AsrVariant(variant) == "qwen3-1.7b-int8") qwen3Asr17bInt8 else qwen3Asr06bInt8
     }
 
     object Parakeet {

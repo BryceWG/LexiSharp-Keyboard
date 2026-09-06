@@ -458,12 +458,14 @@ internal class ImeFloatingKeyboardController(
             root = root,
             width = ViewGroup.LayoutParams.MATCH_PARENT,
             height = ViewGroup.LayoutParams.WRAP_CONTENT
-        ) || changed
+        ) ||
+            changed
         changed = updatePanelFrame(
             panel = panel,
             width = ViewGroup.LayoutParams.MATCH_PARENT,
             gravity = Gravity.TOP
-        ) || changed
+        ) ||
+            changed
         changed = movePanelToOrigin(panel) || changed
         if (changed) {
             ViewCompat.requestApplyInsets(root)
@@ -526,7 +528,8 @@ internal class ImeFloatingKeyboardController(
                 row = it,
                 visible = visible,
                 placement = FloatingDragHandlePlacement.BOTTOM
-            ) || changed
+            ) ||
+                changed
         }
         handle?.let {
             if (it.visibility != target) {
@@ -635,12 +638,9 @@ internal class ImeFloatingKeyboardController(
         }
     }
 
-    private fun shouldUseFloatingKeyboard(root: View, availableWidth: Int): Boolean {
-        return prefs.imeTabletFloatingKeyboardEnabled && availableWidth > 0
-    }
+    private fun shouldUseFloatingKeyboard(root: View, availableWidth: Int): Boolean = prefs.imeTabletFloatingKeyboardEnabled && availableWidth > 0
 
-    private fun keyboardPanel(root: View): View =
-        root.findViewById<View>(R.id.keyboardFloatingPanel) ?: root
+    private fun keyboardPanel(root: View): View = root.findViewById<View>(R.id.keyboardFloatingPanel) ?: root
 
     private fun applyFloatingHostWindowFrame(root: View, targetWidth: Int, targetHeight: Int): Boolean {
         val nextX = activeResizeWindowX.takeIf { isResizing } ?: floatingWindowX(root, targetWidth)
@@ -835,7 +835,9 @@ internal class ImeFloatingKeyboardController(
         val nextX = x.coerceIn(0, maxX)
         val nextY = y.coerceIn(0, maxY)
         val floatingGravity = Gravity.START or Gravity.TOP
-        val changed = attrs.x != nextX || attrs.y != nextY || attrs.gravity != floatingGravity ||
+        val changed = attrs.x != nextX ||
+            attrs.y != nextY ||
+            attrs.gravity != floatingGravity ||
             (attrs.flags and FLOATING_WINDOW_FLAGS) != FLOATING_WINDOW_FLAGS ||
             attrs.windowAnimations != 0
         if (changed) {
@@ -896,9 +898,8 @@ internal class ImeFloatingKeyboardController(
         return (maxY * prefs.imeFloatingKeyboardYFraction).toInt().coerceIn(0, maxY)
     }
 
-    private fun floatingWindowMaxOffsets(root: View, targetWidth: Int, targetHeight: Int): Pair<Int, Int> =
-        (screenWidth(root) - targetWidth).coerceAtLeast(0) to
-            (screenHeight(root) - targetHeight).coerceAtLeast(0)
+    private fun floatingWindowMaxOffsets(root: View, targetWidth: Int, targetHeight: Int): Pair<Int, Int> = (screenWidth(root) - targetWidth).coerceAtLeast(0) to
+        (screenHeight(root) - targetHeight).coerceAtLeast(0)
 
     private fun floatingTargetWidth(root: View, availableWidth: Int): Int {
         val baseWidth = defaultFloatingWidth(root, availableWidth)
@@ -921,9 +922,8 @@ internal class ImeFloatingKeyboardController(
             .coerceAtLeast(minOf(minWidth, availableWidth))
     }
 
-    private fun floatingMinResizableWidth(root: View, availableWidth: Int): Int =
-        minOf(dp(root, FLOATING_RESIZE_MIN_WIDTH_DP), availableWidth)
-            .coerceAtLeast(1)
+    private fun floatingMinResizableWidth(root: View, availableWidth: Int): Int = minOf(dp(root, FLOATING_RESIZE_MIN_WIDTH_DP), availableWidth)
+        .coerceAtLeast(1)
 
     private fun floatingMaxResizableWidth(root: View, availableWidth: Int): Int {
         val sideMargin = dp(root, FLOATING_SIDE_MARGIN_DP)
@@ -938,8 +938,7 @@ internal class ImeFloatingKeyboardController(
 
     private fun screenHeight(root: View): Int = root.resources.displayMetrics.heightPixels
 
-    private fun dp(view: View, value: Float): Int =
-        (value * view.resources.displayMetrics.density + 0.5f).toInt()
+    private fun dp(view: View, value: Float): Int = (value * view.resources.displayMetrics.density + 0.5f).toInt()
 
     private fun View.dimensionOrLayoutParam(isWidth: Boolean): Int? {
         val lpValue = if (isWidth) layoutParams?.width else layoutParams?.height

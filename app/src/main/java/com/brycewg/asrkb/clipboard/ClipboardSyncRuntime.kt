@@ -50,8 +50,7 @@ internal class ClipboardSyncRuntime(
     companion object {
         private val RETRY_DELAYS_MS = longArrayOf(30_000L, 60_000L, 120_000L, 300_000L)
 
-        internal fun retryDelayMs(attempt: Int): Long =
-            RETRY_DELAYS_MS[attempt.coerceIn(0, RETRY_DELAYS_MS.lastIndex)]
+        internal fun retryDelayMs(attempt: Int): Long = RETRY_DELAYS_MS[attempt.coerceIn(0, RETRY_DELAYS_MS.lastIndex)]
     }
 
     private var actorDesired = false
@@ -191,8 +190,11 @@ internal class ClipboardSyncRuntime(
         session.stop()
         session.start(pollingEnabled = true)
         setPhase(
-            if (fallback) ClipboardSyncRuntimePhase.POLLING_FALLBACK
-            else ClipboardSyncRuntimePhase.POLLING
+            if (fallback) {
+                ClipboardSyncRuntimePhase.POLLING_FALLBACK
+            } else {
+                ClipboardSyncRuntimePhase.POLLING
+            }
         )
     }
 
@@ -282,7 +284,9 @@ internal class ClipboardSyncRuntime(
             return
         }
         session.applyRemoteProfile(profileJson) { applied ->
-            !applied && epoch == credentialsEpoch && syncEnabled() &&
+            !applied &&
+                epoch == credentialsEpoch &&
+                syncEnabled() &&
                 phase != ClipboardSyncRuntimePhase.INACTIVE
         }
     }
@@ -317,9 +321,9 @@ internal class ClipboardSyncRuntime(
         retryJob = null
     }
 
-    private fun backgroundAllowed(): Boolean =
-        syncEnabled() && receiveMode() == ClipboardSyncReceiveMode.REALTIME &&
-            keepBackgroundRealtimeEnabled()
+    private fun backgroundAllowed(): Boolean = syncEnabled() &&
+        receiveMode() == ClipboardSyncReceiveMode.REALTIME &&
+        keepBackgroundRealtimeEnabled()
 
     private fun canStayInBackground(): Boolean = backgroundArmed && backgroundAllowed()
 
@@ -329,10 +333,8 @@ internal class ClipboardSyncRuntime(
         if (!previous.isTerminal() && next.isTerminal()) onTerminalPhase(next)
     }
 
-    private fun ClipboardSyncRuntimePhase.isTerminal(): Boolean =
-        this == ClipboardSyncRuntimePhase.INACTIVE
+    private fun ClipboardSyncRuntimePhase.isTerminal(): Boolean = this == ClipboardSyncRuntimePhase.INACTIVE
 
-    private fun ClipboardSyncRuntimePhase.isRunning(): Boolean =
-        this != ClipboardSyncRuntimePhase.INACTIVE &&
-            this != ClipboardSyncRuntimePhase.SCREEN_OFF_DORMANT
+    private fun ClipboardSyncRuntimePhase.isRunning(): Boolean = this != ClipboardSyncRuntimePhase.INACTIVE &&
+        this != ClipboardSyncRuntimePhase.SCREEN_OFF_DORMANT
 }

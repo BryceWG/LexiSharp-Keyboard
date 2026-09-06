@@ -25,7 +25,8 @@ abstract class LocalModelPseudoStreamAsrEngine(
     protected val prefs: Prefs,
     protected val listener: StreamingAsrEngine.Listener,
     protected val onRequestDuration: ((Long) -> Unit)? = null
-) : StreamingAsrEngine, AudioFrameSinkOwner {
+) : StreamingAsrEngine,
+    AudioFrameSinkOwner {
 
     companion object {
         private const val TAG = "LocalPseudoStreamEngine"

@@ -21,16 +21,16 @@ import com.brycewg.asrkb.ui.AsrVendorUi
 import com.brycewg.asrkb.ui.SettingsActivity
 import com.brycewg.asrkb.ui.floatingball.AsrSessionManager
 import com.brycewg.asrkb.ui.floatingball.FloatingBallHoldAccessibilityPromptTracker
-import com.brycewg.asrkb.ui.floatingball.FloatingBallHoldRecordingTracker
 import com.brycewg.asrkb.ui.floatingball.FloatingBallHoldPressAction
+import com.brycewg.asrkb.ui.floatingball.FloatingBallHoldRecordingTracker
 import com.brycewg.asrkb.ui.floatingball.FloatingBallRecordingTapAction
 import com.brycewg.asrkb.ui.floatingball.FloatingBallState
 import com.brycewg.asrkb.ui.floatingball.FloatingBallStateMachine
 import com.brycewg.asrkb.ui.floatingball.FloatingBallTouchHandler
 import com.brycewg.asrkb.ui.floatingball.FloatingBallViewManager
 import com.brycewg.asrkb.ui.floatingball.FloatingMenuHelper
-import com.brycewg.asrkb.ui.floatingball.resolveFloatingBallRecordingTapAction
 import com.brycewg.asrkb.ui.floatingball.resolveFloatingBallHoldPressAction
+import com.brycewg.asrkb.ui.floatingball.resolveFloatingBallRecordingTapAction
 import com.brycewg.asrkb.util.HapticFeedbackHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -637,10 +637,12 @@ internal class FloatingAsrInteractionController(
         }
 
         if (revealEdgeHandleIfNeeded()) return
-        when (resolveFloatingBallRecordingTapAction(
-            isRecording = false,
-            holdToRecordEnabled = isHoldToRecordEnabled()
-        )) {
+        when (
+            resolveFloatingBallRecordingTapAction(
+                isRecording = false,
+                holdToRecordEnabled = isHoldToRecordEnabled()
+            )
+        ) {
             FloatingBallRecordingTapAction.StartRecording -> startRecordingFromBall()
             FloatingBallRecordingTapAction.StopRecording,
             FloatingBallRecordingTapAction.None -> Unit
@@ -668,11 +670,13 @@ internal class FloatingAsrInteractionController(
         updateVisibilityByPref("long_press")
         if (!isHoldToRecordEnabled()) return
         if (stateMachine.isMoveMode) return
-        when (resolveFloatingBallHoldPressAction(
-            isRecording = stateMachine.isRecording,
-            isProcessing = stateMachine.isProcessing,
-            isEdgeHandleVisible = viewManager.isEdgeHandleVisible()
-        )) {
+        when (
+            resolveFloatingBallHoldPressAction(
+                isRecording = stateMachine.isRecording,
+                isProcessing = stateMachine.isProcessing,
+                isEdgeHandleVisible = viewManager.isEdgeHandleVisible()
+            )
+        ) {
             FloatingBallHoldPressAction.StartRecording -> {
                 when (startRecordingFromBall(openAccessibilitySettingsOnMissing = false)) {
                     RecordingStartFromBallResult.Started -> {

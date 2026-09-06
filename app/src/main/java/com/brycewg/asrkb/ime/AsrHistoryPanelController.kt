@@ -178,9 +178,7 @@ internal class AsrHistoryPanelController(
         return dirs
     }
 
-    private fun canReprocess(record: AsrHistoryStore.AsrHistoryRecord): Boolean {
-        return prefs.hasLlmKeys() && AsrHistoryFailDisplay.copyText(record) != null
-    }
+    private fun canReprocess(record: AsrHistoryStore.AsrHistoryRecord): Boolean = prefs.hasLlmKeys() && AsrHistoryFailDisplay.copyText(record) != null
 
     private fun handleSwipeAction(pos: Int, direction: Int) {
         val record = adapter?.currentList?.getOrNull(pos) ?: run {

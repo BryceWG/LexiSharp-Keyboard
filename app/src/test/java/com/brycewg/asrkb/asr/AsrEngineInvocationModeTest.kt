@@ -97,28 +97,26 @@ class AsrEngineInvocationModeTest {
         assertFalse(AsrEngineInvocationMode.RecordingTest.reportsRequestDuration)
     }
 
-    private fun modeForCurrentPath(path: CurrentAsrConstructionPath): AsrEngineInvocationMode =
-        when (path) {
-            CurrentAsrConstructionPath.AppDirectMicrophone,
-            CurrentAsrConstructionPath.SpeechRecognizerDirectMicrophone,
-            CurrentAsrConstructionPath.ExternalDirectMicrophone ->
-                AsrEngineInvocationMode.DirectMicrophoneCapture
-            CurrentAsrConstructionPath.ExternalPushPcm ->
-                AsrEngineInvocationMode.PushPcm
-            CurrentAsrConstructionPath.RecordingTestPushPcm ->
-                AsrEngineInvocationMode.RecordingTest
-            CurrentAsrConstructionPath.ParallelDirectLeg,
-            CurrentAsrConstructionPath.ParallelPushPcmLeg ->
-                error("Parallel paths build both primary and backup modes")
-        }
+    private fun modeForCurrentPath(path: CurrentAsrConstructionPath): AsrEngineInvocationMode = when (path) {
+        CurrentAsrConstructionPath.AppDirectMicrophone,
+        CurrentAsrConstructionPath.SpeechRecognizerDirectMicrophone,
+        CurrentAsrConstructionPath.ExternalDirectMicrophone ->
+            AsrEngineInvocationMode.DirectMicrophoneCapture
+        CurrentAsrConstructionPath.ExternalPushPcm ->
+            AsrEngineInvocationMode.PushPcm
+        CurrentAsrConstructionPath.RecordingTestPushPcm ->
+            AsrEngineInvocationMode.RecordingTest
+        CurrentAsrConstructionPath.ParallelDirectLeg,
+        CurrentAsrConstructionPath.ParallelPushPcmLeg ->
+            error("Parallel paths build both primary and backup modes")
+    }
 
-    private fun modesForParallelPath(path: CurrentAsrConstructionPath): List<AsrEngineInvocationMode> =
-        when (path) {
-            CurrentAsrConstructionPath.ParallelDirectLeg,
-            CurrentAsrConstructionPath.ParallelPushPcmLeg -> listOf(
-                AsrEngineInvocationMode.ParallelPrimary,
-                AsrEngineInvocationMode.ParallelBackup
-            )
-            else -> error("$path is not a parallel construction path")
-        }
+    private fun modesForParallelPath(path: CurrentAsrConstructionPath): List<AsrEngineInvocationMode> = when (path) {
+        CurrentAsrConstructionPath.ParallelDirectLeg,
+        CurrentAsrConstructionPath.ParallelPushPcmLeg -> listOf(
+            AsrEngineInvocationMode.ParallelPrimary,
+            AsrEngineInvocationMode.ParallelBackup
+        )
+        else -> error("$path is not a parallel construction path")
+    }
 }

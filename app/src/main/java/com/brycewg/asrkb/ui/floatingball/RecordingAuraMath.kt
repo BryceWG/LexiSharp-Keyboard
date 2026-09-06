@@ -139,10 +139,8 @@ internal object RecordingAuraMath {
         return (logicalX - inset) to (logicalY - inset)
     }
 
-    fun logicalInsetForWindow(logicalSizePx: Int, expandedWindowSizePx: Int): Int {
-        return ((expandedWindowSizePx - logicalSizePx).coerceAtLeast(0) / 2)
-            .coerceAtLeast(0)
-    }
+    fun logicalInsetForWindow(logicalSizePx: Int, expandedWindowSizePx: Int): Int = ((expandedWindowSizePx - logicalSizePx).coerceAtLeast(0) / 2)
+        .coerceAtLeast(0)
 
     fun haloFrame(
         nowUptimeMs: Long,

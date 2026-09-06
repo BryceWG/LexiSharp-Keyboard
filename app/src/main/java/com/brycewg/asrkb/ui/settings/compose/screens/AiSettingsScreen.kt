@@ -214,7 +214,7 @@ fun AiSettingsScreen(
             onSuccess = { result ->
                 llmTestResultDialog = AiLlmTestResultDialogState(
                     responseMode =
-                        result.responseMode ?: LlmPostProcessor.LlmResponseMode.NON_SSE,
+                    result.responseMode ?: LlmPostProcessor.LlmResponseMode.NON_SSE,
                     totalMs = result.totalMs,
                     connectionMs = result.connectionMs,
                     responseHeadersMs = result.responseHeadersMs,

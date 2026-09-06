@@ -123,8 +123,7 @@ object KeyboardLayoutRuntimeApplier {
         )
     }
 
-    private fun scaledMicDimension(value: Int): Int =
-        (value.coerceAtLeast(1) * MIC_SIZE_RATIO).toInt().coerceAtLeast(1)
+    private fun scaledMicDimension(value: Int): Int = (value.coerceAtLeast(1) * MIC_SIZE_RATIO).toInt().coerceAtLeast(1)
 
     private fun resolveFrameWidth(frame: FrameLayout, root: View): Int? {
         ancestorExplicitContentWidth(frame, R.id.keyboardContentPanel)?.let { return it }
@@ -215,7 +214,8 @@ object KeyboardLayoutRuntimeApplier {
                 button = view.findViewById(R.id.btnMic),
                 width = micBounds.width,
                 height = micBounds.height
-            ) || centered
+            ) ||
+                centered
         }
         else -> false
     }

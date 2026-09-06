@@ -20,14 +20,14 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import com.brycewg.asrkb.LocaleHelper
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.asr.AsrLocalVendorLifecycles
 import com.brycewg.asrkb.asr.AsrLocalModelCatalog
+import com.brycewg.asrkb.asr.AsrLocalVendorLifecycles
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.asr.BluetoothRouteManager
 import com.brycewg.asrkb.asr.ContinuousCaptureCoordinator
 import com.brycewg.asrkb.asr.ContinuousCaptureOwner
-import com.brycewg.asrkb.asr.LocalModelCheck
 import com.brycewg.asrkb.asr.LlmPostProcessor
+import com.brycewg.asrkb.asr.LocalModelCheck
 import com.brycewg.asrkb.asr.isLocalAsrPrepared
 import com.brycewg.asrkb.asr.localModelErrorMessage
 import com.brycewg.asrkb.asr.partitionAsrVendorsByConfigured
@@ -66,8 +66,7 @@ internal fun isLocalAsrPreloadEnabled(
     else -> false
 }
 
-internal fun localAsrMissingModelErrorRes(vendor: AsrVendor): Int? =
-    AsrLocalModelCatalog.missingModelErrorRes(vendor)
+internal fun localAsrMissingModelErrorRes(vendor: AsrVendor): Int? = AsrLocalModelCatalog.missingModelErrorRes(vendor)
 
 internal fun stopRecordingIfActive(isRunning: Boolean, stopRecording: () -> Unit) {
     if (isRunning) stopRecording()
@@ -96,6 +95,7 @@ class AsrKeyboardService :
     companion object {
         const val ACTION_REFRESH_IME_UI = "com.brycewg.asrkb.action.REFRESH_IME_UI"
         private val INSETS_WARMUP_DELAYS_MS = longArrayOf(32L, 96L, 220L)
+
         /** 收起后切换输入法时，异步重试拉起软键盘的延迟序列 */
         private val RESHOW_SOFT_INPUT_DELAYS_MS = longArrayOf(32L, 120L, 280L)
     }
@@ -739,7 +739,6 @@ class AsrKeyboardService :
             }
         }
     }
-
 
     private fun hideNumpadPanel() {
         numpadPanelController?.hide()

@@ -17,8 +17,8 @@ import okio.Buffer
 import okio.BufferedSource
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -389,30 +389,28 @@ class ResumableHttpDownloaderTest {
         claimedLength: Long,
         contentRange: String? = null,
         etag: String? = null
-    ): OkHttpClient {
-        return OkHttpClient.Builder()
-            .addInterceptor { chain ->
-                val body = object : ResponseBody() {
-                    override fun contentType() = "application/zip".toMediaType()
-                    override fun contentLength() = claimedLength
-                    override fun source(): BufferedSource = Buffer().write(actualBytes)
-                }
-                Response.Builder()
-                    .request(chain.request())
-                    .protocol(Protocol.HTTP_1_1)
-                    .code(code)
-                    .message("OK")
-                    .apply {
-                        if (contentRange != null) {
-                            header("Content-Range", contentRange)
-                        }
-                        if (etag != null) {
-                            header("ETag", etag)
-                        }
-                    }
-                    .body(body)
-                    .build()
+    ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val body = object : ResponseBody() {
+                override fun contentType() = "application/zip".toMediaType()
+                override fun contentLength() = claimedLength
+                override fun source(): BufferedSource = Buffer().write(actualBytes)
             }
-            .build()
-    }
+            Response.Builder()
+                .request(chain.request())
+                .protocol(Protocol.HTTP_1_1)
+                .code(code)
+                .message("OK")
+                .apply {
+                    if (contentRange != null) {
+                        header("Content-Range", contentRange)
+                    }
+                    if (etag != null) {
+                        header("ETag", etag)
+                    }
+                }
+                .body(body)
+                .build()
+        }
+        .build()
 }

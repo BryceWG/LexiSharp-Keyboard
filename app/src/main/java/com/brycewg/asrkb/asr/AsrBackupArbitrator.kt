@@ -90,17 +90,16 @@ internal class AsrBackupArbitrator(
         primary: Terminal?,
         backup: Terminal?,
         allowBackupErrorWithoutPrimary: Boolean
-    ): List<AsrBackupArbitrationCommand> =
-        when (backup) {
-            is Terminal.Final -> deliverFinal(backup.text, AsrBackupArbitrationSource.Backup)
-            is Terminal.Error ->
-                if (primary != null || allowBackupErrorWithoutPrimary) {
-                    deliverError(preferPrimaryError(primary, backup.message))
-                } else {
-                    emptyList()
-                }
-            null -> emptyList()
-        }
+    ): List<AsrBackupArbitrationCommand> = when (backup) {
+        is Terminal.Final -> deliverFinal(backup.text, AsrBackupArbitrationSource.Backup)
+        is Terminal.Error ->
+            if (primary != null || allowBackupErrorWithoutPrimary) {
+                deliverError(preferPrimaryError(primary, backup.message))
+            } else {
+                emptyList()
+            }
+        null -> emptyList()
+    }
 
     private fun preferPrimaryError(primary: Terminal?, backupMessage: String): String {
         val primaryMessage = (primary as? Terminal.Error)?.message

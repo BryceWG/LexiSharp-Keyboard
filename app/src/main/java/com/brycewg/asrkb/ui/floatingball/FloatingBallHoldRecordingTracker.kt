@@ -14,11 +14,9 @@ internal class FloatingBallHoldRecordingTracker {
         }
     }
 
-    fun consumeStopOnRelease(isRecordingActive: Boolean): Boolean =
-        consumeIfOwned(isRecordingActive)
+    fun consumeStopOnRelease(isRecordingActive: Boolean): Boolean = consumeIfOwned(isRecordingActive)
 
-    fun consumeCancelForGesture(isRecordingActive: Boolean): Boolean =
-        consumeIfOwned(isRecordingActive)
+    fun consumeCancelForGesture(isRecordingActive: Boolean): Boolean = consumeIfOwned(isRecordingActive)
 
     fun clear() {
         gestureOwnsRecording = false

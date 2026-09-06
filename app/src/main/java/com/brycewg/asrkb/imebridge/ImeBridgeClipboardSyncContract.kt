@@ -17,6 +17,7 @@ internal object ImeBridgeClipboardSyncContract {
 
     const val TRANSACTION_ACTIVATE: Int = android.os.IBinder.FIRST_CALL_TRANSACTION + 0
     const val TRANSACTION_DEACTIVATE: Int = android.os.IBinder.FIRST_CALL_TRANSACTION + 1
+
     /** 仅通知窗口已隐藏；同步会话和剪贴板订阅继续保持。 */
     const val TRANSACTION_WINDOW_HIDDEN: Int = android.os.IBinder.FIRST_CALL_TRANSACTION + 2
 

@@ -19,13 +19,13 @@ import com.brycewg.asrkb.imebridge.ImeBridgeContract
 import com.brycewg.asrkb.imebridge.ImeBridgeResult
 import com.brycewg.asrkb.imebridge.ImeBridgeWarningToast
 import com.brycewg.asrkb.imebridge.imeBridgeWarningMessageRes
-import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.AsrHistoryFailureRecorder
-import com.brycewg.asrkb.store.Prefs
+import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
 import com.brycewg.asrkb.store.AsrHistoryTimingRecorder
 import com.brycewg.asrkb.store.AsrHistoryTimingStage
+import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
 import com.brycewg.asrkb.store.getAsrRuntimeStatsSnapshotOrNull
@@ -42,8 +42,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-internal fun floatingBallLocalAsrMissingModelErrorRes(vendor: AsrVendor): Int? =
-    AsrLocalModelCatalog.missingModelErrorRes(vendor)
+internal fun floatingBallLocalAsrMissingModelErrorRes(vendor: AsrVendor): Int? = AsrLocalModelCatalog.missingModelErrorRes(vendor)
 
 /**
  * ASR 会话管理器
@@ -78,10 +77,13 @@ class AsrSessionManager(
     // 会话上下文
     private var focusContext: FocusContext? = null
     private var lastPartialForPreview: String? = null
+
     @Volatile
     private var useImeBridgeForSession: Boolean = false
+
     @Volatile
     private var useImeBridgeComposingPreviewForSession: Boolean = false
+
     @Volatile
     private var imeBridgeSessionId: String? = null
     private var markerInserted: Boolean = false
@@ -159,7 +161,8 @@ class AsrSessionManager(
 
     private fun isSessionActive(sessionToken: Long): Boolean = sessionToken != 0L && activeSessionToken == sessionToken
 
-    private fun createEngineListener(sessionToken: Long): StreamingAsrEngine.Listener = object : StreamingAsrEngine.Listener,
+    private fun createEngineListener(sessionToken: Long): StreamingAsrEngine.Listener = object :
+        StreamingAsrEngine.Listener,
         BackupAsrStatusListener {
         override fun onFinal(text: String) {
             this@AsrSessionManager.onFinal(sessionToken, text)
@@ -497,12 +500,10 @@ class AsrSessionManager(
         return v
     }
 
-    fun popLastHistoryRecordId(): String =
-        completedHistoryRecordId.also { completedHistoryRecordId = null }
-            ?: UUID.randomUUID().toString()
+    fun popLastHistoryRecordId(): String = completedHistoryRecordId.also { completedHistoryRecordId = null }
+        ?: UUID.randomUUID().toString()
 
-    fun popLastHistoryRawText(): String? =
-        completedHistoryRawText.also { completedHistoryRawText = null }
+    fun popLastHistoryRawText(): String? = completedHistoryRawText.also { completedHistoryRawText = null }
 
     internal fun transitionPostprocessToDelivery() {
         completedHistoryTiming?.apply {
@@ -605,12 +606,10 @@ class AsrSessionManager(
         )
     }
 
-    private fun currentHistoryFailStage(): AsrHistoryStore.AsrHistoryFailStage {
-        return if (isRecordingActive()) {
-            AsrHistoryStore.AsrHistoryFailStage.RECORDING
-        } else {
-            AsrHistoryStore.AsrHistoryFailStage.RECOGNITION
-        }
+    private fun currentHistoryFailStage(): AsrHistoryStore.AsrHistoryFailStage = if (isRecordingActive()) {
+        AsrHistoryStore.AsrHistoryFailStage.RECORDING
+    } else {
+        AsrHistoryStore.AsrHistoryFailStage.RECOGNITION
     }
 
     private fun peekTotalElapsedMsForStats(): Long {
@@ -1473,11 +1472,12 @@ class AsrSessionManager(
     private fun showImeBridgeInsertFailure(bridgeResult: ImeBridgeResult) {
         // 仅当桥接警告 toast 本次实际展示过才跳过，避免被冷却期抑制后用户完全无反馈
         val warningRes = imeBridgeWarningMessageRes(bridgeResult.code, warnOnFailure = true)
-        val warningShown = warningRes != null && ImeBridgeWarningToast.wasShownWithin(
-            warningRes,
-            SystemClock.elapsedRealtime(),
-            WARNING_TOAST_RECENT_WINDOW_MS
-        )
+        val warningShown = warningRes != null &&
+            ImeBridgeWarningToast.wasShownWithin(
+                warningRes,
+                SystemClock.elapsedRealtime(),
+                WARNING_TOAST_RECENT_WINDOW_MS
+            )
         if (warningShown) return
         val isSensitiveField = bridgeResult.isSensitiveField ||
             bridgeResult.code == ImeBridgeContract.RESULT_SENSITIVE_FIELD

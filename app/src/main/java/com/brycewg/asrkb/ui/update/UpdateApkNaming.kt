@@ -25,8 +25,7 @@ object UpdateApkNaming {
         )
     }
 
-    fun currentReleaseFileName(version: String, abi: String): String =
-        "app-release-$version-$abi.apk"
+    fun currentReleaseFileName(version: String, abi: String): String = "app-release-$version-$abi.apk"
 
     /** 应用内下载缓存文件名（不含 ABI 后缀）。 */
     fun localCacheFileName(version: String): String = "$LOCAL_CACHE_PREFIX-$version.apk"

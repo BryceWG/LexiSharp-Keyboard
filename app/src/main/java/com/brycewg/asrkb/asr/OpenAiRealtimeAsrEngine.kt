@@ -80,6 +80,7 @@ class OpenAiRealtimeAsrEngine(
     private var finalizeJob: Job? = null
 
     @Volatile private var targetSampleRate: Int = SAMPLE_RATE_OFFICIAL
+
     @Volatile private var externalVadInputLeveler = VadInputLevelerBranch(
         sampleRate = SAMPLE_RATE_OFFICIAL
     )

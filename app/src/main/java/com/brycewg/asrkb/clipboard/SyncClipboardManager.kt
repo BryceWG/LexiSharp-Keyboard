@@ -1,7 +1,7 @@
 package com.brycewg.asrkb.clipboard
 
-import android.content.Context
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Base64
@@ -10,8 +10,8 @@ import com.brycewg.asrkb.store.Prefs
 import java.io.InputStream
 import java.security.DigestInputStream
 import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +28,6 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.BufferedSink
-import okio.source
 
 /**
  * 写入 SyncClipboard 的文本数据载荷
@@ -124,6 +123,7 @@ class SyncClipboardManager(
     // 最近一次已应用的远端 Profile.hash。必须与 lastPulledWasText 一起判断，
     // 否则文件 → 同一段文本时会跳过历史里的文件条目清理。
     @Volatile private var lastPulledServerHash: String? = null
+
     @Volatile private var lastPulledWasText: Boolean = false
 
     /** 凭证/服务器配置世代；变化时立即作废旧接收路径。 */
@@ -273,10 +273,14 @@ class SyncClipboardManager(
     }
 
     private fun ensureAttachmentWatch() {
-        if (attachmentWatchJob?.isActive == true || clipboardEffectsPaused ||
-            !prefs.syncClipboardEnabled || !attachmentPolicy.hasEnabledType() ||
+        if (attachmentWatchJob?.isActive == true ||
+            clipboardEffectsPaused ||
+            !prefs.syncClipboardEnabled ||
+            !attachmentPolicy.hasEnabledType() ||
             prefs.syncClipboardWatchTreeUri.isBlank()
-        ) return
+        ) {
+            return
+        }
         // ponytail: polling a SAF tree is portable; add provider notifications only if scans prove costly.
         attachmentWatchJob = scope.launch(ioDispatcher) {
             while (isActive && prefs.syncClipboardEnabled && !clipboardEffectsPaused) {
@@ -334,8 +338,7 @@ class SyncClipboardManager(
         return sha256Hex(digest.digest())
     }
 
-    private fun sha256Hex(bytes: ByteArray): String =
-        bytes.joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    private fun sha256Hex(bytes: ByteArray): String = bytes.joinToString("") { "%02x".format(it.toInt() and 0xff) }
 
     private fun authHeaderB64(): String? {
         val u = prefs.syncClipboardUsername
@@ -346,8 +349,7 @@ class SyncClipboardManager(
         return "Basic $b64"
     }
 
-    private fun readClipboardText(): String? =
-        clipboardPort.readText()?.text?.takeIf { it.isNotEmpty() }
+    private fun readClipboardText(): String? = clipboardPort.readText()?.text?.takeIf { it.isNotEmpty() }
 
     private fun writeClipboardText(text: String): Boolean = try {
         clipboardPort.writeText(text)
@@ -810,11 +812,9 @@ class SyncClipboardManager(
     private fun resolvePayloadText(payload: PullClipboardPayload): String? = payload.text?.takeIf { it.isNotEmpty() }
         ?: payload.legacyClipboard?.takeIf { it.isNotEmpty() }
 
-    private fun resolvePayloadHash(payload: PullClipboardPayload): String? =
-        payload.hash?.takeIf { it.isNotBlank() } ?: payload.legacyHash?.takeIf { it.isNotBlank() }
+    private fun resolvePayloadHash(payload: PullClipboardPayload): String? = payload.hash?.takeIf { it.isNotBlank() } ?: payload.legacyHash?.takeIf { it.isNotBlank() }
 
-    private fun sameRemoteHash(left: String?, right: String?): Boolean =
-        !left.isNullOrBlank() && !right.isNullOrBlank() && left.equals(right, ignoreCase = true)
+    private fun sameRemoteHash(left: String?, right: String?): Boolean = !left.isNullOrBlank() && !right.isNullOrBlank() && left.equals(right, ignoreCase = true)
 
     /**
      * 统一解析 payload 文件名，优先新字段，兼容旧字段。
@@ -905,9 +905,8 @@ class SyncClipboardManager(
         return HandledPullPayload(text)
     }
 
-    private fun canApplyPullResponse(updateClipboard: Boolean, requestEpoch: Long): Boolean =
-        credentialsEpoch == requestEpoch &&
-            (!updateClipboard || (prefs.syncClipboardEnabled && !clipboardEffectsPaused))
+    private fun canApplyPullResponse(updateClipboard: Boolean, requestEpoch: Long): Boolean = credentialsEpoch == requestEpoch &&
+        (!updateClipboard || (prefs.syncClipboardEnabled && !clipboardEffectsPaused))
 
     /** 处理文件类型的 payload，并在类型和大小允许时自动下载。 */
     private fun handleFilePayload(
@@ -938,99 +937,103 @@ class SyncClipboardManager(
                 return@run HandledPullPayload(fileName)
             }
             try {
-            // 若文件名与最近一次处理的文件相同，则视为内容未更新，避免重复触发预览
-            val prevName = try {
-                prefs.syncClipboardLastFileName
-            } catch (e: Throwable) {
-                Log.e(TAG, "Failed to read last file name", e)
-                ""
-            }
-            val previousEntry = clipboardStore?.getLatestFileEntry()
-            val sameRemoteFile = fileName.isNotEmpty() && fileName == prevName &&
-                (serverHash.isNullOrBlank() ||
-                    previousEntry?.serverHash.equals(serverHash, ignoreCase = true)) &&
-                previousEntry?.downloadStatus == DownloadStatus.COMPLETED &&
-                fileManager.fileExists(fileName, serverSize)
-            if (sameRemoteFile) {
-                Log.d(TAG, "File payload unchanged, skip preview: $fileName")
-                return@run HandledPullPayload(fileName)
-            }
-
-            val entryType = when (type.lowercase()) {
-                "image" -> EntryType.IMAGE
-                "file" -> EntryType.FILE
-                else -> EntryType.FILE
-            }
-
-            // 检查文件是否已下载；同名但 hash 更新时先删旧文件。
-            val existingPath = fileManager.getLocalPath(fileName)
-            if (existingPath != null && !serverHash.isNullOrBlank() &&
-                !previousEntry?.serverHash.equals(serverHash, ignoreCase = true)
-            ) {
-                fileManager.deleteFile(fileName)
-            }
-            val hadLocalFile = fileManager.fileExists(fileName, serverSize)
-            val (downloaded, localPath) = if (attachmentDownloadAttempts > 0) {
-                downloadAttachmentWithRetry(
-                    fileName,
-                    serverSize,
-                    serverHash,
-                    attachmentKind,
-                    updateClipboard,
-                    requestEpoch,
-                    attachmentDownloadAttempts
-                )
-            } else {
-                false to null
-            }
-            if (!canApplyPullResponse(updateClipboard, requestEpoch) ||
-                !attachmentPolicy.allows(attachmentKind, serverSize)
-            ) {
-                if (downloaded && !hadLocalFile) fileManager.deleteFile(fileName)
-                attachmentNotifier.clearDownloadProgress()
-                return@run HandledPullPayload(fileName, clipboardApplied = false)
-            }
-            val downloadStatus = if (downloaded && localPath != null) {
-                if (!hadLocalFile) attachmentNotifier.showDownloaded(fileName)
-                DownloadStatus.COMPLETED
-            } else {
-                if (attachmentDownloadAttempts > 0) attachmentNotifier.showDownloadFailed(fileName)
-                if (attachmentDownloadAttempts > 1 &&
-                    prefs.syncClipboardReceiveMode == ClipboardSyncReceiveMode.REALTIME
-                ) {
-                    scheduleAttachmentRecovery(requestEpoch)
+                // 若文件名与最近一次处理的文件相同，则视为内容未更新，避免重复触发预览
+                val prevName = try {
+                    prefs.syncClipboardLastFileName
+                } catch (e: Throwable) {
+                    Log.e(TAG, "Failed to read last file name", e)
+                    ""
                 }
-                DownloadStatus.FAILED
-            }
+                val previousEntry = clipboardStore?.getLatestFileEntry()
+                val sameRemoteFile = fileName.isNotEmpty() &&
+                    fileName == prevName &&
+                    (
+                        serverHash.isNullOrBlank() ||
+                            previousEntry?.serverHash.equals(serverHash, ignoreCase = true)
+                        ) &&
+                    previousEntry?.downloadStatus == DownloadStatus.COMPLETED &&
+                    fileManager.fileExists(fileName, serverSize)
+                if (sameRemoteFile) {
+                    Log.d(TAG, "File payload unchanged, skip preview: $fileName")
+                    return@run HandledPullPayload(fileName)
+                }
 
-            // 添加到历史记录（仅保留最新一条文件记录）
-            clipboardStore?.addFileEntry(
-                type = entryType,
-                fileName = fileName,
-                serverFileName = fileName,
-                fileSize = serverSize,
-                serverHash = serverHash,
-                localFilePath = localPath,
-                downloadStatus = downloadStatus
-            )
+                val entryType = when (type.lowercase()) {
+                    "image" -> EntryType.IMAGE
+                    "file" -> EntryType.FILE
+                    else -> EntryType.FILE
+                }
 
-            // 通知监听器有新文件
-            try {
-                listener?.onFilePulled(entryType, fileName, fileName)
-            } catch (e: Throwable) {
-                Log.e(TAG, "Failed to notify file pulled listener", e)
-            }
+                // 检查文件是否已下载；同名但 hash 更新时先删旧文件。
+                val existingPath = fileManager.getLocalPath(fileName)
+                if (existingPath != null &&
+                    !serverHash.isNullOrBlank() &&
+                    !previousEntry?.serverHash.equals(serverHash, ignoreCase = true)
+                ) {
+                    fileManager.deleteFile(fileName)
+                }
+                val hadLocalFile = fileManager.fileExists(fileName, serverSize)
+                val (downloaded, localPath) = if (attachmentDownloadAttempts > 0) {
+                    downloadAttachmentWithRetry(
+                        fileName,
+                        serverSize,
+                        serverHash,
+                        attachmentKind,
+                        updateClipboard,
+                        requestEpoch,
+                        attachmentDownloadAttempts
+                    )
+                } else {
+                    false to null
+                }
+                if (!canApplyPullResponse(updateClipboard, requestEpoch) ||
+                    !attachmentPolicy.allows(attachmentKind, serverSize)
+                ) {
+                    if (downloaded && !hadLocalFile) fileManager.deleteFile(fileName)
+                    attachmentNotifier.clearDownloadProgress()
+                    return@run HandledPullPayload(fileName, clipboardApplied = false)
+                }
+                val downloadStatus = if (downloaded && localPath != null) {
+                    if (!hadLocalFile) attachmentNotifier.showDownloaded(fileName)
+                    DownloadStatus.COMPLETED
+                } else {
+                    if (attachmentDownloadAttempts > 0) attachmentNotifier.showDownloadFailed(fileName)
+                    if (attachmentDownloadAttempts > 1 &&
+                        prefs.syncClipboardReceiveMode == ClipboardSyncReceiveMode.REALTIME
+                    ) {
+                        scheduleAttachmentRecovery(requestEpoch)
+                    }
+                    DownloadStatus.FAILED
+                }
 
-            // 记录最近一次成功处理的文件名
-            try {
-                prefs.syncClipboardLastFileName = fileName
-            } catch (e: Throwable) {
-                Log.e(TAG, "Failed to save last file name", e)
-            }
+                // 添加到历史记录（仅保留最新一条文件记录）
+                clipboardStore?.addFileEntry(
+                    type = entryType,
+                    fileName = fileName,
+                    serverFileName = fileName,
+                    fileSize = serverSize,
+                    serverHash = serverHash,
+                    localFilePath = localPath,
+                    downloadStatus = downloadStatus
+                )
 
-            Log.d(TAG, "File payload handled: $fileName (type: $type, status: $downloadStatus)")
-            // 附件失败已由本管理器安排一次受控恢复，避免 realtime 立即重复拉取同一份 profile。
-            HandledPullPayload(fileName, clipboardApplied = attachmentDownloadAttempts > 0)
+                // 通知监听器有新文件
+                try {
+                    listener?.onFilePulled(entryType, fileName, fileName)
+                } catch (e: Throwable) {
+                    Log.e(TAG, "Failed to notify file pulled listener", e)
+                }
+
+                // 记录最近一次成功处理的文件名
+                try {
+                    prefs.syncClipboardLastFileName = fileName
+                } catch (e: Throwable) {
+                    Log.e(TAG, "Failed to save last file name", e)
+                }
+
+                Log.d(TAG, "File payload handled: $fileName (type: $type, status: $downloadStatus)")
+                // 附件失败已由本管理器安排一次受控恢复，避免 realtime 立即重复拉取同一份 profile。
+                HandledPullPayload(fileName, clipboardApplied = attachmentDownloadAttempts > 0)
             } catch (e: Throwable) {
                 Log.e(TAG, "Failed to handle file payload: $fileName", e)
                 HandledPullPayload(fileName, clipboardApplied = false)
@@ -1044,8 +1047,7 @@ class SyncClipboardManager(
      * @param progressCallback 进度回调
      * @return 是否下载成功
      */
-    fun downloadFile(entryId: String, progressCallback: ((Long, Long) -> Unit)? = null): Boolean =
-        ClipboardAttachmentTransferGate.run { downloadFileLocked(entryId, progressCallback) }
+    fun downloadFile(entryId: String, progressCallback: ((Long, Long) -> Unit)? = null): Boolean = ClipboardAttachmentTransferGate.run { downloadFileLocked(entryId, progressCallback) }
 
     private fun downloadFileLocked(entryId: String, progressCallback: ((Long, Long) -> Unit)?): Boolean {
         val store = clipboardStore ?: return false
@@ -1241,9 +1243,11 @@ class SyncClipboardManager(
         return false to null
     }
 
-    private fun isSafeAttachmentFileName(fileName: String): Boolean =
-        fileName.isNotBlank() && fileName != "." && fileName != ".." &&
-            !fileName.contains('/') && !fileName.contains('\\')
+    private fun isSafeAttachmentFileName(fileName: String): Boolean = fileName.isNotBlank() &&
+        fileName != "." &&
+        fileName != ".." &&
+        !fileName.contains('/') &&
+        !fileName.contains('\\')
 
     private class UriRequestBody(
         private val context: Context,
@@ -1281,7 +1285,6 @@ class SyncClipboardManager(
             contentDigest = digest.digest()
         }
     }
-
 
     /**
      * 在启动时调用：若系统剪贴板文本与上次成功上传不一致，则主动上传一次。

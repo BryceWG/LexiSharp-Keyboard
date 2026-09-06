@@ -12,18 +12,18 @@ import android.os.SystemClock
 import android.util.Log
 import com.brycewg.asrkb.asr.*
 import com.brycewg.asrkb.asr.BluetoothRouteManager
-import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.AsrHistoryAudioCapture
 import com.brycewg.asrkb.store.AsrHistoryFailureRecorder
 import com.brycewg.asrkb.store.AsrHistoryStore
 import com.brycewg.asrkb.store.AsrHistoryTimingOrigin
 import com.brycewg.asrkb.store.AsrHistoryTimingRecorder
 import com.brycewg.asrkb.store.AsrHistoryTimingStage
-import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
+import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.store.debug.DebugLogManager
 import com.brycewg.asrkb.store.debug.StreamingPreviewDiag
-import java.util.concurrent.atomic.AtomicLong
+import com.brycewg.asrkb.store.recordPrimaryAsrRuntimeRequestIfSuccessful
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -255,8 +255,7 @@ class AsrSessionManager(
     /**
      * 键盘状态栏展示用的识别耗时，与历史卡片/详情相同：timing trace 的 RECOGNITION 阶段。
      */
-    fun getLastDisplayedRecognitionDuration(): Long? =
-        lastRecognitionStageMs?.takeIf { it > 0L }
+    fun getLastDisplayedRecognitionDuration(): Long? = lastRecognitionStageMs?.takeIf { it > 0L }
 
     fun peekLastFinalVendorForStats(): AsrVendor = lastFinalVendorForStats ?: sessionPrimaryVendor
 
@@ -706,12 +705,10 @@ class AsrSessionManager(
         )
     }
 
-    private fun currentHistoryFailStage(): AsrHistoryStore.AsrHistoryFailStage {
-        return if (isRunning()) {
-            AsrHistoryStore.AsrHistoryFailStage.RECORDING
-        } else {
-            AsrHistoryStore.AsrHistoryFailStage.RECOGNITION
-        }
+    private fun currentHistoryFailStage(): AsrHistoryStore.AsrHistoryFailStage = if (isRunning()) {
+        AsrHistoryStore.AsrHistoryFailStage.RECORDING
+    } else {
+        AsrHistoryStore.AsrHistoryFailStage.RECOGNITION
     }
 
     private fun peekTotalElapsedMsForStats(): Long {

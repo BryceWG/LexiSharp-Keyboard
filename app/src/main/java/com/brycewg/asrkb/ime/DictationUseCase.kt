@@ -352,12 +352,11 @@ internal class DictationUseCase(
         } catch (_: Throwable) { }
     }
 
-    private fun elapsedRealtimeMs(): Long =
-        try {
-            android.os.SystemClock.elapsedRealtime()
-        } catch (_: Throwable) {
-            0L
-        }
+    private fun elapsedRealtimeMs(): Long = try {
+        android.os.SystemClock.elapsedRealtime()
+    } catch (_: Throwable) {
+        0L
+    }
 
     private fun logCommitPath(
         mode: String,

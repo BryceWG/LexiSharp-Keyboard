@@ -326,8 +326,11 @@ class OtherSettingsViewModel(
                     if (cached == null) {
                         requestSyncClipboardCapabilityProbe()
                     } else {
-                        val mode = if (cached) ClipboardSyncReceiveMode.REALTIME
-                        else ClipboardSyncReceiveMode.POLLING
+                        val mode = if (cached) {
+                            ClipboardSyncReceiveMode.REALTIME
+                        } else {
+                            ClipboardSyncReceiveMode.POLLING
+                        }
                         prefs.syncClipboardReceiveMode = mode
                         _syncClipboardState.value = _syncClipboardState.value.copy(
                             receiveMode = mode,

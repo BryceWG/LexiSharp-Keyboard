@@ -76,12 +76,11 @@ internal object CurrentAsrConstructionBaseline {
             describePushPcm(vendor, settings)
     }
 
-    fun describeBackupContainer(externalPcmInput: Boolean): CurrentAsrEngineUse =
-        use(
-            CurrentAsrEngineFamily.Parallel,
-            "ParallelAsrEngine",
-            mode = if (externalPcmInput) "externalPcmInput=true" else null
-        )
+    fun describeBackupContainer(externalPcmInput: Boolean): CurrentAsrEngineUse = use(
+        CurrentAsrEngineFamily.Parallel,
+        "ParallelAsrEngine",
+        mode = if (externalPcmInput) "externalPcmInput=true" else null
+    )
 
     fun recordingTestMode(
         vendor: AsrVendor,
@@ -239,27 +238,21 @@ internal object CurrentAsrConstructionBaseline {
         AsrVendor.Parakeet -> false
     }
 
-    private fun stream(engine: String): CurrentAsrEngineUse =
-        use(CurrentAsrEngineFamily.Stream, engine)
+    private fun stream(engine: String): CurrentAsrEngineUse = use(CurrentAsrEngineFamily.Stream, engine)
 
-    private fun file(engine: String): CurrentAsrEngineUse =
-        use(CurrentAsrEngineFamily.File, engine)
+    private fun file(engine: String): CurrentAsrEngineUse = use(CurrentAsrEngineFamily.File, engine)
 
-    private fun localFile(engine: String): CurrentAsrEngineUse =
-        use(CurrentAsrEngineFamily.LocalFile, engine)
+    private fun localFile(engine: String): CurrentAsrEngineUse = use(CurrentAsrEngineFamily.LocalFile, engine)
 
-    private fun localPseudo(engine: String): CurrentAsrEngineUse =
-        use(CurrentAsrEngineFamily.LocalPseudoStream, engine)
+    private fun localPseudo(engine: String): CurrentAsrEngineUse = use(CurrentAsrEngineFamily.LocalPseudoStream, engine)
 
-    private fun pushStream(engine: String): CurrentAsrEngineUse =
-        use(CurrentAsrEngineFamily.PushPcmStream, engine)
+    private fun pushStream(engine: String): CurrentAsrEngineUse = use(CurrentAsrEngineFamily.PushPcmStream, engine)
 
-    private fun pushAdapter(wrappedRecognizer: String): CurrentAsrEngineUse =
-        use(
-            family = CurrentAsrEngineFamily.PushPcmAdapter,
-            engine = "GenericPushFileAsrAdapter",
-            wrappedRecognizer = wrappedRecognizer
-        )
+    private fun pushAdapter(wrappedRecognizer: String): CurrentAsrEngineUse = use(
+        family = CurrentAsrEngineFamily.PushPcmAdapter,
+        engine = "GenericPushFileAsrAdapter",
+        wrappedRecognizer = wrappedRecognizer
+    )
 
     private fun use(
         family: CurrentAsrEngineFamily,

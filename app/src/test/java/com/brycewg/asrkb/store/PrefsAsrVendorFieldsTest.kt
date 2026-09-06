@@ -258,10 +258,9 @@ class PrefsAsrVendorFieldsTest {
         )
     }
 
-    private fun hasRequiredSchemaStrings(vendor: AsrVendor, store: VendorFieldStore): Boolean =
-        PrefsAsrVendorFields.requiredStringFieldsForValidation(vendor).all { field ->
-            store.getString(field.key, field.default).isNotBlank()
-        }
+    private fun hasRequiredSchemaStrings(vendor: AsrVendor, store: VendorFieldStore): Boolean = PrefsAsrVendorFields.requiredStringFieldsForValidation(vendor).all { field ->
+        store.getString(field.key, field.default).isNotBlank()
+    }
 
     private class FakeVendorFieldStore : VendorFieldStore {
         private val strings = mutableMapOf<String, String>()
@@ -302,15 +301,13 @@ class PrefsAsrVendorFieldsTest {
 
         override fun optString(key: String): String = values[key]?.toString().orEmpty()
 
-        override fun optBoolean(key: String, default: Boolean): Boolean =
-            (values[key] as? Boolean) ?: default
+        override fun optBoolean(key: String, default: Boolean): Boolean = (values[key] as? Boolean) ?: default
 
-        override fun optInt(key: String, default: Int): Int =
-            when (val value = values[key]) {
-                is Int -> value
-                is Number -> value.toInt()
-                is String -> value.toIntOrNull() ?: default
-                else -> default
-            }
+        override fun optInt(key: String, default: Int): Int = when (val value = values[key]) {
+            is Int -> value
+            is Number -> value.toInt()
+            is String -> value.toIntOrNull() ?: default
+            else -> default
+        }
     }
 }

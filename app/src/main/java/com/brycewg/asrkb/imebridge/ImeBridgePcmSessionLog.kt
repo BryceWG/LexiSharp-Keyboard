@@ -97,31 +97,29 @@ internal class BridgePcmSessionSummary(
         frameCount += 1
     }
 
-    fun record(operation: String, result: BridgePcmOperationResult, nowMs: Long): BridgePcmSessionLogRecord =
-        BridgePcmSessionLogRecord(
-            targetPackage = targetPackage,
-            sessionSummary = summarizeSessionId(sessionId),
-            operation = operation,
-            resultCode = result.code,
-            resultMessage = result.message,
-            pcmBytes = pcmBytes,
-            pcmDurationMs = pcmDurationMs,
-            frameCount = frameCount,
-            elapsedMs = (nowMs - startedMs).coerceAtLeast(0L),
-            hasInputConnection = hasInputConnection,
-            isSensitiveField = isSensitiveField,
-            isImeWindowVisible = isImeWindowVisible,
-            supportsComposingPreview = supportsComposingPreview,
-            supportsPcmRecording = supportsPcmRecording
-        )
+    fun record(operation: String, result: BridgePcmOperationResult, nowMs: Long): BridgePcmSessionLogRecord = BridgePcmSessionLogRecord(
+        targetPackage = targetPackage,
+        sessionSummary = summarizeSessionId(sessionId),
+        operation = operation,
+        resultCode = result.code,
+        resultMessage = result.message,
+        pcmBytes = pcmBytes,
+        pcmDurationMs = pcmDurationMs,
+        frameCount = frameCount,
+        elapsedMs = (nowMs - startedMs).coerceAtLeast(0L),
+        hasInputConnection = hasInputConnection,
+        isSensitiveField = isSensitiveField,
+        isImeWindowVisible = isImeWindowVisible,
+        supportsComposingPreview = supportsComposingPreview,
+        supportsPcmRecording = supportsPcmRecording
+    )
 
     private companion object {
         private const val PCM_16_BYTES_PER_SAMPLE = 2L
     }
 }
 
-internal fun summarizeSessionId(sessionId: String): String =
-    sessionId.take(8).ifEmpty { "empty" }
+internal fun summarizeSessionId(sessionId: String): String = sessionId.take(8).ifEmpty { "empty" }
 
 internal fun sanitizeReason(message: String): String {
     val normalized = message.lowercase()

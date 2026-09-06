@@ -263,13 +263,12 @@ class ImeBridgePcmExternalSessionFactoryTest {
         val endedSessions = mutableListOf<String>()
         private val factory = ImeBridgePcmExternalSessionFactory(pushFactory, backfill)
 
-        fun createSession(): BridgePcmSession =
-            factory.create(
-                BridgePcmSessionConfig(
-                    sessionId = "session-1",
-                    supportsComposingPreview = supportsComposingPreview
-                )
-            ) { endedSessions += it } ?: error("expected session")
+        fun createSession(): BridgePcmSession = factory.create(
+            BridgePcmSessionConfig(
+                sessionId = "session-1",
+                supportsComposingPreview = supportsComposingPreview
+            )
+        ) { endedSessions += it } ?: error("expected session")
     }
 
     private class FakePushPcmSessionFactory(

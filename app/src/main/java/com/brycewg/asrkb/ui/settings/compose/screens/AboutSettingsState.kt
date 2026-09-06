@@ -8,8 +8,8 @@ package com.brycewg.asrkb.ui.settings.compose.screens
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import com.brycewg.asrkb.R
 import com.brycewg.asrkb.LocaleHelper
+import com.brycewg.asrkb.R
 import com.brycewg.asrkb.asr.AsrVendor
 import com.brycewg.asrkb.store.ApiLogStore
 import com.brycewg.asrkb.store.Prefs
@@ -290,5 +290,4 @@ private fun Context.formatDurationMs(ms: Long): String {
     }
 }
 
-private fun formatInt(context: Context, v: Long): String =
-    NumberFormat.getIntegerInstance(LocaleHelper.locale(context)).format(v)
+private fun formatInt(context: Context, v: Long): String = NumberFormat.getIntegerInstance(LocaleHelper.locale(context)).format(v)

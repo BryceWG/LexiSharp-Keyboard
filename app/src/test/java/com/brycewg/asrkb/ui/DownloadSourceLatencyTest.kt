@@ -111,12 +111,11 @@ class DownloadSourceLatencyTest {
         assertEquals("https://ghproxy.net", display)
     }
 
-    private fun shortTimeoutClient(timeoutMs: Long = 2_000L): OkHttpClient =
-        OkHttpClient.Builder()
-            .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-            .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-            .writeTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-            .callTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-            .retryOnConnectionFailure(false)
-            .build()
+    private fun shortTimeoutClient(timeoutMs: Long = 2_000L): OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+        .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+        .writeTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+        .callTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+        .retryOnConnectionFailure(false)
+        .build()
 }

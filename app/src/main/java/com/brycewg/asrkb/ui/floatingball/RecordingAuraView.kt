@@ -164,9 +164,7 @@ internal class RecordingAuraView @JvmOverloads constructor(
         peakWaves.removeAll { nowUptimeMs - it.startedAtMs >= PEAK_DURATION_MS }
     }
 
-    private fun applyAlpha(color: Int, alpha: Int): Int {
-        return (alpha.coerceIn(0, 255) shl 24) or (color and 0x00FFFFFF)
-    }
+    private fun applyAlpha(color: Int, alpha: Int): Int = (alpha.coerceIn(0, 255) shl 24) or (color and 0x00FFFFFF)
 
     private companion object {
         private const val PEAK_DURATION_MS = 760L

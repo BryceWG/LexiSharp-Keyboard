@@ -27,11 +27,9 @@ internal object ContinuousCaptureAudioSpec {
     const val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
     const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
 
-    fun isCompatible(sampleRate: Int, channelConfig: Int, audioFormat: Int): Boolean {
-        return sampleRate == SAMPLE_RATE &&
-            channelConfig == CHANNEL_CONFIG &&
-            audioFormat == AUDIO_FORMAT
-    }
+    fun isCompatible(sampleRate: Int, channelConfig: Int, audioFormat: Int): Boolean = sampleRate == SAMPLE_RATE &&
+        channelConfig == CHANNEL_CONFIG &&
+        audioFormat == AUDIO_FORMAT
 }
 
 enum class ContinuousCaptureOwner {

@@ -83,13 +83,17 @@ internal class Qwen3AsrFileAsrEngine(
 
     override suspend fun recognize(pcm: ByteArray) {
         val t0 = System.currentTimeMillis()
-        val localLog = if (isProgressiveChunkDecode) null else LocalAsrCallLogger.startInference(
-            prefs = prefs,
-            vendor = AsrVendor.Qwen3Asr,
-            source = "file",
-            audioBytes = pcm.size,
-            sampleRate = sampleRate
-        )
+        val localLog = if (isProgressiveChunkDecode) {
+            null
+        } else {
+            LocalAsrCallLogger.startInference(
+                prefs = prefs,
+                vendor = AsrVendor.Qwen3Asr,
+                source = "file",
+                audioBytes = pcm.size,
+                sampleRate = sampleRate
+            )
+        }
         var loadLog: LocalAsrCallLogger.Session? = null
         var durationReported = false
         fun reportDuration() {
@@ -189,7 +193,9 @@ internal class Qwen3AsrFileAsrEngine(
                 localLog?.failure(msg)
                 listener.onError(msg)
             } else {
-                val finalText = if (isProgressiveChunkDecode) text.trim() else {
+                val finalText = if (isProgressiveChunkDecode) {
+                    text.trim()
+                } else {
                     finalizeCombinedProgressiveText(text)
                 }
                 reportDuration()

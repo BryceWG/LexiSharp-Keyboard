@@ -65,16 +65,14 @@ object LocaleHelper {
         return LocaleListCompat.wrap(appContext.resources.configuration.locales)
     }
 
-    private fun storedLanguageTag(context: Context): String {
-        return try {
-            val appContext = context.applicationContext ?: context
-            appContext.getSharedPreferences(PREFS_FILE_NAME, Context.MODE_PRIVATE)
-                .getString(KEY_APP_LANGUAGE_TAG, "")
-                .orEmpty()
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to read stored app language tag", t)
-            ""
-        }
+    private fun storedLanguageTag(context: Context): String = try {
+        val appContext = context.applicationContext ?: context
+        appContext.getSharedPreferences(PREFS_FILE_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_APP_LANGUAGE_TAG, "")
+            .orEmpty()
+    } catch (t: Throwable) {
+        Log.w(TAG, "Failed to read stored app language tag", t)
+        ""
     }
 
     private fun normalizeLanguageTag(tag: String): String = when (tag.trim().lowercase()) {

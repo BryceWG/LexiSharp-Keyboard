@@ -53,37 +53,34 @@ data class ImeBridgeResult(
 }
 
 class ImeBridgeClient(private val context: Context) {
-    fun queryStatus(timeoutMs: Long = DEFAULT_STATUS_TIMEOUT_MS): ImeBridgeResult =
-        sendBridgeRequest(
-            ImeBridgeContract.ACTION_QUERY_STATUS,
-            null,
-            timeoutMs,
-            warnOnFailure = false
-        )
+    fun queryStatus(timeoutMs: Long = DEFAULT_STATUS_TIMEOUT_MS): ImeBridgeResult = sendBridgeRequest(
+        ImeBridgeContract.ACTION_QUERY_STATUS,
+        null,
+        timeoutMs,
+        warnOnFailure = false
+    )
 
     fun beginSession(
         sessionId: String,
         timeoutMs: Long = DEFAULT_SESSION_TIMEOUT_MS
-    ): ImeBridgeResult =
-        sendBridgeRequest(
-            ImeBridgeContract.ACTION_BEGIN_SESSION,
-            null,
-            timeoutMs,
-            sessionId = sessionId,
-            warnOnFailure = false
-        )
+    ): ImeBridgeResult = sendBridgeRequest(
+        ImeBridgeContract.ACTION_BEGIN_SESSION,
+        null,
+        timeoutMs,
+        sessionId = sessionId,
+        warnOnFailure = false
+    )
 
     fun cancelSession(
         sessionId: String,
         timeoutMs: Long = DEFAULT_SESSION_TIMEOUT_MS
-    ): ImeBridgeResult =
-        sendBridgeRequest(
-            ImeBridgeContract.ACTION_CANCEL_SESSION,
-            null,
-            timeoutMs,
-            sessionId = sessionId,
-            warnOnFailure = false
-        )
+    ): ImeBridgeResult = sendBridgeRequest(
+        ImeBridgeContract.ACTION_CANCEL_SESSION,
+        null,
+        timeoutMs,
+        sessionId = sessionId,
+        warnOnFailure = false
+    )
 
     fun insertText(
         text: String,
@@ -116,27 +113,25 @@ class ImeBridgeClient(private val context: Context) {
         cursorPosition: Int = 1,
         timeoutMs: Long = DEFAULT_COMPOSING_TIMEOUT_MS,
         sessionId: String? = null
-    ): ImeBridgeResult =
-        sendBridgeRequest(
-            ImeBridgeContract.ACTION_SET_COMPOSING_TEXT,
-            text,
-            timeoutMs,
-            cursorPosition,
-            sessionId,
-            warnOnFailure = false
-        )
+    ): ImeBridgeResult = sendBridgeRequest(
+        ImeBridgeContract.ACTION_SET_COMPOSING_TEXT,
+        text,
+        timeoutMs,
+        cursorPosition,
+        sessionId,
+        warnOnFailure = false
+    )
 
     fun finishComposingText(
         timeoutMs: Long = DEFAULT_COMPOSING_TIMEOUT_MS,
         sessionId: String? = null
-    ): ImeBridgeResult =
-        sendBridgeRequest(
-            ImeBridgeContract.ACTION_FINISH_COMPOSING_TEXT,
-            null,
-            timeoutMs,
-            sessionId = sessionId,
-            warnOnFailure = false
-        )
+    ): ImeBridgeResult = sendBridgeRequest(
+        ImeBridgeContract.ACTION_FINISH_COMPOSING_TEXT,
+        null,
+        timeoutMs,
+        sessionId = sessionId,
+        warnOnFailure = false
+    )
 
     fun setClipboardText(
         text: String,
@@ -162,35 +157,32 @@ class ImeBridgeClient(private val context: Context) {
 
     fun getClipboardText(
         timeoutMs: Long = DEFAULT_CLIPBOARD_TIMEOUT_MS
-    ): ImeBridgeResult =
-        sendBridgeRequest(
-            ImeBridgeContract.ACTION_GET_CLIPBOARD_TEXT,
-            null,
-            timeoutMs,
-            warnOnFailure = false
-        )
+    ): ImeBridgeResult = sendBridgeRequest(
+        ImeBridgeContract.ACTION_GET_CLIPBOARD_TEXT,
+        null,
+        timeoutMs,
+        warnOnFailure = false
+    )
 
     fun startClipboardObserve(
         subscriptionToken: String,
         timeoutMs: Long = DEFAULT_CLIPBOARD_TIMEOUT_MS
-    ): ImeBridgeResult =
-        sendBridgeRequest(
-            ImeBridgeContract.ACTION_START_CLIPBOARD_OBSERVE,
-            null,
-            timeoutMs,
-            clipboardSubscriptionToken = subscriptionToken,
-            warnOnFailure = false
-        )
+    ): ImeBridgeResult = sendBridgeRequest(
+        ImeBridgeContract.ACTION_START_CLIPBOARD_OBSERVE,
+        null,
+        timeoutMs,
+        clipboardSubscriptionToken = subscriptionToken,
+        warnOnFailure = false
+    )
 
     fun stopClipboardObserve(
         timeoutMs: Long = DEFAULT_CLIPBOARD_TIMEOUT_MS
-    ): ImeBridgeResult =
-        sendBridgeRequest(
-            ImeBridgeContract.ACTION_STOP_CLIPBOARD_OBSERVE,
-            null,
-            timeoutMs,
-            warnOnFailure = false
-        )
+    ): ImeBridgeResult = sendBridgeRequest(
+        ImeBridgeContract.ACTION_STOP_CLIPBOARD_OBSERVE,
+        null,
+        timeoutMs,
+        warnOnFailure = false
+    )
 
     fun resolveCurrentImePackage(): String? = resolveCurrentImePackage(context)
 
@@ -408,8 +400,7 @@ class ImeBridgeClient(private val context: Context) {
         return true
     }
 
-    private fun shortActionName(action: String): String =
-        action.substringAfterLast('.').lowercase()
+    private fun shortActionName(action: String): String = action.substringAfterLast('.').lowercase()
 
     companion object {
         private const val TAG = "ImeBridgeClient"
@@ -465,11 +456,11 @@ private object BridgeResultHandler {
 internal fun imeBridgeWarningMessageRes(code: Int, warnOnFailure: Boolean): Int? {
     if (!warnOnFailure) return null
     return when (code) {
-    ImeBridgeContract.RESULT_PROTOCOL_MISMATCH -> R.string.toast_ime_bridge_protocol_mismatch
-    ImeBridgeContract.RESULT_NO_RECEIVER,
-    ImeBridgeContract.RESULT_TIMEOUT,
-    ImeBridgeContract.RESULT_SEND_FAILED -> R.string.toast_ime_bridge_connection_failed
-    else -> null
+        ImeBridgeContract.RESULT_PROTOCOL_MISMATCH -> R.string.toast_ime_bridge_protocol_mismatch
+        ImeBridgeContract.RESULT_NO_RECEIVER,
+        ImeBridgeContract.RESULT_TIMEOUT,
+        ImeBridgeContract.RESULT_SEND_FAILED -> R.string.toast_ime_bridge_connection_failed
+        else -> null
     }
 }
 

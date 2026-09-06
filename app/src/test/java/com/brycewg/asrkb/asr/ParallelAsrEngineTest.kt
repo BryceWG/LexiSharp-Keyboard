@@ -187,7 +187,9 @@ class ParallelAsrEngineTest {
     }
 
     @OptIn(InternalCoroutinesApi::class)
-    private class RecordingImmediateDelayDispatcher : CoroutineDispatcher(), Delay {
+    private class RecordingImmediateDelayDispatcher :
+        CoroutineDispatcher(),
+        Delay {
         val delays = Collections.synchronizedList(mutableListOf<Long>())
 
         override fun dispatch(context: CoroutineContext, block: Runnable) {

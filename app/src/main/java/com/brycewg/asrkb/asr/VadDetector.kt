@@ -144,7 +144,9 @@ class VadDetector(
 
             val pooled = synchronized(poolLock) {
                 val pool = vadPools.getOrPut(key) { ArrayDeque() }
-                if (pool.size >= MAX_POOL_SIZE) false else {
+                if (pool.size >= MAX_POOL_SIZE) {
+                    false
+                } else {
                     pool.addLast(vad)
                     true
                 }

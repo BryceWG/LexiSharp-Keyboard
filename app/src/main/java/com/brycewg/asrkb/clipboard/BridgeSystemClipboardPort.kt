@@ -28,8 +28,7 @@ internal class ImeBridgeClipboardClientAdapter(
 ) : ClipboardBridgeClient {
     override fun getClipboardText(): ImeBridgeResult = client.getClipboardText()
     override fun setClipboardText(text: String): ImeBridgeResult = client.setClipboardText(text)
-    override fun startClipboardObserve(subscriptionToken: String): ImeBridgeResult =
-        client.startClipboardObserve(subscriptionToken)
+    override fun startClipboardObserve(subscriptionToken: String): ImeBridgeResult = client.startClipboardObserve(subscriptionToken)
     override fun stopClipboardObserve(): ImeBridgeResult = client.stopClipboardObserve()
 }
 
@@ -113,7 +112,9 @@ internal class BridgeSystemClipboardPort(
                             ImeBridgeContract.EXTRA_CLIPBOARD_SUBSCRIPTION_TOKEN
                         )
                     )
-                ) return
+                ) {
+                    return
+                }
                 observer?.invoke()
             }
         }
@@ -157,8 +158,7 @@ internal fun isTrustedClipboardChange(
     actualTargetPackage: String?,
     expectedSubscriptionToken: String,
     actualSubscriptionToken: String?
-): Boolean =
-    protocol == ImeBridgeContract.PROTOCOL_VERSION &&
-        !expectedTargetPackage.isNullOrEmpty() &&
-        actualTargetPackage == expectedTargetPackage &&
-        actualSubscriptionToken == expectedSubscriptionToken
+): Boolean = protocol == ImeBridgeContract.PROTOCOL_VERSION &&
+    !expectedTargetPackage.isNullOrEmpty() &&
+    actualTargetPackage == expectedTargetPackage &&
+    actualSubscriptionToken == expectedSubscriptionToken

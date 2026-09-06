@@ -27,13 +27,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.brycewg.asrkb.BuildConfig
 import com.brycewg.asrkb.R
-import com.brycewg.asrkb.store.Prefs
-import com.brycewg.asrkb.store.AsrHistoryAudioStore
-import com.brycewg.asrkb.store.AsrHistoryStore
-import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.clipboard.ClipboardSyncReceiveMode
 import com.brycewg.asrkb.clipboard.ClipboardSyncRuntimeService
 import com.brycewg.asrkb.clipboard.isSyncClipboardDownloadDirectory
+import com.brycewg.asrkb.ime.AsrKeyboardService
+import com.brycewg.asrkb.store.AsrHistoryAudioStore
+import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.floating.FloatingServiceManager
 import com.brycewg.asrkb.ui.floating.KeepAliveNotificationClick
 import com.brycewg.asrkb.ui.floating.PrivilegedKeepAliveScheduler
@@ -72,13 +71,12 @@ fun OtherSettingsScreen(
         factory = remember(prefs, context) {
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    OtherSettingsViewModel(
-                        prefs = prefs,
-                        onSyncClipboardChanged = {
-                            notifySyncClipboardConfigChanged(context, prefs)
-                        }
-                    ) as T
+                override fun <T : ViewModel> create(modelClass: Class<T>): T = OtherSettingsViewModel(
+                    prefs = prefs,
+                    onSyncClipboardChanged = {
+                        notifySyncClipboardConfigChanged(context, prefs)
+                    }
+                ) as T
             }
         }
     )

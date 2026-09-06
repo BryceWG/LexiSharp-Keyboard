@@ -54,6 +54,7 @@ internal class XAsrStreamSession(
     private val queuedPcmBytes = AtomicInteger(0)
 
     @Volatile private var processorJob: Job? = null
+
     @Volatile private var lastEmittedText: String? = null
     private var lastEmitUptimeMs: Long = 0L
 
@@ -130,15 +131,13 @@ internal class XAsrStreamSession(
         processorJob?.join()
     }
 
-    suspend fun awaitSinkReady(timeoutMs: Long): Boolean {
-        return try {
-            withTimeoutOrNull(timeoutMs) { sinkReady.await() } != null
-        } catch (_: CancellationException) {
-            currentCoroutineContext().ensureActive()
-            false
-        } catch (_: Throwable) {
-            false
-        }
+    suspend fun awaitSinkReady(timeoutMs: Long): Boolean = try {
+        withTimeoutOrNull(timeoutMs) { sinkReady.await() } != null
+    } catch (_: CancellationException) {
+        currentCoroutineContext().ensureActive()
+        false
+    } catch (_: Throwable) {
+        false
     }
 
     private fun closeEvents() {
@@ -286,6 +285,7 @@ internal class XAsrStreamSession(
         private const val LIVE_DECODE_MAX_LOOPS = 8
         private const val MAX_PREBUFFER_BYTES = 384 * 1024
         private const val MODEL_CHUNK_MS = 480
+
         // 补齐当前 chunk + 一个 right-context chunk；数量由模型结构决定，与设备快慢无关。
         private const val TAIL_PAD_CHUNKS = 2
         private const val FINALIZE_DECODE_MAX_LOOPS = 512

@@ -27,7 +27,6 @@ internal fun Channel<ByteArray>.closeSessionDispatch(cause: Throwable? = null) {
     close(cause)
 }
 
-private fun Channel<ByteArray>.sessionEndSignal(): CompletableDeferred<Unit> =
-    synchronized(continuousCaptureSessionEnds) {
-        continuousCaptureSessionEnds.getOrPut(this) { CompletableDeferred() }
-    }
+private fun Channel<ByteArray>.sessionEndSignal(): CompletableDeferred<Unit> = synchronized(continuousCaptureSessionEnds) {
+    continuousCaptureSessionEnds.getOrPut(this) { CompletableDeferred() }
+}

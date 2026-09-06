@@ -2,13 +2,13 @@
 package com.brycewg.asrkb.asr
 
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.coroutines.ContinuationInterceptor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.test.runTest
-import kotlin.coroutines.ContinuationInterceptor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -266,8 +266,7 @@ class XAsrStreamSessionTest {
             }
         }
 
-        override fun isReady(): Boolean =
-            pending >= samplesPerChunk || (finished && pending > 0)
+        override fun isReady(): Boolean = pending >= samplesPerChunk || (finished && pending > 0)
 
         override fun decode() {
             val consume = if (finished && pending < samplesPerChunk) pending else samplesPerChunk

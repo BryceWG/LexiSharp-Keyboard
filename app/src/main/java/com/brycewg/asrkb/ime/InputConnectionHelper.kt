@@ -118,7 +118,9 @@ class InputConnectionHelper(private val tag: String = "InputConnectionHelper") {
         }
         streamingPreviewOwnership = if (success && anchor != null && ownedText != null) {
             StreamingPreviewOwnership(WeakReference(ic), anchor, ownedText)
-        } else null
+        } else {
+            null
+        }
         logPreviewWrite(
             ic = ic,
             previewText = previewText,

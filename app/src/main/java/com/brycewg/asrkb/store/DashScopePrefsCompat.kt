@@ -34,8 +34,7 @@ internal object DashScopePrefsCompat {
         "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
     }
 
-    fun getDashMultimodalGenerationEndpoint(dashRegion: String): String =
-        getDashHttpBaseUrl(dashRegion).trimEnd('/') + "/services/aigc/multimodal-generation/generation"
+    fun getDashMultimodalGenerationEndpoint(dashRegion: String): String = getDashHttpBaseUrl(dashRegion).trimEnd('/') + "/services/aigc/multimodal-generation/generation"
 
     fun normalizeDashAsrModel(model: String): String {
         val trimmed = model.trim()
@@ -63,8 +62,7 @@ internal object DashScopePrefsCompat {
             it.equals(Prefs.DASH_MODEL_QWEN_AUDIO_REALTIME, ignoreCase = true)
     }
 
-    fun isStreamingModel(model: String): Boolean =
-        isRecognitionStreamingModel(model) || isQwen3RealtimeModel(model)
+    fun isStreamingModel(model: String): Boolean = isRecognitionStreamingModel(model) || isQwen3RealtimeModel(model)
 
     fun isKnownAsrModel(model: String): Boolean {
         val normalized = normalizeDashAsrModel(model)
@@ -84,8 +82,7 @@ internal object DashScopePrefsCompat {
         }
     }
 
-    fun isSemanticPunctuationSupported(model: String): Boolean =
-        isRecognitionStreamingModel(model)
+    fun isSemanticPunctuationSupported(model: String): Boolean = isRecognitionStreamingModel(model)
 
     fun isQwenAudioModel(model: String): Boolean = normalizeDashAsrModel(model).let {
         it.equals(Prefs.DASH_MODEL_QWEN_AUDIO_FLASH, ignoreCase = true) ||
@@ -104,13 +101,11 @@ internal object DashScopePrefsCompat {
             !isGenerationAsrModel(normalized)
     }
 
-    fun isLanguageSupported(model: String): Boolean =
-        !isOmniModel(model) && (!isGenerationAsrModel(model) || isQwenAudioModel(model))
+    fun isLanguageSupported(model: String): Boolean = !isOmniModel(model) && (!isGenerationAsrModel(model) || isQwenAudioModel(model))
 
     fun parseDashLanguages(value: String): List<String> = normalizeDashLanguages(listOf(value))
 
-    fun serializeDashLanguages(values: Iterable<String>): String =
-        normalizeDashLanguages(values).joinToString(",")
+    fun serializeDashLanguages(values: Iterable<String>): String = normalizeDashLanguages(values).joinToString(",")
 
     private fun normalizeDashLanguages(values: Iterable<String>): List<String> = values
         .asSequence()

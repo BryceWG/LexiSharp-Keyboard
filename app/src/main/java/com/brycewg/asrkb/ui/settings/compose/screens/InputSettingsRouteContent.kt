@@ -140,8 +140,7 @@ internal fun InputSettingsRouteContent(
                             }
                         },
                         value = uiState.trimTrailingPunctThreshold.toFloat(),
-                        valueRange = Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_MIN.toFloat()..
-                            Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_UNLIMITED.toFloat(),
+                        valueRange = Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_MIN.toFloat()..Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_UNLIMITED.toFloat(),
                         steps = Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_UNLIMITED -
                             Prefs.TRIM_FINAL_TRAILING_PUNCT_THRESHOLD_MIN - 1,
                         uiMode = uiMode,
@@ -462,7 +461,6 @@ internal fun InputSettingsRouteContent(
                 )
             }
         }
-
     }
 }
 

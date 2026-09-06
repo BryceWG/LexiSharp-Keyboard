@@ -1,10 +1,10 @@
 package com.brycewg.asrkb.clipboard
 
-import androidx.test.core.app.ApplicationProvider
 import android.net.Uri
+import androidx.test.core.app.ApplicationProvider
 import com.brycewg.asrkb.store.Prefs
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test

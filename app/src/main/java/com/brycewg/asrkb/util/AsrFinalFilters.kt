@@ -18,13 +18,11 @@ object AsrFinalFilters {
         fun onAiPostprocessFinished()
     }
 
-    fun shouldTrimTrailingPunctAndEmoji(prefs: Prefs, text: String): Boolean {
-        return shouldTrimTrailingPunctAndEmoji(
-            enabled = prefs.trimFinalTrailingPunct,
-            effectiveCharCount = TextSanitizer.countEffectiveChars(text),
-            threshold = prefs.trimFinalTrailingPunctThreshold
-        )
-    }
+    fun shouldTrimTrailingPunctAndEmoji(prefs: Prefs, text: String): Boolean = shouldTrimTrailingPunctAndEmoji(
+        enabled = prefs.trimFinalTrailingPunct,
+        effectiveCharCount = TextSanitizer.countEffectiveChars(text),
+        threshold = prefs.trimFinalTrailingPunctThreshold
+    )
 
     internal fun shouldTrimTrailingPunctAndEmoji(
         enabled: Boolean,

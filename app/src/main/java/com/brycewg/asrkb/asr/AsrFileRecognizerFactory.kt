@@ -146,26 +146,23 @@ internal object RealAsrFileRecognizerConstructorTable : AsrFileRecognizerConstru
 internal fun AsrFileRecognizerConstructorTable.createStreamingEngine(
     key: AsrFileRecognizerKey,
     request: AsrFileRecognizerRequest
-): StreamingAsrEngine =
-    create(key, request) as? StreamingAsrEngine
-        ?: error("${key.engineClassName} must implement StreamingAsrEngine for direct microphone construction")
+): StreamingAsrEngine = create(key, request) as? StreamingAsrEngine
+    ?: error("${key.engineClassName} must implement StreamingAsrEngine for direct microphone construction")
 
-internal fun AsrDirectMicrophoneEngineRequest.toFileRecognizerRequest(): AsrFileRecognizerRequest =
-    AsrFileRecognizerRequest(
-        context = context,
-        scope = scope,
-        prefs = prefs,
-        listener = listener,
-        onRequestDuration = onRequestDuration,
-        modelOverride = modelOverride
-    )
+internal fun AsrDirectMicrophoneEngineRequest.toFileRecognizerRequest(): AsrFileRecognizerRequest = AsrFileRecognizerRequest(
+    context = context,
+    scope = scope,
+    prefs = prefs,
+    listener = listener,
+    onRequestDuration = onRequestDuration,
+    modelOverride = modelOverride
+)
 
-internal fun AsrPushPcmEngineRequest.toFileRecognizerRequest(): AsrFileRecognizerRequest =
-    AsrFileRecognizerRequest(
-        context = context,
-        scope = scope,
-        prefs = prefs,
-        listener = listener,
-        onRequestDuration = onRequestDuration,
-        modelOverride = modelOverride
-    )
+internal fun AsrPushPcmEngineRequest.toFileRecognizerRequest(): AsrFileRecognizerRequest = AsrFileRecognizerRequest(
+    context = context,
+    scope = scope,
+    prefs = prefs,
+    listener = listener,
+    onRequestDuration = onRequestDuration,
+    modelOverride = modelOverride
+)

@@ -100,8 +100,11 @@ internal class SyncClipboardSignalRClient(
                 .split('.').take(3).map { it.toIntOrNull() ?: return false }
             val normalized = parts + List(3 - parts.size) { 0 }
             return normalized[0] > 3 ||
-                normalized[0] == 3 && normalized[1] > 1 ||
-                normalized[0] == 3 && normalized[1] == 1 && normalized[2] >= 1
+                normalized[0] == 3 &&
+                normalized[1] > 1 ||
+                normalized[0] == 3 &&
+                normalized[1] == 1 &&
+                normalized[2] >= 1
         }
 
         private fun basicAuthHeader(username: String, password: String): String {
@@ -114,10 +117,12 @@ internal class SyncClipboardSignalRClient(
     }
 
     @Volatile private var listener: Listener? = null
+
     @Volatile private var webSocket: WebSocket? = null
     private val connected = AtomicBoolean(false)
     private val started = AtomicBoolean(false)
     private val lifecycleLock = Any()
+
     @Volatile private var generation = 0L
     private var negotiateCall: Call? = null
     private var pingJob: Job? = null
@@ -177,36 +182,39 @@ internal class SyncClipboardSignalRClient(
             .header("Authorization", auth)
             .build()
         val receiveBuffer = StringBuilder()
-        val socket = httpClient.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                if (!isCurrent(currentGeneration)) {
-                    webSocket.close(1000, "stale")
-                    return
+        val socket = httpClient.newWebSocket(
+            request,
+            object : WebSocketListener() {
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    if (!isCurrent(currentGeneration)) {
+                        webSocket.close(1000, "stale")
+                        return
+                    }
+                    // SignalR handshake
+                    webSocket.send("""{"protocol":"json","version":1}$RECORD_SEPARATOR""")
                 }
-                // SignalR handshake
-                webSocket.send("""{"protocol":"json","version":1}$RECORD_SEPARATOR""")
-            }
 
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                handleText(currentGeneration, receiveBuffer, text)
-            }
+                override fun onMessage(webSocket: WebSocket, text: String) {
+                    handleText(currentGeneration, receiveBuffer, text)
+                }
 
-            override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                handleText(currentGeneration, receiveBuffer, bytes.utf8())
-            }
+                override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
+                    handleText(currentGeneration, receiveBuffer, bytes.utf8())
+                }
 
-            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                webSocket.close(code, reason)
-            }
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    webSocket.close(code, reason)
+                }
 
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                markDisconnected(currentGeneration, null)
-            }
+                override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                    markDisconnected(currentGeneration, null)
+                }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                markDisconnected(currentGeneration, t)
+                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                    markDisconnected(currentGeneration, t)
+                }
             }
-        })
+        )
         val accepted = synchronized(lifecycleLock) {
             if (isCurrent(currentGeneration)) {
                 webSocket = socket
@@ -389,10 +397,7 @@ internal class SyncClipboardSignalRClient(
         currentListener?.onDisconnected(error)
     }
 
-    private fun isCurrent(currentGeneration: Long): Boolean =
-        started.get() && generation == currentGeneration
-
+    private fun isCurrent(currentGeneration: Long): Boolean = started.get() && generation == currentGeneration
 }
 
-internal class RealtimeUnavailableException(httpCode: Int) :
-    IllegalStateException("SignalR negotiate unsupported: HTTP $httpCode")
+internal class RealtimeUnavailableException(httpCode: Int) : IllegalStateException("SignalR negotiate unsupported: HTTP $httpCode")

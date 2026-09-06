@@ -31,8 +31,8 @@ import com.brycewg.asrkb.ime.AsrKeyboardService
 import com.brycewg.asrkb.store.Prefs
 import com.brycewg.asrkb.ui.BaseActivity
 import com.brycewg.asrkb.ui.DownloadSourceOption
-import com.brycewg.asrkb.ui.floating.floatingInputNeedsAccessibility
 import com.brycewg.asrkb.ui.SettingsActivity
+import com.brycewg.asrkb.ui.floating.floatingInputNeedsAccessibility
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialog
 import com.brycewg.asrkb.ui.settings.compose.components.SettingsMessageDialogState
 import com.brycewg.asrkb.ui.settings.compose.core.BibiSettingsRoute
@@ -422,10 +422,12 @@ class OnboardingGuideActivity : BaseActivity() {
 
     private fun showProPromo() {
         try {
-            startActivity(Intent(this, SettingsActivity::class.java).putExtra(
-                SettingsActivity.EXTRA_INITIAL_ROUTE,
-                BibiSettingsRoute.Paywall.id
-            ))
+            startActivity(
+                Intent(this, SettingsActivity::class.java).putExtra(
+                    SettingsActivity.EXTRA_INITIAL_ROUTE,
+                    BibiSettingsRoute.Paywall.id
+                )
+            )
             prefs.proPromoShown = true
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to open Pro paywall", t)

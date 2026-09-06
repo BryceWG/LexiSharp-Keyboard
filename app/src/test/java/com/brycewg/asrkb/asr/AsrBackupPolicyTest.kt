@@ -247,6 +247,5 @@ class AsrBackupPolicyTest {
         )
     }
 
-    private fun throwingChecks(): AsrBackupAvailabilityChecks =
-        AsrBackupAvailabilityChecks { error("availability should not be required") }
+    private fun throwingChecks(): AsrBackupAvailabilityChecks = AsrBackupAvailabilityChecks { error("availability should not be required") }
 }

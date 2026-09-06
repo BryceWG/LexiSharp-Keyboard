@@ -81,8 +81,7 @@ internal object UsageStatsShareCardRenderer {
         return h
     }
 
-    private fun heroHeight(payload: UsageStatsSharePayload): Float =
-        HERO_BASE_HEIGHT + if (payload.heroSavedText != null) HERO_SAVED_EXTRA else 0f
+    private fun heroHeight(payload: UsageStatsSharePayload): Float = HERO_BASE_HEIGHT + if (payload.heroSavedText != null) HERO_SAVED_EXTRA else 0f
 
     private fun vendorCardHeight(payload: UsageStatsSharePayload): Float = if (payload.hasVendorData) {
         VENDOR_HEADER + payload.topVendors.size * VENDOR_ROW + 24f
@@ -445,13 +444,12 @@ internal object UsageStatsShareCardRenderer {
         canvas.drawRoundRect(rect, CARD_RADIUS, CARD_RADIUS, stroke)
     }
 
-    private fun textPaint(sizePx: Float, color: Int, typeface: Typeface): Paint =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            this.color = color
-            textSize = sizePx
-            this.typeface = typeface
-            isSubpixelText = true
-        }
+    private fun textPaint(sizePx: Float, color: Int, typeface: Typeface): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = color
+        textSize = sizePx
+        this.typeface = typeface
+        isSubpixelText = true
+    }
 
     /** 从 startSize 逐级缩小字号直到文本单行放得下，最小 minSize（仍放不下则截断由调用方保证宽度足够） */
     private fun fitTextPaint(

@@ -33,8 +33,7 @@ internal object AsrPrimaryNetworkGate {
         true
     }
 
-    private fun isOnlinePrimary(vendor: AsrVendor): Boolean =
-        classifyAsrVendorAvailability(vendor) == AsrVendorAvailabilityClassification.OnlineConfiguration
+    private fun isOnlinePrimary(vendor: AsrVendor): Boolean = classifyAsrVendorAvailability(vendor) == AsrVendorAvailabilityClassification.OnlineConfiguration
 }
 
 private const val TAG = "AsrPrimaryNetworkGate"

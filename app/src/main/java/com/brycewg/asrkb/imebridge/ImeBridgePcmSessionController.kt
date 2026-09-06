@@ -156,8 +156,7 @@ internal class ImeBridgePcmSessionController(
         pcm: ByteArray,
         sampleRate: Int,
         channels: Int
-    ): BridgePcmOperationResult =
-        writeFrame(BridgePcmSessionOperationRequest(sessionId, emptySet()), pcm, sampleRate, channels)
+    ): BridgePcmOperationResult = writeFrame(BridgePcmSessionOperationRequest(sessionId, emptySet()), pcm, sampleRate, channels)
 
     @Synchronized
     fun writeFrame(
@@ -177,8 +176,7 @@ internal class ImeBridgePcmSessionController(
     }
 
     @Synchronized
-    fun finish(sessionId: String): BridgePcmOperationResult =
-        finish(BridgePcmSessionOperationRequest(sessionId, emptySet()))
+    fun finish(sessionId: String): BridgePcmOperationResult = finish(BridgePcmSessionOperationRequest(sessionId, emptySet()))
 
     @Synchronized
     fun finish(request: BridgePcmSessionOperationRequest): BridgePcmOperationResult {
@@ -200,8 +198,7 @@ internal class ImeBridgePcmSessionController(
     }
 
     @Synchronized
-    fun cancel(sessionId: String): BridgePcmOperationResult =
-        cancel(BridgePcmSessionOperationRequest(sessionId, emptySet()))
+    fun cancel(sessionId: String): BridgePcmOperationResult = cancel(BridgePcmSessionOperationRequest(sessionId, emptySet()))
 
     @Synchronized
     fun cancel(request: BridgePcmSessionOperationRequest): BridgePcmOperationResult {
@@ -277,8 +274,7 @@ internal class ImeBridgePcmSessionController(
             request.callerPackages.contains(current.ownerPackage)
     }
 
-    private fun stale(): BridgePcmOperationResult =
-        result(ImeBridgePcmContract.RESULT_STALE_SESSION)
+    private fun stale(): BridgePcmOperationResult = result(ImeBridgePcmContract.RESULT_STALE_SESSION)
 
     private fun result(
         code: Int,
@@ -321,10 +317,8 @@ internal class ImeBridgePcmSessionController(
         private const val MAX_SAMPLE_RATE = 192_000
         private const val PCM_MONO_CHANNELS = 1
 
-        fun isValidSessionId(sessionId: String): Boolean =
-            sessionId.isNotBlank() && SESSION_ID_PATTERN.matches(sessionId)
+        fun isValidSessionId(sessionId: String): Boolean = sessionId.isNotBlank() && SESSION_ID_PATTERN.matches(sessionId)
 
-        fun isValidPcmFormat(sampleRate: Int, channels: Int): Boolean =
-            sampleRate in MIN_SAMPLE_RATE..MAX_SAMPLE_RATE && channels == PCM_MONO_CHANNELS
+        fun isValidPcmFormat(sampleRate: Int, channels: Int): Boolean = sampleRate in MIN_SAMPLE_RATE..MAX_SAMPLE_RATE && channels == PCM_MONO_CHANNELS
     }
 }

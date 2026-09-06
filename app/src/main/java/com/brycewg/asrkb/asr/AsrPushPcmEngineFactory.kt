@@ -70,16 +70,15 @@ internal class AsrPushPcmEngineFactory(
     private val constructors: AsrPushPcmEngineConstructorTable =
         RealAsrPushPcmEngineConstructorTable
 ) {
-    fun create(request: AsrPushPcmEngineRequest): StreamingAsrEngine =
-        constructors.create(
-            resolvePlan(
-                vendor = request.vendor,
-                invocationMode = request.invocationMode,
-                preferences = request.preferences,
-                source = request.source
-            ),
-            request
-        )
+    fun create(request: AsrPushPcmEngineRequest): StreamingAsrEngine = constructors.create(
+        resolvePlan(
+            vendor = request.vendor,
+            invocationMode = request.invocationMode,
+            preferences = request.preferences,
+            source = request.source
+        ),
+        request
+    )
 
     fun createOrNull(request: AsrPushPcmEngineRequest): StreamingAsrEngine? {
         if (!isRequestAvailable(request)) return null
@@ -218,29 +217,28 @@ internal class AsrPushPcmEngineFactory(
         else -> error("$vendor has no Push PCM pseudo stream engine")
     }
 
-    private fun isRequestAvailable(request: AsrPushPcmEngineRequest): Boolean =
-        isPushPcmFactoryVendorAvailable(
-            vendor = request.vendor,
-            invocationMode = request.invocationMode,
-            checkers = AsrVendorAvailabilityCheckers(
-                onlineConfiguration = { checkedVendor ->
-                    isOnlineAsrVendorConfigured(
-                        checkedVendor,
-                        AsrOnlineConfigurationChecks(
-                            hasSfKeys = { request.prefs.hasSfKeys() },
-                            hasVendorKeys = { request.prefs.hasVendorKeys(it) }
-                        )
+    private fun isRequestAvailable(request: AsrPushPcmEngineRequest): Boolean = isPushPcmFactoryVendorAvailable(
+        vendor = request.vendor,
+        invocationMode = request.invocationMode,
+        checkers = AsrVendorAvailabilityCheckers(
+            onlineConfiguration = { checkedVendor ->
+                isOnlineAsrVendorConfigured(
+                    checkedVendor,
+                    AsrOnlineConfigurationChecks(
+                        hasSfKeys = { request.prefs.hasSfKeys() },
+                        hasVendorKeys = { request.prefs.hasVendorKeys(it) }
                     )
-                },
-                localModelReadiness = { checkedVendor ->
-                    AsrLocalVendorLifecycles.isModelReady(
-                        request.context,
-                        request.prefs,
-                        checkedVendor
-                    )
-                }
-            )
+                )
+            },
+            localModelReadiness = { checkedVendor ->
+                AsrLocalVendorLifecycles.isModelReady(
+                    request.context,
+                    request.prefs,
+                    checkedVendor
+                )
+            }
         )
+    )
 }
 
 internal fun isPushPcmFactoryVendorAvailable(

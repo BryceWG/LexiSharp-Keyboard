@@ -40,7 +40,8 @@ class AsrEngineDiagnosticNameTest {
 
     private class FakeBackupEngine(
         override val backupStrategy: AsrParallelEngineDecision
-    ) : FakeEngine(), BackupAwareAsrEngine {
+    ) : FakeEngine(),
+        BackupAwareAsrEngine {
         override val primaryVendor: AsrVendor = AsrVendor.Volc
         override val backupVendor: AsrVendor = AsrVendor.OpenAI
 

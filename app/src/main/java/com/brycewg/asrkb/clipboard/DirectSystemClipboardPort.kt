@@ -20,7 +20,9 @@ class DirectSystemClipboardPort(
         context.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
     @Volatile private var observer: (() -> Unit)? = null
+
     @Volatile private var registered = false
+
     @Volatile private var suppressOwnChange = false
 
     private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {

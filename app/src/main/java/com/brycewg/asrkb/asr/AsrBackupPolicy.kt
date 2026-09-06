@@ -27,8 +27,7 @@ enum class BackupAsrLocalResidency(val id: String) {
     Resident("resident");
 
     companion object {
-        fun fromId(id: String?): BackupAsrLocalResidency =
-            entries.firstOrNull { it.id == id } ?: OnDemand
+        fun fromId(id: String?): BackupAsrLocalResidency = entries.firstOrNull { it.id == id } ?: OnDemand
     }
 }
 
@@ -80,9 +79,7 @@ internal fun resolveBackupAsrDecision(
     )
 }
 
-internal fun shouldUseBackupAsr(input: AsrBackupPolicyInput): Boolean {
-    return resolveBackupAsrDecision(input) != AsrBackupPolicyDecision.UsePrimaryOnly
-}
+internal fun shouldUseBackupAsr(input: AsrBackupPolicyInput): Boolean = resolveBackupAsrDecision(input) != AsrBackupPolicyDecision.UsePrimaryOnly
 
 internal fun resolveBackupAsrDecision(input: AsrBackupPolicyInput): AsrBackupPolicyDecision {
     if (!input.backupEnabled) return AsrBackupPolicyDecision.UsePrimaryOnly
