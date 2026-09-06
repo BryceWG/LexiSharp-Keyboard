@@ -7,7 +7,8 @@ indent_size = 4
 indent_style = space
 
 max_line_length = off
-ktlint_standard_max-line-length = off
+ktlint_standard_max-line-length = disabled
 ktlint_standard_no-wildcard-imports = disabled
+ktlint_function_naming_ignore_when_annotated_with = Composable
 
 insert_final_newline = true
